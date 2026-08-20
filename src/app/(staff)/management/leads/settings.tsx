@@ -10,6 +10,7 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { DurationField } from '@/components/DurationField';
 import { Input } from '@/components/Input';
+import { AgentSettings } from '@/components/leads/AgentSettings';
 import { LeadsShell } from '@/components/LeadsNav';
 import { PageHead } from '@/components/PageHead';
 import { SectionLabel } from '@/components/SectionLabel';
@@ -327,11 +328,13 @@ export default function LeadSettingsScreen() {
   const recOn = agent.data?.call_recording_enabled ?? true;
 
   return (
-    <LeadsShell active="settings" tabs={['leads', 'agent', 'conversations', 'settings']}>
+    <LeadsShell active="settings" tabs={['leads', 'conversations', 'settings']}>
       <PageHead
         title="Lead settings"
-        subtitle="How leads are routed, recorded, and how long any of it is kept."
+        subtitle="What the assistant sounds like, what it knows, and how leads are routed, recorded and kept."
       />
+
+      <AgentSettings />
 
       <SectionLabel>When a lead comes in</SectionLabel>
 

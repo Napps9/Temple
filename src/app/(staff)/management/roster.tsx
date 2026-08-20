@@ -183,7 +183,7 @@ export default function Roster() {
             <ChipButton
               label="Its screens"
               icon="open-outline"
-              onPress={() => router.push('/management/leads/agent' as never)}
+              onPress={() => router.push('/management/leads/settings' as never)}
             />
           </View>
         </View>

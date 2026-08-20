@@ -3546,14 +3546,21 @@ builder, before returning to Leads. The former single
 section's left sidebar (`LeadsShell`/`LeadsNav`), ordered Leads → AI
 Agent → Conversations → Settings (non-owners with `can_assign_plan` see
 only Leads/Conversations). **Settings**
-(`/management/leads/settings`) holds the operational/policy cards under
-plain (non-collapsible) section labels — When A Lead Comes In
-(assignment strategy + "text the coach too"), Lead Sources (opens the
-same add/archive `SourcesEditorModal` the pipeline's source picker reads
-from — no longer its own sidebar tab), Call Recording & Consent, Usage &
-Data (usage stats, outcomes, daily message cap, conversation retention),
-Data Retention (lead retention window). **AI Agent**
-(`/management/leads/agent`) holds the assistant's behaviour and persona:
+(`/management/leads/settings`) is now the whole of the section's
+configuration — the AI Agent tab was folded into it, because what the
+assistant sounds like, what it knows, how leads route, what is recorded
+and how long any of it is kept are one job, not two. Three tabs, not
+four; `/management/leads/agent` redirects here. Sections, in order: Talk
+To Your AI, The Front Desk and What It Knows (all from the old AI Agent
+tab, moved as `components/leads/AgentSettings.tsx` rather than merged as
+code, so the per-card drafts and saves are untouched), then When A Lead
+Comes In (assignment strategy + "text the coach too"), Lead Sources
+(opens the same add/archive `SourcesEditorModal` the pipeline's source
+picker reads from), Recording And Consent, and Limits And Retention —
+the last of which merges what were Usage & Data (usage stats, outcomes,
+daily message cap, conversation retention) and Data Retention (lead
+retention window), because both answered how long something is kept.
+The AI Agent sections hold the assistant's behaviour and persona:
 a "Talk to your AI" hero leads the page, with a Teach/Test tab switch
 inside one container rather than two separate "talk to it" cards —
 **Teach it** is the interview (step bar + large icon avatar carrying the

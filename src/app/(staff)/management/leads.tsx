@@ -145,7 +145,7 @@ export default function LeadsScreen() {
   const [milestoneDismissed, setMilestoneDismissed] = useState(false);
 
   const tabs: LeadsTab[] = isOwner
-    ? ['leads', 'agent', 'conversations', 'settings']
+    ? ['leads', 'conversations', 'settings']
     : ['leads', 'conversations'];
 
   const agentSettings = useQuery({

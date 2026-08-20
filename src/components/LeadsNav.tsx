@@ -10,25 +10,22 @@ import { useThemeColors } from '@/lib/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-export type LeadsTab = 'leads' | 'agent' | 'conversations' | 'settings';
+export type LeadsTab = 'leads' | 'conversations' | 'settings';
 
 const TAB_LABELS: Record<LeadsTab, string> = {
   leads: 'Leads',
-  agent: 'AI Agent',
   conversations: 'Conversations',
   settings: 'Settings',
 };
 
 const TAB_ICONS: Record<LeadsTab, IconName> = {
   leads: 'funnel-outline',
-  agent: 'sparkles-outline',
   conversations: 'chatbubbles-outline',
   settings: 'settings-outline',
 };
 
 function goToTab(tab: LeadsTab) {
   if (tab === 'leads') router.push('/management/leads' as never);
-  else if (tab === 'agent') router.push('/management/leads/agent' as never);
   else if (tab === 'conversations') router.push('/management/leads/conversations' as never);
   else router.push('/management/leads/settings' as never);
 }
@@ -96,7 +93,7 @@ function LeadsPills({
   );
 }
 
-// Shell for the Leads section's screens (pipeline, agent, conversations,
+// Shell for the Leads section's screens (pipeline, conversations,
 // settings) — a persistent left sidebar on desktop matching the Manage
 // screen's own sidebar, a pill row above the content on mobile.
 export function LeadsShell({
