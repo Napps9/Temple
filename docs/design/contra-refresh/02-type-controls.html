@@ -1,245 +1,253 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>Type, controls, and the per-gym accent</title>
+<html><head><meta charset="utf-8"><title>Type, controls, and where colour is allowed</title>
 <link rel="stylesheet" href="fonts.css">
 <link rel="stylesheet" href="system.css">
 <link rel="stylesheet" href="legacy.css">
-<style></style>
-</head>
+<style></style></head>
 <body class="board">
-<svg style="position:absolute;width:0;height:0" aria-hidden="true"><symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol><symbol id="i-barbell" viewBox="0 0 24 24"><path d="M4 9v6M7 6.5v11M17 6.5v11M20 9v6M7 12h10"/></symbol><symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 16.5l6-6 4 4 7.5-7.5"/><path d="M14.5 7h6v6"/></symbol><symbol id="i-ticket" viewBox="0 0 24 24"><rect x="3" y="6.5" width="18" height="11" rx="2.6"/><path d="M9 6.5v1.6M9 11.2v1.6M9 15.9v1.6"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></symbol><symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></symbol><symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.2 2.5L4.8 13.6H11l-.8 7.9 8.9-11.1H13z"/></symbol><symbol id="i-card" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M2.5 10h19"/></symbol><symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.2 19.5a5.8 5.8 0 0 1 11.6 0"/><path d="M16.2 5.4a3.2 3.2 0 0 1 0 5.9"/><path d="M17.4 14.6a5.8 5.8 0 0 1 3.4 4.9"/></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V4"/><path d="M5.5 5h11l-2 3.6 2 3.6h-11z"/></symbol><symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3.5h7.5L18 8v12.5H6z"/><path d="M13.5 3.5V8H18"/><path d="M9 12.5h6M9 16h4"/></symbol><symbol id="i-up" viewBox="0 0 24 24"><path d="M12 20V5"/><path d="M6 11l6-6 6 6"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></symbol><symbol id="i-swap" viewBox="0 0 24 24"><path d="M3.5 8.5H17"/><path d="M13.5 5L17 8.5 13.5 12"/><path d="M20.5 15.5H7"/><path d="M10.5 12L7 15.5 10.5 19"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.2 2"/></symbol><symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.8"/><path d="M12 7.5v5.2M12 16.2v.3"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8L20.5 20.5"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.6l1.5 2.5 2.9-.5.6 2.9 2.7 1.2-1.4 2.6 1.4 2.6-2.7 1.2-.6 2.9-2.9-.5L12 21.4l-1.5-2.5-2.9.5-.6-2.9-2.7-1.2L5.7 12 4.3 9.4l2.7-1.2.6-2.9 2.9.5z"/></symbol><symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 14.8a3 3 0 0 1-3 3H9.4L5 21v-3.6a3 3 0 0 1-1-2.6V8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/></symbol><symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v4.6a4 4 0 0 1-8 0z"/><path d="M8 5.5H5.4A2.6 2.6 0 0 0 8 10.6M16 5.5h2.6A2.6 2.6 0 0 1 16 10.6"/><path d="M12 12.6v3.2M8.8 20h6.4l-.6-4H9.4z"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M5 5.2A2.2 2.2 0 0 1 7.2 3H19v14.4H7.2A2.2 2.2 0 0 0 5 19.6z"/><path d="M5 19.6A1.6 1.6 0 0 1 6.6 18H19v3H6.6A1.6 1.6 0 0 1 5 19.6z"/></symbol><symbol id="i-body" viewBox="0 0 24 24"><circle cx="12" cy="4.4" r="2"/><path d="M12 7v7.2M12 7.6L7.2 9.4M12 7.6l4.8 1.8M12 14.2L9 20.4M12 14.2l3 6.2"/></symbol><symbol id="i-library" viewBox="0 0 24 24"><path d="M4 5h3.6v14H4zM9.6 5h3.6v14H9.6z"/><path d="M16.4 5.6l3.3 12.8-2.2.6-3.3-12.8z"/></symbol><symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3.2s5 3.9 5 8.1a5 5 0 0 1-10 0c0-2 1-3.2 1-3.2s.4 2 1.9 2c0-3 2.1-4.8 2.1-6.9z"/></symbol><symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol><symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.6"/><path d="M3.8 7l8.2 6 8.2-6"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol><symbol id="i-users2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s6.5-6 6.5-10.5a6.5 6.5 0 1 0-13 0C5.5 15 12 21 12 21z"/><circle cx="12" cy="10.3" r="2.4"/></symbol></svg>
+<svg style="position:absolute;width:0;height:0" aria-hidden="true"><symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3.5"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol><symbol id="i-barbell" viewBox="0 0 24 24"><path d="M4 9v6M7 6.5v11M17 6.5v11M20 9v6M7 12h10"/></symbol><symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 16.5l6-6 4 4 7.5-7.5"/><path d="M14.5 7h6v6"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol><symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h13"/><path d="M12.5 5.5L19 12l-6.5 6.5"/></symbol><symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19.5V5"/><path d="M6 11l6-6 6 6"/></symbol><symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></symbol><symbol id="i-card" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="3.4"/><path d="M2.5 10h19"/></symbol><symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.2 19.5a5.8 5.8 0 0 1 11.6 0"/><path d="M16.2 5.4a3.2 3.2 0 0 1 0 5.9"/><path d="M17.4 14.6a5.8 5.8 0 0 1 3.4 4.9"/></symbol><symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V4"/><path d="M5.5 5h11l-2 3.6 2 3.6h-11z"/></symbol><symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3.5h7.5L18 8v12.5H6z"/><path d="M13.5 3.5V8H18"/><path d="M9 12.5h6M9 16h4"/></symbol><symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M6.2 9.5a5.8 5.8 0 0 1 11.6 0c0 4.7 1.9 5.8 1.9 5.8H4.3s1.9-1.1 1.9-5.8z"/><path d="M10 19a2 2 0 0 0 4 0"/></symbol><symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 14.8a3 3 0 0 1-3 3H9.4L5 21v-3.6a3 3 0 0 1-1-2.6V8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.6l1.5 2.5 2.9-.5.6 2.9 2.7 1.2-1.4 2.6 1.4 2.6-2.7 1.2-.6 2.9-2.9-.5L12 21.4l-1.5-2.5-2.9.5-.6-2.9-2.7-1.2L5.7 12 4.3 9.4l2.7-1.2.6-2.9 2.9.5z"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.2 2"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8 20.5 20.5"/></symbol><symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v4.6a4 4 0 0 1-8 0z"/><path d="M8 5.5H5.4A2.6 2.6 0 0 0 8 10.6M16 5.5h2.6A2.6 2.6 0 0 1 16 10.6"/><path d="M12 12.6v3.2M8.8 20h6.4l-.6-4H9.4z"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M5 5.2A2.2 2.2 0 0 1 7.2 3H19v14.4H7.2A2.2 2.2 0 0 0 5 19.6z"/><path d="M5 19.6A1.6 1.6 0 0 1 6.6 18H19v3H6.6A1.6 1.6 0 0 1 5 19.6z"/></symbol><symbol id="i-body" viewBox="0 0 24 24"><circle cx="12" cy="4.4" r="2"/><path d="M12 7v7.2M12 7.6 7.2 9.4M12 7.6l4.8 1.8M12 14.2 9 20.4M12 14.2l3 6.2"/></symbol><symbol id="i-library" viewBox="0 0 24 24"><path d="M4 5h3.6v14H4zM9.6 5h3.6v14H9.6z"/><path d="M16.4 5.6l3.3 12.8-2.2.6-3.3-12.8z"/></symbol><symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="3"/><path d="m3.8 7 8.2 6 8.2-6"/></symbol><symbol id="i-panel" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M9.5 4.5v15"/></symbol></svg>
 <div class="board-head">
-  <h1 class="board-title">Type, controls, and the per-gym accent</h1>
-  <p class="board-sub">The typographic choice, the scale it produces, and the component set rebuilt on hairlines instead of shadows. Every gym still gets its own colour — it just stops washing across whole surfaces and lands on the one thing you are meant to press.</p>
+  <h1 class="board-title">Type, controls, and where colour is allowed</h1>
+  <p class="board-sub">One serif for the wordmark, one sans for the entire product, and a control set with no shadows except on things that float. The selected state is a soft tint or a raised white card — never an ink fill, which is what I got wrong last time.</p>
 </div>
 
-<div class="app" style="max-family:0;max-width:1180px;margin:0 auto;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:30px">
+<div class="app" style="max-width:1180px;margin:0 auto;background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:30px">
 
-  <div class="micro">Three typographic directions</div>
-  <div class="row g16 wrap" style="margin-top:14px;align-items:stretch">
-    
-  <div class="card" style="flex:1;min-width:330px;padding:20px;border-color:var(--ink);border-width:1.5px">
-    <div class="row between">
-      <span class="micro">Recommended</span>
-      <span class="chip" style="height:22px;padding:0 9px;font-size:10.5px">Archivo + Inter Tight</span>
+  <span class="lbl">Two faces, and that is the whole system</span>
+  <div class="row g16" style="margin-top:14px;align-items:stretch">
+    <div class="card" style="flex:1;padding:24px">
+      <span class="lbl">Wordmark only</span>
+      <div style="margin-top:16px"><span class="wordmark" style="font-size:54px;color:#14161a">temple</span></div>
+      <div class="row g10" style="margin-top:16px;align-items:baseline">
+        <span class="wordmark" style="font-size:26px">temple</span>
+        <span class="wordmark" style="font-size:18px">temple</span>
+        <span class="wordmark" style="font-size:13px">temple</span>
+      </div>
+      <div class="small" style="margin-top:16px;font-size:13px">
+        <b class="strong">Fraunces</b> — variable, free, with the WONK axis on
+        for the splayed leg on the <i>r</i> and the curved tail on the
+        <i>a</i>. It appears in exactly one place.
+      </div>
     </div>
-    <div style="font-family:Archivo;font-weight:700;letter-spacing:-.035em;color:var(--ink);font-size:40px;line-height:1.05;margin-top:16px">Book a class</div>
-    <div style="font-family:Archivo;font-weight:700;letter-spacing:-.035em;color:var(--ink);font-size:19px;line-height:1.25;margin-top:12px;opacity:.85">Thursday 21 August · 18:00</div>
-    <div style="font-family:Archivo;font-weight:700;letter-spacing:-.035em;color:var(--ink);font-size:33px;line-height:1.1;margin-top:12px;opacity:.35">Rag&amp;Q1 · 07:15</div>
-    <div style="font-family:'Inter Tight';font-size:14px;line-height:1.45;color:var(--ink-2);margin-top:12px">
-      Sturdy grotesque for anything that carries weight; Inter Tight for the dense UI underneath. Closest to Contra: confident, tight, quiet about it. Both variable, both free.
+    <div class="card" style="flex:1.4;padding:24px">
+      <span class="lbl">Everything else</span>
+      <div style="font-size:44px;font-weight:700;letter-spacing:-.038em;line-height:1.02;margin-top:14px">Book a class</div>
+      <div style="font-size:19px;color:var(--ink-2);margin-top:10px">Thursday 21 August · 18:00</div>
+      <div class="small" style="margin-top:16px;font-size:13px">
+        <b class="strong">Geist</b> — neutral, tight, nine weights. One family
+        for headings, body, numbers and labels, so nothing decorative competes
+        with the gym's own brand.
+      </div>
     </div>
-  </div>
-    
-  <div class="card" style="flex:1;min-width:330px;padding:20px;">
-    <div class="row between">
-      <span class="micro">Alternative</span>
-      <span class="chip" style="height:22px;padding:0 9px;font-size:10.5px">Instrument Sans</span>
-    </div>
-    <div style="font-family:'Instrument Sans';font-weight:600;letter-spacing:-.025em;color:var(--ink);font-size:40px;line-height:1.05;margin-top:16px">Book a class</div>
-    <div style="font-family:'Instrument Sans';font-weight:600;letter-spacing:-.025em;color:var(--ink);font-size:19px;line-height:1.25;margin-top:12px;opacity:.85">Thursday 21 August · 18:00</div>
-    <div style="font-family:'Instrument Sans';font-weight:600;letter-spacing:-.025em;color:var(--ink);font-size:33px;line-height:1.1;margin-top:12px;opacity:.35">Rag&amp;Q1 · 07:15</div>
-    <div style="font-family:'Inter Tight';font-size:14px;line-height:1.45;color:var(--ink-2);margin-top:12px">
-      One family for everything, the Luma move. Lighter on its feet and simpler to ship — gives up some of the monumentality the name Temple invites.
-    </div>
-  </div>
-    
-  <div class="card" style="flex:1;min-width:330px;padding:20px;">
-    <div class="row between">
-      <span class="micro">Alternative</span>
-      <span class="chip" style="height:22px;padding:0 9px;font-size:10.5px">Bricolage + Geist</span>
-    </div>
-    <div style="font-family:'Bricolage Grotesque';font-weight:700;letter-spacing:-.02em;color:var(--ink);font-size:40px;line-height:1.05;margin-top:16px">Book a class</div>
-    <div style="font-family:'Bricolage Grotesque';font-weight:700;letter-spacing:-.02em;color:var(--ink);font-size:19px;line-height:1.25;margin-top:12px;opacity:.85">Thursday 21 August · 18:00</div>
-    <div style="font-family:'Bricolage Grotesque';font-weight:700;letter-spacing:-.02em;color:var(--ink);font-size:33px;line-height:1.1;margin-top:12px;opacity:.35">Rag&amp;Q1 · 07:15</div>
-    <div style="font-family:'Inter Tight';font-size:14px;line-height:1.45;color:var(--ink-2);margin-top:12px">
-      The most opinionated. Real personality in the display cut, but it dates faster and fights a gym owner who wants their own brand to be the loud thing on screen.
-    </div>
-  </div>
   </div>
 
-  <div class="rule" style="margin:28px 0"></div>
+  <div class="rule" style="margin:26px 0"></div>
 
-  <div class="micro">The scale — Archivo for display, Inter Tight from 16px down</div>
-  <div style="margin-top:10px">
+  <span class="lbl">The scale</span>
+  <div style="margin-top:8px">
     
-    <div class="row g16" style="align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line-soft)">
-      <span class="micro" style="width:96px;flex:none">Display</span>
-      <span style="font-family:Archivo;font-weight:700;font-size:34px;letter-spacing:-.035em;flex:1">The whiteboard, the front desk, the books</span>
-      <span class="small" style="font-size:11.5px;width:210px;flex:none;text-align:right">Archivo 700 · 34/35 · −0.035em</span>
-    </div>
-    
-    <div class="row g16" style="align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line-soft)">
-      <span class="micro" style="width:96px;flex:none">Page title</span>
-      <span style="font-family:Archivo;font-weight:700;font-size:27px;letter-spacing:-.03em;flex:1">The whiteboard, the front desk, the books</span>
-      <span class="small" style="font-size:11.5px;width:210px;flex:none;text-align:right">Archivo 700 · 27/30 · −0.03em</span>
-    </div>
-    
-    <div class="row g16" style="align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line-soft)">
-      <span class="micro" style="width:96px;flex:none">Card title</span>
-      <span style="font-family:Archivo;font-weight:700;font-size:19px;letter-spacing:-.02em;flex:1">The whiteboard, the front desk, the books</span>
-      <span class="small" style="font-size:11.5px;width:210px;flex:none;text-align:right">Archivo 700 · 19/23 · −0.02em</span>
-    </div>
-    
-    <div class="row g16" style="align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line-soft)">
-      <span class="micro" style="width:96px;flex:none">Row title</span>
-      <span style="font-family:'Inter Tight';font-weight:600;font-size:15.5px;letter-spacing:-.012em;flex:1">The whiteboard, the front desk, the books</span>
-      <span class="small" style="font-size:11.5px;width:210px;flex:none;text-align:right">Inter Tight 600 · 15.5/20</span>
-    </div>
-    
-    <div class="row g16" style="align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line-soft)">
-      <span class="micro" style="width:96px;flex:none">Body</span>
-      <span style="font-family:'Inter Tight';font-weight:400;font-size:14.5px;color:var(--ink-2);flex:1">The whiteboard, the front desk, the books</span>
-      <span class="small" style="font-size:11.5px;width:210px;flex:none;text-align:right">Inter Tight 400 · 14.5/21</span>
-    </div>
-    
-    <div class="row g16" style="align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line-soft)">
-      <span class="micro" style="width:96px;flex:none">Meta</span>
-      <span style="font-family:'Inter Tight';font-weight:400;font-size:13px;color:var(--ink-2);flex:1">The whiteboard, the front desk, the books</span>
-      <span class="small" style="font-size:11.5px;width:210px;flex:none;text-align:right">Inter Tight 400 · 13/18</span>
-    </div>
+      <div class="row g16" style="align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line)">
+        <span class="lbl" style="width:92px;flex:none">Display</span>
+        <span style="font-size:40px;font-weight:700;letter-spacing:-.038em;flex:1">The whiteboard, the front desk, the books</span>
+        <span class="small" style="font-size:11.5px;width:200px;flex:none;text-align:right">Geist 700 · 40/41 · −0.038em</span>
+      </div>
+      <div class="row g16" style="align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line)">
+        <span class="lbl" style="width:92px;flex:none">Page title</span>
+        <span style="font-size:28px;font-weight:700;letter-spacing:-.032em;flex:1">The whiteboard, the front desk, the books</span>
+        <span class="small" style="font-size:11.5px;width:200px;flex:none;text-align:right">Geist 700 · 28/31 · −0.032em</span>
+      </div>
+      <div class="row g16" style="align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line)">
+        <span class="lbl" style="width:92px;flex:none">Card title</span>
+        <span style="font-size:20px;font-weight:700;letter-spacing:-.026em;flex:1">The whiteboard, the front desk, the books</span>
+        <span class="small" style="font-size:11.5px;width:200px;flex:none;text-align:right">Geist 700 · 20/24 · −0.026em</span>
+      </div>
+      <div class="row g16" style="align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line)">
+        <span class="lbl" style="width:92px;flex:none">Row title</span>
+        <span style="font-size:15.5px;font-weight:600;letter-spacing:-.014em;flex:1">The whiteboard, the front desk, the books</span>
+        <span class="small" style="font-size:11.5px;width:200px;flex:none;text-align:right">Geist 600 · 15.5/20</span>
+      </div>
+      <div class="row g16" style="align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line)">
+        <span class="lbl" style="width:92px;flex:none">Body</span>
+        <span style="font-size:15px;color:var(--ink-2);flex:1">The whiteboard, the front desk, the books</span>
+        <span class="small" style="font-size:11.5px;width:200px;flex:none;text-align:right">Geist 400 · 15/22</span>
+      </div>
+      <div class="row g16" style="align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line)">
+        <span class="lbl" style="width:92px;flex:none">Meta</span>
+        <span style="font-size:13.5px;color:var(--ink-2);flex:1">The whiteboard, the front desk, the books</span>
+        <span class="small" style="font-size:11.5px;width:200px;flex:none;text-align:right">Geist 400 · 13.5/19</span>
+      </div>
     <div class="row g16" style="align-items:baseline;padding:11px 0">
-      <span class="micro" style="width:96px;flex:none">Label</span>
-      <span class="micro" style="flex:1;font-size:10px">The whiteboard, the front desk, the books</span>
-      <span class="small" style="font-size:11.5px;width:210px;flex:none;text-align:right">Inter Tight 600 · 10px · +0.15em · caps</span>
+      <span class="lbl" style="width:92px;flex:none">Label</span>
+      <span class="lbl" style="flex:1">The whiteboard, the front desk, the books</span>
+      <span class="small" style="font-size:11.5px;width:200px;flex:none;text-align:right">Geist 600 · 11px · +0.09em · caps</span>
     </div>
   </div>
 
-  <div class="rule" style="margin:28px 0"></div>
+  <div class="rule" style="margin:26px 0"></div>
 
-  <div class="row g32" style="align-items:flex-start">
-    <div class="stack g14" style="flex:1">
-      <span class="micro">Controls</span>
-      <div class="card">
-        <div class="row g10 wrap">
-          <span class="btn btn-ink">Book</span>
-          <span class="btn btn-accent">Record</span>
-          <span class="btn btn-outline">Cancel</span>
-          <span class="btn btn-quiet">Waitlist</span>
-        </div>
-        <div class="row g8 wrap" style="margin-top:16px">
-          <span class="chip chip-ink">All</span>
-          <span class="chip"><svg class="i" style="width:13px;height:13px;flex:none;"><use href="#i-doc"/></svg>Your rules</span>
-          <span class="chip chip-ok"><svg class="i" style="width:13px;height:13px;flex:none;"><use href="#i-check"/></svg>Booked</span>
-          <span class="chip chip-warn">3 spots left</span>
-          <span class="chip chip-bad">Payment failed</span>
-          <span class="chip chip-accent"><svg class="i i-fill" style="width:12px;height:12px;flex:none;"><use href="#i-spark"/></svg>For you</span>
-        </div>
-        <div class="row g10" style="margin-top:16px">
-          <div class="seg">
-            <span class="on"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-cal"/></svg>Book</span>
-            <span><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-barbell"/></svg>Programming</span>
-            <span><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-trend"/></svg>Track</span>
-          </div>
-        </div>
-        <div class="field" style="margin-top:16px">
-          <span class="grow">Show me a member, change a class…</span>
-          <span class="btn btn-accent" style="width:34px;height:34px;padding:0;border-radius:999px"><svg class="i" style="width:16px;height:16px;flex:none;"><use href="#i-up"/></svg></span>
-        </div>
+  <div class="row g24" style="align-items:flex-start">
+    <div class="stack g14" style="flex:1"><span class="lbl">Controls</span>
+  <div class="card">
+    <div class="row g10 wrap">
+      <span class="btn btn-accent">Book</span>
+      <span class="btn btn-dark">Post</span>
+      <span class="btn btn-plain">Cancel</span>
+      <span class="btn btn-soft">Waitlist</span>
+    </div>
+    <div class="row g8 wrap" style="margin-top:16px">
+      <span class="chip chip-on">For you</span>
+      <span class="chip"><svg class="i" style="width:14px;height:14px;flex:none;"><use href="#i-cal"/></svg>Topics</span>
+      <span class="chip chip-ok"><svg class="i" style="width:13px;height:13px;flex:none;"><use href="#i-check"/></svg>Booked</span>
+      <span class="chip chip-warn">3 spots left</span>
+      <span class="chip chip-bad">Payment failed</span>
+      <span class="chip chip-accent"><svg class="i i-fill" style="width:12px;height:12px;flex:none;"><use href="#i-spark"/></svg>For you</span>
+    </div>
+    <div class="row g8 wrap" style="margin-top:16px;align-items:center">
+      <span class="badge">Pro</span>
+      <span class="badge">Coming soon</span>
+      <span class="lbl">Section label</span>
+      <span class="grow"></span>
+      <div class="avstack faces "><div class="avatar" style="width:22px;height:22px;font-size:8px">dk</div><div class="avatar" style="width:22px;height:22px;font-size:8px">pr</div><div class="avatar" style="width:22px;height:22px;font-size:8px">mb</div><div class="avatar" style="width:22px;height:22px;font-size:8px">lk</div></div>
+    </div>
+    <div class="stack g6" style="margin-top:16px">
+      <div class="row between"><span class="small" style="font-size:12.5px">Setup</span><span class="small num" style="font-size:12.5px">60%</span></div>
+      <div class="bar"><i style="width:60%"></i></div>
+    </div>
+    <div class="glow" style="margin-top:24px">
+      <div class="field" style="min-height:52px">
+        <span class="grow">Show me a member, change a class…</span>
+        <span class="btn btn-dark btn-sm" style="padding-left:8px"><span class="orb" style="width:18px;height:18px;display:block"></span>Let's go</span>
       </div>
     </div>
-
+  </div></div>
     <div class="stack g14" style="flex:1">
-      <span class="micro">The same components in dark</span>
-      <div class="app dark" style="background:var(--paper);border-radius:20px;padding:16px;border:1px solid rgba(0,0,0,.4)">
-        <div class="card">
-          <div class="row g10 wrap">
-            <span class="btn btn-ink" style="background:var(--ink);color:var(--paper)">Book</span>
-            <span class="btn btn-accent">Record</span>
-            <span class="btn btn-outline">Cancel</span>
-            <span class="btn btn-quiet">Waitlist</span>
-          </div>
-          <div class="row g8 wrap" style="margin-top:16px">
-            <span class="chip chip-ink">All</span>
-            <span class="chip"><svg class="i" style="width:13px;height:13px;flex:none;"><use href="#i-doc"/></svg>Your rules</span>
-            <span class="chip chip-ok"><svg class="i" style="width:13px;height:13px;flex:none;"><use href="#i-check"/></svg>Booked</span>
-            <span class="chip chip-warn">3 spots left</span>
-            <span class="chip chip-bad">Payment failed</span>
-            <span class="chip chip-accent"><svg class="i i-fill" style="width:12px;height:12px;flex:none;"><use href="#i-spark"/></svg>For you</span>
-          </div>
-          <div class="row g10" style="margin-top:16px">
-            <div class="seg">
-              <span class="on"><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-cal"/></svg>Book</span>
-              <span><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-barbell"/></svg>Programming</span>
-              <span><svg class="i" style="width:15px;height:15px;flex:none;"><use href="#i-trend"/></svg>Track</span>
-            </div>
-          </div>
-          <div class="field" style="margin-top:16px">
-            <span class="grow">Show me a member, change a class…</span>
-            <span class="btn btn-accent" style="width:34px;height:34px;padding:0;border-radius:999px"><svg class="i" style="width:16px;height:16px;flex:none;"><use href="#i-up"/></svg></span>
-          </div>
-        </div>
+      <span class="lbl">The same set in dark</span>
+      <div class="app dark" style="background:var(--bg);border-radius:20px;padding:16px">
+  <div class="card">
+    <div class="row g10 wrap">
+      <span class="btn btn-accent">Book</span>
+      <span class="btn btn-dark">Post</span>
+      <span class="btn btn-plain">Cancel</span>
+      <span class="btn btn-soft">Waitlist</span>
+    </div>
+    <div class="row g8 wrap" style="margin-top:16px">
+      <span class="chip chip-on">For you</span>
+      <span class="chip"><svg class="i" style="width:14px;height:14px;flex:none;"><use href="#i-cal"/></svg>Topics</span>
+      <span class="chip chip-ok"><svg class="i" style="width:13px;height:13px;flex:none;"><use href="#i-check"/></svg>Booked</span>
+      <span class="chip chip-warn">3 spots left</span>
+      <span class="chip chip-bad">Payment failed</span>
+      <span class="chip chip-accent"><svg class="i i-fill" style="width:12px;height:12px;flex:none;"><use href="#i-spark"/></svg>For you</span>
+    </div>
+    <div class="row g8 wrap" style="margin-top:16px;align-items:center">
+      <span class="badge">Pro</span>
+      <span class="badge">Coming soon</span>
+      <span class="lbl">Section label</span>
+      <span class="grow"></span>
+      <div class="avstack faces "><div class="avatar" style="width:22px;height:22px;font-size:8px">dk</div><div class="avatar" style="width:22px;height:22px;font-size:8px">pr</div><div class="avatar" style="width:22px;height:22px;font-size:8px">mb</div><div class="avatar" style="width:22px;height:22px;font-size:8px">lk</div></div>
+    </div>
+    <div class="stack g6" style="margin-top:16px">
+      <div class="row between"><span class="small" style="font-size:12.5px">Setup</span><span class="small num" style="font-size:12.5px">60%</span></div>
+      <div class="bar"><i style="width:60%"></i></div>
+    </div>
+    <div class="glow" style="margin-top:24px">
+      <div class="field" style="min-height:52px">
+        <span class="grow">Show me a member, change a class…</span>
+        <span class="btn btn-dark btn-sm" style="padding-left:8px"><span class="orb" style="width:18px;height:18px;display:block"></span>Let's go</span>
       </div>
+    </div>
+  </div></div>
     </div>
   </div>
 
-  <div class="rule" style="margin:28px 0"></div>
+  <div class="rule" style="margin:26px 0"></div>
 
-  <div class="micro">One system, five gyms — the accent is the only thing that moves</div>
-  <div class="row g12 wrap" style="margin-top:14px">
+  <div class="row between" style="align-items:flex-end">
+    <span class="lbl">Where the gym's colour is allowed to appear</span>
+    <span class="small" style="font-size:12.5px">Everything not listed here stays monochrome</span>
+  </div>
+  <div class="row g14 wrap" style="margin-top:14px">
     
       <div class="card" style="flex:1;min-width:196px;padding:14px">
+        <div style="height:40px;display:flex;align-items:center"><div class="gymtile" style="width:38px;height:38px;border-radius:11px;font-size:17px">F</div></div>
+        <div class="small" style="margin-top:10px;font-size:12.5px">Logo tile</div>
+      </div>
+      <div class="card" style="flex:1;min-width:196px;padding:14px">
+        <div style="height:40px;display:flex;align-items:center"><span class="btn btn-accent btn-sm">Book</span></div>
+        <div class="small" style="margin-top:10px;font-size:12.5px">The one primary action</div>
+      </div>
+      <div class="card" style="flex:1;min-width:196px;padding:14px">
+        <div style="height:40px;display:flex;align-items:center"><span class="row g8"><i class="dot" style="background:#e11d48"></i><i class="dot" style="background:#6366f1"></i><i class="dot" style="background:#0f766e"></i></span></div>
+        <div class="small" style="margin-top:10px;font-size:12.5px">Class-type dots</div>
+      </div>
+      <div class="card" style="flex:1;min-width:196px;padding:14px">
+        <div style="height:40px;display:flex;align-items:center"><span class="row g2"><i style="width:11px;height:11px;border-radius:3px;background:var(--accent);opacity:0.25;display:block"></i><i style="width:11px;height:11px;border-radius:3px;background:var(--accent);opacity:0.5;display:block"></i><i style="width:11px;height:11px;border-radius:3px;background:var(--accent);opacity:1;display:block"></i><i style="width:11px;height:11px;border-radius:3px;background:var(--accent);opacity:0.4;display:block"></i><i style="width:11px;height:11px;border-radius:3px;background:var(--accent);opacity:1;display:block"></i><i style="width:11px;height:11px;border-radius:3px;background:var(--accent);opacity:0.7;display:block"></i></span></div>
+        <div class="small" style="margin-top:10px;font-size:12.5px">A member’s own data</div>
+      </div>
+      <div class="card" style="flex:1;min-width:196px;padding:14px">
+        <div style="height:40px;display:flex;align-items:center"><span style="width:86px;height:38px;border-radius:10px;display:block;background:radial-gradient(110% 80% at 24% 10%, #fda4af 0%, rgba(253,164,175,0) 58%), linear-gradient(150deg, #e11d48 0%, #4c0519 100%)"></span></div>
+        <div class="small" style="margin-top:10px;font-size:12.5px">The gym’s photography</div>
+      </div>
+  </div>
+  <div class="small" style="margin-top:14px;font-size:13px;max-width:780px">
+    The reference keeps its primary button near-black and lets colour in only
+    through content. Temple sells "make it look like your gym", so the accent
+    keeps the primary action here — that is the one deliberate departure, and
+    it is a single token if you would rather it were ink.
+  </div>
+
+  <div class="rule" style="margin:26px 0"></div>
+
+  <span class="lbl">One system, five gyms</span>
+  <div class="row g12 wrap" style="margin-top:14px">
+    
+      <div class="card" style="flex:1;min-width:194px;padding:14px">
         <div class="row g10">
-          <div class="gymtile" style="background:#c2410c;color:#fff">F</div>
-          <div class="stack g2 grow" style="min-width:0">
-            <span class="h3 trunc" style="font-size:13.5px">Forge Barbell Club</span>
-            <span class="micro" style="letter-spacing:.08em">#C2410C</span>
-          </div>
+          <div class="gymtile" style="background:#c2410c">F</div>
+          <span class="h3 trunc grow" style="font-size:13.5px">Forge Barbell Club</span>
         </div>
         <div class="row g6" style="margin-top:12px">
           <span class="btn btn-sm" style="background:#c2410c;color:#fff">Book</span>
-          <span class="chip" style="border-color:#c2410c33;background:#c2410c1a;color:#c2410c">Strength</span>
+          <span class="chip chip-sm"><svg class="i" style="width:12px;height:12px;flex:none;"><use href="#i-cal"/></svg>Thu</span>
         </div>
       </div>
-      <div class="card" style="flex:1;min-width:196px;padding:14px">
+      <div class="card" style="flex:1;min-width:194px;padding:14px">
         <div class="row g10">
-          <div class="gymtile" style="background:#3b6ba5;color:#fff">S</div>
-          <div class="stack g2 grow" style="min-width:0">
-            <span class="h3 trunc" style="font-size:13.5px">Southbank S&amp;C</span>
-            <span class="micro" style="letter-spacing:.08em">#3B6BA5</span>
-          </div>
+          <div class="gymtile" style="background:#3b6ba5">S</div>
+          <span class="h3 trunc grow" style="font-size:13.5px">Southbank S&amp;C</span>
         </div>
         <div class="row g6" style="margin-top:12px">
           <span class="btn btn-sm" style="background:#3b6ba5;color:#fff">Book</span>
-          <span class="chip" style="border-color:#3b6ba533;background:#3b6ba51a;color:#3b6ba5">Strength</span>
+          <span class="chip chip-sm"><svg class="i" style="width:12px;height:12px;flex:none;"><use href="#i-cal"/></svg>Thu</span>
         </div>
       </div>
-      <div class="card" style="flex:1;min-width:196px;padding:14px">
+      <div class="card" style="flex:1;min-width:194px;padding:14px">
         <div class="row g10">
-          <div class="gymtile" style="background:#2f7a4f;color:#fff">G</div>
-          <div class="stack g2 grow" style="min-width:0">
-            <span class="h3 trunc" style="font-size:13.5px">Grove Athletic</span>
-            <span class="micro" style="letter-spacing:.08em">#2F7A4F</span>
-          </div>
-        </div>
-        <div class="row g6" style="margin-top:12px">
-          <span class="btn btn-sm" style="background:#2f7a4f;color:#fff">Book</span>
-          <span class="chip" style="border-color:#2f7a4f33;background:#2f7a4f1a;color:#2f7a4f">Strength</span>
-        </div>
-      </div>
-      <div class="card" style="flex:1;min-width:196px;padding:14px">
-        <div class="row g10">
-          <div class="gymtile" style="background:#7c3aed;color:#fff">N</div>
-          <div class="stack g2 grow" style="min-width:0">
-            <span class="h3 trunc" style="font-size:13.5px">Nightshift Fitness</span>
-            <span class="micro" style="letter-spacing:.08em">#7C3AED</span>
-          </div>
-        </div>
-        <div class="row g6" style="margin-top:12px">
-          <span class="btn btn-sm" style="background:#7c3aed;color:#fff">Book</span>
-          <span class="chip" style="border-color:#7c3aed33;background:#7c3aed1a;color:#7c3aed">Strength</span>
-        </div>
-      </div>
-      <div class="card" style="flex:1;min-width:196px;padding:14px">
-        <div class="row g10">
-          <div class="gymtile" style="background:#0f766e;color:#fff">H</div>
-          <div class="stack g2 grow" style="min-width:0">
-            <span class="h3 trunc" style="font-size:13.5px">Harbour CrossFit</span>
-            <span class="micro" style="letter-spacing:.08em">#0F766E</span>
-          </div>
+          <div class="gymtile" style="background:#0f766e">G</div>
+          <span class="h3 trunc grow" style="font-size:13.5px">Grove Athletic</span>
         </div>
         <div class="row g6" style="margin-top:12px">
           <span class="btn btn-sm" style="background:#0f766e;color:#fff">Book</span>
-          <span class="chip" style="border-color:#0f766e33;background:#0f766e1a;color:#0f766e">Strength</span>
+          <span class="chip chip-sm"><svg class="i" style="width:12px;height:12px;flex:none;"><use href="#i-cal"/></svg>Thu</span>
+        </div>
+      </div>
+      <div class="card" style="flex:1;min-width:194px;padding:14px">
+        <div class="row g10">
+          <div class="gymtile" style="background:#7c3aed">N</div>
+          <span class="h3 trunc grow" style="font-size:13.5px">Nightshift Fitness</span>
+        </div>
+        <div class="row g6" style="margin-top:12px">
+          <span class="btn btn-sm" style="background:#7c3aed;color:#fff">Book</span>
+          <span class="chip chip-sm"><svg class="i" style="width:12px;height:12px;flex:none;"><use href="#i-cal"/></svg>Thu</span>
+        </div>
+      </div>
+      <div class="card" style="flex:1;min-width:194px;padding:14px">
+        <div class="row g10">
+          <div class="gymtile" style="background:#b91c1c">H</div>
+          <span class="h3 trunc grow" style="font-size:13.5px">Harbour CrossFit</span>
+        </div>
+        <div class="row g6" style="margin-top:12px">
+          <span class="btn btn-sm" style="background:#b91c1c;color:#fff">Book</span>
+          <span class="chip chip-sm"><svg class="i" style="width:12px;height:12px;flex:none;"><use href="#i-cal"/></svg>Thu</span>
         </div>
       </div>
   </div>
