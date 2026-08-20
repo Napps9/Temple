@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Redirect } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, Switch, View } from 'react-native';
+import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -200,52 +201,49 @@ function ProductsTab() {
         </Text>
       ) : (
         (products.data ?? []).map((p) => (
-          <Pressable
+          <ListRow
             key={p.id}
             onPress={() => setEditing(draftFrom(p))}
-            className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 flex-row items-center gap-3 active:opacity-70">
-            {productImages(p)[0] ? (
-              <Image
-                source={{ uri: productImages(p)[0] }}
-                className="w-12 h-12 rounded-lg"
-              />
-            ) : (
-              <View className="w-12 h-12 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
-                <Ionicons
-                  name={p.kind === 'digital' ? 'cloud-download-outline' : 'cube-outline'}
-                  size={20}
-                  color={colors.ink3}
+            lead={
+              productImages(p)[0] ? (
+                <Image
+                  source={{ uri: productImages(p)[0] }}
+                  className="w-12 h-12 rounded-lg"
                 />
-              </View>
-            )}
-            <View className="flex-1">
-              <Text className="text-ink dark:text-ink-dk font-semibold">
-                {p.name}
-              </Text>
-              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-                {formatMoney(p.price_cents, currency)}
-                {p.recurring ? '/mo' : ''} ·{' '}
-                {p.recurring
-                  ? 'Subscription'
-                  : p.kind === 'digital'
-                    ? 'Digital'
-                    : 'Physical'}
-                {!p.recurring && p.track_inventory
-                  ? ` · ${p.stock_quantity ?? 0} in stock`
-                  : ''}
-                {!p.active ? ' · Hidden' : ''}
-              </Text>
-            </View>
-            {productSoldOut(p) ? (
-              <View className="px-2 py-1 rounded-full bg-red-100 dark:bg-red-950/50">
-                <Text className="text-red-600 dark:text-red-400 text-xs font-semibold">
-                  Sold out
-                </Text>
-              </View>
-            ) : (
-              <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
-            )}
-          </Pressable>
+              ) : (
+                <View className="w-12 h-12 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
+                  <Ionicons
+                    name={p.kind === 'digital' ? 'cloud-download-outline' : 'cube-outline'}
+                    size={20}
+                    color={colors.ink3}
+                  />
+                </View>
+              )
+            }
+            title={p.name}
+            subtitle={`${formatMoney(p.price_cents, currency)}${
+              p.recurring ? '/mo' : ''
+            } · ${
+              p.recurring
+                ? 'Subscription'
+                : p.kind === 'digital'
+                  ? 'Digital'
+                  : 'Physical'
+            }${
+              !p.recurring && p.track_inventory
+                ? ` · ${p.stock_quantity ?? 0} in stock`
+                : ''
+            }${!p.active ? ' · Hidden' : ''}`}
+            trailing={
+              productSoldOut(p) ? (
+                <View className="px-2 py-1 rounded-full bg-red-100 dark:bg-red-950/50">
+                  <Text className="text-red-600 dark:text-red-400 text-xs font-semibold">
+                    Sold out
+                  </Text>
+                </View>
+              ) : undefined
+            }
+          />
         ))
       )}
     </View>

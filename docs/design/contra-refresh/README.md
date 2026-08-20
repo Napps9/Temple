@@ -189,8 +189,29 @@ Still open:
     32): Communications was seven routes for three jobs and is four —
     the automations list and the topics editor are sections, and
     creating a campaign is a button rather than a screen that inserts a
-    row and redirects. Next: member import 4 → 1, `track/` 7 → fewer,
-    then the Manage hub, Timeline and `setup.tsx`.
+    row and redirects. Then `ListRow` got its first six callers.
+
+    Two consolidations the plan called for are deliberately **not**
+    done, because they do not survive reading the code. Member import is
+    three importers with genuinely different mechanics (Stripe OAuth +
+    plan mapping, a members CSV with column mapping, a workouts CSV with
+    movement matching) that already share a doorway; one route switching
+    between them is a re-parenting with real risk and no visible gain.
+    `track/` is one hub, three record routes and four distinct jobs —
+    review my history, compare with the gym, browse movements, manage
+    injuries — and merging those makes the hub worse rather than
+    smaller.
+
+    Next: every other directory still hand-rolls its rows, and the three
+    heaviest screens (`setup.tsx`, `timeline/index`, `management/index`)
+    have the right colours, type, controls, labels and modals but not
+    yet the right structure. The most repeated shape left is the
+    **door** — an icon tile, a title, a wrapping blurb and a chevron, in
+    the Manage hub, Email, the agent settings and three checklists.
+    `ListRow`'s subtitle is one line by design, so a door is either a
+    seventh part or a `wrap` prop on this one; that is a design decision
+    rather than a migration, so it is written down here rather than
+    guessed at.
 
 ## Rebuilding
 

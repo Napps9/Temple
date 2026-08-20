@@ -4371,6 +4371,61 @@ actions are owner-only by policy:
 
 ---
 
+## The design system
+
+Every surface in the product is drawn from one set of parts, one neutral
+ramp, one modal and one rule about the gym's colour. The proposal and the
+record are `docs/design/contra-refresh/` (33 boards, `node build.mjs &&
+node shot.mjs` to rebuild); this is what a contributor needs to know
+without reading them.
+
+- **The ramp.** `ground` / `surface` / `raised` / `sunken` / `line` /
+  `line-strong` / `ink` / `ink-2` / `ink-3`, each with a `-dk` partner,
+  paired at the call site: `bg-surface dark:bg-surface-dk`. Nothing in
+  `src/` names a `gray-*` or `slate-*` utility, and nothing passes a
+  neutral hex to an icon — `useThemeColors()` returns the same ramp for
+  the runtime cases.
+- **Depth is a hairline and a tone step.** Two shadows exist, `soft` and
+  `float`, and only for something that genuinely leaves the page: a
+  primary button, a sheet, a dialog, a popover.
+- **The accent rule.** The gym's colour marks the one action a page
+  exists for, and nothing else. A selected chip, a picked radio, a
+  ticked box and a nav's current section are all a tone step — the
+  raised surface and ink at semibold — because a picked option is a
+  state, not an action.
+- **Six page parts**, in `src/components/`: `PageHead`, `SectionLabel`
+  (and `FieldLabel`, the same token without the heading role),
+  `ListRow` + `RuledList`, `SettingCard`, `AIMark`, `Check`. `PageHead`
+  and the labels draw no padding of their own; the screen's ScrollView
+  supplies `px-4` and the stack gap.
+- **One label token**: 11px / 600 / uppercase / +1px / ink-3, used by
+  `SectionLabel`, `FieldLabel` and `Input`'s own label.
+- **One modal**: `Sheet` — a sheet under 1024 and a dialog above it, via
+  `modalShape()` in `lib/breakpoint.ts`. A modal never opens another
+  modal; a nested one is a step of the same sheet, which is what `Sheet`'s
+  `onBack` prop draws.
+- **Four states every list owes you**, in `EmptyState`: *nothing yet*,
+  *nothing matches*, *loading* (a skeleton of the rows that are coming,
+  not a spinner in blank space), *failed*. `Spinner` is for a card or a
+  button that is busy inside an otherwise-drawn page.
+- **One vertical nav.** `SideNav` is the staff rail at 1024 and up;
+  `TopNav` below it, and on the member side at every width. A section's
+  own nav is a horizontal pill row, never a second column — the rail is
+  246px the page never sees, which is also why it waits for 1024 rather
+  than 768 (see `lib/breakpoint.ts`).
+- **Type**: Geist for everything, Fraunces for the wordmark. React
+  Native has no font inheritance and does not synthesise weights, so
+  `components/Text.tsx` wraps `Text`/`TextInput` and every font-weight
+  utility in `tailwind.config.js` names its own file. Four weights are
+  loaded; anything else falls back mid-sentence.
+
+**Verifying a design change.** `tsc` and vitest cannot see a wrong token:
+a class NativeWind does not recognise compiles to nothing and is green in
+CI. `node scripts/verify-tokens.mjs <export-dir> <class>...` greps the
+emitted CSS of an `expo export -p web` for each class, and every run
+should include a class you know is fake, to prove the checker can still
+fail.
+
 ## Data protection (health data / GDPR Article 9)
 
 PAR-Q and injury data are special-category health data. The protective
