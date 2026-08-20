@@ -15,6 +15,7 @@ import {
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { useGymMembership, useSession } from '@/lib/auth';
 import {
   centsToRateInput,
@@ -182,14 +183,10 @@ export default function CoachEarningsPage() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Coach earnings
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Set per-class-type rates and review what each coach has earned.
-          </Text>
-        </View>
+        <PageHead
+          title="Coach earnings"
+          subtitle="Set per-class-type rates and review what each coach has earned."
+        />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Text className="text-ink dark:text-ink-dk font-semibold">

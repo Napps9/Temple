@@ -9,6 +9,7 @@ import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { EmptyState } from '@/components/EmptyState';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
@@ -683,15 +684,12 @@ export default function MembershipScreen() {
 
         {failingSub ? <PaymentFailedNotice sub={failingSub} /> : null}
 
-        <View className="gap-2">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Membership
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Pick a plan to book classes
-            {membership?.gymName ? ` at ${membership.gymName}` : ''}.
-          </Text>
-        </View>
+        <PageHead
+          title="Membership"
+          subtitle={`Pick a plan to book classes${
+            membership?.gymName ? ` at ${membership.gymName}` : ''
+          }.`}
+        />
 
         {params.checkout === 'success' ? (
           <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">

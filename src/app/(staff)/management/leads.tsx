@@ -18,6 +18,7 @@ import {
 } from '@/components/DateRangeCta';
 import { Input } from '@/components/Input';
 import { LeadsShell, type LeadsTab } from '@/components/LeadsNav';
+import { PageHead } from '@/components/PageHead';
 import { StatTile } from '@/components/StatTile';
 import { TalkToAssistant } from '@/components/TalkToAssistant';
 import { useGymMembership } from '@/lib/auth';
@@ -303,17 +304,11 @@ export default function LeadsScreen() {
 
   return (
     <LeadsShell active="leads" tabs={tabs}>
-        <View className="flex-row items-start justify-between gap-3">
-          <View className="flex-1 gap-1">
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-              Leads
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk">
-              Track prospects from first contact through conversion.
-            </Text>
-          </View>
-          <Button onPress={() => setAddOpen(true)}>Add lead</Button>
-        </View>
+        <PageHead
+          title="Leads"
+          subtitle="Track prospects from first contact through conversion."
+          action={<Button onPress={() => setAddOpen(true)}>Add lead</Button>}
+        />
 
         <View className="gap-3">
           <DateRangeCta

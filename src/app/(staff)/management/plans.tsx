@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { useGymMembership } from '@/lib/auth';
 import { useExportMembershipsCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { errorMessage } from '@/lib/errors';
@@ -1113,16 +1114,10 @@ export default function PlansScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
-        <View className="gap-2">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Plans
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Define your membership plans. Existing subscribers keep the price
-            and credits they signed up with — editing a plan only changes what
-            new subscribers get.
-          </Text>
-        </View>
+        <PageHead
+          title="Plans"
+          subtitle="Define your membership plans. Existing subscribers keep the price and credits they signed up with — editing a plan only changes what new subscribers get."
+        />
         <PlansPanel />
       </ScrollView>
     </Screen>

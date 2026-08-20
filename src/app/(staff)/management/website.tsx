@@ -9,6 +9,7 @@ import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { PageManagerModal } from '@/components/website/PageManagerModal';
 import { SiteEditor } from '@/components/website/SiteEditor';
@@ -499,14 +500,10 @@ export default function WebsiteManageScreen() {
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
           <BackLink fallbackHref="/management" />
-          <View className="gap-1">
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-              Website
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk">
-              A public site for {brand.gymName}, built from your own schedule and pricing.
-            </Text>
-          </View>
+          <PageHead
+            title="Website"
+            subtitle={`A public site for ${brand.gymName}, built from your own schedule and pricing.`}
+          />
           <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               The site builder isn't turned on for your gym yet — get in touch with Temple
@@ -618,14 +615,10 @@ export default function WebsiteManageScreen() {
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
           <BackLink fallbackHref="/management" />
-          <View className="gap-1">
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-              Website
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk">
-              Pick a starting point — every word, block and theme can be changed later.
-            </Text>
-          </View>
+          <PageHead
+            title="Website"
+            subtitle="Pick a starting point — every word, block and theme can be changed later."
+          />
           {error ? <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text> : null}
           <View className="gap-3">
             {SITE_TEMPLATE_LIST.map((t) => {

@@ -8,6 +8,7 @@ import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { MoneyJobCard } from '@/components/MoneyJobCard';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -128,9 +129,7 @@ export default function Roster() {
         className="flex-1"
         contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/timeline" />
-        <Text className="text-ink dark:text-ink-dk text-2xl font-bold">
-          The team
-        </Text>
+        <PageHead title="The team" />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <View className="flex-row items-center gap-3">

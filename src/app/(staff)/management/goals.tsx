@@ -7,6 +7,7 @@ import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -127,9 +128,7 @@ export default function Goals() {
         className="flex-1"
         contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/timeline" />
-        <Text className="text-ink dark:text-ink-dk text-2xl font-bold">
-          Goals
-        </Text>
+        <PageHead title="Goals" />
 
         {(goals.data ?? []).map((g) => {
           const toGo = Math.max(0, g.target_value - current);

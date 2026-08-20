@@ -6,6 +6,10 @@ import { Text } from './Text';
 // action. The action is the only place on the page allowed to carry the
 // gym's colour — repeated row-level actions are ink, because five brand
 // pills down a list is a wash rather than an accent.
+//
+// It draws no padding of its own. Every screen's ScrollView already
+// supplies `px-4` and a stack gap, and a part that adds to that would sit
+// indented from the cards beneath it on every page in the product.
 export function PageHead({
   title,
   subtitle,
@@ -16,7 +20,7 @@ export function PageHead({
   action?: ReactNode;
 }) {
   return (
-    <View className="flex-row items-start gap-3 px-4 pt-3 pb-3.5">
+    <View className="flex-row items-start gap-3">
       <View className="flex-1 gap-1">
         <Text
           accessibilityRole="header"

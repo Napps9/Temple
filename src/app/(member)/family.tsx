@@ -10,6 +10,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { CONSENT_POLICY_VERSION, computeAge } from '@/lib/consent';
@@ -60,15 +61,10 @@ export default function FamilyScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/account" />
 
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Family
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Add children you look after. You book their classes and complete
-            their health screening on their behalf.
-          </Text>
-        </View>
+        <PageHead
+          title="Family"
+          subtitle="Add children you look after. You book their classes and complete their health screening on their behalf."
+        />
 
         {!allowMinors ? (
           <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl p-4">

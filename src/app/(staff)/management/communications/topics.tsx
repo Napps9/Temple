@@ -9,6 +9,7 @@ import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
 import { Input } from '@/components/Input';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -88,16 +89,10 @@ export default function EmailTopicsScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/communications" />
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Email topics
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Categorise your sends so members can choose what they hear from
-            you. A member who unsubscribes from “Promos” still receives
-            “Billing reminders”.
-          </Text>
-        </View>
+        <PageHead
+          title="Email topics"
+          subtitle="Categorise your sends so members can choose what they hear from you. A member who unsubscribes from “Promos” still receives “Billing reminders”."
+        />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Text className="text-ink dark:text-ink-dk font-semibold">

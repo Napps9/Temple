@@ -140,9 +140,12 @@ Still open:
 4. ~~Build the page parts as components.~~ **Done**: `PageHead`,
    `SectionLabel`, `ListRow`/`RuledList`, `SettingCard`, `AIMark`, `Check`.
 5. ~~One modal that renders a sheet under 768 and a dialog above it.~~
-   **Done** — `Sheet` + `SheetAction`, breakpoint in `lib/modal-shape.ts`.
-   Twelve of the bespoke ones are retired (see board 22); around twenty
-   remain, the large record-a-workout / create-a-class ones among them.
+   **Done** — `Sheet` + `SheetAction`, breakpoint in `lib/breakpoint.ts`.
+   All 22 bespoke ones are retired (boards 22 and 26), including the four
+   nested Modals inside `RecordWorkoutModal` and the three inside
+   `SiteEditor`. Two are deliberately not sheets: `ImageGalleryModal` is
+   a full-bleed pinch-and-pan viewer with its own gesture root, and
+   `DurationField`'s picker is a popover anchored to its field.
 6. The app shell: ground colour and the nav rail. **Done.**
 7. **The neutral ramp, everywhere.** **Done to 197 occurrences**, from
    5,604 — thirteen exact light/dark pairs by codemod, then 57 more
@@ -160,13 +163,17 @@ Still open:
     consolidated where two screens serve one job. **Started**: Lead
     settings is on the page parts, and the AI Agent tab folded into it —
     four tabs to three, moved as a component so the per-card saves were
-    not touched. Next: the Manage hub, Timeline, `setup.tsx`.
+    not touched. Then the page head: 41 screens were hand-rolling a
+    24px title block and now call `PageHead` (board 27), which also
+    settled the padding question — the parts draw none, because every
+    screen's ScrollView already carries `px-4`. Next: the Manage hub,
+    Timeline, `setup.tsx`.
 
 ## Rebuilding
 
 ```bash
 cd docs/design/contra-refresh
-node build.mjs   # writes 01..26.html
+node build.mjs   # writes 01..27.html
 node shot.mjs    # screenshots them to png/ at 2x
 node shot.mjs 05 # just one board
 ```
@@ -174,8 +181,8 @@ node shot.mjs 05 # just one board
 `kit.mjs` holds every shared part — including `AI_CHOICE`, the single
 constant that swaps the machine's glyph across all sixteen places it
 appears. `b-foundation`, `b-aimark`, `b-member`, `b-staff` and `b-states` hold the
-proposal boards; `b-shipped`, `b-decisions`, `b-parts`, `b-rail` and
-`b-leads` hold the record ones, which are drawn from the code rather than
+proposal boards; `b-shipped`, `b-decisions`, `b-parts`, `b-rail`,
+`b-leads` and `b-heads` hold the record ones, which are drawn from the code rather than
 ahead of it — several of them cover screens behind auth that the exported
 bundle cannot photograph. `system.css` is the proposed design
 system, `legacy.css` approximates today's app for the before/after.

@@ -5,6 +5,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import {
   allGroupsDisciplineFirst,
@@ -46,15 +47,10 @@ export default function MovementLibrary() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/track" />
-        <View className="gap-2">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Movement Library
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-            Search every movement we track — across CrossFit and Hyrox — star
-            your favourites, and open any one for your PRs and history.
-          </Text>
-        </View>
+        <PageHead
+          title="Movement Library"
+          subtitle="Search every movement we track — across CrossFit and Hyrox — star your favourites, and open any one for your PRs and history."
+        />
 
         <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line-strong dark:border-line-dk rounded-xl px-3">
           <Ionicons name="search" size={18} color={colors.ink2} />

@@ -8,6 +8,7 @@ import { Text } from '@/components/Text';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { formatDate } from '@/lib/format-date';
@@ -147,14 +148,7 @@ export default function Inbox() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Inbox
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Messages from coaches and the gym.
-          </Text>
-        </View>
+        <PageHead title="Inbox" subtitle="Messages from coaches and the gym." />
 
         <PaymentNoticeBanner
           gymId={membership.gymId}

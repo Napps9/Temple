@@ -11,6 +11,7 @@ import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -68,15 +69,10 @@ export default function InjuriesScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/track" />
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Injury tracker
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Log a niggle or injury so your coaches can program around it.
-            Tap the body where it hurts.
-          </Text>
-        </View>
+        <PageHead
+          title="Injury tracker"
+          subtitle="Log a niggle or injury so your coaches can program around it. Tap the body where it hurts."
+        />
 
         {due.length > 0 ? (
           <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl p-4 gap-1">

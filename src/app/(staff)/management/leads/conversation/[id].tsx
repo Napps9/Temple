@@ -10,6 +10,7 @@ import { Button } from '@/components/Button';
 import { Sheet, SheetAction } from '@/components/Sheet';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { syncVapiAssistant } from '@/lib/agent-sync';
 import { useGymMembership } from '@/lib/auth';
@@ -492,12 +493,10 @@ export default function AgentConversationScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/leads/conversations" />
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            {c?.lead?.full_name ?? c?.phone ?? 'Conversation'}
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            {c
+        <PageHead
+          title={c?.lead?.full_name ?? c?.phone ?? 'Conversation'}
+          subtitle={
+            c
               ? `${isVoice ? 'Phone call' : 'SMS'} · ${c.phone} · ${
                   status === 'active'
                     ? 'AI replying'
@@ -505,9 +504,9 @@ export default function AgentConversationScreen() {
                       ? 'With a coach'
                       : 'Opted out'
                 }`
-              : ''}
-          </Text>
-        </View>
+              : ''
+          }
+        />
 
         {/* Recording playback (voice, reviewers only) */}
         {isVoice && canReview === true && recording.data ? (

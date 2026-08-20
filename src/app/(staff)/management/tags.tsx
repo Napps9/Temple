@@ -11,6 +11,7 @@ import { MemberTagChip } from '@/components/MemberTagChip';
 import { Screen } from '@/components/Screen';
 import { TagRulesPanel } from '@/components/TagRulesPanel';
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -126,15 +127,10 @@ function MemberTags({ profileId }: { profileId: string }) {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
-        <View className="gap-2">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            {profileQuery.data?.full_name ?? 'Member'}
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Manual tags only. Auto tags are managed by rules and recomputed
-            against the live cohort view.
-          </Text>
-        </View>
+        <PageHead
+          title={profileQuery.data?.full_name ?? 'Member'}
+          subtitle="Manual tags only. Auto tags are managed by rules and recomputed against the live cohort view."
+        />
 
         <View className="gap-2">
           <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
@@ -218,11 +214,7 @@ function RulesEditor() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
-        <View className="gap-2">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Tag rules
-          </Text>
-        </View>
+        <PageHead title="Tag rules" />
         <TagRulesPanel />
       </ScrollView>
     </Screen>

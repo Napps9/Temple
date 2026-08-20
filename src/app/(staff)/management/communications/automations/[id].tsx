@@ -8,6 +8,7 @@ import { Text } from '@/components/Text';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { EmailEditor } from '@/components/email/EmailEditor';
 import { HtmlPreview } from '@/components/email/HtmlPreview';
@@ -736,18 +737,18 @@ export default function AutomationEditor() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/communications/automations" />
 
-        <View className="flex-row items-center justify-between gap-3 flex-wrap">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold flex-1">
-            Edit automation
-          </Text>
-          <Button
-            variant="secondary"
-            onPress={saveNow}
-            loading={save.isPending}
-            success={justSaved}>
-            Save
-          </Button>
-        </View>
+        <PageHead
+          title="Edit automation"
+          action={
+            <Button
+              variant="secondary"
+              onPress={saveNow}
+              loading={save.isPending}
+              success={justSaved}>
+              Save
+            </Button>
+          }
+        />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 flex-row items-center justify-between gap-3">
           <View className="flex-1">

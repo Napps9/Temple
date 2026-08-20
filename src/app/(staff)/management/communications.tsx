@@ -7,6 +7,7 @@ import { Text } from '@/components/Text';
 import { CampaignList } from '@/components/email/CampaignList';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { StatTile } from '@/components/StatTile';
 import { useCampaigns } from '@/lib/comms';
 import { useCan } from '@/lib/useCan';
@@ -95,14 +96,10 @@ export default function CommunicationsScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Email campaigns
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Design, send and analyse email campaigns to your members.
-          </Text>
-        </View>
+        <PageHead
+          title="Email campaigns"
+          subtitle="Design, send and analyse email campaigns to your members."
+        />
         {canManageComms === false ? (
           <Text className="text-ink-2 dark:text-ink-2-dk">
             You don't have permission to manage communications.

@@ -8,6 +8,7 @@ import { Text } from '@/components/Text';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage, functionErrorMessage } from '@/lib/errors';
@@ -280,17 +281,10 @@ export default function ImportStripeScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/plans" />
-        <View className="gap-2">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Import from Stripe
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Bring your Stripe plans and subscribers across. We create a Temple
-            plan for each Stripe price — including ones no one's on yet — and
-            members with a live subscription are adopted (same billing, no
-            re-charge), manageable in the app once they sign up.
-          </Text>
-        </View>
+        <PageHead
+          title="Import from Stripe"
+          subtitle="Bring your Stripe plans and subscribers across. We create a Temple plan for each Stripe price — including ones no one's on yet — and members with a live subscription are adopted (same billing, no re-charge), manageable in the app once they sign up."
+        />
 
         {commit.data ? (
           <View className="bg-surface dark:bg-surface-dk border border-emerald-300 dark:border-emerald-800 rounded-xl p-5 gap-3">

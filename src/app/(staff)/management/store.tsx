@@ -12,6 +12,7 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { DraggableImageStrip } from '@/components/DraggableImageStrip';
 import { Input } from '@/components/Input';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
@@ -93,14 +94,10 @@ export default function StoreManageScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Store
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Sell merch, programmes and tickets to your members.
-          </Text>
-        </View>
+        <PageHead
+          title="Store"
+          subtitle="Sell merch, programmes and tickets to your members."
+        />
 
         <StoreHome />
       </ScrollView>

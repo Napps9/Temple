@@ -1,8 +1,8 @@
 import { Redirect } from 'expo-router';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
-import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { CustomDomainCard } from '@/components/website/CustomDomainCard';
 import { useCan } from '@/lib/useCan';
@@ -37,14 +37,10 @@ export default function WebsiteDomainScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/website" />
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Custom domain
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Serve {brand.gymName}'s site from a domain you own.
-          </Text>
-        </View>
+        <PageHead
+          title="Custom domain"
+          subtitle={`Serve ${brand.gymName}'s site from a domain you own.`}
+        />
         <CustomDomainCard gymId={brand.gymId} />
       </ScrollView>
     </Screen>

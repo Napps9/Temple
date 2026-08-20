@@ -7,6 +7,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { useSession } from '@/lib/auth';
 import {
   attendanceLabel,
@@ -148,14 +149,10 @@ export default function BookingsScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/book" />
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            My bookings
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Your upcoming classes and past attendance.
-          </Text>
-        </View>
+        <PageHead
+          title="My bookings"
+          subtitle="Your upcoming classes and past attendance."
+        />
 
         <View className="flex-row gap-2 flex-wrap">
           <TabChip

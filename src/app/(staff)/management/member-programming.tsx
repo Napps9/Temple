@@ -16,6 +16,7 @@ import {
   MemberProgrammingAccessModal,
   type MemberProgrammingAccessValue,
 } from '@/components/MemberProgrammingAccessModal';
+import { PageHead } from '@/components/PageHead';
 import { ProgrammingCalendar } from '@/components/ProgrammingCalendar';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -356,16 +357,11 @@ function IndividualsList() {
       <ScrollView
         className="flex-1"
         contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <View className="gap-2">
-          <BackLink fallbackHref="/(staff)/programming" />
-          <Text className="text-ink dark:text-ink-dk text-2xl font-bold">
-            Individual programming
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-            Personal programmes written for one member, free or sold through
-            the store and memberships.
-          </Text>
-        </View>
+        <BackLink fallbackHref="/(staff)/programming" />
+        <PageHead
+          title="Individual programming"
+          subtitle="Personal programmes written for one member, free or sold through the store and memberships."
+        />
 
         <View className="gap-2">
           <Text className="text-ink-2 dark:text-ink-2-dk font-semibold">

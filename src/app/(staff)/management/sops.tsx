@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { formatDate } from '@/lib/format-date';
 import { errorMessage } from '@/lib/errors';
@@ -203,15 +204,10 @@ export default function SopsScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
-        <View className="gap-2">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            SOPs
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            How we do things here. Visible to all staff; only owners and
-            admins can edit.
-          </Text>
-        </View>
+        <PageHead
+          title="SOPs"
+          subtitle="How we do things here. Visible to all staff; only owners and admins can edit."
+        />
 
         {canEdit ? (
           <Button

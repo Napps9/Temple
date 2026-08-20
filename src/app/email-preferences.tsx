@@ -4,6 +4,7 @@ import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
 import { EmptyState } from '@/components/EmptyState';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -69,14 +70,10 @@ export default function EmailPreferencesScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/account" />
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Email preferences
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Choose which messages from this gym land in your inbox.
-          </Text>
-        </View>
+        <PageHead
+          title="Email preferences"
+          subtitle="Choose which messages from this gym land in your inbox."
+        />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <View className="flex-row items-center justify-between gap-3">

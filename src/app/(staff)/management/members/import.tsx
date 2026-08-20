@@ -9,6 +9,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { joinUrl } from '@/lib/brand';
@@ -624,16 +625,10 @@ export default function ImportMembersScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
 
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Import members
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Drop in a CSV from your previous platform (Mindbody, PushPress,
-            Glofox, Wodify, a spreadsheet…). We stage the rows; members
-            link to their data when they sign up at your join link.
-          </Text>
-        </View>
+        <PageHead
+          title="Import members"
+          subtitle="Drop in a CSV from your previous platform (Mindbody, PushPress, Glofox, Wodify, a spreadsheet…). We stage the rows; members link to their data when they sign up at your join link."
+        />
 
         {stripeConnected.data === true &&
         (phase === 'upload' || phase === 'map' || phase === 'review') ? (

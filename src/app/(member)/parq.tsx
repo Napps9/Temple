@@ -6,6 +6,7 @@ import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -155,16 +156,10 @@ export default function ParqForm() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
         <BackLink />
-        <View className="gap-2">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Health screening
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Please answer honestly. Any "yes" answer on a flagged question
-            tells the team to follow up before your first session — you
-            can still book.
-          </Text>
-        </View>
+        <PageHead
+          title="Health screening"
+          subtitle={'Please answer honestly. Any "yes" answer on a flagged question tells the team to follow up before your first session — you can still book.'}
+        />
 
         {list.map((q, idx) => {
           const answer = answers[idx];

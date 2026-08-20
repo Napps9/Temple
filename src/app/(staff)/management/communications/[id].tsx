@@ -14,6 +14,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { campaignReport } from '@/lib/campaign-report';
 import { StatTile } from '@/components/StatTile';
 import { useGymMembership } from '@/lib/auth';
@@ -418,17 +419,11 @@ function EditorView({ campaign }: { campaign: Campaign }) {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/communications" />
-        <View className="gap-1">
-          <View className="flex-row items-center gap-2">
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold flex-1">
-              Edit campaign
-            </Text>
-            <SaveButton state={saveState} onPress={saveNow} />
-          </View>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Build your email, choose who gets it, then send.
-          </Text>
-        </View>
+        <PageHead
+          title="Edit campaign"
+          subtitle="Build your email, choose who gets it, then send."
+          action={<SaveButton state={saveState} onPress={saveNow} />}
+        />
 
         {/* Details */}
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
@@ -886,18 +881,13 @@ function ReportView({ campaign }: { campaign: Campaign }) {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/communications" />
-      <View className="gap-1">
-        <View className="flex-row items-center gap-2">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold flex-1">
-            {campaign.title || 'Campaign'}
-          </Text>
-          <StatusBadge status={campaign.status} />
-        </View>
-        <Text className="text-ink-2 dark:text-ink-2-dk">
-          {campaign.subject || 'No subject'}
-          {campaign.sent_at ? ` · sent ${formatDateTime(campaign.sent_at)}` : ''}
-        </Text>
-      </View>
+      <PageHead
+        title={campaign.title || 'Campaign'}
+        subtitle={`${campaign.subject || 'No subject'}${
+          campaign.sent_at ? ` · sent ${formatDateTime(campaign.sent_at)}` : ''
+        }`}
+        action={<StatusBadge status={campaign.status} />}
+      />
 
       {campaign.status === 'sending' ? (
         <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex-row items-center gap-3">

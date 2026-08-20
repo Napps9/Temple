@@ -15,6 +15,7 @@ import {
   type Preset,
 } from '@/components/DateRangeCta';
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import {
   computeMovementTrends,
@@ -298,15 +299,10 @@ export default function AnalysisScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-4xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/(staff)/programming" />
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Programming analysis
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Is the month balanced? Start with the verdicts, then drill
-            into the cards.
-          </Text>
-        </View>
+        <PageHead
+          title="Programming analysis"
+          subtitle="Is the month balanced? Start with the verdicts, then drill into the cards."
+        />
 
         {canSeeLogsResolved === false ? (
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">

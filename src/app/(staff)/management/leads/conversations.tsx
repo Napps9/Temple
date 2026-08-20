@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 import { Text } from '@/components/Text';
 
 import { LeadsShell, type LeadsTab } from '@/components/LeadsNav';
+import { PageHead } from '@/components/PageHead';
 import { useGymMembership } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -53,15 +54,10 @@ export default function AgentConversationsScreen() {
 
   return (
     <LeadsShell active="conversations" tabs={tabs}>
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            AI conversations
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Every text and call the front desk assistant has handled. Open one
-            to read it or take over.
-          </Text>
-        </View>
+        <PageHead
+          title="AI conversations"
+          subtitle="Every text and call the front desk assistant has handled. Open one to read it or take over."
+        />
 
         <View className="gap-2">
           {(conversations.data ?? []).map((c) => (

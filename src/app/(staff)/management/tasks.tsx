@@ -9,6 +9,7 @@ import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -139,16 +140,10 @@ export default function TasksScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
-        <View className="gap-2">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Tasks
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            {canManage
-              ? 'Day-to-day work assigned across your team.'
-              : 'Tasks assigned to you. Tap a task to mark it done.'}
-          </Text>
-        </View>
+        <PageHead
+          title="Tasks"
+          subtitle={canManage ? 'Day-to-day work assigned across your team.' : 'Tasks assigned to you. Tap a task to mark it done.'}
+        />
 
         <View className="flex-row gap-2">
           <Tab label="Open" active={filter === 'open'} onPress={() => setFilter('open')} />

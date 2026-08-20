@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Modal, Pressable, Switch, View } from 'react-native';
 import { Text } from '@/components/Text';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -337,59 +337,61 @@ export default function LeadSettingsScreen() {
 
       <AgentSettings />
 
-      <SectionLabel>When a lead comes in</SectionLabel>
+      <View className="gap-2">
+        <SectionLabel>When a lead comes in</SectionLabel>
 
-      <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
-        {(['round_robin', 'single_default', 'manual'] as Strategy[]).map((s) => {
-          const sel = strategy === s;
-          return (
-            <Pressable
-              key={s}
-              onPress={() => setStrategy(s)}
-              className={`rounded-lg border p-3 gap-1 ${
-                sel ? 'border-primary bg-primary/5' : 'border-line dark:border-line-dk'
-              }`}>
-              <Text className="text-ink dark:text-ink-dk font-medium">
-                {STRATEGY_COPY[s].title}
-              </Text>
-              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-                {STRATEGY_COPY[s].blurb}
-              </Text>
-            </Pressable>
-          );
-        })}
+        <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
+          {(['round_robin', 'single_default', 'manual'] as Strategy[]).map((s) => {
+            const sel = strategy === s;
+            return (
+              <Pressable
+                key={s}
+                onPress={() => setStrategy(s)}
+                className={`rounded-lg border p-3 gap-1 ${
+                  sel ? 'border-primary bg-primary/5' : 'border-line dark:border-line-dk'
+                }`}>
+                <Text className="text-ink dark:text-ink-dk font-medium">
+                  {STRATEGY_COPY[s].title}
+                </Text>
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
+                  {STRATEGY_COPY[s].blurb}
+                </Text>
+              </Pressable>
+            );
+          })}
 
-        {strategy === 'single_default' ? (
-          <View className="gap-1.5 pt-1">
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
-              Send every lead to
-            </Text>
-            <View className="flex-row flex-wrap gap-2">
-              {(coaches.data ?? []).map((c) => {
-                const sel = defaultCoach === c.profile_id;
-                return (
-                  <Pressable
-                    key={c.profile_id}
-                    onPress={() => setDefaultCoach(c.profile_id)}
-                    className={`px-3 py-1.5 rounded-full border ${
-                      sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
-                    }`}>
-                    <Text className="text-xs text-ink-2 dark:text-ink-2-dk">
-                      {c.full_name ?? 'Coach'}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+          {strategy === 'single_default' ? (
+            <View className="gap-1.5 pt-1">
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
+                Send every lead to
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {(coaches.data ?? []).map((c) => {
+                  const sel = defaultCoach === c.profile_id;
+                  return (
+                    <Pressable
+                      key={c.profile_id}
+                      onPress={() => setDefaultCoach(c.profile_id)}
+                      className={`px-3 py-1.5 rounded-full border ${
+                        sel ? 'border-primary bg-primary/10' : 'border-line dark:border-line-dk'
+                      }`}>
+                      <Text className="text-xs text-ink-2 dark:text-ink-2-dk">
+                        {c.full_name ?? 'Coach'}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-          </View>
-        ) : null}
+          ) : null}
 
-        <Button
-          onPress={() => saveRule.mutate()}
-          loading={saveRule.isPending}
-          disabled={strategy === 'single_default' && !defaultCoach}>
-          Save
-        </Button>
+          <Button
+            onPress={() => saveRule.mutate()}
+            loading={saveRule.isPending}
+            disabled={strategy === 'single_default' && !defaultCoach}>
+            Save
+          </Button>
+        </View>
       </View>
 
       <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
@@ -425,129 +427,133 @@ export default function LeadSettingsScreen() {
         </View>
       </View>
 
-      <SectionLabel>Recording and consent</SectionLabel>
+      <View className="gap-2">
+        <SectionLabel>Recording and consent</SectionLabel>
 
-      <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
-        <View className="flex-row items-center justify-between gap-3">
-          <View className="flex-1">
-            <Text className="text-ink dark:text-ink-dk font-medium">
-              Record calls for review
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-              A short consent line plays at the start of every call. Recordings let you review and
-              coach the AI.
-            </Text>
+        <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
+          <View className="flex-row items-center justify-between gap-3">
+            <View className="flex-1">
+              <Text className="text-ink dark:text-ink-dk font-medium">
+                Record calls for review
+              </Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
+                A short consent line plays at the start of every call. Recordings let you review and
+                coach the AI.
+              </Text>
+            </View>
+            <Switch
+              accessibilityLabel="Record calls for review"
+              value={recOn}
+              onValueChange={(v) => toggleRecording.mutate(v)}
+            />
           </View>
-          <Switch
-            accessibilityLabel="Record calls for review"
-            value={recOn}
-            onValueChange={(v) => toggleRecording.mutate(v)}
-          />
+          {recRetention !== null ? (
+            <DurationField
+              label="Delete recordings after"
+              value={recRetention}
+              onChange={setRecRetention}
+              base="days"
+              units={['days', 'weeks', 'months']}
+              placeholder="90"
+            />
+          ) : null}
+          <Button onPress={() => saveRecordingRetention.mutate()} loading={saveRecordingRetention.isPending}>
+            Save retention
+          </Button>
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+            Recordings are stored privately, every playback is logged, and a caller who replies STOP
+            is opted out.
+          </Text>
         </View>
-        {recRetention !== null ? (
-          <DurationField
-            label="Delete recordings after"
-            value={recRetention}
-            onChange={setRecRetention}
-            base="days"
-            units={['days', 'weeks', 'months']}
-            placeholder="90"
-          />
-        ) : null}
-        <Button onPress={() => saveRecordingRetention.mutate()} loading={saveRecordingRetention.isPending}>
-          Save retention
-        </Button>
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
-          Recordings are stored privately, every playback is logged, and a caller who replies STOP
-          is opted out.
-        </Text>
       </View>
 
-      <SectionLabel>Limits and retention</SectionLabel>
+      <View className="gap-2">
+        <SectionLabel>Limits and retention</SectionLabel>
 
-      <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
-          Usage &amp; limits
-        </Text>
-        <View className="flex-row gap-3">
-          <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
-            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-              {usage.data?.sentToday ?? '—'}
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Texts sent (24h)</Text>
+        <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-widest">
+            Usage &amp; limits
+          </Text>
+          <View className="flex-row gap-3">
+            <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+              <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
+                {usage.data?.sentToday ?? '—'}
+              </Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Texts sent (24h)</Text>
+            </View>
+            <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+              <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
+                {usage.data?.conversations7d ?? '—'}
+              </Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Threads (7d)</Text>
+            </View>
+            <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+              <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
+                {usage.data?.calls7d ?? '—'}
+              </Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Calls (7d)</Text>
+            </View>
           </View>
-          <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
-            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-              {usage.data?.conversations7d ?? '—'}
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Threads (7d)</Text>
+          <View className="flex-row gap-3">
+            <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+              <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
+                {outcomes.data?.leads_30d ?? '—'}
+              </Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Leads (30d)</Text>
+            </View>
+            <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+              <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
+                {outcomes.data?.converted_30d ?? '—'}
+              </Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Joined (30d)</Text>
+            </View>
+            <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+              <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
+                {outcomes.data
+                  ? new Intl.NumberFormat('en-GB', {
+                      style: 'currency',
+                      currency: outcomes.data.currency,
+                      maximumFractionDigits: 0,
+                    }).format(outcomes.data.attributed_monthly_cents / 100)
+                  : '—'}
+              </Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Won per month</Text>
+            </View>
           </View>
-          <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
-            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-              {usage.data?.calls7d ?? '—'}
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Calls (7d)</Text>
-          </View>
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+            Bottom row counts leads the agent sourced: captured, signed up as members, and the
+            monthly value of those members' current plans.
+            {outcomes.data?.committed
+              ? ` ${outcomes.data.committed} more committed and finishing signup.`
+              : ''}
+          </Text>
+          {msgCap !== null ? (
+            <Input
+              label="Daily message cap"
+              value={msgCap}
+              onChangeText={setMsgCap}
+              keyboardType="number-pad"
+              placeholder="200"
+            />
+          ) : null}
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+            Past the cap the AI stops replying for the day and hands threads to a coach — it bounds
+            what a hostile or chatty texter can cost you.
+          </Text>
+          {convRetention !== null ? (
+            <DurationField
+              label="Delete conversations after"
+              value={convRetention}
+              onChange={setConvRetention}
+              base="days"
+              units={['days', 'weeks', 'months']}
+              placeholder="365"
+            />
+          ) : null}
+          <Button onPress={() => saveLimits.mutate()} loading={saveLimits.isPending}>
+            Save limits
+          </Button>
         </View>
-        <View className="flex-row gap-3">
-          <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
-            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-              {outcomes.data?.leads_30d ?? '—'}
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Leads (30d)</Text>
-          </View>
-          <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
-            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-              {outcomes.data?.converted_30d ?? '—'}
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Joined (30d)</Text>
-          </View>
-          <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
-            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-              {outcomes.data
-                ? new Intl.NumberFormat('en-GB', {
-                    style: 'currency',
-                    currency: outcomes.data.currency,
-                    maximumFractionDigits: 0,
-                  }).format(outcomes.data.attributed_monthly_cents / 100)
-                : '—'}
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Won per month</Text>
-          </View>
-        </View>
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
-          Bottom row counts leads the agent sourced: captured, signed up as members, and the
-          monthly value of those members' current plans.
-          {outcomes.data?.committed
-            ? ` ${outcomes.data.committed} more committed and finishing signup.`
-            : ''}
-        </Text>
-        {msgCap !== null ? (
-          <Input
-            label="Daily message cap"
-            value={msgCap}
-            onChangeText={setMsgCap}
-            keyboardType="number-pad"
-            placeholder="200"
-          />
-        ) : null}
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
-          Past the cap the AI stops replying for the day and hands threads to a coach — it bounds
-          what a hostile or chatty texter can cost you.
-        </Text>
-        {convRetention !== null ? (
-          <DurationField
-            label="Delete conversations after"
-            value={convRetention}
-            onChange={setConvRetention}
-            base="days"
-            units={['days', 'weeks', 'months']}
-            placeholder="365"
-          />
-        ) : null}
-        <Button onPress={() => saveLimits.mutate()} loading={saveLimits.isPending}>
-          Save limits
-        </Button>
       </View>
 
       <View className="rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk p-4 gap-3">

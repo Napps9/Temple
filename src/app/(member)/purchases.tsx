@@ -7,6 +7,7 @@ import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
@@ -60,14 +61,10 @@ export default function PurchasesScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/store" />
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Purchases
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Your subscriptions, orders and downloads.
-          </Text>
-        </View>
+        <PageHead
+          title="Purchases"
+          subtitle="Your subscriptions, orders and downloads."
+        />
 
         {subRows.length > 0 ? (
           <View className="gap-2">

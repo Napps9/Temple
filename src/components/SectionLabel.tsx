@@ -9,6 +9,11 @@ import { Text } from './Text';
 //
 // `right` is for the one piece of context or link that belongs to the
 // group rather than to any row in it — "5 classes", "See all".
+//
+// Like PageHead it draws no padding. A label belongs to the group under
+// it, so the call site wraps the two in a tighter stack than the page's
+// own — `<View className="gap-2">` — rather than the label reaching down
+// with a margin it cannot know the size of.
 export function SectionLabel({
   children,
   right,
@@ -17,7 +22,7 @@ export function SectionLabel({
   right?: ReactNode;
 }) {
   return (
-    <View className="flex-row items-center justify-between gap-3 px-4 pb-2.5">
+    <View className="flex-row items-center justify-between gap-3">
       <Text
         accessibilityRole="header"
         className="text-ink-3 dark:text-ink-3-dk text-[11px] font-semibold uppercase tracking-[1px]">

@@ -8,6 +8,7 @@ import { Text } from '@/components/Text';
 import { Button } from '@/components/Button';
 import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import {
@@ -122,14 +123,10 @@ export default function ConsentForm() {
   return (
     <Screen edges={['top', 'bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-xl md:mx-auto md:w-full">
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Welcome — let's get you set up
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            A couple of details and your consent, then you're in.
-          </Text>
-        </View>
+        <PageHead
+          title="Welcome — let's get you set up"
+          subtitle="A couple of details and your consent, then you're in."
+        />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <Text className="text-ink dark:text-ink-dk font-semibold">

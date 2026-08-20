@@ -7,6 +7,7 @@ import { Text } from '@/components/Text';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { DEFAULT_AUTOMATION_WAIT_DAYS } from '@/lib/email/automation-knob';
@@ -131,20 +132,15 @@ export default function AutomationsScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/communications" />
-        <View className="flex-row items-start justify-between gap-3">
-          <View className="flex-1 gap-1">
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-              Automations
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk">
-              Emails that send themselves when something happens — a member joins,
-              attends their first class, goes quiet, or a lead stays cold.
-            </Text>
-          </View>
-          <Button onPress={() => create.mutate()} loading={create.isPending}>
-            New
-          </Button>
-        </View>
+        <PageHead
+          title="Automations"
+          subtitle="Emails that send themselves when something happens — a member joins, attends their first class, goes quiet, or a lead stays cold."
+          action={
+            <Button onPress={() => create.mutate()} loading={create.isPending}>
+              New
+            </Button>
+          }
+        />
 
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>

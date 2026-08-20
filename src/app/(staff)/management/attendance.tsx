@@ -5,12 +5,12 @@ import { ScrollView, View } from 'react-native';
 import { Text } from '@/components/Text';
 
 import { AttendanceChart } from '@/components/AttendanceChart';
-import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { DatePicker } from '@/components/DatePicker';
 import { Screen } from '@/components/Screen';
 import { StatTile } from '@/components/StatTile';
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { useGymMembership } from '@/lib/auth';
 import { useClassTypes } from '@/lib/useClassCatalog';
 import {
@@ -123,14 +123,10 @@ export default function AttendanceScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
-        <View className="gap-2">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Attendance
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Trends from check-ins recorded on class bookings.
-          </Text>
-        </View>
+        <PageHead
+          title="Attendance"
+          subtitle="Trends from check-ins recorded on class bookings."
+        />
 
         <View className="flex-row gap-3">
           <View className="flex-1">

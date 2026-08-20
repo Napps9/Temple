@@ -9,6 +9,7 @@ import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
+import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole } from '@/lib/auth';
 import {
@@ -251,16 +252,10 @@ export default function BillingScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
 
-        <View className="gap-1">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Billing & payments
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Connect your gym's Stripe account to charge members for
-            memberships and credit packs. You keep 100% — Temple takes no
-            cut of your payments.
-          </Text>
-        </View>
+        <PageHead
+          title="Billing & payments"
+          subtitle="Connect your gym's Stripe account to charge members for memberships and credit packs. You keep 100% — Temple takes no cut of your payments."
+        />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-5 gap-3">
           <Text className="text-ink dark:text-ink-dk font-semibold">

@@ -4,12 +4,12 @@ import { useEffect, useRef } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Text } from '@/components/Text';
 
-import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { InviteSection } from '@/components/InviteSection';
 import { MembersList } from '@/components/MembersList';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
+import { PageHead } from '@/components/PageHead';
 import { useGymMembership } from '@/lib/auth';
 import { useExportMembersCsv, exportErrorMessage } from '@/lib/csv-exports';
 import { getScrollPosition, setScrollPosition } from '@/lib/list-scroll-position';
@@ -65,15 +65,10 @@ export default function MembersScreen() {
         }}
         scrollEventThrottle={100}>
         <BackLink fallbackHref="/management" />
-        <View className="gap-2">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Members
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            {totalQuery.data ?? 0} members. Filter by cohort or search by name.
-            Tap a member to open their detail page.
-          </Text>
-        </View>
+        <PageHead
+          title="Members"
+          subtitle={`${totalQuery.data ?? 0} members. Filter by cohort or search by name. Tap a member to open their detail page.`}
+        />
 
         {canExport ? (
           <View className="gap-2">
