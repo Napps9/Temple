@@ -10,7 +10,7 @@ import { ColourField } from '@/components/ColourField';
 import { Input } from '@/components/Input';
 import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { Screen } from '@/components/Screen';
-import { TempleLockup } from '@/components/TempleLockup';
+import { TempleLockup } from '@/components/TempleMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   createGymWithSignup,
@@ -180,7 +180,7 @@ export default function CreateGymScreen() {
         <ScrollView contentContainerClassName="py-8 px-4">
           <View className="gap-6 w-full max-w-lg mx-auto">
             <View className="items-center">
-              <TempleLockup width={160} height={40} />
+              <TempleLockup size={22} />
             </View>
             <View className="gap-2">
               <Text className="text-gray-900 dark:text-gray-50 text-3xl font-semibold">

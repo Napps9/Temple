@@ -1,101 +1,116 @@
 # Temple brand assets
 
-Temple-the-company's logo artwork. Lives in
-`assets/images/temple-brand/`.
+Temple-the-company's identity. The mark lives in code
+(`src/components/TempleMark.tsx`); the flat files in
+`assets/images/temple-brand/` are generated from it.
 
-This is the **product/company identity** — the logo a logged-out visitor
-sees. It is *not* the same thing as the per-gym brand colour the app
-themes at runtime (`useThemeColors().primary`), which every gym sets for
-itself. Keep the two separate: gyms recolour their own surfaces; the
-Temple mark never gets recoloured.
+This is the **product/company identity** — what a logged-out visitor
+sees. It is *not* the per-gym brand colour the app themes at runtime
+(`useThemeColors().primary`), which every gym sets for itself. Keep the
+two separate: gyms recolour their own surfaces; the Temple mark never
+gets recoloured.
 
 ---
 
 ## The mark
 
-Three offset rounded-square cards stacked back-to-front, each holding a
-pillar glyph (a column — the "temple"). The diagonal offset reads as
-depth. Back card gold, middle card steel-blue, front card ink-or-cream
-depending on the background it sits on.
+Three offset rounded-square cards, the front one with a doorway cut out
+of it. The two behind are hairlines, so the offset still reads as depth
+without a shadow.
+
+It used to be three *filled* cards — gold, steel blue, ink — each holding
+a column, with the offset doing the work of a drop shadow. That was a
+considered identity and the silhouette is unchanged, but it was built on
+the two things the current design system removed: colour in the furniture,
+and depth from shadow rather than from a hairline and a tone step. So it
+was flattened rather than replaced. One ink, on light or on dark.
+
+The doorway stops short of the card's bottom edge on purpose. Run it to
+the edge and the ink around it forms an arch that reads as a lowercase
+**n** — which, sitting next to a lowercase wordmark, is the one thing the
+mark must not do.
+
+## The wordmark
+
+**temple**, lowercase, set in **Fraunces 700**. Lowercase and serif on
+purpose: Temple is the thing a gym runs on, not a monument, and the old
+letterspaced `TEMPLE` caps with a `TECHNOLOGY` tagline said the opposite.
+There is no tagline any more.
+
+Fraunces is loaded by the app (`@expo-google-fonts/fraunces`, the 700
+cut only) and is the only serif in the product. Everything else is Geist.
 
 ## Palette
 
 | Role | Hex | Used for |
 |------|-----|----------|
-| Gold | `#E8B620` | back card |
-| Steel blue | `#3B6BA5` | middle card |
-| Ink | `#111111` | front card + glyphs on light backgrounds |
-| Cream (paper) | `#F4F2ED` | front card + glyphs on dark backgrounds |
-| Tagline grey | `#5A5550` | the "TECHNOLOGY" tagline |
-| Mono back | `#999690` | greyscale mark, back card |
-| Mono middle | `#CCCAC5` | greyscale mark, middle card |
+| Ink | `#14161A` | the mark and wordmark on a light surface |
+| Paper | `#F4F5F6` | the mark and wordmark on a dark surface |
 
-No green. The brand blue is the muted **`#3B6BA5`** — *not* `#2563EB`.
-(`#2563EB` is only the app's *default gym* theme colour, a runtime
-per-gym default; it has nothing to do with the company logo.)
-
-## Typography
-
-Wordmark and tagline are set in **Outfit** (Google Fonts):
-
-- `TEMPLE` — weight 800, letter-spacing ~7
-- `TECHNOLOGY` — weight 500, letter-spacing ~5, colour `#5A5550`
+That is the whole palette. There is no gold, no steel blue, no tagline
+grey, and no `#2563EB` — that last one is only the app's *default gym*
+theme colour, a runtime per-gym default, and has nothing to do with the
+company logo.
 
 ---
 
-## Filename convention
+## Using it in the app
 
+Import the components, not the files:
+
+```tsx
+import { TempleLockup, TempleMark, TempleWordmark } from '@/components/TempleMark';
+
+<TempleLockup size={28} />   // mark + wordmark, sized from the type
+<TempleMark size={44} />     // mark alone
+<TempleWordmark size={26} /> // wordmark alone
 ```
-{type}-{colour|mono}-{on-light|on-dark}[-centred]-{size}.{svg|png}
+
+All three take the active scheme's ink automatically and accept a
+`color` override for the rare surface that needs one (a coloured hero, a
+photo scrim). Nothing needs an `on-light` / `on-dark` choice any more —
+that decision moved into `useThemeColors()`.
+
+`TempleMark` drops the two hairline cards below 28px, where they stop
+being depth and start being two grey smudges.
+
+## The flat files
+
+For anything outside the app — an app store, a build tool, a slide, a
+print job.
+
+| File | What |
+|------|------|
+| `mark-on-{light,dark}.svg` | the mark, vector, prefer this |
+| `mark-on-{light,dark}-512px.png` | the mark, raster |
+| `lockup-on-{light,dark}.svg` | mark + wordmark, Fraunces inlined |
+| `lockup-on-{light,dark}-960px.png` | mark + wordmark, raster |
+
+`on-light` / `on-dark` names the **background** it will sit on, not the
+colour of the artwork.
+
+The app icon, favicon, splash and Android adaptive layers are generated
+into `assets/images/` from the same source and are wired into
+`app.json`.
+
+## Regenerating
+
+Every flat file above comes from one script, which shares the mark's path
+data with the component:
+
+```bash
+node scripts/brand/build-marks.mjs
 ```
 
-- **type** — `mark`, `lockup`, `app-icon`, or `favicon`
-- **colour | mono** — full gold/blue/ink, or greyscale for
-  single-colour contexts (embossing, one-ink print, etc.)
-- **on-light | on-dark** — match this to the **background** you're
-  placing it on. The front card and glyphs flip so the mark stays legible.
-- **centred** — artwork optically centred in a square. Use when the mark
-  stands alone (avatars, square tiles, social). Without `-centred` the
-  mark is anchored to the top-left — use that in lockups or left-aligned
-  rows.
-- **size** — `svg` (vector — prefer it) or a raster PNG at that pixel
-  width. Use the size at or above your render size; never upscale a PNG.
-
-## What's in the folder
-
-| Asset | Files | Notes |
-|-------|-------|-------|
-| **Mark** (icon only) | `mark-{colour\|mono}-{on-light\|on-dark}[-centred][-{64..1024}px]` | colour has png 64/128/256/512(/1024); **mono is SVG-only** |
-| **Lockup** (mark + "TEMPLE / TECHNOLOGY") | `lockup-{on-light\|on-dark}[-{480,960}px]` | viewBox 480×120 (4:1) |
-| **App icon** (full-bleed rounded tile) | `app-icon-{light\|dark}[-{180,512,1024}px]` | 180 iOS · 512 Android/PWA · 1024 store |
-| **Favicon** | `favicon-{16,32}.png` | browser tabs |
-
----
-
-## Which file do I use?
-
-- **Top-of-page / nav logo** → `lockup-on-{light\|dark}` matching the background.
-- **Square avatar / social / standalone icon** → `mark-…-centred`.
-- **Inline, left-aligned with text** → `mark` (non-centred) or the lockup.
-- **One-colour / print / etched** → any `mono`.
-- **iOS / Android / PWA launcher** → `app-icon-{light\|dark}` at the platform size.
-- **Browser tab** → `favicon-16` / `favicon-32`.
-- **Web & React Native** → prefer the **SVG**; fall back to the
-  nearest-larger PNG where SVG isn't practical.
-
-## Using them in code
-
-- **SVG:** render with `react-native-svg` (already a dependency), or on
-  web via `require()` into an `<Image>` / `<img>`.
-- **PNG:** `require('…/<file>.png')` into `<Image>`.
-- The logged-out landing (`/get-started`) is always dark, so it should
-  use the **`-on-dark`** lockup or mark.
+Run it after any change to `TempleMark.tsx`. It needs Chromium. If the
+script and the component ever disagree, the component is right — it is
+what people actually see.
 
 ## Do / don't
 
 - **Do** keep clear space around the mark of roughly one card's width.
-- **Do** pick the `on-light` / `on-dark` variant to match the surface.
-- **Don't** recolour, rotate, stretch, add shadows/effects, or rebuild
-  the mark. Use mono if colour won't work.
-- **Don't** place the colour mark on a busy photo — use the app-icon
-  tile or a mono mark instead.
+- **Do** let the component pick ink or paper; only pass `color` when the
+  surface is neither.
+- **Don't** recolour it, rotate it, stretch it, add a shadow, or rebuild
+  it by hand.
+- **Don't** put the wordmark in anything but Fraunces 700, lowercase.

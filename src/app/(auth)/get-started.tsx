@@ -6,7 +6,7 @@ import { Text } from '@/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LegalConsentNotice } from '@/components/LegalConsentNotice';
-import { TempleLockup } from '@/components/TempleLockup';
+import { TempleLockup } from '@/components/TempleMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useThemePreference } from '@/lib/theme';
 
@@ -200,7 +200,7 @@ export default function GetStartedScreen() {
         <View className="w-full max-w-xl mx-auto gap-8">
           {/* Brand lockup (mark + wordmark), understated up top. */}
           <View className="items-center">
-            <TempleLockup width={220} height={55} />
+            <TempleLockup size={30} />
           </View>
 
           {/* Header */}

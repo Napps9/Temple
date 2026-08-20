@@ -9,7 +9,7 @@ import { GymLogo } from '@/components/GymLogo';
 import { Input } from '@/components/Input';
 import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { Screen } from '@/components/Screen';
-import { TempleLockup } from '@/components/TempleLockup';
+import { TempleLockup } from '@/components/TempleMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   acceptInvite,
@@ -338,7 +338,7 @@ export default function AcceptInviteScreen() {
 function Header() {
   return (
     <View className="items-center">
-      <TempleLockup width={160} height={40} />
+      <TempleLockup size={22} />
     </View>
   );
 }

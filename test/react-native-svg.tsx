@@ -6,39 +6,36 @@ import type { ReactNode } from 'react';
 // is the same reason the icon font and expo-router are stubbed. The real
 // module's job is drawing, and jsdom does not draw.
 //
-// What is kept is the element names, because that is the part a render
-// test can meaningfully ask about: whether a mark was drawn at all, and
-// which one. Everything else is a hole where a vector goes.
+// What is kept is the element names and their attributes, because that is
+// the part a render test can meaningfully ask about: whether a mark was
+// drawn, which shapes it is made of, and how it was told to fill them.
+// React DOM already knows the SVG attribute names, so props pass through
+// as written — `fillRule` reaches the DOM as `fill-rule`, `viewBox` keeps
+// its capital B — and a test can read them back the way it wrote them.
 type SvgProps = {
   children?: ReactNode;
-  width?: number | string;
-  height?: number | string;
-  viewBox?: string;
-  fill?: string;
-  stroke?: string;
-  d?: string;
+  accessibilityLabel?: string;
   [key: string]: unknown;
 };
 
+// Everything React Native names differently from the DOM, plus the props
+// that exist only on the native side and would draw an unknown-attribute
+// warning if they reached jsdom.
+function toDom({ accessibilityLabel, ...props }: SvgProps) {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(props)) {
+    if (typeof v === 'string' || typeof v === 'number') out[k] = v;
+  }
+  if (accessibilityLabel) out['aria-label'] = accessibilityLabel;
+  return out;
+}
+
 const el =
-  (tag: string) =>
-  ({ children, ...props }: SvgProps) => {
-    // React would warn on unknown camelCase DOM attributes; the ones a
-    // test cares about (d, fill, viewBox) are valid SVG attributes and
-    // pass straight through.
-    const safe: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(props)) {
-      if (typeof v === 'string' || typeof v === 'number') safe[k.toLowerCase()] = v;
-    }
-    return <g {...safe}>{children}</g>;
-  };
+  (Tag: 'path' | 'circle' | 'rect' | 'line' | 'ellipse' | 'text' | 'g') =>
+  ({ children, ...props }: SvgProps) => <Tag {...toDom(props)}>{children}</Tag>;
 
 export default function Svg({ children, ...props }: SvgProps) {
-  const safe: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(props)) {
-    if (typeof v === 'string' || typeof v === 'number') safe[k.toLowerCase()] = v;
-  }
-  return <svg {...safe}>{children}</svg>;
+  return <svg {...toDom(props)}>{children}</svg>;
 }
 
 export const Path = el('path');
@@ -47,3 +44,4 @@ export const Rect = el('rect');
 export const Line = el('line');
 export const Ellipse = el('ellipse');
 export const Text = el('text');
+export const G = el('g');

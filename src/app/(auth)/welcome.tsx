@@ -7,7 +7,7 @@ import { Text } from '@/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
-import { TempleLockup } from '@/components/TempleLockup';
+import { TempleLockup } from '@/components/TempleMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   completePendingGym,
@@ -107,7 +107,7 @@ export default function WelcomeScreen() {
         }}>
         <View className="w-full max-w-sm mx-auto gap-8">
           <View className="items-center">
-            <TempleLockup width={196} height={49} />
+            <TempleLockup size={28} />
           </View>
 
           <View className="items-center gap-4">

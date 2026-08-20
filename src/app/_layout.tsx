@@ -7,6 +7,8 @@ import { Geist_400Regular } from '@expo-google-fonts/geist/400Regular';
 import { Geist_500Medium } from '@expo-google-fonts/geist/500Medium';
 import { Geist_600SemiBold } from '@expo-google-fonts/geist/600SemiBold';
 import { Geist_700Bold } from '@expo-google-fonts/geist/700Bold';
+// One cut of one serif, for the wordmark and nothing else.
+import { Fraunces_700Bold } from '@expo-google-fonts/fraunces/700Bold';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -146,6 +148,7 @@ export default function RootLayout() {
     Geist_500Medium,
     Geist_600SemiBold,
     Geist_700Bold,
+    Fraunces_700Bold,
   });
 
   // Hold on loading, but never on failure: a font that will not load is a
