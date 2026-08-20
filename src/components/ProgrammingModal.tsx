@@ -290,6 +290,34 @@ export function ProgrammingModal({
     setDrafts((curr) => [...curr, emptyDraft()]);
   }
 
+  // Board 04: the two pickers were a sheet over this one. Steps now.
+  if (pickerOpenFor) {
+    return (
+      <Sheet
+        visible={visible}
+        title={
+          pickerOpenFor.kind === 'category'
+            ? 'Pick a category'
+            : 'Pick a scoring format'
+        }
+        onClose={close}
+        onBack={() => setPickerOpenFor(null)}
+        dialogWidth={620}>
+        <PickerStep
+          kind={pickerOpenFor.kind}
+          onPick={(key) => {
+            if (pickerOpenFor.kind === 'category') {
+              pickCategory(pickerOpenFor.idx, key as SectionCategoryKey);
+            } else {
+              pickFormat(pickerOpenFor.idx, key as SectionFormatKey);
+            }
+            setPickerOpenFor(null);
+          }}
+        />
+      </Sheet>
+    );
+  }
+
   return (
     <Sheet
       visible={visible}
@@ -389,20 +417,6 @@ export function ProgrammingModal({
           )}
       </View>
 
-      <PickerModal
-        visible={pickerOpenFor !== null}
-        kind={pickerOpenFor?.kind ?? 'category'}
-        onPick={(key) => {
-          if (!pickerOpenFor) return;
-          if (pickerOpenFor.kind === 'category') {
-            pickCategory(pickerOpenFor.idx, key as SectionCategoryKey);
-          } else {
-            pickFormat(pickerOpenFor.idx, key as SectionFormatKey);
-          }
-          setPickerOpenFor(null);
-        }}
-        onClose={() => setPickerOpenFor(null)}
-      />
     </Sheet>
   );
 }
@@ -535,32 +549,16 @@ function PickerButton({
   );
 }
 
-function PickerModal({
-  visible,
+function PickerStep({
   kind,
   onPick,
-  onClose,
 }: {
-  visible: boolean;
   kind: 'category' | 'format';
   onPick: (key: string) => void;
-  onClose: () => void;
 }) {
   const items = kind === 'category' ? SECTION_CATEGORIES : SECTION_FORMATS;
-  const title = kind === 'category' ? 'Pick a category' : 'Pick a scoring format';
   return (
-    <Sheet
-      visible={visible}
-      title={title}
-      onClose={onClose}
-      actions={
-        <SheetAction grow>
-          <Button variant="secondary" onPress={onClose}>
-            Cancel
-          </Button>
-        </SheetAction>
-      }>
-      <View className="rounded-card border border-line dark:border-line-dk overflow-hidden mb-1">
+    <View className="rounded-card border border-line dark:border-line-dk overflow-hidden mb-1">
         {items.map((it, i) => (
           <Pressable
             key={it.key}
@@ -569,12 +567,11 @@ function PickerModal({
             className={`px-3.5 py-3 active:bg-raised dark:active:bg-raised-dk ${
               i === 0 ? '' : 'border-t border-line dark:border-line-dk'
             }`}>
-            <Text className="text-ink dark:text-ink-dk text-[14.5px]">
-              {it.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-    </Sheet>
+          <Text className="text-ink dark:text-ink-dk text-[14.5px]">
+            {it.label}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
   );
 }

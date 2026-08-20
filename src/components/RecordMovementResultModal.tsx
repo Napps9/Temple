@@ -224,6 +224,27 @@ export function RecordMovementResultModal({
     onError: (e) => setError(errorMessage(e, 'Could not save workout')),
   });
 
+  // Board 04: the movement picker was a sheet over this one. A step now.
+  if (pickerOpenFor !== null) {
+    return (
+      <Sheet
+        visible={visible}
+        title="Pick a movement"
+        onClose={onClose}
+        onBack={() => setPickerOpenFor(null)}
+        dialogWidth={620}>
+        <SchemePickerStep
+          visible
+          options={schemeOptions}
+          onPick={(opt) => {
+            updateDraft(pickerOpenFor, { option: opt });
+            setPickerOpenFor(null);
+          }}
+        />
+      </Sheet>
+    );
+  }
+
   return (
     <Sheet
       visible={visible}
@@ -302,15 +323,6 @@ export function RecordMovementResultModal({
           ) : null}
       </View>
 
-      <SchemePickerModal
-        visible={pickerOpenFor !== null}
-        options={schemeOptions}
-        onPick={(opt) => {
-          if (pickerOpenFor !== null) updateDraft(pickerOpenFor, { option: opt });
-          setPickerOpenFor(null);
-        }}
-        onClose={() => setPickerOpenFor(null)}
-      />
     </Sheet>
   );
 }
@@ -393,16 +405,16 @@ function DraftCard({
   );
 }
 
-function SchemePickerModal({
+function SchemePickerStep({
   visible,
   options,
   onPick,
-  onClose,
 }: {
+  // Kept so the group expansions reset when the sheet leaves this step,
+  // the same way they reset when it was a modal of its own.
   visible: boolean;
   options: SchemeOption[];
   onPick: (opt: SchemeOption) => void;
-  onClose: () => void;
 }) {
   const colors = useThemeColors();
   // Group the flat scheme list back by category for navigation.
@@ -446,18 +458,7 @@ function SchemePickerModal({
   }, [visible]);
 
   return (
-    <Sheet
-      visible={visible}
-      title="Pick a movement"
-      onClose={onClose}
-      actions={
-        <SheetAction grow>
-          <Button variant="secondary" onPress={onClose}>
-            Close
-          </Button>
-        </SheetAction>
-      }>
-      <View className="gap-2 pb-1">
+    <View className="gap-2 pb-1">
             {groups.map((g) => (
               <View key={g.key}>
                 <Pressable
@@ -521,9 +522,8 @@ function SchemePickerModal({
                   </View>
                 ) : null}
               </View>
-            ))}
-      </View>
-    </Sheet>
+      ))}
+    </View>
   );
 }
 

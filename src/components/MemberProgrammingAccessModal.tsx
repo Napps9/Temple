@@ -87,6 +87,54 @@ export function MemberProgrammingAccessModal({
     onError: (e) => setError(errorMessage(e, 'Could not save access')),
   });
 
+  // Board 04: the product picker was a second sheet over this one. It is
+  // a step of the same sheet — same list, same choices, back returns to
+  // the form.
+  if (pickerOpen) {
+    return (
+      <Sheet
+        visible={visible}
+        title="Pick a product"
+        onClose={onClose}
+        onBack={() => setPickerOpen(false)}
+        dialogWidth={520}>
+        <View className="gap-1 pb-1">
+          <Pressable
+            onPress={() => {
+              setProductId(null);
+              setPickerOpen(false);
+            }}
+            className="rounded-lg px-3 py-3 active:bg-raised dark:active:bg-raised-dk">
+            <Text className="text-ink dark:text-ink-dk">No product</Text>
+            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
+              Only a qualifying membership plan unlocks it.
+            </Text>
+          </Pressable>
+          {(products.data ?? []).map((p) => (
+            <Pressable
+              key={p.id}
+              onPress={() => {
+                setProductId(p.id);
+                setPickerOpen(false);
+              }}
+              className="rounded-lg px-3 py-3 active:bg-raised dark:active:bg-raised-dk">
+              <Text className="text-ink dark:text-ink-dk">{p.name}</Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
+                {productPriceLabel(p, currency)}
+                {p.recurring ? ' · subscription' : ' · one-off'}
+              </Text>
+            </Pressable>
+          ))}
+          {products.data && products.data.length === 0 ? (
+            <Text className="text-ink-3 dark:text-ink-3-dk text-[13px] px-3 py-2">
+              No store products yet — add one in Manage → Store first.
+            </Text>
+          ) : null}
+        </View>
+      </Sheet>
+    );
+  }
+
   return (
     <Sheet
       visible={visible}
@@ -183,55 +231,6 @@ export function MemberProgrammingAccessModal({
           ) : null}
       </View>
 
-      <Sheet
-        visible={pickerOpen}
-        title="Pick a product"
-        onClose={() => setPickerOpen(false)}
-        actions={
-          <SheetAction grow>
-            <Button variant="secondary" onPress={() => setPickerOpen(false)}>
-              Cancel
-            </Button>
-          </SheetAction>
-        }>
-            <View className="gap-1 pb-1">
-              <Pressable
-                onPress={() => {
-                  setProductId(null);
-                  setPickerOpen(false);
-                }}
-                className="rounded-lg px-3 py-3 active:bg-raised dark:active:bg-raised-dk">
-                <Text className="text-ink dark:text-ink-dk">
-                  No product
-                </Text>
-                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-                  Only a qualifying membership plan unlocks it.
-                </Text>
-              </Pressable>
-              {(products.data ?? []).map((p) => (
-                <Pressable
-                  key={p.id}
-                  onPress={() => {
-                    setProductId(p.id);
-                    setPickerOpen(false);
-                  }}
-                  className="rounded-lg px-3 py-3 active:bg-raised dark:active:bg-raised-dk">
-                  <Text className="text-ink dark:text-ink-dk">
-                    {p.name}
-                  </Text>
-                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-                    {productPriceLabel(p, currency)}
-                    {p.recurring ? ' · subscription' : ' · one-off'}
-                  </Text>
-                </Pressable>
-              ))}
-              {products.data && products.data.length === 0 ? (
-                <Text className="text-ink-3 dark:text-ink-3-dk text-[13px] px-3 py-2">
-                  No store products yet — add one in Manage → Store first.
-                </Text>
-              ) : null}
-            </View>
-      </Sheet>
     </Sheet>
   );
 }
