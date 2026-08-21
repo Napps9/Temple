@@ -5,12 +5,11 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'rea
 import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
-import { GymLogo } from '@/components/GymLogo';
 import { Input } from '@/components/Input';
 import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { Screen } from '@/components/Screen';
 import { FieldLabel } from '@/components/SectionLabel';
-import { TempleLockup } from '@/components/TempleMark';
+import { TempleLockup, TempleMark } from '@/components/TempleMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   acceptInvite,
@@ -349,12 +348,7 @@ function Header() {
 function GymHeader({ info }: { info: InviteGym }) {
   return (
     <View className="items-center gap-3 pt-2">
-      <GymLogo
-        size={64}
-        logoUrl={info.logo_url}
-        name={info.name}
-        primaryColor={info.primary_color}
-      />
+      <TempleMark size={56} />
       <FieldLabel>
         You're joining
       </FieldLabel>

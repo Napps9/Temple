@@ -158,7 +158,7 @@ export default function SignInScreen() {
             />
             <Link href="/forgot-password" asChild>
               <Pressable hitSlop={8} accessibilityRole="button" className="self-end">
-                <Text className="text-primary text-sm">Forgot password?</Text>
+                <Text className="text-link text-sm font-medium">Forgot password?</Text>
               </Pressable>
             </Link>
           </View>
@@ -184,7 +184,7 @@ export default function SignInScreen() {
                 onPress={resend}
                 disabled={resendLoading}
                 accessibilityRole="button">
-                <Text className="text-primary text-sm">
+                <Text className="text-link text-sm font-medium">
                   {resendLoading
                     ? 'Sending…'
                     : 'Didn’t get the confirmation email? Resend it'}
@@ -204,7 +204,7 @@ export default function SignInScreen() {
           <View className="items-center">
             <Link href="/get-started" asChild>
               <Pressable hitSlop={8}>
-                <Text className="text-primary">New to Temple? Get started</Text>
+                <Text className="text-link font-medium">New to Temple? Get started</Text>
               </Pressable>
             </Link>
           </View>

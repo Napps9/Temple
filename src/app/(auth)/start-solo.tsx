@@ -261,7 +261,7 @@ export default function StartSoloScreen() {
             <View className="items-center pt-2">
               <Link href="/get-started" asChild>
                 <Pressable hitSlop={8}>
-                  <Text className="text-primary text-sm">
+                  <Text className="text-link text-sm font-medium">
                     Back to all three options
                   </Text>
                 </Pressable>

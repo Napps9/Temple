@@ -6,9 +6,9 @@ import { Check } from '@/components/Check';
 import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
-import { GymLogo } from '@/components/GymLogo';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
+import { TempleMark } from '@/components/TempleMark';
 import { FieldLabel } from '@/components/SectionLabel';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -107,7 +107,7 @@ export default function LeadCaptureScreen() {
           </Text>
           <Link href="/sign-in" asChild>
             <Pressable hitSlop={8}>
-              <Text className="text-primary">Sign in</Text>
+              <Text className="text-link font-medium">Sign in</Text>
             </Pressable>
           </Link>
         </View>
@@ -121,7 +121,7 @@ export default function LeadCaptureScreen() {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center gap-4 p-6">
-          <GymLogo size={64} logoUrl={info.logo_url} name={info.name} primaryColor={primary} />
+          <TempleMark size={56} />
           <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
             {info.name}
           </Text>
@@ -137,7 +137,7 @@ export default function LeadCaptureScreen() {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center gap-4 p-6">
-          <GymLogo size={64} logoUrl={info.logo_url} name={info.name} primaryColor={primary} />
+          <TempleMark size={56} />
           <Text className="text-ink dark:text-ink-dk text-xl font-semibold text-center">
             Thanks, {fullName.trim().split(' ')[0] || 'there'}!
           </Text>
@@ -157,7 +157,7 @@ export default function LeadCaptureScreen() {
         <ScrollView contentContainerClassName="py-8 px-4">
           <View className="gap-6 w-full max-w-md mx-auto">
             <View className="items-center gap-3 pt-4">
-              <GymLogo size={64} logoUrl={info.logo_url} name={info.name} primaryColor={primary} />
+              <TempleMark size={56} />
               <FieldLabel>
                 Enquire at
               </FieldLabel>
@@ -230,7 +230,7 @@ export default function LeadCaptureScreen() {
               <Text className="text-ink-3 dark:text-ink-3-dk text-xs text-center">
                 Already a member?{' '}
                 <Link href="/sign-in" asChild>
-                  <Text className="text-primary">Sign in</Text>
+                  <Text className="text-link font-medium">Sign in</Text>
                 </Link>
               </Text>
             </View>

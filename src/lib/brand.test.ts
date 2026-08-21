@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  gymInitial,
-  hexToPrimaryDarkRgbTriplet,
   hexToRgbTriplet,
   inviteUrl,
   joinUrl,
@@ -34,17 +32,6 @@ describe('slugify', () => {
   });
   it('returns empty for empty', () => {
     expect(slugify('')).toBe('');
-  });
-});
-
-describe('gymInitial', () => {
-  it('returns the first character upper-cased', () => {
-    expect(gymInitial('iron temple')).toBe('I');
-    expect(gymInitial('Temple')).toBe('T');
-  });
-  it('falls back to T for empty', () => {
-    expect(gymInitial('')).toBe('T');
-    expect(gymInitial('   ')).toBe('T');
   });
 });
 
@@ -91,21 +78,8 @@ describe('hexToRgbTriplet', () => {
     expect(hexToRgbTriplet('#FFFFFF')).toBe('255 255 255');
   });
   it('falls back to the default for malformed input', () => {
-    expect(hexToRgbTriplet('#nope')).toBe('59 107 165');
-    expect(hexToRgbTriplet('')).toBe('59 107 165');
-    expect(hexToRgbTriplet('zzzzzz')).toBe('59 107 165');
-  });
-});
-
-describe('hexToPrimaryDarkRgbTriplet', () => {
-  it('darkens each channel by ~15%', () => {
-    // 235 * 0.85 = 199.75 → 200; 99 * 0.85 = 84.15 → 84
-    expect(hexToPrimaryDarkRgbTriplet('#2563EB')).toBe('31 84 200');
-  });
-  it('keeps black at black', () => {
-    expect(hexToPrimaryDarkRgbTriplet('#000000')).toBe('0 0 0');
-  });
-  it('falls back to the default-dark on malformed input', () => {
-    expect(hexToPrimaryDarkRgbTriplet('nope')).toBe('50 91 140');
+    expect(hexToRgbTriplet('#nope')).toBe('194 65 12');
+    expect(hexToRgbTriplet('')).toBe('194 65 12');
+    expect(hexToRgbTriplet('zzzzzz')).toBe('194 65 12');
   });
 });

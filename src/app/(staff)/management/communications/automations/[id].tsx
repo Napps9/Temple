@@ -14,12 +14,7 @@ import { FieldLabel } from '@/components/SectionLabel';
 import { EmailEditor } from '@/components/email/EmailEditor';
 import { HtmlPreview } from '@/components/email/HtmlPreview';
 import { useGymMembership, useSession } from '@/lib/auth';
-import {
-  coerceDocument,
-  documentWarnings,
-  starterDocument,
-  type EmailDocument,
-} from '@/lib/email/blocks';
+import { FALLBACK_BRAND_SEED, coerceDocument, documentWarnings, starterDocument, type EmailDocument } from '@/lib/email/blocks';
 import { knobToStorage, storageToKnob } from '@/lib/email/automation-knob';
 import { useGymTagLabels } from '@/lib/comms';
 import { renderEmailHtml, renderEmailText } from '@/lib/email/render';
@@ -258,9 +253,9 @@ export default function AutomationEditor() {
   const queryClient = useQueryClient();
 
   const brandSeed = {
-    primaryColor: brand.primaryColor,
-    secondaryColor: brand.secondaryColor,
-    textColor: brand.textColor,
+    primaryColor: FALLBACK_BRAND_SEED.primaryColor,
+    secondaryColor: FALLBACK_BRAND_SEED.secondaryColor,
+    textColor: FALLBACK_BRAND_SEED.textColor,
   };
 
   const automation = useQuery({
@@ -549,8 +544,7 @@ export default function AutomationEditor() {
     mutationFn: async (): Promise<StepRow> => {
       const doc0 = starterDocument(brandSeed, {
         gymName: brand.gymName,
-        logoUrl: brand.logoUrl,
-      });
+        });
       const { data, error: e } = await supabase
         .from('email_automation_steps')
         .insert({

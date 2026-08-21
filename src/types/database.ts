@@ -5012,20 +5012,6 @@ export type Database = {
         Args: { p_slug: string };
         Returns: string;
       };
-      set_gym_branding: {
-        Args: {
-          p_gym_id: string;
-          p_logo_url: string | null;
-          p_primary_color: string;
-          p_secondary_color: string;
-          p_text_color: string;
-          p_logo_url_dark?: string | null;
-          p_primary_color_dark?: string | null;
-          p_secondary_color_dark?: string | null;
-          p_text_color_dark?: string | null;
-        };
-        Returns: null;
-      };
       set_gym_name: {
         Args: { p_gym_id: string; p_name: string };
         Returns: null;

@@ -1,56 +1,23 @@
-// Pure brand helpers — colour normalisation, slug suggestion, logo
-// fallback initial. The React hook that reads the gym's row from
-// Supabase lives separately in useGymBrand.ts so this module stays
-// free of React / RN deps and is unit-testable in vitest.
+// Pure gym helpers — slug suggestion, the share URLs, and the hex
+// normaliser the content colour pickers use. The React hook that reads
+// the gym's row from Supabase lives separately in useGymBrand.ts so this
+// module stays free of React / RN deps and is unit-testable in vitest.
 
-export const DEFAULT_BRAND = {
-  primaryColor: '#3B6BA5',
-  secondaryColor: '#0F172A',
-  textColor: '#0F172A',
-} as const;
-
-// Per-mode (light vs dark) brand surface. Each mode owns its own logo
-// and its own three brand colours so a gym with an inverse logo for
-// dark backgrounds (and lifted brand colours that read on dark
-// chrome) can configure both. When the dark fields are unset they're
-// derived from the light ones at read time — see useGymBrand.ts.
-export type BrandMode = {
-  logoUrl: string | null;
-  primaryColor: string;
-  secondaryColor: string;
-  textColor: string;
-};
-
-export type GymBrand = {
+// Who a gym is. Colours and logos used to live here too — a gym set six
+// hexes and uploaded two logos, and the app rendered itself in them.
+// Temple's chrome is Temple's now, so a gym is its name and its slug.
+export type GymIdentity = {
   gymId: string | null;
   gymName: string;
   slug: string | null;
   publicSignupEnabled: boolean;
-  // Resolved for the active colour scheme — what the chrome should
-  // render right now. Every consumer (TopNav, Button, QR cards, …)
-  // reads from here without caring which mode is active.
-  logoUrl: string | null;
-  primaryColor: string;
-  secondaryColor: string;
-  textColor: string;
-  // Both modes, exposed so the Advanced branding editor and the live
-  // preview can render the pair side-by-side. The dark mode is
-  // auto-derived from light when no explicit dark values were saved.
-  modes: { light: BrandMode; dark: BrandMode };
 };
 
-const FALLBACK_MODE: BrandMode = {
-  logoUrl: null,
-  ...DEFAULT_BRAND,
-};
-
-export const FALLBACK_BRAND: GymBrand = {
+export const FALLBACK_GYM: GymIdentity = {
   gymId: null,
   gymName: 'Temple',
   slug: null,
   publicSignupEnabled: true,
-  ...FALLBACK_MODE,
-  modes: { light: FALLBACK_MODE, dark: FALLBACK_MODE },
 };
 
 // Normalise a hex input the user typed into the colour fields:
@@ -105,36 +72,16 @@ export function inviteUrl(origin: string, code: string): string {
   return `${cleanedOrigin}/accept-invite?code=${encodeURIComponent(code)}`;
 }
 
-// Default RGB triplet for the build-time primary; returned when a hex
-// can't be parsed so a malformed `gyms.primary_color` never blanks the
-// chrome.
-const DEFAULT_PRIMARY_RGB = '59 107 165';
-const DEFAULT_PRIMARY_DARK_RGB = '50 91 140';
+// Convert "#C2410C" → "194 65 12" (space-separated RGB triplet) for the
+// CSS variables Tailwind splices into `rgb(... / <alpha-value>)`. Only
+// ThemedShell calls it, to push ACCENT into the `primary` token.
+const FALLBACK_TRIPLET = '194 65 12';
 
-// Convert "#2563EB" → "37 99 235" (space-separated RGB triplet) for
-// CSS variables that Tailwind splices into `rgb(... / <alpha-value>)`.
-// Accepts hex with or without the leading hash; falls back to the
-// default blue if the input isn't a valid 6-char hex.
 export function hexToRgbTriplet(hex: string): string {
   const clean = hex.replace(/^#/, '');
-  if (!/^[0-9A-Fa-f]{6}$/.test(clean)) return DEFAULT_PRIMARY_RGB;
+  if (!/^[0-9A-Fa-f]{6}$/.test(clean)) return FALLBACK_TRIPLET;
   const r = parseInt(clean.slice(0, 2), 16);
   const g = parseInt(clean.slice(2, 4), 16);
   const b = parseInt(clean.slice(4, 6), 16);
-  return `${r} ${g} ${b}`;
-}
-
-// `primary-dark` is the pressed/hover variant of primary. Tailwind
-// shipped `bg-primary-dark` for active states on Button, so the
-// runtime token needs to track primary at ~15% darker. Returning the
-// triplet form keeps it usable in the same `rgb(... / <alpha-value>)`
-// shape.
-export function hexToPrimaryDarkRgbTriplet(hex: string): string {
-  const clean = hex.replace(/^#/, '');
-  if (!/^[0-9A-Fa-f]{6}$/.test(clean)) return DEFAULT_PRIMARY_DARK_RGB;
-  const darken = (c: number) => Math.max(0, Math.round(c * 0.85));
-  const r = darken(parseInt(clean.slice(0, 2), 16));
-  const g = darken(parseInt(clean.slice(2, 4), 16));
-  const b = darken(parseInt(clean.slice(4, 6), 16));
   return `${r} ${g} ${b}`;
 }

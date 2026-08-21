@@ -557,117 +557,6 @@ export const reopenGym: ActionSpec<Reopen> = {
 };
 
 // ============================================================================
-// gym.set_colour
-// ============================================================================
-//
-// The one branding change an owner makes more than once. Logos are a file
-// picker and the Branding card keeps them; a colour is a sentence.
-//
-// Dark mode is the whole subtlety. primary_color_dark is nullable and
-// means "derive it from the light one", so a gym that has never opened the
-// editor gets both modes moved by this and a gym that hand-picked a dark
-// colour keeps it. Which of those happened is said on the card, because
-// silently discarding a deliberate choice and silently ignoring a change
-// are both wrong and they look identical from outside.
-
-const HEX = /^#[0-9A-Fa-f]{6}$/;
-
-type Branding = {
-  logo_url: string | null;
-  primary_color: string;
-  secondary_color: string;
-  text_color: string;
-  logo_url_dark: string | null;
-  primary_color_dark: string | null;
-  secondary_color_dark: string | null;
-  text_color_dark: string | null;
-};
-
-async function currentBranding(ctx: ActionContext): Promise<Branding | null> {
-  const { data } = await ctx.supabase
-    .from('gyms')
-    .select(
-      'logo_url, primary_color, secondary_color, text_color, logo_url_dark, ' +
-        'primary_color_dark, secondary_color_dark, text_color_dark',
-    )
-    .eq('id', ctx.gymId)
-    .maybeSingle();
-  return (data as Branding | null) ?? null;
-}
-
-export const setGymColour: ActionSpec<{ colour: string }> = {
-  name: 'gym.set_colour',
-  kind: 'do',
-  capability: null,
-  // set_gym_branding asks user_is_owner_of, and the gym's identity is an
-  // owner's decision rather than a grantable one.
-  roles: ['owner'],
-  says:
-    'Change the gym\'s brand colour — "make our colour navy", "our brand ' +
-    'colour is #E11D48", "change the app colour to dark green". Only the ' +
-    'colour; a logo is a file and lives on the Branding card.',
-  args: [
-    {
-      name: 'colour',
-      type: 'string',
-      desc:
-        'The colour as a 6-digit hex with a leading #, e.g. "#E11D48". If ' +
-        'they named a colour in words ("navy", "dark green"), convert it to ' +
-        'its hex yourself. If you cannot tell what colour they mean, leave ' +
-        'it out rather than guessing.',
-      required: true,
-    },
-  ],
-  invalidate: ['gym-brand'],
-  sanitise: (raw) => {
-    const colour = argString(raw, 'colour', 7);
-    return colour && HEX.test(colour) ? { colour: colour.toUpperCase() } : null;
-  },
-  preview: async (a, ctx) => {
-    const b = await currentBranding(ctx);
-    if (!b) {
-      return { title: 'I could not read your branding.', lines: [] };
-    }
-    if (b.primary_color.toUpperCase() === a.colour) {
-      return { title: `Your brand colour is already ${a.colour}.`, lines: [] };
-    }
-    return {
-      title: `Change your brand colour to ${a.colour}?`,
-      lines: [
-        `${b.primary_color.toUpperCase()} → ${a.colour}, everywhere the app uses your colour — buttons, links, your join page and your website.`,
-        b.primary_color_dark === null
-          ? 'Dark mode follows it automatically.'
-          : 'Your hand-picked dark-mode colour stays as it is — change that one on the Branding card.',
-      ],
-      yes: 'Yes, change it',
-    };
-  },
-  apply: async (a, ctx) => {
-    const b = await currentBranding(ctx);
-    if (!b) throw new ActionError('I could not read your branding.');
-    const { error } = await ctx.supabase.rpc('set_gym_branding', {
-      p_gym_id: ctx.gymId,
-      p_logo_url: b.logo_url,
-      p_primary_color: a.colour,
-      p_secondary_color: b.secondary_color,
-      p_text_color: b.text_color,
-      p_logo_url_dark: b.logo_url_dark,
-      p_primary_color_dark: b.primary_color_dark,
-      p_secondary_color_dark: b.secondary_color_dark,
-      p_text_color_dark: b.text_color_dark,
-    });
-    if (error) {
-      throw new ActionError(
-        /not authorised|row-level security|permission/i.test(error.message)
-          ? 'Only an owner can change the gym’s branding.'
-          : "That didn't save — try again.",
-      );
-    }
-    return `Your brand colour is now ${a.colour}.`;
-  },
-};
-
-// ============================================================================
 // gym.rename
 // ============================================================================
 //
@@ -744,7 +633,6 @@ export const GYM_ACTIONS: AnyAction[] = [
   erase(addPlans),
   erase(closeGym),
   erase(reopenGym),
-  erase(setGymColour),
   erase(renameGym),
   erase(draftNewsletter),
 ];

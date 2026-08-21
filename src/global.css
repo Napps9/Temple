@@ -2,14 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Brand colour defaults. Stored as space-separated RGB triplets so
-   Tailwind's `<alpha-value>` syntax in tailwind.config.js can splice
-   in an opacity (bg-primary/10, text-primary/50, etc.). The values
-   are overridden at runtime by ThemedShell once useGymBrand() resolves
-   the gym's saved primary_color. */
+/* Temple's accent, as space-separated RGB triplets so Tailwind's
+   `<alpha-value>` syntax in tailwind.config.js can splice in an opacity
+   (bg-primary/10, text-primary/50, …).
+
+   These are the light-scheme values and they exist for first paint on
+   web only. ThemedShell writes the scheme-correct pair over them from
+   ACCENT in src/lib/theme.ts, which is also what native reads — native
+   never parses this file, so the constants have to live in TS. */
 :root {
-  --color-primary: 59 107 165;
-  --color-primary-dark: 50 91 140;
-  --color-link: 15 23 42;
-  --color-secondary: 15 23 42;
+  --color-primary: 194 65 12;
+  --color-primary-dark: 165 55 10;
+  --color-link: 20 22 26;
+  --color-secondary: 20 22 26;
 }

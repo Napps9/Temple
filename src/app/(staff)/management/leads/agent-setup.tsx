@@ -17,7 +17,7 @@ import { VoiceSampleButton } from '@/components/VoiceSampleButton';
 import { provisionFrontDesk, syncVapiAssistant } from '@/lib/agent-sync';
 import { AGENT_VOICES } from '@/lib/agent-voices';
 import { useGymMembership } from '@/lib/auth';
-import { contrastRatio } from '@/lib/brand-derivation';
+import { contrastRatio } from '@/lib/contrast';
 import { copyToClipboard } from '@/lib/clipboard';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';

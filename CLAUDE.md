@@ -22,9 +22,10 @@ already exist.
 
 - **App**: Expo Router (Expo 56) on React Native + React Native Web
 - **Styling**: NativeWind 4 (Tailwind-flavoured), `darkMode: 'class'`,
-  the `primary` colour token is driven by a runtime CSS variable that
-  follows the gym's saved brand colour (light vs dark resolved at
-  scheme change). Don't hard-code `#2563EB` — use
+  the `primary` colour token is driven by a runtime CSS variable
+  carrying **Temple's accent** — `#C2410C` light, `#F0783C` dark, from
+  `ACCENT` in `src/lib/theme.ts`. Gyms used to set that colour; they no
+  longer recolour Temple's chrome. Don't hard-code the hex — use
   `useThemeColors().primary`.
 - **Data**: `@tanstack/react-query` for client state, Supabase (RLS
   Postgres + Storage + Auth) for everything else.
@@ -199,15 +200,20 @@ Gotchas seen in this codebase:
   RPC, a card's save sends the server's values for the other cards'
   fields; seed drafts once (don't reseed on refetch) so saving one
   card can't wipe or commit another card's unsaved edits.
-- **Brand colours**: use `useThemeColors().primary` for runtime icon
-  tints. `bg-primary` / `text-primary` etc. work via the Tailwind
-  runtime CSS variable. The five legitimate hard-coded `#2563EB`
-  literals: create-gym placeholder text, branding picker default,
-  `_layout.tsx` CrashScreen, `index.tsx` pre-membership loading
-  spinner, `ColorSwatchPicker` preset.
-- **`useGymBrand()`** returns the resolved-for-active-scheme brand at
-  the top level (`primaryColor`, `logoUrl`, `gymName`) plus
-  `modes: { light, dark }` for the editor.
+- **The accent**: use `useThemeColors().primary` for runtime icon
+  tints; `bg-primary` / `text-primary` etc. work via the Tailwind
+  runtime CSS variable. `ThemedShell` in `_layout.tsx` is the only
+  writer, and `src/global.css` holds the light values for web's first
+  paint (native never parses that file, so the constants live in TS).
+  It is **one accent per view** — the page's single action. Repeated row
+  actions are ink.
+- **`useGymBrand()`** returns a gym's *identity* — `gymName`, `slug`,
+  `gymId`, `publicSignupEnabled`. No colours and no logo: a gym is
+  named, not painted.
+- **Content colour is not brand.** Class-type dots, tag colours and
+  email/site themes are authored per item and stay — that's
+  `ColorSwatchPicker`, `brand-themes.ts`, and the gym's public website,
+  which keeps whatever logo and tint its snapshot holds.
 
 ---
 

@@ -224,7 +224,9 @@ describe('finding it by typing', () => {
 
   it('finds a surface by a word in its description', () => {
     expect(searchBackOffice('stock', all).map((e) => e.title)).toEqual(['Store']);
-    expect(searchBackOffice('logo', all).map((e) => e.title)).toEqual(['Branding']);
+    expect(searchBackOffice('join link', all).map((e) => e.title)).toEqual([
+      'Gym details',
+    ]);
   });
 
   it('finds one by the category it lives under', () => {
@@ -275,7 +277,6 @@ describe('finding it by typing', () => {
       'waiver',
       'export',
       'vat',
-      'logo',
       'permissions',
       'holiday',
       'newsletter',
@@ -428,9 +429,9 @@ describe('the screen reads the manifest', () => {
   it('has a settings section behind every section link', () => {
     const named = BACK_OFFICE.filter((e) => e.section);
     expect(named.map((e) => e.title).sort()).toEqual([
-      'Branding',
       'Class types',
       'Closures',
+      'Gym details',
       'Gym settings',
       'Health screening',
       'Leaderboards',
@@ -487,7 +488,6 @@ describe('the screen reads the manifest', () => {
     const steps = BACK_OFFICE.filter((e) => e.setupStep);
     expect(steps.map((e) => e.setupStep!.key).sort()).toEqual([
       'class_type_and_schedule',
-      'logo',
       'parq',
       'settings',
     ]);

@@ -14,7 +14,7 @@ import { useThemeColors } from '@/lib/theme';
 // Setup checklist shown to the gym owner on the Manage home page while
 // the gym is still being stood up. Each step is derived from a
 // concrete query against the live data — when the owner uploads a
-// logo / publishes PAR-Q / adds a plan, the matching step flips done.
+// publishes PAR-Q / adds a plan, the matching step flips done.
 // The card stays put until every step (required and optional) is done,
 // or the owner dismisses it — both surfaces share the
 // onboarding_dismissed_at flag — so setup is always one place away and
@@ -27,7 +27,6 @@ import { useThemeColors } from '@/lib/theme';
 
 type Step = {
   key:
-    | 'logo'
     | 'settings'
     | 'class_type_and_schedule'
     | 'parq'
@@ -49,13 +48,6 @@ type Step = {
 };
 
 const STEPS: Step[] = [
-  {
-    key: 'logo',
-    label: 'Add your gym logo',
-    description: 'A logo makes the app feel like your gym, not a template.',
-    section: 'branding',
-    icon: 'image-outline',
-  },
   {
     key: 'settings',
     label: 'Set your gym settings',

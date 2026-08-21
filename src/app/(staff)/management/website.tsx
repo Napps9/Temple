@@ -103,7 +103,17 @@ async function autoPopulateImages(
   }
 }
 
-type GymWebsiteSettings = { websiteBuilderEnabled: boolean; currency: string };
+// The gym's own public site is the gym's content, not Temple's chrome:
+// it keeps the logo and accent stored on the row, and the published
+// renderer in api/site reads the same two from its snapshot. Temple's
+// app no longer offers an editor for them, so this is whatever a gym
+// set before — the preview has to read it here to match what ships.
+type GymWebsiteSettings = {
+  websiteBuilderEnabled: boolean;
+  currency: string;
+  logoUrl: string | null;
+  primaryColor: string;
+};
 
 function useGymWebsiteSettings(gymId: string | null | undefined) {
   return useQuery({
@@ -112,11 +122,16 @@ function useGymWebsiteSettings(gymId: string | null | undefined) {
     queryFn: async (): Promise<GymWebsiteSettings> => {
       const { data, error } = await supabase
         .from('gyms')
-        .select('website_builder_enabled, currency')
+        .select('website_builder_enabled, currency, logo_url, primary_color')
         .eq('id', gymId!)
         .single();
       if (error) throw error;
-      return { websiteBuilderEnabled: data.website_builder_enabled, currency: data.currency };
+      return {
+        websiteBuilderEnabled: data.website_builder_enabled,
+        currency: data.currency,
+        logoUrl: data.logo_url,
+        primaryColor: data.primary_color,
+      };
     },
   });
 }
@@ -626,7 +641,7 @@ export default function WebsiteManageScreen() {
           {error ? <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text> : null}
           <View className="gap-3">
             {SITE_TEMPLATE_LIST.map((t) => {
-              const composed = composeThemeWithBrand(BRAND_THEMES[t.themeId], brand.primaryColor);
+              const composed = composeThemeWithBrand(BRAND_THEMES[t.themeId], colors.primary);
               return (
                 <Pressable
                   key={t.id}
@@ -813,11 +828,14 @@ export default function WebsiteManageScreen() {
   const editorDoc: SiteEditorDocument = { settings: document.settings, blocks: activePage.blocks };
 
   const themeId = isThemeId(document.settings.themeId) ? document.settings.themeId : 'forged';
-  const composedTheme = composeThemeWithBrand(BRAND_THEMES[themeId], brand.primaryColor);
+  const composedTheme = composeThemeWithBrand(
+    BRAND_THEMES[themeId],
+    settings.data?.primaryColor ?? '',
+  );
   const siteRenderCtx = {
     slug: brand.slug ?? '',
     gymName: brand.gymName,
-    gymLogoUrl: brand.logoUrl,
+    gymLogoUrl: settings.data?.logoUrl ?? null,
     gymCurrency: settings.data?.currency ?? 'GBP',
     theme: composedTheme,
     schedule: preview.schedule.data ?? [],
@@ -1031,7 +1049,7 @@ export default function WebsiteManageScreen() {
                   onChange={handlePanelChange}
                   gymId={brand.gymId ?? ''}
                   gymName={brand.gymName}
-                  brandPrimaryColor={brand.primaryColor}
+                  brandPrimaryColor={colors.primary}
                   compact
                   selectedId={selectedId}
                   onSelectBlock={setSelectedId}
@@ -1063,7 +1081,7 @@ export default function WebsiteManageScreen() {
               onChange={handlePanelChange}
               gymId={brand.gymId ?? ''}
               gymName={brand.gymName}
-              brandPrimaryColor={brand.primaryColor}
+              brandPrimaryColor={colors.primary}
               selectedId={selectedId}
               onSelectBlock={setSelectedId}
             />

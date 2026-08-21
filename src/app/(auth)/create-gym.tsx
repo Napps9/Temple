@@ -4,9 +4,7 @@ import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { Text } from '@/components/Text';
 
-import { BrandPreview } from '@/components/BrandPreview';
 import { Button } from '@/components/Button';
-import { ColourField } from '@/components/ColourField';
 import { Input } from '@/components/Input';
 import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { Screen } from '@/components/Screen';
@@ -18,11 +16,11 @@ import {
   resendConfirmation,
   useSession,
 } from '@/lib/auth';
-import { DEFAULT_BRAND, normaliseHex, slugify } from '@/lib/brand';
+import { slugify } from '@/lib/brand';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 
-type Step = 'account' | 'gym' | 'check_email' | 'brand';
+type Step = 'account' | 'gym' | 'check_email';
 
 export default function CreateGymScreen() {
   const session = useSession();
@@ -40,14 +38,6 @@ export default function CreateGymScreen() {
   const slugTouched = useMemo(() => gymSlug !== '' && gymSlug !== slugify(gymName), [gymName, gymSlug]);
   const effectiveSlug = slugTouched ? gymSlug : slugify(gymName);
 
-  // Branding
-  const [primary, setPrimary] = useState<string>(DEFAULT_BRAND.primaryColor);
-  const [secondary, setSecondary] = useState<string>(DEFAULT_BRAND.secondaryColor);
-  const [textColor, setTextColor] = useState<string>(DEFAULT_BRAND.textColor);
-  const [pickerFor, setPickerFor] = useState<
-    null | 'primary' | 'secondary' | 'text'
-  >(null);
-
   // Save state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,10 +47,10 @@ export default function CreateGymScreen() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendNotice, setResendNotice] = useState<string | null>(null);
 
-  // Brand is collected *before* the gym is created so it can be stashed
-  // in user_metadata and survive an email-confirmation round trip — this
-  // step just validates the account/gym fields and advances.
-  function continueToBrand() {
+  // Validates the account/gym fields, then creates. There used to be a
+  // Brand step after this one, collecting three hexes before the gym
+  // existed so they could survive an email-confirmation round trip.
+  function submit() {
     setError(null);
     if (!session) {
       if (!email.trim() || !password) {
@@ -80,7 +70,7 @@ export default function CreateGymScreen() {
       setError('Slug must contain at least one letter or digit');
       return;
     }
-    setStep('brand');
+    void createGym();
   }
 
   async function resend() {
@@ -107,15 +97,8 @@ export default function CreateGymScreen() {
     setStep('account');
   }
 
-  async function createWithBrand() {
+  async function createGym() {
     setError(null);
-    const p = normaliseHex(primary);
-    const s = normaliseHex(secondary);
-    const t = normaliseHex(textColor);
-    if (!p || !s || !t) {
-      setError('Each colour needs to be a valid 6-character hex (e.g. #3B6BA5)');
-      return;
-    }
     setLoading(true);
     try {
       if (session) {
@@ -126,14 +109,6 @@ export default function CreateGymScreen() {
           p_slug: effectiveSlug,
         });
         if (rpcError) throw rpcError;
-        const { error: brandError } = await supabase.rpc('set_gym_branding', {
-          p_gym_id: data as unknown as string,
-          p_logo_url: null,
-          p_primary_color: p,
-          p_secondary_color: s,
-          p_text_color: t,
-        });
-        if (brandError) throw brandError;
         await refreshMembership(queryClient);
         queryClient.invalidateQueries({ queryKey: ['gym-brand'] });
         router.replace('/' as never);
@@ -144,9 +119,6 @@ export default function CreateGymScreen() {
           fullName: fullName.trim(),
           gymName: gymName.trim(),
           gymSlug: effectiveSlug,
-          primaryColor: p,
-          secondaryColor: s,
-          textColor: t,
         });
         if (result.status === 'pending_confirmation') {
           setPendingEmail(result.email);
@@ -165,9 +137,6 @@ export default function CreateGymScreen() {
     }
   }
 
-  const validPrimary = normaliseHex(primary) ?? DEFAULT_BRAND.primaryColor;
-  const validSecondary = normaliseHex(secondary) ?? DEFAULT_BRAND.secondaryColor;
-  const validText = normaliseHex(textColor) ?? DEFAULT_BRAND.textColor;
 
   return (
     <Screen>
@@ -187,11 +156,9 @@ export default function CreateGymScreen() {
                 Start a new gym
               </Text>
               <Text className="text-ink-2 dark:text-ink-2-dk">
-                {step === 'brand'
-                  ? 'Pick your colours. You can refine these in settings later.'
-                  : step === 'check_email'
-                    ? "Confirm your email so we can keep your gym safe."
-                    : 'Tell us about you and the gym you run.'}
+                {step === 'check_email'
+                  ? 'Confirm your email so we can keep your gym safe.'
+                  : 'Tell us about you and the gym you run.'}
               </Text>
             </View>
 
@@ -234,7 +201,7 @@ export default function CreateGymScreen() {
                 <View className="items-center pt-1">
                   <Link href="/sign-in" asChild>
                     <Pressable hitSlop={8}>
-                      <Text className="text-primary text-sm">
+                      <Text className="text-link text-sm font-medium">
                         Already confirmed? Sign in
                       </Text>
                     </Pressable>
@@ -243,7 +210,7 @@ export default function CreateGymScreen() {
               </View>
             ) : null}
 
-            {step !== 'brand' && step !== 'check_email' ? (
+            {step !== 'check_email' ? (
               <View className="gap-4">
                 {!session ? (
                   <>
@@ -297,59 +264,14 @@ export default function CreateGymScreen() {
                 {error ? (
                   <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
                 ) : null}
-                <Button onPress={continueToBrand}>Continue</Button>
-              </View>
-            ) : null}
-
-            {step === 'brand' ? (
-              <View className="gap-4">
-                <BrandPreview
-                  gymName={gymName}
-                  logoUrl={null}
-                  primaryColor={validPrimary}
-                  secondaryColor={validSecondary}
-                  textColor={validText}
-                />
-                <ColourField
-                  label="Primary colour"
-                  value={primary}
-                  onChange={setPrimary}
-                  pickerOpen={pickerFor === 'primary'}
-                  onPick={() =>
-                    setPickerFor(pickerFor === 'primary' ? null : 'primary')
-                  }
-                />
-                <ColourField
-                  label="Secondary colour"
-                  value={secondary}
-                  onChange={setSecondary}
-                  pickerOpen={pickerFor === 'secondary'}
-                  onPick={() =>
-                    setPickerFor(pickerFor === 'secondary' ? null : 'secondary')
-                  }
-                />
-                <ColourField
-                  label="Text colour"
-                  value={textColor}
-                  onChange={setTextColor}
-                  pickerOpen={pickerFor === 'text'}
-                  onPick={() =>
-                    setPickerFor(pickerFor === 'text' ? null : 'text')
-                  }
-                />
-                {error ? (
-                  <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
-                ) : null}
-                <Button onPress={createWithBrand} loading={loading}>
-                  Create gym
-                </Button>
+                <Button onPress={submit} loading={loading}>Create gym</Button>
               </View>
             ) : null}
 
             <View className="items-center pt-2">
               <Link href="/sign-in" asChild>
                 <Pressable hitSlop={8}>
-                  <Text className="text-primary">
+                  <Text className="text-link font-medium">
                     Have an account? Sign in
                   </Text>
                 </Pressable>
@@ -368,16 +290,13 @@ function Steps({ current }: { current: Step }) {
   const labels: { key: Step; label: string }[] = [
     { key: 'account', label: 'Account' },
     { key: 'gym', label: 'Gym' },
-    { key: 'brand', label: 'Brand' },
   ];
   // 'check_email' sits between 'gym' and 'brand' — for the bar it
-  // counts as "gym done, brand pending" so the user can see they're
-  // most of the way through.
+  // counts as "gym done" so the user can see they're through the form.
   const passes: Record<Step, number> = {
     account: 0,
     gym: 1,
     check_email: 2,
-    brand: 2,
   };
   const progress = passes[current] ?? 0;
   return (

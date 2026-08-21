@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { contrastRatio } from './brand-derivation';
+import { contrastRatio } from './contrast';
 import {
   BRAND_THEME_LIST,
   BRAND_THEMES,

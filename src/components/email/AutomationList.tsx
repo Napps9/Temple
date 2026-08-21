@@ -10,7 +10,7 @@ import { SectionLabel } from '@/components/SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { DEFAULT_AUTOMATION_WAIT_DAYS } from '@/lib/email/automation-knob';
 import { renderEmailHtml, renderEmailText } from '@/lib/email/render';
-import { starterDocument } from '@/lib/email/blocks';
+import { FALLBACK_BRAND_SEED, starterDocument } from '@/lib/email/blocks';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -83,11 +83,11 @@ export function AutomationList() {
     mutationFn: async () => {
       const doc = starterDocument(
         {
-          primaryColor: brand.primaryColor,
-          secondaryColor: brand.secondaryColor,
-          textColor: brand.textColor,
+          primaryColor: FALLBACK_BRAND_SEED.primaryColor,
+          secondaryColor: FALLBACK_BRAND_SEED.secondaryColor,
+          textColor: FALLBACK_BRAND_SEED.textColor,
         },
-        { gymName: brand.gymName, logoUrl: brand.logoUrl },
+        { gymName: brand.gymName, },
       );
       const { data, error: e } = await supabase
         .from('email_automations')

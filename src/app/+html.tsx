@@ -11,8 +11,8 @@ import type { PropsWithChildren } from 'react';
 // preference via the NavModal).
 //
 // Hex values mirror src/lib/theme.ts (screenBg) and tailwind.config.js
-// (the ramp's ground / ground-dk). Single-sourcing is a small follow-up; not worth the
-// CSS-variable pipework for two extra references right now.
+// (the ramp's `ground`). Single-sourcing is a small follow-up; not worth
+// the CSS-variable pipework for two extra references right now.
 export default function Root({ children }: PropsWithChildren) {
   return (
     <html lang="en">
@@ -28,11 +28,15 @@ export default function Root({ children }: PropsWithChildren) {
             useThemePreference effect swaps to dark for users who've
             explicitly chosen it; first-paint flash for that group is
             acceptable since they've opted in. */}
-        <meta name="theme-color" content="#F1F5F9" />
+        <meta name="theme-color" content="#F7F7F8" />
+        {/* Temple's PWA identity, static since gyms no longer rebrand the
+            app. This used to be a data-URL manifest written at runtime
+            from the gym's logo and colour. */}
+        <link rel="manifest" href="/manifest.json" />
         <style
           dangerouslySetInnerHTML={{
             __html: `
-              html, body { margin: 0; background-color: #F1F5F9; }
+              html, body { margin: 0; background-color: #F7F7F8; }
             `,
           }}
         />

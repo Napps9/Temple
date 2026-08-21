@@ -3170,16 +3170,17 @@ The Manage page presents a tab strip:
     putting classes back when it reopens. Its own card rather than part of
     Gym settings above, because it has always been gated on who may
     bulk-edit classes rather than on who manages staff.
-  - **Branding** — gym name, slug, logo upload, primary / secondary /
-    text colours with inline HSV picker, public-signup toggle. An
-    **Advanced branding** collapsible adds a dark-mode logo and a
-    second colour palette — any field left blank is auto-derived from
-    the light values via WCAG-contrast against the dark screen bg
-    (`deriveDarkColour`), and a one-tap "Auto-generate from light"
-    button fills the lot. The runtime `useGymBrand` resolves the right
-    set based on the active colour scheme, so every chrome consumer
-    (TopNav, Button, QR cards…) flips automatically when the user
-    toggles light/dark.
+  - **Gym details** — gym name, slug, public-signup toggle, enquiry-link
+    toggle. This was **Branding**, and it was the whole per-gym theming
+    system: a logo upload per scheme, three colours per scheme with an
+    inline HSV picker, an Advanced collapsible that auto-derived the
+    dark palette from the light one by WCAG contrast, and a runtime
+    `useGymBrand` that pushed the result into Tailwind's `primary` token
+    so the nav mark, every button and even the PWA icon wore the gym's
+    colours. **Removed.** Temple's chrome is Temple's — one accent,
+    `#C2410C` light / `#F0783C` dark — and a gym is identified by its
+    name. The `gyms` colour and logo columns are kept, not dropped, so
+    an already-published gym website still renders from its snapshot.
   - **Health screening** [`can_manage_parq`] — upload a waiver PDF for
     members to sign (primary), and/or build a question-by-question
     PAR-Q (optional extra); publish new versions of either. One is

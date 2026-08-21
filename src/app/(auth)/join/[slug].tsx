@@ -5,10 +5,10 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'rea
 import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
-import { GymLogo } from '@/components/GymLogo';
 import { Input } from '@/components/Input';
 import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { Screen } from '@/components/Screen';
+import { TempleMark } from '@/components/TempleMark';
 import { FieldLabel } from '@/components/SectionLabel';
 import {
   joinGymBySlug,
@@ -192,7 +192,7 @@ export default function JoinGymScreen() {
           </Text>
           <Link href="/sign-in" asChild>
             <Pressable hitSlop={8}>
-              <Text className="text-primary">Sign in</Text>
+              <Text className="text-link font-medium">Sign in</Text>
             </Pressable>
           </Link>
         </View>
@@ -206,12 +206,7 @@ export default function JoinGymScreen() {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center gap-4 p-6">
-          <GymLogo
-            size={64}
-            logoUrl={info.logo_url}
-            name={info.name}
-            primaryColor={primary}
-          />
+          <TempleMark size={56} />
           <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
             {info.name}
           </Text>
@@ -231,12 +226,7 @@ export default function JoinGymScreen() {
         <ScrollView contentContainerClassName="py-8 px-4">
           <View className="gap-6 w-full max-w-md mx-auto">
             <View className="items-center gap-3 pt-4">
-              <GymLogo
-                size={64}
-                logoUrl={info.logo_url}
-                name={info.name}
-                primaryColor={primary}
-              />
+              <TempleMark size={56} />
               <FieldLabel>
                 You're joining
               </FieldLabel>
@@ -330,7 +320,7 @@ export default function JoinGymScreen() {
                         onPress={sendFreshLink}
                         disabled={freshLinkLoading}
                         accessibilityRole="button">
-                        <Text className="text-primary text-sm">
+                        <Text className="text-link text-sm font-medium">
                           {freshLinkLoading ? 'Sending…' : 'Email me a fresh link'}
                         </Text>
                       </Pressable>
@@ -378,7 +368,7 @@ export default function JoinGymScreen() {
                 <View className="items-center">
                   <Link href="/sign-in" asChild>
                     <Pressable hitSlop={8}>
-                      <Text className="text-primary text-sm">
+                      <Text className="text-link text-sm font-medium">
                         Already have an account? Sign in
                       </Text>
                     </Pressable>

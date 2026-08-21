@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { GymLogo } from './GymLogo';
+import { TempleMark } from './TempleMark';
 import { NavAccountMenu } from './NavAccountMenu';
 import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
@@ -137,12 +137,7 @@ export function TopNav({
             }}
             hitSlop={6}
             className="flex-row items-center gap-3 hover:opacity-80 active:opacity-70">
-            <GymLogo
-              size={36}
-              logoUrl={brand.logoUrl}
-              name={gymName}
-              primaryColor={brand.primaryColor}
-            />
+            <TempleMark size={30} />
             <Text
               className="text-ink dark:text-ink-dk font-semibold text-base hidden lg:flex"
               numberOfLines={1}>

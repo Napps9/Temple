@@ -4,11 +4,10 @@ Temple-the-company's identity. The mark lives in code
 (`src/components/TempleMark.tsx`); the flat files in
 `assets/images/temple-brand/` are generated from it.
 
-This is the **product/company identity** — what a logged-out visitor
-sees. It is *not* the per-gym brand colour the app themes at runtime
-(`useThemeColors().primary`), which every gym sets for itself. Keep the
-two separate: gyms recolour their own surfaces; the Temple mark never
-gets recoloured.
+This is the **product identity**, and since gyms stopped recolouring
+Temple it is the only identity the app has. There was a per-gym brand —
+six hexes and two logos, driving the nav mark, every primary button and
+the PWA icon. That is gone: a gym is identified by its name.
 
 ---
 
@@ -45,11 +44,16 @@ cut only) and is the only serif in the product. Everything else is Geist.
 |------|-----|----------|
 | Ink | `#14161A` | the mark and wordmark on a light surface |
 | Paper | `#F4F5F6` | the mark and wordmark on a dark surface |
+| Accent | `#C2410C` light / `#F0783C` dark | the one action per page |
 
-That is the whole palette. There is no gold, no steel blue, no tagline
-grey, and no `#2563EB` — that last one is only the app's *default gym*
-theme colour, a runtime per-gym default, and has nothing to do with the
-company logo.
+The mark is ink or paper and never the accent. Two accent values rather
+than one because a burnt orange carrying a white label on `#F7F7F8` is
+too dark to read against `#0A0B0D`; both clear the 3:1 UI floor on their
+own ground, which `src/lib/contrast.test.ts` asserts.
+
+There is no gold, no steel blue, no tagline grey, and no `#2563EB` —
+that last was the old default *gym* colour and never had anything to do
+with Temple.
 
 ---
 

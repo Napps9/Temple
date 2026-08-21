@@ -15,7 +15,7 @@ import { StatTile } from '@/components/StatTile';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { useCampaigns } from '@/lib/comms';
 import { DEFAULT_AUDIENCE } from '@/lib/email/audience';
-import { starterDocument } from '@/lib/email/blocks';
+import { FALLBACK_BRAND_SEED, starterDocument } from '@/lib/email/blocks';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -40,11 +40,11 @@ function useCreateCampaign() {
       if (!membership?.gymId || !session?.user.id) throw new Error('No gym');
       const doc = starterDocument(
         {
-          primaryColor: brand.primaryColor,
-          secondaryColor: brand.secondaryColor,
-          textColor: brand.textColor,
+          primaryColor: FALLBACK_BRAND_SEED.primaryColor,
+          secondaryColor: FALLBACK_BRAND_SEED.secondaryColor,
+          textColor: FALLBACK_BRAND_SEED.textColor,
         },
-        { gymName: brand.gymName, logoUrl: brand.logoUrl },
+        { gymName: brand.gymName, },
       );
       const { data, error: insErr } = await supabase
         .from('email_campaigns')

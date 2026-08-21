@@ -50,7 +50,6 @@ export const CASES: EvalCase[] = [
   { say: 'Add a Tuesday and Thursday 6am HIIT class, 45 minutes, capacity 14', expect: [{ action: 'gym.add_classes' }] },
   { say: 'Close the gym from 24 to 26 December', expect: [{ action: 'gym.close_dates' }] },
   { say: 'Reopen on the 27th after all', expect: [{ action: 'gym.reopen' }] },
-  { say: 'Change our brand colour to forest green', expect: [{ action: 'gym.set_colour' }] },
   { say: 'Rename the gym to Ironworks East', expect: [{ action: 'gym.rename' }] },
 
   // --- programming ---------------------------------------------------------

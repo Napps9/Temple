@@ -16,7 +16,6 @@ import { useCan } from '@/lib/useCan';
 
 // Required setup keys mirror the non-optional STEPS in /onboarding.
 const REQUIRED_SETUP_KEYS = new Set([
-  'logo',
   'settings',
   'class_type_and_schedule',
   'parq',

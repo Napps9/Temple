@@ -9,7 +9,7 @@
 // the convention documented in brand-derivation.ts) so it stays
 // unit-testable and importable from any consumer.
 
-import { contrastRatio } from './brand-derivation';
+import { contrastRatio } from './contrast';
 
 export type ThemeId = 'forged' | 'ringside' | 'daybreak' | 'baseline';
 

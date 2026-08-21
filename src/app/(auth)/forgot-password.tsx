@@ -104,7 +104,7 @@ export default function ForgotPasswordScreen() {
           <View className="items-center">
             <Link href="/sign-in" asChild>
               <Pressable hitSlop={8}>
-                <Text className="text-primary">Back to sign in</Text>
+                <Text className="text-link font-medium">Back to sign in</Text>
               </Pressable>
             </Link>
           </View>

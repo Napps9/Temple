@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
-import { contrastRatio } from '@/lib/brand-derivation';
+import { contrastRatio } from '@/lib/contrast';
 import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
 

@@ -10,7 +10,6 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 
 import { Button } from '@/components/Button';
-import { GymLogo } from '@/components/GymLogo';
 import { joinUrl } from '@/lib/brand';
 import {
   autoDetect as memberAutoDetect,
@@ -89,7 +88,6 @@ import type { Json } from '@/types/database';
 // account). /onboarding and this conversation must never disagree about
 // what comes next.
 type Step =
-  | 'logo'
   | 'rules'
   | 'timetable'
   | 'parq'
@@ -105,7 +103,6 @@ type Msg =
   | { kind: 'mine'; text: string }
   | { kind: 'receipt'; text: string; step?: Exclude<Step, 'golive'> }
   | { kind: 'step-ask'; step: Exclude<Step, 'golive'>; text: string }
-  | { kind: 'logo-card'; open: boolean }
   | { kind: 'class-builder'; open: boolean }
   | { kind: 'stripe-card'; open: boolean }
   | { kind: 'plan-builder'; open: boolean }
@@ -122,7 +119,6 @@ type Msg =
 // The checklist's required list, in the checklist's order, so the
 // progress bar counts exactly what /onboarding counts.
 export const REQUIRED_SETUP_KEYS = [
-  'logo',
   'settings',
   'class_type_and_schedule',
   'parq',
@@ -137,7 +133,6 @@ const STEP_META: Record<
   Exclude<Step, 'golive'>,
   { icon: React.ComponentProps<typeof Ionicons>['name']; label: string; estimate: string }
 > = {
-  logo: { icon: 'image-outline', label: 'Add your gym logo', estimate: '1 min' },
   timetable: {
     icon: 'pricetag-outline',
     label: 'Add a class type & schedule',
@@ -181,8 +176,6 @@ const STEP_META: Record<
 // editor for classes (typing the week out stays as the alternative in
 // the bar), sentences for prices, chips for rules.
 const ASK: Record<Exclude<Step, 'golive'>, string> = {
-  logo:
-    'First, make it yours — add your logo and the whole app wears it. Not to hand? Skip it; everything runs fine without.',
   timetable:
     'Now your week — add each class below — or just describe the whole thing in the box ("CrossFit at 6, 7 and 9:30 weekday mornings, 6pm evenings, cap of 16") and I\'ll build it.',
   stripe:
@@ -206,7 +199,6 @@ const ASK: Record<Exclude<Step, 'golive'>, string> = {
 const GOLIVE_LINE = 'That’s the walk-through done.';
 
 const TAP_ONLY: Partial<Record<Step, string>> = {
-  logo: 'This one’s a tap — choose your logo above, or skip and we’ll move on.',
   stripe: 'Stripe needs its own secure page — tap Connect above, or do it later.',
   parq: 'This one’s a file — upload your waiver above, or skip it for now.',
   team: 'Pop a coach’s email in the box above, or skip if you run solo.',
@@ -280,7 +272,6 @@ export default function SetupScreen() {
 
   function stepsRemaining(from: Step | null): Step[] {
     const all: Step[] = [
-      'logo',
       'rules',
       'timetable',
       'parq',
@@ -293,7 +284,6 @@ export default function SetupScreen() {
     ];
     const start = from ? all.indexOf(from) + 1 : 0;
     return all.slice(start).filter((s) => {
-      if (s === 'logo') return !doneKeys.has('logo');
       if (s === 'timetable') return !doneKeys.has('class_type_and_schedule');
       if (s === 'stripe') return !doneKeys.has('stripe');
       if (s === 'plans') return !doneKeys.has('plan');
@@ -345,11 +335,6 @@ export default function SetupScreen() {
       pushMsgs(
         { kind: 'step-ask', step: 'rules', text: ask('rules') },
         { kind: 'rule-question', q: 0, open: true },
-      );
-    } else if (next === 'logo') {
-      pushMsgs(
-        { kind: 'step-ask', step: 'logo', text: ask('logo') },
-        { kind: 'logo-card', open: true },
       );
     } else if (next === 'timetable') {
       pushMsgs(
@@ -715,7 +700,7 @@ export default function SetupScreen() {
     );
   }
 
-  const allRequiredDone = ['logo', 'settings', 'class_type_and_schedule', 'parq', 'stripe', 'plan'].every(
+  const allRequiredDone = ['settings', 'class_type_and_schedule', 'parq', 'stripe', 'plan'].every(
     (k) => doneKeys.has(k),
   );
   const busy = parse.isPending || applying.isPending;
@@ -772,27 +757,7 @@ export default function SetupScreen() {
           // outgrows the viewport it scrolls exactly as before.
           contentContainerClassName="flex-grow justify-end gap-4 py-4 px-4 md:max-w-2xl md:mx-auto md:w-full">
           {messages.map((m, i) =>
-            m.kind === 'logo-card' ? (
-              m.open ? (
-                <LogoCard
-                  key={i}
-                  gymId={membership.gymId}
-                  onDone={(receipt) => {
-                    setMessages((prev) => closeCards(prev));
-                    pushMsgs({ kind: 'receipt', step: 'logo', text: receipt });
-                    advance('logo');
-                  }}
-                  onSkip={() => {
-                    setMessages((prev) => closeCards(prev));
-                    pushMsgs({
-                      kind: 'receipt',
-                      text: 'No logo for now — add it any time; the checklist keeps the step open.',
-                    });
-                    advance('logo');
-                  }}
-                />
-              ) : null
-            ) : m.kind === 'class-builder' ? (
+            m.kind === 'class-builder' ? (
               m.open ? (
                 <ClassBuilderCard
                   key={i}
@@ -1047,7 +1012,6 @@ function MessageRow({
   const currency = useGymCurrency();
   // Rendered by the parent's special cases, never here.
   if (
-    msg.kind === 'logo-card' ||
     msg.kind === 'class-builder' ||
     msg.kind === 'stripe-card' ||
     msg.kind === 'plan-builder' ||
@@ -1238,7 +1202,6 @@ function MessageRow({
 // here rather than sending them to a Manage page. Leaving the chat to
 // finish a chat step was the whole thing we were trying not to do.
 const FINISH_ROWS: { key: string; step: Exclude<Step, 'golive'> }[] = [
-  { key: 'logo', step: 'logo' },
   { key: 'settings', step: 'rules' },
   { key: 'class_type_and_schedule', step: 'timetable' },
   { key: 'parq', step: 'parq' },
@@ -2029,99 +1992,6 @@ function WorkoutsImportCard({
 // The logo step: the branding screen's own picker, upload and
 // set_gym_branding write, placed in the conversation. Skipping is a
 // first-class answer — the checklist keeps the step open for later.
-function LogoCard({
-  gymId,
-  onDone,
-  onSkip,
-}: {
-  gymId: string;
-  onDone: (receipt: string) => void;
-  onSkip: () => void;
-}) {
-  const colors = useThemeColors();
-  const queryClient = useQueryClient();
-  const [preview, setPreview] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const upload = useMutation({
-    mutationFn: async () => {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) throw new Error('Photo library permission denied');
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.85,
-      });
-      if (result.canceled || result.assets.length === 0) return false;
-      const asset = result.assets[0];
-      const response = await fetch(asset.uri);
-      const blob = await response.blob();
-      const ext = asset.uri.split('.').pop()?.toLowerCase() || 'png';
-      const path = `${gymId}/light-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from('gym-logos')
-        .upload(path, blob, {
-          contentType: asset.mimeType ?? `image/${ext}`,
-          upsert: false,
-        });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from('gym-logos').getPublicUrl(path);
-
-      // Per-card save discipline: send the server's values for every
-      // other branding field so this write can only change the logo.
-      const { data: gym, error: gErr } = await supabase
-        .from('gyms')
-        .select(
-          'logo_url, primary_color, secondary_color, text_color, logo_url_dark, primary_color_dark, secondary_color_dark, text_color_dark',
-        )
-        .eq('id', gymId)
-        .single();
-      if (gErr || !gym) throw gErr ?? new Error('Could not read branding');
-      const { error: sErr } = await supabase.rpc('set_gym_branding', {
-        p_gym_id: gymId,
-        p_logo_url: pub.publicUrl,
-        p_primary_color: gym.primary_color,
-        p_secondary_color: gym.secondary_color,
-        p_text_color: gym.text_color,
-        p_logo_url_dark: gym.logo_url_dark,
-        p_primary_color_dark: gym.primary_color_dark,
-        p_secondary_color_dark: gym.secondary_color_dark,
-        p_text_color_dark: gym.text_color_dark,
-      });
-      if (sErr) throw sErr;
-      setPreview(pub.publicUrl);
-      return true;
-    },
-    onSuccess: (uploaded) => {
-      if (!uploaded) return;
-      queryClient.invalidateQueries({ queryKey: ['gym-row'] });
-      queryClient.invalidateQueries({ queryKey: ['gym-brand'] });
-      queryClient.invalidateQueries({ queryKey: ['gym-membership'] });
-      queryClient.invalidateQueries({ queryKey: ['gym-setup-progress'] });
-      onDone('Logo’s in — the app is wearing it.');
-    },
-    onError: () => setError('That upload didn’t take — try again.'),
-  });
-
-  return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
-      <View className="flex-row items-center gap-3">
-        <GymLogo size={56} logoUrl={preview} name="?" primaryColor={colors.primary} />
-        <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm leading-5">
-          Square works best — it becomes the app icon your members install.
-        </Text>
-      </View>
-      {error ? (
-        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
-      ) : null}
-      <Button onPress={() => upload.mutate()} loading={upload.isPending}>
-        Choose your logo
-      </Button>
-      <StepSkip label="Skip for now" onPress={onSkip} disabled={upload.isPending} />
-    </View>
-  );
-}
 
 // The class step's structured path: the real schedule editor
 // (RecurrenceEditor — the same component the class-types screen uses),

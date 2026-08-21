@@ -34,11 +34,7 @@ import {
   normalizeAudience,
   type AudienceDefinition,
 } from '@/lib/email/audience';
-import {
-  coerceDocument,
-  documentWarnings,
-  type BrandSeed,
-} from '@/lib/email/blocks';
+import { FALLBACK_BRAND_SEED, coerceDocument, documentWarnings, type BrandSeed } from '@/lib/email/blocks';
 import { useEmailHistory } from '@/lib/email/history';
 import { renderEmailHtml } from '@/lib/email/render';
 import { errorMessage } from '@/lib/errors';
@@ -144,11 +140,11 @@ function EditorView({ campaign }: { campaign: Campaign }) {
 
   const brandSeed: BrandSeed = useMemo(
     () => ({
-      primaryColor: brand.primaryColor,
-      secondaryColor: brand.secondaryColor,
-      textColor: brand.textColor,
+      primaryColor: FALLBACK_BRAND_SEED.primaryColor,
+      secondaryColor: FALLBACK_BRAND_SEED.secondaryColor,
+      textColor: FALLBACK_BRAND_SEED.textColor,
     }),
-    [brand.primaryColor, brand.secondaryColor, brand.textColor],
+    [FALLBACK_BRAND_SEED.primaryColor, FALLBACK_BRAND_SEED.secondaryColor, FALLBACK_BRAND_SEED.textColor],
   );
 
   const [title, setTitle] = useState(campaign.title);
@@ -505,7 +501,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
           onPress={() => setMode('design')}
           className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center gap-3 border border-primary/30 hover:border-primary/60 active:opacity-80">
           <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
-            <Ionicons name="brush-outline" size={22} color={brand.primaryColor} />
+            <Ionicons name="brush-outline" size={22} color={FALLBACK_BRAND_SEED.primaryColor} />
           </View>
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -865,9 +861,9 @@ function ReportView({ campaign }: { campaign: Campaign }) {
 
   const previewHtml = useMemo(() => {
     const doc = coerceDocument(campaign.design, {
-      primaryColor: brand.primaryColor,
-      secondaryColor: brand.secondaryColor,
-      textColor: brand.textColor,
+      primaryColor: FALLBACK_BRAND_SEED.primaryColor,
+      secondaryColor: FALLBACK_BRAND_SEED.secondaryColor,
+      textColor: FALLBACK_BRAND_SEED.textColor,
     });
     return renderEmailHtml(doc, {
       preheader: campaign.preheader,

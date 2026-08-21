@@ -9,7 +9,7 @@
 // compatibility — colours/type come from CSS custom properties set once
 // from the theme, not repeated on every element.
 
-import { contrastRatio } from './brand-derivation';
+import { contrastRatio } from './contrast';
 import type { BrandTheme } from './brand-themes';
 import { formatMoney } from './coach-earnings';
 import type {

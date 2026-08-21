@@ -60,10 +60,12 @@ a subtly recut sparkle that is one line to switch to.
 - **Two faces.** Fraunces for the lowercase `temple` wordmark — one place
   only. Geist for the entire product.
 - **Selected is never an ink fill.** A raised white card or a soft tint.
-- **Colour comes from content.** The gym's accent is allowed on exactly
-  five things: the logo tile, the one primary action per page, class-type
-  dots, a member's own data, and the gym's photography. Repeated row
-  actions (five Book buttons) are ink.
+- **Colour comes from content.** The accent is allowed on exactly four
+  things: the one primary action per page, class-type dots, a member's
+  own data, and the gym's photography. Repeated row actions (five Book
+  buttons) are ink. It used to be five — the logo tile was the fifth, and
+  it was the gym's colour rather than Temple's; gyms no longer recolour
+  the chrome, so the accent is `#C2410C` / `#F0783C` for everyone.
 - **One mark for the machine.** Anything the agent did carries the sparkle
   and nothing else — one glyph across the product instead of five amber
   banners. It is the only solid-filled icon among ~30 monoline ones, and in
@@ -118,8 +120,8 @@ a subtly recut sparkle that is one line to switch to.
 - **Lowercase `temple`** — yes, in Fraunces 700. No tagline.
 - **The sidebar** — yes, at 768 and up. It turned out to be chrome, not
   routing: the tab router underneath is untouched.
-- **The accent** — rows are ink, the page's one action keeps the gym's
-  colour. `Button` gained a `plain` variant for the repeated case.
+- **The accent** — rows are ink, the page's one action carries Temple's
+  accent. `Button` gained a `plain` variant for the repeated case.
 
 Still open:
 

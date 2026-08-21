@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { retireClassType, restoreClassType } from './classes';
-import { reopenGym, setGymColour } from './gym';
+import { reopenGym } from './gym';
 import type { ActionContext } from './types';
 
 // The four verbs the settings sections were still the only way to reach.
@@ -108,103 +108,6 @@ describe('classes.restore_type', () => {
   it('only ever looks at retired classes', async () => {
     const live = await restoreClassType.preview({ classType: 'Yoga' }, typeCtx({}));
     expect(live.title).toBe('Yoga is already running.');
-  });
-});
-
-// ---------------------------------------------------------------------------
-
-function brandCtx(opts: {
-  branding?: Record<string, unknown> | null;
-  rpc?: (name: string, args: unknown) => { error: { message: string } | null };
-}): ActionContext {
-  const branding =
-    opts.branding === undefined
-      ? {
-          logo_url: null,
-          primary_color: '#2563EB',
-          secondary_color: '#111827',
-          text_color: '#FFFFFF',
-          logo_url_dark: null,
-          primary_color_dark: null,
-          secondary_color_dark: null,
-          text_color_dark: null,
-        }
-      : opts.branding;
-  return {
-    supabase: {
-      from: () => ({
-        select: () => ({
-          eq: () => ({ maybeSingle: async () => ({ data: branding, error: null }) }),
-        }),
-      }),
-      rpc: async (name: string, args: unknown) =>
-        opts.rpc ? opts.rpc(name, args) : { error: null },
-    },
-    gymId: 'g1',
-    userId: 'u1',
-    currency: 'GBP',
-  } as unknown as ActionContext;
-}
-
-describe('gym.set_colour', () => {
-  it('takes a hex and refuses anything that is not one', () => {
-    expect(setGymColour.sanitise({ colour: '#e11d48' })).toEqual({ colour: '#E11D48' });
-    // The parser is asked to convert a colour name itself; a word arriving
-    // here means it could not, and guessing a hex from it would pick a
-    // colour nobody chose.
-    expect(setGymColour.sanitise({ colour: 'navy' })).toBeNull();
-    expect(setGymColour.sanitise({ colour: '#E11D4' })).toBeNull();
-    expect(setGymColour.sanitise({ colour: 'E11D48' })).toBeNull();
-  });
-
-  it('says dark mode follows when nobody has hand-picked one', async () => {
-    const p = await setGymColour.preview({ colour: '#E11D48' }, brandCtx({}));
-    expect(p.title).toBe('Change your brand colour to #E11D48?');
-    expect(p.lines[0]).toContain('#2563EB → #E11D48');
-    expect(p.lines[1]).toBe('Dark mode follows it automatically.');
-  });
-
-  it('says a hand-picked dark colour is kept, rather than silently keeping it', async () => {
-    const p = await setGymColour.preview(
-      { colour: '#E11D48' },
-      brandCtx({
-        branding: {
-          logo_url: null,
-          primary_color: '#2563EB',
-          secondary_color: '#111827',
-          text_color: '#FFFFFF',
-          logo_url_dark: null,
-          primary_color_dark: '#60A5FA',
-          secondary_color_dark: null,
-          text_color_dark: null,
-        },
-      }),
-    );
-    expect(p.lines[1]).toContain('stays as it is');
-  });
-
-  it('does not ask to change a colour that is already set', async () => {
-    const p = await setGymColour.preview({ colour: '#2563EB' }, brandCtx({}));
-    expect(p.title).toBe('Your brand colour is already #2563EB.');
-    expect(p.yes).toBeUndefined();
-  });
-
-  // Every other field goes back exactly as it came, so changing the colour
-  // cannot wipe a logo somebody uploaded.
-  it('sends the gym its own values for everything it is not changing', async () => {
-    const rpc = vi.fn(() => ({ error: null }));
-    await setGymColour.apply!({ colour: '#E11D48' }, brandCtx({ rpc }));
-    expect(rpc).toHaveBeenCalledWith('set_gym_branding', {
-      p_gym_id: 'g1',
-      p_logo_url: null,
-      p_primary_color: '#E11D48',
-      p_secondary_color: '#111827',
-      p_text_color: '#FFFFFF',
-      p_logo_url_dark: null,
-      p_primary_color_dark: null,
-      p_secondary_color_dark: null,
-      p_text_color_dark: null,
-    });
   });
 });
 

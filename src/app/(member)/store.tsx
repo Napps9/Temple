@@ -24,6 +24,7 @@ import { useThemeColors } from '@/lib/theme';
 import { useGymBrand } from '@/lib/useGymBrand';
 
 export default function StoreScreen() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const session = useSession();
   const brand = useGymBrand();
@@ -51,13 +52,6 @@ export default function StoreScreen() {
         <BackLink fallbackHref="/account" />
 
         <View className="flex-row items-center gap-3">
-          {brand.logoUrl ? (
-            <Image
-              source={{ uri: brand.logoUrl }}
-              className="w-10 h-10 rounded-lg"
-              resizeMode="contain"
-            />
-          ) : null}
           <View className="flex-1">
             <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
               Store
@@ -70,7 +64,7 @@ export default function StoreScreen() {
             <Pressable
               hitSlop={8}
               className="flex-row items-center gap-1 active:opacity-70">
-              <Ionicons name="bag-handle-outline" size={18} color={brand.primaryColor} />
+              <Ionicons name="bag-handle-outline" size={18} color={colors.primary} />
               <Text className="text-primary text-sm font-medium">Purchases</Text>
             </Pressable>
           </Link>

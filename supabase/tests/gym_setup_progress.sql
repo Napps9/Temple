@@ -1,11 +1,12 @@
 -- get_gym_setup_progress reflects the actual gym state, step by step.
 -- A fresh gym reports every step pending; doing each setup action
--- flips its matching flag. Nine steps in total — team / members
+-- flips its matching flag. Eight steps in total — team / members
 -- imported / workouts imported are optional client-side but the RPC
--- still reports them.
+-- still reports them. There was a ninth, `logo`, until gyms stopped
+-- recolouring Temple and the surface that completed it went away.
 
 begin;
-select plan(13);
+select plan(11);
 
 \ir _helpers.psql
 
@@ -26,22 +27,6 @@ select is(
      current_setting('test.gym')::uuid) where done)::int,
   0,
   'a fresh gym reports zero setup steps complete'
-);
-
--- 2. logo flips after gyms.logo_url is set.
-do $$
-begin
-  reset role;
-  update public.gyms set logo_url = 'https://example.com/logo.png'
-    where id = current_setting('test.gym')::uuid;
-  perform _test_act_as(current_setting('test.owner')::uuid);
-end $$;
-
-select is(
-  (select done from public.get_gym_setup_progress(
-     current_setting('test.gym')::uuid) where step_key = 'logo'),
-  true,
-  'logo step flips done when a logo url is present'
 );
 
 -- 3. settings flips after the owner saves gym settings once. Driven
@@ -171,7 +156,7 @@ select is(
 
 -- 9b. stripe flips done once a connected Stripe account row exists. The
 -- insert bypasses RLS (there's no owner INSERT policy — the edge function
--- writes it with the service role), mirroring the logo update above.
+-- writes it with the service role).
 do $$
 begin
   reset role;
@@ -193,22 +178,13 @@ select is(
 select is(
   (select count(*) from public.get_gym_setup_progress(
      current_setting('test.gym')::uuid) where done)::int,
-  8,
-  'eight of nine steps report done; workouts_imported needs a tracked workout'
+  7,
+  'seven of eight steps report done; workouts_imported needs a tracked workout'
 );
 
--- 11-12. Sub-step counts on the remaining multi-part steps. logo and
--- parq each have target 2 (light + dark logo; waiver + parq) — we've
--- only set one of each, so complete = 1 even though `done` already
--- flipped.
-select is(
-  (select (complete::text || '/' || target::text)
-   from public.get_gym_setup_progress(
-     current_setting('test.gym')::uuid) where step_key = 'logo'),
-  '1/2',
-  'logo sub-count: light logo set, dark logo blank → 1/2'
-);
-
+-- 10. Sub-step count on the remaining multi-part step. parq has
+-- target 2 (waiver + PAR-Q) — we've only published one, so complete = 1
+-- even though `done` already flipped.
 select is(
   (select (complete::text || '/' || target::text)
    from public.get_gym_setup_progress(

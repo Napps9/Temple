@@ -7,7 +7,6 @@ import {
 } from '@tanstack/react-query';
 import { useSyncExternalStore } from 'react';
 
-import { DEFAULT_BRAND } from './brand';
 import {
   parseMembershipRow,
   type GymMembership,
@@ -332,40 +331,22 @@ export type CreateGymWithSignupResult =
   | { status: 'created'; gymId: string }
   | { status: 'pending_confirmation'; email: string };
 
-export type PendingBrand = {
-  primaryColor: string;
-  secondaryColor: string;
-  textColor: string;
-};
-
-// Create the gym then stamp its branding, from an authenticated session.
-// Shared by the immediate-signup path and the post-confirmation resume so
-// every route brands the new gym identically.
-async function createGymAndBrand(
-  args: { name: string; slug: string } & PendingBrand,
-): Promise<string> {
+// Create the gym from an authenticated session. Shared by the
+// immediate-signup path and the post-confirmation resume. It used to
+// stamp three brand colours onto the new gym straight afterwards.
+async function createGym(args: { name: string; slug: string }): Promise<string> {
   const { data: gymId, error } = await supabase.rpc('create_gym', {
     p_name: args.name,
     p_slug: args.slug,
   });
   if (error) throw error;
-  const id = gymId as unknown as string;
-  const { error: brandError } = await supabase.rpc('set_gym_branding', {
-    p_gym_id: id,
-    p_logo_url: null,
-    p_primary_color: args.primaryColor,
-    p_secondary_color: args.secondaryColor,
-    p_text_color: args.textColor,
-  });
-  if (brandError) throw brandError;
-  return id;
+  return gymId as unknown as string;
 }
 
-// creates a profiles row + the gym + the owner membership, then applies
-// the chosen brand colours. When email confirmation is required, returns
-// 'pending_confirmation' instead — the gym name/slug AND colours are
-// stashed in user_metadata so the post-confirmation resume finishes the
-// job, fully branded, in one tap.
+// creates a profiles row + the gym + the owner membership. When email
+// confirmation is required, returns 'pending_confirmation' instead — the
+// gym name and slug are stashed in user_metadata so the post-confirmation
+// resume finishes the job in one tap.
 export async function createGymWithSignup(
   args: {
     email: string;
@@ -373,7 +354,7 @@ export async function createGymWithSignup(
     fullName: string;
     gymName: string;
     gymSlug: string;
-  } & PendingBrand,
+  },
 ): Promise<CreateGymWithSignupResult> {
   const { email, password, fullName, gymName, gymSlug } = args;
   const { data, error } = await supabase.auth.signUp({
@@ -385,9 +366,6 @@ export async function createGymWithSignup(
         full_name: fullName,
         pending_gym_name: gymName,
         pending_gym_slug: gymSlug,
-        pending_gym_primary: args.primaryColor,
-        pending_gym_secondary: args.secondaryColor,
-        pending_gym_text: args.textColor,
       },
     },
   });
@@ -396,13 +374,7 @@ export async function createGymWithSignup(
   if (resolved.status === 'pending_confirmation') {
     return { status: 'pending_confirmation', email };
   }
-  const gymId = await createGymAndBrand({
-    name: gymName,
-    slug: gymSlug,
-    primaryColor: args.primaryColor,
-    secondaryColor: args.secondaryColor,
-    textColor: args.textColor,
-  });
+  const gymId = await createGym({ name: gymName, slug: gymSlug });
   await clearPendingGymMetadata();
   return { status: 'created', gymId };
 }
@@ -416,9 +388,6 @@ async function clearPendingGymMetadata(): Promise<void> {
       data: {
         pending_gym_name: null,
         pending_gym_slug: null,
-        pending_gym_primary: null,
-        pending_gym_secondary: null,
-        pending_gym_text: null,
       },
     });
   } catch {
@@ -431,29 +400,21 @@ async function clearPendingGymMetadata(): Promise<void> {
 // of making the user re-enter everything after email confirmation.
 export function pendingGymFromSession(
   session: { user: { user_metadata?: Record<string, unknown> | null } } | null,
-): ({ name: string; slug: string } & PendingBrand) | null {
+): { name: string; slug: string } | null {
   const meta = session?.user.user_metadata ?? null;
   if (!meta) return null;
   const name = typeof meta.pending_gym_name === 'string' ? meta.pending_gym_name : '';
   const slug = typeof meta.pending_gym_slug === 'string' ? meta.pending_gym_slug : '';
   if (!name || !slug) return null;
-  const str = (v: unknown, fallback: string) =>
-    typeof v === 'string' && v ? v : fallback;
-  return {
-    name,
-    slug,
-    primaryColor: str(meta.pending_gym_primary, DEFAULT_BRAND.primaryColor),
-    secondaryColor: str(meta.pending_gym_secondary, DEFAULT_BRAND.secondaryColor),
-    textColor: str(meta.pending_gym_text, DEFAULT_BRAND.textColor),
-  };
+  return { name, slug };
 }
 
 // Finishes a gym creation deferred by email confirmation: the user has
-// now signed in, so create the gym and apply the saved colours.
+// now signed in, so create the gym they named before confirming.
 export async function completePendingGym(
-  args: { name: string; slug: string } & PendingBrand,
+  args: { name: string; slug: string },
 ): Promise<{ gymId: string }> {
-  const gymId = await createGymAndBrand(args);
+  const gymId = await createGym(args);
   await clearPendingGymMetadata();
   return { gymId };
 }

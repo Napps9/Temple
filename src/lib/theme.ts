@@ -2,9 +2,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'nativewind';
 import { useEffect } from 'react';
 
-import { useGymBrand } from './useGymBrand';
-
 const KEY = 'app_theme';
+
+// Temple's accent, and the whole of it. This used to be the gym's saved
+// colour, resolved per scheme and pushed into the Tailwind `primary`
+// token at runtime; gyms no longer recolour Temple's chrome, so the
+// token's source is a constant and every `bg-primary` call site keeps
+// working unchanged.
+//
+// Two values rather than one because a burnt orange that carries a white
+// label on #F7F7F8 is too dark to read against #0A0B0D. `primaryDark` is
+// the pressed/hover step, not the dark-scheme partner.
+export const ACCENT = {
+  light: { primary: '#C2410C', primaryDark: '#A5370A', ink: '#14161A' },
+  dark: { primary: '#F0783C', primaryDark: '#CC6633', ink: '#F4F5F6' },
+} as const;
 
 export type Scheme = 'light' | 'dark';
 
@@ -38,8 +50,8 @@ export function useThemePreference() {
 
 export function useThemeColors() {
   const { scheme } = useThemePreference();
-  const brand = useGymBrand();
   const dark = scheme === 'dark';
+  const accent = dark ? ACCENT.dark : ACCENT.light;
   return {
     // The ground the whole app sits on. Cool and near-white rather than
     // slate, so a white card reads as a card rather than as more page.
@@ -47,16 +59,18 @@ export function useThemeColors() {
     // and is the runtime twin of the `ground` Tailwind token.
     screenBg: dark ? '#0A0B0D' : '#F7F7F8',
     statusBar: dark ? ('light' as const) : ('dark' as const),
-    // Runtime brand primary — components calling `colors.primary`
-    // for an Ionicon tint etc. follow the gym's saved colour. Drives
-    // solid fills, active-state emphasis and icon tints.
-    primary: brand.primaryColor,
-    // Brand "Text" colour — links and CTA copy (the `link` Tailwind
-    // token / `text-link`). Resolved per scheme.
-    text: brand.textColor,
-    // Brand "Secondary" colour — accent chips and tints (the
-    // `secondary` Tailwind token).
-    secondary: brand.secondaryColor,
+    // Temple's accent. Drives solid fills, active-state emphasis and
+    // icon tints — the one action per page, never a repeated row action.
+    primary: accent.primary,
+    // Links and CTA copy (`text-link`). Ink, not the accent: every
+    // `text-link` in the product already carries font-medium or
+    // font-semibold, so weight marks it as tappable and the colour was
+    // redundant. Accent-coloured links put a second accent beside the
+    // page's one action — on create-gym, "Have an account? Sign in" sat
+    // directly under an accent-filled Create gym.
+    text: accent.ink,
+    // Accent chips and tints (`text-secondary`).
+    secondary: accent.ink,
     white: '#FFFFFF',
 
     // The neutral ramp, for the places a colour has to be a runtime value

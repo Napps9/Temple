@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 
-import { GymLogo } from './GymLogo';
 import { NavAccountMenu } from './NavAccountMenu';
 import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
@@ -77,13 +76,7 @@ export function SideNav({ sections }: { sections: NavSection[] }) {
           }}
           accessibilityRole="button"
           accessibilityLabel={brand.gymName}
-          className="flex-row items-center gap-2.5 rounded-ctl border border-line dark:border-line-dk px-2.5 py-2 hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk">
-          <GymLogo
-            size={30}
-            logoUrl={brand.logoUrl}
-            name={brand.gymName}
-            primaryColor={brand.primaryColor}
-          />
+          className="flex-row items-center rounded-ctl border border-line dark:border-line-dk px-2.5 py-2 hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk">
           <View className="flex-1 min-w-0">
             <Text
               className="text-ink dark:text-ink-dk text-[13.5px] font-semibold"

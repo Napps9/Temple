@@ -780,7 +780,7 @@ export default function ImportMembersScreen() {
                 </Text>
                 {mappingLoading ? (
                   <View className="flex-row items-center gap-1.5">
-                    <ActivityIndicator size="small" color={brand.primaryColor} />
+                    <ActivityIndicator size="small" color={colors.primary} />
                     <FieldLabel>
                       Matching
                     </FieldLabel>
@@ -790,7 +790,7 @@ export default function ImportMembersScreen() {
                     <Ionicons
                       name="sparkles"
                       size={12}
-                      color={brand.primaryColor}
+                      color={colors.primary}
                     />
                     <Text className="text-primary text-[10px] font-semibold uppercase tracking-widest">
                       AI-matched
@@ -967,7 +967,7 @@ export default function ImportMembersScreen() {
           <HandoverPanel
             gymId={membership?.gymId ?? null}
             gymName={brand.gymName}
-            primaryColor={brand.primaryColor}
+            primaryColor={colors.primary}
             slug={brand.slug}
             result={importResult}
           />

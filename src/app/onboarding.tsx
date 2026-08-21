@@ -26,7 +26,6 @@ import { useThemeColors } from '@/lib/theme';
 // not just this session; the steps are still reachable from Manage.
 
 type StepKey =
-  | 'logo'
   | 'settings'
   | 'class_type_and_schedule'
   | 'parq'
@@ -60,14 +59,6 @@ function stepHref(step: Step): string {
 }
 
 const STEPS: Step[] = [
-  {
-    key: 'logo',
-    label: 'Add your gym logo',
-    description: 'A logo makes the app feel like your gym, not a template.',
-    section: 'branding',
-    icon: 'image-outline',
-    estimate: '1 min',
-  },
   {
     key: 'settings',
     label: 'Set your gym settings',
