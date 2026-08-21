@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { ListRow, RuledList } from '@/components/ListRow';
 import { Check } from '@/components/Check';
 import { EmptyState } from '@/components/EmptyState';
 import { Text, TextInput } from '@/components/Text';
@@ -1750,6 +1751,7 @@ function AgentActionCard({
   event: TimelineEvent;
   gymId: string | undefined;
 }) {
+  const colors = useThemeColors();
   const [open, setOpen] = useState(false);
   const [always, setAlways] = useState(false);
   const [decided, setDecided] = useState<'approve' | 'reject' | null>(null);
@@ -1884,6 +1886,18 @@ function AgentActionCard({
           </Pressable>
         </View>
       ) : null}
+      {!open ? (
+        <Pressable
+          onPress={() => setOpen(true)}
+          hitSlop={6}
+          accessibilityRole="button"
+          className="flex-row items-center gap-1.5 self-start">
+          <Ionicons name="chevron-down" size={13} color={colors.ink3} />
+          <Text className="text-ink-2 dark:text-ink-2-dk text-[12.5px]">
+            See the details
+          </Text>
+        </Pressable>
+      ) : null}
       <View className="flex-row items-center gap-2">
         <View className="flex-1">
           <Button onPress={() => decide('approve')} loading={busy}>
@@ -1896,11 +1910,6 @@ function AgentActionCard({
           </Button>
         </View>
       </View>
-      {!open ? (
-        <Pressable onPress={() => setOpen(true)} hitSlop={6}>
-          <Text className="text-link text-sm font-semibold">See the details</Text>
-        </Pressable>
-      ) : null}
       {failed ? (
         <Text className="text-red-600 dark:text-red-400 text-sm">
           That didn&apos;t go through — try again.
@@ -2148,33 +2157,32 @@ function CoverOfferCard({
         {left.length === 0 ? 'You picked it up.' : 'Take one?'}
       </Text>
 
-      {left.map((o) => (
-        <View key={o.offer_id} className="flex-row items-center gap-3">
-          <View className="flex-1">
-            <Text className="text-ink-2 dark:text-ink-2-dk text-[14px]">
-              {o.name}
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-[12.5px]">
-              {new Date(o.starts_at).toLocaleString('en-GB', {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true,
-              })}
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => claim(o)}
-            disabled={!!busyId}
-            className="px-4 py-2.5 rounded-lg bg-primary active:opacity-70">
-            <Text className="text-white text-sm font-semibold">
-              {busyId === o.offer_id ? 'Taking…' : "I'll take it"}
-            </Text>
-          </Pressable>
-        </View>
-      ))}
+      <RuledList>
+        {left.map((o, i) => (
+          <ListRow
+            ruled
+            first={i === 0}
+            key={o.offer_id}
+            title={o.name}
+            subtitle={new Date(o.starts_at).toLocaleString('en-GB', {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true,
+            })}
+            trailing={
+              <ChipButton
+                label={busyId === o.offer_id ? 'Taking…' : 'Take it'}
+                icon="hand-left-outline"
+                onPress={() => claim(o)}
+                disabled={!!busyId}
+              />
+            }
+          />
+        ))}
+      </RuledList>
 
       {taken.length > 0 ? (
         <Text className="text-ink-2 dark:text-ink-2-dk text-[13px]">
@@ -2202,6 +2210,7 @@ function RequestCard({
   event: TimelineEvent;
   gymId: string | undefined;
 }) {
+  const colors = useThemeColors();
   const [open, setOpen] = useState(false);
   const [decided, setDecided] = useState<'approve' | 'reject' | null>(null);
   const decide = useDecideChangeRequest(gymId);
@@ -2261,6 +2270,18 @@ function RequestCard({
           </Text>
         </View>
       ) : null}
+      {note && !open ? (
+        <Pressable
+          onPress={() => setOpen(true)}
+          hitSlop={6}
+          accessibilityRole="button"
+          className="flex-row items-center gap-1.5 self-start">
+          <Ionicons name="chevron-down" size={13} color={colors.ink3} />
+          <Text className="text-ink-2 dark:text-ink-2-dk text-[12.5px]">
+            See the details
+          </Text>
+        </Pressable>
+      ) : null}
       <View className="flex-row items-center gap-2">
         <View className="flex-1">
           <Button onPress={() => onDecide('approve')} loading={decide.isPending}>
@@ -2276,11 +2297,6 @@ function RequestCard({
           </Button>
         </View>
       </View>
-      {note && !open ? (
-        <Pressable onPress={() => setOpen(true)} hitSlop={6}>
-          <Text className="text-link text-sm font-semibold">See the details</Text>
-        </Pressable>
-      ) : null}
       {decide.isError ? (
         <Text className="text-red-600 dark:text-red-400 text-sm">
           That didn&apos;t go through — try again.

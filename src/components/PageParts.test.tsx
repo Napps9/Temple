@@ -90,6 +90,31 @@ describe('ListRow', () => {
     expect(container.querySelector('[data-icon="ionicons:chevron-forward"]')).toBeNull();
   });
 
+  // `wrap` is what makes a row a door: a destination with a sentence
+  // saying where it goes, rather than a record with a field under it.
+  // react-native-web turns numberOfLines into its own classes, but the
+  // clamp itself lands as a real inline style, which is stable to assert.
+  it('clips the subtitle to one line, and to two when it wraps', () => {
+    const clamped = (html: string) => /-webkit-line-clamp:\s*2/.test(html);
+    const { container, rerender } = render(
+      <ListRow title="Goals" subtitle="What each member is working toward." />,
+    );
+    expect(clamped(container.innerHTML)).toBe(false);
+    rerender(
+      <ListRow wrap title="Goals" subtitle="What each member is working toward." />,
+    );
+    expect(clamped(container.innerHTML)).toBe(true);
+  });
+
+  it('shows the foot line only when it is given one', () => {
+    const { container, rerender } = render(<ListRow wrap title="Class types" />);
+    expect(container.textContent).toBe('Class types');
+    rerender(
+      <ListRow wrap title="Class types" foot={<Text>or say "add a class type"</Text>} />,
+    );
+    expect(screen.getByText('or say "add a class type"')).toBeTruthy();
+  });
+
   it('calls back when pressed', () => {
     const onPress = vi.fn();
     render(<ListRow title="Amara Nwosu" onPress={onPress} />);
