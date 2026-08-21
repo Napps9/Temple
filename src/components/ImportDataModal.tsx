@@ -1,9 +1,11 @@
+
 import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { type ComponentProps, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
+import { IconTile, ListRow } from '@/components/ListRow';
 import { ManageModal } from '@/components/ManageModal';
 import { useThemeColors } from '@/lib/theme';
 
@@ -95,23 +97,14 @@ export function ImportDataModal({
 
       <View className="gap-2">
         {OPTIONS[tab].map((o) => (
-          <Pressable
+          <ListRow
             key={o.title}
+            wrap
+            lead={<IconTile name={o.icon} />}
+            title={o.title}
+            subtitle={o.description}
             onPress={() => go(o.href)}
-            className="bg-surface dark:bg-surface-dk rounded-card p-4 flex-row items-start gap-3 border border-line dark:border-line-dk active:opacity-70">
-            <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
-              <Ionicons name={o.icon} size={18} color={colors.ink2} />
-            </View>
-            <View className="flex-1 gap-0.5">
-              <Text className="text-ink dark:text-ink-dk font-semibold">
-                {o.title}
-              </Text>
-              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-                {o.description}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
-          </Pressable>
+          />
         ))}
       </View>
     </ManageModal>

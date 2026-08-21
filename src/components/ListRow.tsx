@@ -33,6 +33,8 @@ export function ListRow({
   onPress,
   ruled,
   first,
+  wrap,
+  foot,
 }: {
   // Avatar, icon, class-type dot, date block — whatever identifies the row.
   lead?: ReactNode;
@@ -47,15 +49,26 @@ export function ListRow({
   ruled?: boolean;
   // Ruled rows draw their own top hairline; the first in a group does not.
   first?: boolean;
+  // Let the subtitle run to two lines instead of being clipped to one,
+  // and top-align the row so the chevron stays on the title's line. For
+  // the six places that are a *door* — a destination with a sentence
+  // explaining where it goes, rather than a record with a field under
+  // it. Those were six hand-rolled cards before this.
+  wrap?: boolean;
+  // A third, quieter line under the subtitle. Only doors have one — it is
+  // where the Manage hub tells you the thing you just searched for is
+  // something you could have said instead.
+  foot?: ReactNode;
 }) {
   const colors = useThemeColors();
   const tappable = !!href || !!onPress;
 
+  const align = wrap ? 'items-start' : 'items-center';
   const shell = ruled
-    ? `flex-row items-center gap-3 px-3.5 py-3 ${
+    ? `flex-row ${align} gap-3 px-3.5 py-3 ${
         first ? '' : 'border-t border-line dark:border-line-dk'
       }`
-    : 'flex-row items-center gap-3 px-3.5 py-3 rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk';
+    : `flex-row ${align} gap-3 px-3.5 py-3 rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk`;
 
   const body = (
     <>
@@ -68,16 +81,23 @@ export function ListRow({
         </Text>
         {subtitle ? (
           <Text
-            numberOfLines={1}
-            className="text-ink-3 dark:text-ink-3-dk text-[12.5px]">
+            numberOfLines={wrap ? 2 : 1}
+            className={
+              wrap
+                ? 'text-ink-2 dark:text-ink-2-dk text-[12.5px] leading-[17px]'
+                : 'text-ink-3 dark:text-ink-3-dk text-[12.5px]'
+            }>
             {subtitle}
           </Text>
         ) : null}
+        {foot}
       </View>
       {chip}
       {trailing ??
         (tappable ? (
-          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
+          <View className={wrap ? 'pt-1' : undefined}>
+            <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
+          </View>
         ) : null)}
     </>
   );
@@ -107,6 +127,26 @@ export function ListRow({
     </Link>
   ) : (
     pressable
+  );
+}
+
+// The lead five of the six doors draw by hand: a tinted square holding a
+// monoline glyph. It lives here rather than in its own file because it is
+// the lead slot's commonest filler, not a part in its own right.
+export function IconTile({
+  name,
+  size = 34,
+}: {
+  name: ComponentProps<typeof Ionicons>['name'];
+  size?: number;
+}) {
+  const colors = useThemeColors();
+  return (
+    <View
+      style={{ width: size, height: size }}
+      className="rounded-ctl bg-raised dark:bg-raised-dk items-center justify-center">
+      <Ionicons name={name} size={Math.round(size * 0.52)} color={colors.ink2} />
+    </View>
   );
 }
 

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, Switch, View } from 'react-native';
+import { IconTile, ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -942,26 +943,16 @@ export default function AutomationEditor() {
           ) : null}
         </View>
 
-        <Pressable
+        <ListRow
+          wrap
+          lead={<IconTile name="brush-outline" />}
+          title="Design your email"
+          subtitle={`${doc.blocks.length} block${doc.blocks.length === 1 ? '' : 's'} · edit the layout and content`}
           onPress={() => {
             setEditingStep(null);
             setMode('design');
           }}
-          className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 active:opacity-70">
-          <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
-            <Ionicons name="brush-outline" size={18} color={colors.ink2} />
-          </View>
-          <View className="flex-1">
-            <Text className="text-ink dark:text-ink-dk font-semibold">
-              Design your email
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-              {doc.blocks.length} block{doc.blocks.length === 1 ? '' : 's'} · edit the
-              layout and content
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
-        </Pressable>
+        />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <View className="gap-1">

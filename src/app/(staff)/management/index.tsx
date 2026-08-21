@@ -4,6 +4,7 @@ import { Link, router, useLocalSearchParams } from 'expo-router';
 import type { ComponentProps, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
 import { Avatar } from '@/components/Avatar';
@@ -84,6 +85,10 @@ import { StoreHome } from './store';
 
 type LinkHref = ComponentProps<typeof Link>['href'];
 
+// A door: a destination, and a sentence saying where it goes. One of the
+// six that used to hand-roll this; it is a ListRow with a wrapping
+// subtitle now, so it obeys the same padding and chevron rules as every
+// other row in the product.
 function ManagementCard({
   title,
   description,
@@ -107,40 +112,31 @@ function ManagementCard({
   // telling them they need not have.
   saidInstead?: string;
 }) {
-  const colors = useThemeColors();
-  const body = (
-    <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-1 border border-line dark:border-line-dk">
-      <View className="flex-row justify-between items-center gap-3">
-        <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
-          {title}
-        </Text>
-        {comingSoon ? (
-          <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-semibold uppercase tracking-[1px]">
+  return (
+    <ListRow
+      wrap
+      title={title}
+      subtitle={description}
+      href={comingSoon ? undefined : href}
+      onPress={comingSoon ? undefined : onPress}
+      // Replaces the chevron rather than sitting beside it: there is
+      // nothing to open yet, so an affordance saying otherwise would lie.
+      trailing={
+        comingSoon ? (
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-semibold uppercase tracking-[1px] pt-1">
             Coming soon
           </Text>
-        ) : (
-          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
-        )}
-      </View>
-      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">{description}</Text>
-      {saidInstead ? (
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
-          or say “{saidInstead}”
-        </Text>
-      ) : null}
-    </View>
+        ) : undefined
+      }
+      foot={
+        saidInstead ? (
+          <Text className="text-ink-3 dark:text-ink-3-dk text-[12px] pt-0.5">
+            or say &ldquo;{saidInstead}&rdquo;
+          </Text>
+        ) : undefined
+      }
+    />
   );
-  if (onPress && !comingSoon) {
-    return <Pressable onPress={onPress}>{body}</Pressable>;
-  }
-  if (href && !comingSoon) {
-    return (
-      <Link href={href} asChild>
-        <Pressable>{body}</Pressable>
-      </Link>
-    );
-  }
-  return body;
 }
 
 type IconName = ComponentProps<typeof Ionicons>['name'];

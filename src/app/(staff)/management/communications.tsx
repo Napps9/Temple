@@ -1,8 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { IconTile, ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -95,23 +96,13 @@ export function CommunicationsHome({ onNew }: { onNew?: () => void }) {
 
       <AutomationList />
 
-      <Link href="/management/communications/settings" asChild>
-        <Pressable className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 active:opacity-70">
-          <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
-            <Ionicons name="settings-outline" size={18} color={colors.ink2} />
-          </View>
-          <View className="flex-1">
-            <Text className="text-ink dark:text-ink-dk font-semibold">
-              Email settings
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-              Sender, the required postal-address footer, and the topics
-              members can unsubscribe from.
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
-        </Pressable>
-      </Link>
+      <ListRow
+        wrap
+        lead={<IconTile name="settings-outline" />}
+        title="Email settings"
+        subtitle="Sender, the required postal-address footer, and the topics members can unsubscribe from."
+        href="/management/communications/settings"
+      />
     </View>
   );
 }
