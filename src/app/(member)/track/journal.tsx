@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -103,24 +104,20 @@ export default function Journal() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <View className="flex-row items-center gap-2">
-          <BackLink inline fallbackHref="/track" />
-          <View className="flex-1">
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-              Journal
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              Every workout you've logged.
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => setRecording(true)}
-            hitSlop={6}
-            className="bg-primary active:bg-primary-dark rounded-full px-3 py-1.5 flex-row items-center gap-1">
-            <Ionicons name="add" size={14} color="#FFFFFF" />
-            <Text className="text-white text-xs font-semibold">Record</Text>
-          </Pressable>
-        </View>
+        <PageHead
+          lead={<BackLink inline fallbackHref="/track" />}
+          title="Journal"
+          subtitle="Every workout you've logged."
+          action={
+            <Pressable
+              onPress={() => setRecording(true)}
+              hitSlop={6}
+              className="bg-primary active:bg-primary-dark rounded-full px-3 py-1.5 flex-row items-center gap-1">
+              <Ionicons name="add" size={14} color="#FFFFFF" />
+              <Text className="text-white text-xs font-semibold">Record</Text>
+            </Pressable>
+          }
+        />
 
         {journal.isLoading ? (
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { PageHead } from '@/components/PageHead';
 import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -109,17 +110,11 @@ export default function NewDirectMessage() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <View className="flex-row items-center gap-2">
-          <BackLink inline fallbackHref="/inbox" />
-          <View className="flex-1">
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-              New message
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              Pick a recipient.
-            </Text>
-          </View>
-        </View>
+        <PageHead
+          lead={<BackLink inline fallbackHref="/inbox" />}
+          title="New message"
+          subtitle="Pick a recipient."
+        />
 
         <TextInput
           value={query}

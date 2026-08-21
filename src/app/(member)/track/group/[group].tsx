@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -173,17 +174,11 @@ export default function GroupPage() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <View className="flex-row items-center gap-2">
-          <BackLink inline fallbackHref="/track" />
-          <View className="flex-1">
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-              {group.name}
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              {group.blurb}
-            </Text>
-          </View>
-        </View>
+        <PageHead
+          lead={<BackLink inline fallbackHref="/track" />}
+          title={group.name}
+          subtitle={group.blurb}
+        />
 
         <View className="gap-2">
           {group.movements.map((m) => {

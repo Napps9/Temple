@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, Switch, View } from 'react-native';
+import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
 import { AgentBriefBuilder } from '@/components/AgentBriefBuilder';
@@ -284,12 +285,17 @@ export default function AgentSetupWizard() {
         <BackLink fallbackHref="/management/leads" />
 
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <Ionicons name="sparkles" size={22} color={colors.primary} />
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-              AI Sales Agent
-            </Text>
-          </View>
+          <PageHead
+            lead={
+              <Ionicons
+                name="sparkles"
+                size={22}
+                color={colors.primary}
+                style={{ marginTop: 4 }}
+              />
+            }
+            title="AI Sales Agent"
+          />
           <View className="flex-row gap-1.5">
             {STEPS.map((s, i) => (
               <View

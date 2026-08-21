@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
@@ -166,27 +167,25 @@ export default function TrackHome() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-5xl xl:max-w-7xl md:mx-auto md:w-full">
-        <View className="flex-row items-center gap-3">
-          <View className="flex-1 gap-0.5">
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-              Track
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              {isHyrox
-                ? 'Log your stations, run splits and race times.'
-                : 'Log workouts and PRs across movements.'}
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => {
-              setRecordPrefill(null);
-              setRecording(true);
-            }}
-            className="bg-primary hover:opacity-90 active:bg-primary-dark rounded-full px-4 py-2.5 flex-row items-center gap-1.5">
-            <Ionicons name="add" size={16} color="#FFFFFF" />
-            <Text className="text-white text-sm font-semibold">Record</Text>
-          </Pressable>
-        </View>
+        <PageHead
+          title="Track"
+          subtitle={
+            isHyrox
+              ? 'Log your stations, run splits and race times.'
+              : 'Log workouts and PRs across movements.'
+          }
+          action={
+            <Pressable
+              onPress={() => {
+                setRecordPrefill(null);
+                setRecording(true);
+              }}
+              className="bg-primary hover:opacity-90 active:bg-primary-dark rounded-full px-4 py-2.5 flex-row items-center gap-1.5">
+              <Ionicons name="add" size={16} color="#FFFFFF" />
+              <Text className="text-white text-sm font-semibold">Record</Text>
+            </Pressable>
+          }
+        />
 
         {journalCount.data === 0 &&
         !onboardingFlags.data?.track_how_it_works_dismissed ? (

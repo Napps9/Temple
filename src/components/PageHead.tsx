@@ -11,16 +11,23 @@ import { Text } from './Text';
 // supplies `px-4` and a stack gap, and a part that adds to that would sit
 // indented from the cards beneath it on every page in the product.
 export function PageHead({
+  lead,
   title,
   subtitle,
   action,
 }: {
+  // Sits before the title in the same row. Two things go here: the
+  // `inline` BackLink — a bare chevron sized to sit beside a title,
+  // which is one of BackLink's two documented placements — and the
+  // avatar on a member's own page. Anything wider belongs in `action`.
+  lead?: ReactNode;
   title: string;
   subtitle?: string;
   action?: ReactNode;
 }) {
   return (
     <View className="flex-row items-start gap-3">
+      {lead}
       <View className="flex-1 gap-1">
         <Text
           accessibilityRole="header"

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
+import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -51,24 +52,20 @@ export default function StoreScreen() {
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/account" />
 
-        <View className="flex-row items-center gap-3">
-          <View className="flex-1">
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-              Store
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk">
-              {brand.gymName}
-            </Text>
-          </View>
-          <Link href="/purchases" asChild>
-            <Pressable
-              hitSlop={8}
-              className="flex-row items-center gap-1 active:opacity-70">
-              <Ionicons name="bag-handle-outline" size={18} color={colors.primary} />
-              <Text className="text-primary text-sm font-medium">Purchases</Text>
-            </Pressable>
-          </Link>
-        </View>
+        <PageHead
+          title="Store"
+          subtitle={brand.gymName}
+          action={
+            <Link href="/purchases" asChild>
+              <Pressable
+                hitSlop={8}
+                className="flex-row items-center gap-1 active:opacity-70">
+                <Ionicons name="bag-handle-outline" size={18} color={colors.primary} />
+                <Text className="text-primary text-sm font-medium">Purchases</Text>
+              </Pressable>
+            </Link>
+          }
+        />
 
         {params.checkout === 'success' ? (
           <View className="bg-green-50 dark:bg-green-950/40 rounded-xl p-3">
