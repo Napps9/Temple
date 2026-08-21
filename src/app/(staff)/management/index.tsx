@@ -4,8 +4,9 @@ import { Link, router, useLocalSearchParams } from 'expo-router';
 import type { ComponentProps, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { PageHead } from '@/components/PageHead';
 import { ListRow } from '@/components/ListRow';
-import { Text } from '@/components/Text';
+import { Text, TextInput } from '@/components/Text';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
@@ -21,7 +22,6 @@ import { FinanceBlock } from '@/components/FinanceBlock';
 import { GymSetupChecklist } from '@/components/GymSetupChecklist';
 import { ImportDataModal } from '@/components/ImportDataModal';
 import { EmptyState } from '@/components/EmptyState';
-import { Input } from '@/components/Input';
 import { BrandingPanel } from '@/components/BrandingPanel';
 import { ClassTypesPanel } from '@/components/ClassTypesPanel';
 import { ClosuresCard } from '@/components/ClosuresCard';
@@ -258,6 +258,7 @@ function SearchResults({
 }
 
 export default function ManagementHome() {
+  const colors = useThemeColors();
   const role = useRole();
   const canSeeInsights = useCan('can_see_insights');
   const canViewAttendance = useCan('can_view_attendance');
@@ -384,15 +385,33 @@ export default function ManagementHome() {
         <ScrollView
           className="flex-1"
           contentContainerClassName="gap-4 py-6 px-4 lg:px-8 lg:max-w-5xl lg:w-full">
+          <PageHead
+            title="Manage"
+            subtitle="Everything behind the gym — people, money, and how it runs."
+          />
           {entries.length > 1 ? (
-            <Input
-              label="Find a setting"
-              value={query}
-              onChangeText={setQuery}
-              placeholder="refunds, sending domain, coach pay…"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line-strong dark:border-line-dk rounded-ctl px-3">
+              <Ionicons name="search" size={18} color={colors.ink2} />
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder="refunds, sending domain, coach pay…"
+                placeholderTextColor={colors.ink3}
+                accessibilityLabel="Find a setting"
+                autoCapitalize="none"
+                autoCorrect={false}
+                className="flex-1 py-3 text-ink dark:text-ink-dk"
+              />
+              {searching ? (
+                <Pressable
+                  onPress={() => setQuery('')}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear the search">
+                  <Ionicons name="close-circle" size={18} color={colors.ink2} />
+                </Pressable>
+              ) : null}
+            </View>
           ) : null}
           {/* The section nav is a pill row at every width. It used to
               become a second full-height sidebar at 1024, which is
@@ -447,9 +466,10 @@ export default function ManagementHome() {
         ) : activeCategory === 'settings' ? (
           <SettingsTab open={openSection} />
         ) : null}
-        {searching
-          ? null
-          : visibleCards.map((c) => (
+        {searching || visibleCards.length === 0 ? null : (
+          <View className="gap-3">
+            <SectionLabel>{CATEGORY_LABELS[activeCategory]}</SectionLabel>
+            {visibleCards.map((c) => (
               <ManagementCard
                 key={c.title}
                 title={c.title}
@@ -459,6 +479,8 @@ export default function ManagementHome() {
                 saidInstead={c.saidInstead}
               />
             ))}
+          </View>
+        )}
         </ScrollView>
       </View>
     </Screen>
@@ -1135,8 +1157,6 @@ function CoachEarningsSummary({ profileId }: { profileId: string }) {
 // ============================================================================
 // Key stats — at-a-glance KPIs on the manage page, with a shared date filter.
 // ============================================================================
-
-
 
 // ============================================================================
 // Insights tab — Revenue, Members, Attendance. Everything lead/lifecycle
