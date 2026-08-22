@@ -231,8 +231,8 @@ export function MovementDetailView({
               onPress={() => setRecording({})}
               hitSlop={6}
               className="bg-primary hover:opacity-90 active:bg-primary-dark rounded-full px-3 py-1.5 flex-row items-center gap-1">
-              <Ionicons name="add" size={14} color="#FFFFFF" />
-              <Text className="text-white text-xs font-semibold">Record</Text>
+              <Ionicons name="add" size={14} color={colors.onPrimary} />
+              <Text className="text-on-primary text-xs font-semibold">Record</Text>
             </Pressable>
           ) : null}
         </View>

@@ -137,7 +137,7 @@ export default function DirectThread() {
                       <Text
                         className={
                           fromMe
-                            ? 'text-white text-sm'
+                            ? 'text-on-primary text-sm'
                             : 'text-ink dark:text-ink-dk text-sm'
                         }>
                         {m.body}
@@ -179,7 +179,7 @@ export default function DirectThread() {
                 ? 'bg-sunken dark:bg-sunken-dk'
                 : 'bg-primary active:bg-primary-dark'
             }`}>
-            <Ionicons name="arrow-up" size={20} color="#FFFFFF" />
+            <Ionicons name="arrow-up" size={20} color={colors.onPrimary} />
           </Pressable>
         </View>
         {error ? (

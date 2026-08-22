@@ -700,6 +700,7 @@ function SaveButton({
   state: 'idle' | 'saving' | 'saved';
   onPress: () => void;
 }) {
+  const colors = useThemeColors();
   const saved = state === 'saved';
   return (
     <Pressable
@@ -712,7 +713,7 @@ function SaveButton({
           : 'bg-primary disabled:opacity-70'
       }`}>
       {state === 'saving' ? (
-        <ActivityIndicator size="small" color={saved ? '#16A34A' : '#FFFFFF'} />
+        <ActivityIndicator size="small" color={saved ? '#16A34A' : colors.onPrimary} />
       ) : (
         <Ionicons
           name={saved ? 'checkmark-circle' : 'save-outline'}

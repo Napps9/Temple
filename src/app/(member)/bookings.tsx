@@ -377,8 +377,9 @@ function WaitlistCard({
 }
 
 function AttendanceBadge({ label }: { label: ReturnType<typeof attendanceLabel> }) {
+  const colors = useThemeColors();
   const color =
-    label === 'Attended' ? '#10B981' : label === 'No-show' ? '#F97316' : '#9CA3AF';
+    label === 'Attended' ? '#10B981' : label === 'No-show' ? '#F97316' : colors.ink3;
   return (
     <View style={{ backgroundColor: color }} className="rounded-full px-2 py-0.5">
       <Text className="text-white text-[10px] font-semibold">{label}</Text>

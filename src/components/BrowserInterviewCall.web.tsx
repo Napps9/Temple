@@ -144,7 +144,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
             {preparing ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text className="font-semibold text-sm text-white">Allow &amp; start talking</Text>
+              <Text className="font-semibold text-sm text-on-primary">Allow &amp; start talking</Text>
             )}
           </Pressable>
         </View>
@@ -209,7 +209,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
         <Pressable
           onPress={() => submit.mutate()}
           className="py-2.5 rounded-lg items-center bg-primary">
-          <Text className="font-semibold text-sm text-white">Try saving again</Text>
+          <Text className="font-semibold text-sm text-on-primary">Try saving again</Text>
         </Pressable>
       </View>
     );

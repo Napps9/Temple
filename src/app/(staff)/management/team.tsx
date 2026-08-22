@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, Switch, View } from 'react-native';
 import { ListRow, RuledList } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
@@ -636,21 +636,23 @@ function CapabilityRow({
       <Pressable
         onPress={onToggle}
         disabled={disabled}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: enabled, disabled }}
+        accessibilityLabel={label}
         className="flex-1 flex-row items-center justify-between gap-3">
         <View className="flex-1 gap-0.5">
           <View className="flex-row items-center gap-2">
             <Text className="text-ink dark:text-ink-dk font-medium">{label}</Text>
             {isOverridden ? (
-              <View className="w-1.5 h-1.5 rounded-full bg-primary" />
+              <View className="w-1.5 h-1.5 rounded-full bg-ink-3 dark:bg-ink-3-dk" />
             ) : null}
           </View>
           <Text className="text-ink-2 dark:text-ink-2-dk text-xs">{description}</Text>
         </View>
-        <View
-          className={`w-11 h-6 rounded-full justify-center px-0.5 ${
-            enabled ? 'bg-primary items-end' : 'bg-sunken dark:bg-sunken-dk items-start'
-          }`}>
-          <View className="w-5 h-5 rounded-full bg-white" />
+        {/* Visual only — the row is the control, and a live Switch inside
+            it would fire alongside the row's own onPress. */}
+        <View pointerEvents="none">
+          <Switch value={enabled} disabled={disabled} />
         </View>
       </Pressable>
       {onClear ? (

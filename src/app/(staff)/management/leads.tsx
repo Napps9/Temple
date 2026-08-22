@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, Link, router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Platform, Pressable, ScrollView, View } from 'react-native';
 import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 

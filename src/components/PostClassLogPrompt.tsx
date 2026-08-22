@@ -126,7 +126,7 @@ export function PostClassLogPrompt() {
       <Pressable
         onPress={() => setRecording(true)}
         className="bg-primary rounded-lg py-3 items-center justify-center active:bg-primary-dark">
-        <Text className="text-white font-semibold">Log your workout</Text>
+        <Text className="text-on-primary font-semibold">Log your workout</Text>
       </Pressable>
       {/* Same flow the Programming page's "Record results" prompt opens —
           pre-filled with this class's date and tied to its session id,

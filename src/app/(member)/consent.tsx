@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useThemeColors } from '@/lib/theme';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -26,6 +27,7 @@ import { useGymAllowMinors } from '@/lib/useGymAllowMinors';
 // entry. PAR-Q screening follows once this passes (the index gate
 // chains consent → PAR-Q → app).
 export default function ConsentForm() {
+  const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const session = useSession();
   const queryClient = useQueryClient();
@@ -192,7 +194,7 @@ export default function ConsentForm() {
                         : 'border border-line-strong dark:border-line-strong-dk'
                     }`}>
                     {guardianAck ? (
-                      <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                      <Ionicons name="checkmark" size={16} color={colors.onPrimary} />
                     ) : null}
                   </View>
                   <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">
@@ -226,7 +228,7 @@ export default function ConsentForm() {
                           : 'border border-line-strong dark:border-line-strong-dk'
                       }`}>
                       {on ? (
-                        <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                        <Ionicons name="checkmark" size={16} color={colors.onPrimary} />
                       ) : null}
                     </View>
                     <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">

@@ -998,12 +998,14 @@ export default function WebsiteManageScreen() {
                 accessibilityState={{ selected: isActive }}
                 className={`px-3 py-1.5 rounded-full ${
                   isActive
-                    ? 'bg-primary'
-                    : 'bg-raised dark:bg-raised-dk hover:bg-sunken dark:hover:bg-sunken-dk'
+                    ? 'bg-raised dark:bg-raised-dk'
+                    : 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk hover:border-line-strong dark:hover:border-line-strong-dk'
                 }`}>
                 <Text
-                  className={`text-xs font-semibold ${
-                    isActive ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
+                  className={`text-xs ${
+                    isActive
+                      ? 'text-ink dark:text-ink-dk font-semibold'
+                      : 'text-ink-2 dark:text-ink-2-dk font-medium'
                   }`}>
                   {p.title}
                 </Text>

@@ -62,7 +62,7 @@ export function MemberGetStartedChecklist() {
   };
 
   return (
-    <View className="bg-raised dark:bg-raised-dk/40 rounded-2xl p-3 gap-3 border border-primary/20">
+    <View className="bg-raised dark:bg-raised-dk/40 rounded-card p-3 gap-3 border border-primary/20">
       <Pressable
         onPress={() => setOpen((v) => !v)}
         className="flex-row items-center gap-3 active:opacity-70">
@@ -104,7 +104,7 @@ export function MemberGetStartedChecklist() {
             <Pressable
               key={step.key}
               onPress={() => runStep(step.key)}
-              className="flex-row items-center gap-3 rounded-lg px-3 py-2.5 bg-white dark:bg-raised-dk active:opacity-70">
+              className="flex-row items-center gap-3 rounded-lg px-3 py-2.5 bg-surface dark:bg-surface-dk active:opacity-70">
               <StatusDisk
                 size={28}
                 done={step.done}

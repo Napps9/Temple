@@ -13,6 +13,7 @@
 :root {
   --color-primary: 194 65 12;
   --color-primary-dark: 165 55 10;
+  --color-on-primary: 255 255 255;
   --color-link: 20 22 26;
   --color-secondary: 20 22 26;
 }

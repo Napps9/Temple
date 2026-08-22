@@ -411,7 +411,7 @@ export function ProgrammingCalendar({
                   <Text
                     className={`font-bold text-base ${
                       selected
-                        ? 'text-white'
+                        ? 'text-on-primary'
                         : today
                           ? 'text-ink dark:text-ink-dk font-semibold'
                           : 'text-ink dark:text-ink-dk'
@@ -453,10 +453,10 @@ export function ProgrammingCalendar({
                   onPress={() => setRecordingDate(date)}
                   className="bg-primary active:bg-primary-dark rounded-xl p-3 flex-row items-center gap-3">
                   <View className="w-9 h-9 rounded-full bg-white/20 items-center justify-center">
-                    <Ionicons name="add" size={20} color="#FFFFFF" />
+                    <Ionicons name="add" size={20} color={colors.onPrimary} />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-white font-semibold text-sm">
+                    <Text className="text-on-primary font-semibold text-sm">
                       Record results
                     </Text>
                     <Text className="text-white/80 text-xs">

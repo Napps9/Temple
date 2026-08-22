@@ -96,7 +96,7 @@ export function RecurrenceEditor({
                 <Text
                   className={
                     sel
-                      ? 'text-white font-semibold'
+                      ? 'text-on-primary font-semibold'
                       : 'text-ink-2 dark:text-ink-2-dk font-medium'
                   }>
                   {DAY_LETTERS[i]}

@@ -98,11 +98,14 @@ const server = createServer(async (req, res) => {
   if (path.startsWith('/rest/v1/rpc/')) {
     const fn = path.slice('/rest/v1/rpc/'.length);
     await readBody(req);
-    const value = Object.prototype.hasOwnProperty.call(RPCS, fn) ? RPCS[fn] : [];
-    if (!Object.prototype.hasOwnProperty.call(RPCS, fn)) {
-      console.log(`  rpc  ${fn} -> [] (no fixture)`);
-    }
-    return json(res, shape(Array.isArray(value) ? value : [value], req) ?? value);
+    const known = Object.prototype.hasOwnProperty.call(RPCS, fn);
+    if (!known) console.log(`  rpc  ${fn} -> [] (no fixture)`);
+    const value = known ? RPCS[fn] : [];
+    // A scalar fixture answers as a scalar: PostgREST returns bare JSON
+    // for a scalar-returning function, and an array where a number
+    // belongs turns into NaN downstream.
+    if (!Array.isArray(value)) return json(res, value);
+    return json(res, shape(value, req));
   }
 
   // --------------------------------------------------------------- table

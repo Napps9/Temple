@@ -3,7 +3,6 @@ import { forwardRef, type ComponentProps, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, View as RNView, type View } from 'react-native';
 import { Text } from './Text';
 
-import { contrastRatio } from '@/lib/contrast';
 import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
 
@@ -74,14 +73,10 @@ export const Button = forwardRef<View, Props>(function Button(
 ) {
   const colors = useThemeColors();
   const isDisabled = disabled || loading;
-  // The primary fill is the gym's chosen brand colour — pick whichever
-  // of white / near-black ink reads better on it, so a light brand
-  // (yellow, cyan) doesn't produce white-on-white labels.
-  const primaryLabel =
-    contrastRatio(colors.primary, '#FFFFFF') >=
-    contrastRatio(colors.primary, '#111827')
-      ? '#FFFFFF'
-      : '#111827';
+  // The label on the accent fill is a theme token now that the accent is
+  // Temple's own — white on the light accent, near-black ink on the
+  // lifted dark one.
+  const primaryLabel = colors.onPrimary;
   // Icon + spinner tint tracks the variant's text colour, so a leading
   // icon and its label are never two different colours.
   const accent: Record<Variant, string> = {

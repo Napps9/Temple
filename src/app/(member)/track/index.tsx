@@ -181,8 +181,8 @@ export default function TrackHome() {
                 setRecording(true);
               }}
               className="bg-primary hover:opacity-90 active:bg-primary-dark rounded-full px-4 py-2.5 flex-row items-center gap-1.5">
-              <Ionicons name="add" size={16} color="#FFFFFF" />
-              <Text className="text-white text-sm font-semibold">Record</Text>
+              <Ionicons name="add" size={16} color={colors.onPrimary} />
+              <Text className="text-on-primary text-sm font-semibold">Record</Text>
             </Pressable>
           }
         />
@@ -354,7 +354,7 @@ function TrackHowItWorks() {
     },
   ];
   return (
-    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 border border-primary/20">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <View className="flex-row items-start gap-3">
         <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
           <Ionicons name="compass-outline" size={22} color={colors.primary} />
@@ -785,7 +785,7 @@ function GroupTile({
       </View>
       {recentCount > 0 ? (
         <View className="absolute right-3 top-3 bg-primary rounded-full px-2 py-0.5">
-          <Text className="text-white text-[10px] font-bold">
+          <Text className="text-on-primary text-[10px] font-bold">
             {recentCount} new
           </Text>
         </View>

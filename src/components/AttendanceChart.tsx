@@ -52,7 +52,7 @@ export function AttendanceChart({ data, width = 560, height = 200 }: Props) {
           y1={PADDING_TOP + chartH}
           x2={PADDING_LEFT + chartW}
           y2={PADDING_TOP + chartH}
-          stroke="#E5E7EB"
+          stroke={colors.line}
           strokeWidth={1}
         />
         <SvgText
@@ -89,7 +89,7 @@ export function AttendanceChart({ data, width = 560, height = 200 }: Props) {
                 x={x + barW / 2}
                 y={PADDING_TOP + chartH + 14}
                 textAnchor="middle"
-                fill="#6B7280"
+                fill={colors.ink3}
                 fontSize={9}>
                 {d.label}
               </SvgText>

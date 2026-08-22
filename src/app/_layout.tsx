@@ -139,6 +139,7 @@ function ThemedShell() {
     return vars({
       '--color-primary': hexToRgbTriplet(accent.primary),
       '--color-primary-dark': hexToRgbTriplet(accent.primaryDark),
+      '--color-on-primary': hexToRgbTriplet(accent.onPrimary),
       '--color-link': hexToRgbTriplet(accent.ink),
       '--color-secondary': hexToRgbTriplet(accent.ink),
     });
@@ -153,6 +154,7 @@ function ThemedShell() {
     const root = document.documentElement.style;
     root.setProperty('--color-primary', hexToRgbTriplet(accent.primary));
     root.setProperty('--color-primary-dark', hexToRgbTriplet(accent.primaryDark));
+    root.setProperty('--color-on-primary', hexToRgbTriplet(accent.onPrimary));
     root.setProperty('--color-link', hexToRgbTriplet(accent.ink));
     root.setProperty('--color-secondary', hexToRgbTriplet(accent.ink));
   }, [scheme]);
