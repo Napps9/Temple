@@ -1,7 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
+import { AIMark } from './AIMark';
 import { Text } from './Text';
+
+import { renderIconSlot, type IconSlot } from './icon-slot';
 
 import { useThemeColors } from '@/lib/theme';
 import {
@@ -20,10 +23,7 @@ import {
 // category so the sentence doesn't have to be re-read to place it — a
 // stream of near-identical grey lines was the complaint that bought
 // these.
-export const KIND_ICON: Record<
-  TimelineEvent['kind'],
-  React.ComponentProps<typeof Ionicons>['name']
-> = {
+export const KIND_ICON: Record<TimelineEvent['kind'], IconSlot> = {
   member_joined: 'person-add-outline',
   lead_captured: 'chatbubble-ellipses-outline',
   payment_failing: 'card-outline',
@@ -33,9 +33,9 @@ export const KIND_ICON: Record<
   gym_closed: 'moon-outline',
   membership_request: 'help-circle-outline',
   campaign_sent: 'paper-plane-outline',
-  // Temple itself acted — one icon for every job, because "Temple did
+  // Temple itself acted — one mark for every job, because "Temple did
   // this" is the category; the sentence says which job.
-  agent_action: 'sparkles-outline',
+  agent_action: <AIMark />,
 };
 
 export function ReceiptLine({ event }: { event: TimelineEvent }) {
@@ -72,7 +72,7 @@ export function SoftLine({
   text: string;
   tone: 'neutral' | 'amber' | 'red';
   lead?: string;
-  icon?: React.ComponentProps<typeof Ionicons>['name'];
+  icon?: IconSlot;
   // Temple's own receipts step back so the people-lines step forward.
   quiet?: boolean;
   at?: string;
@@ -107,7 +107,7 @@ export function SoftLine({
                   ? 'bg-transparent'
                   : 'bg-sunken/70 dark:bg-raised-dk'
           }`}>
-          <Ionicons name={icon} size={14} color={iconColor} />
+          {renderIconSlot(icon, 14, iconColor)}
         </View>
       ) : (
         <View

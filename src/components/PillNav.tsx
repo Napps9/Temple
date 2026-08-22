@@ -1,16 +1,14 @@
-import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
 import { Pressable, ScrollView } from 'react-native';
 import { Text } from './Text';
 
-import { useThemeColors } from '@/lib/theme';
+import { renderIconSlot, type IconSlot } from './icon-slot';
 
-type IconName = ComponentProps<typeof Ionicons>['name'];
+import { useThemeColors } from '@/lib/theme';
 
 export type PillNavItem<K extends string = string> = {
   key: K;
   label: string;
-  icon?: IconName;
+  icon?: IconSlot;
 };
 
 // The one section-pill strip. It existed three times before this — the
@@ -53,13 +51,9 @@ export function PillNav<K extends string>({
                 ? 'bg-raised dark:bg-raised-dk'
                 : 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk hover:border-line-strong dark:hover:border-line-strong-dk'
             }`}>
-            {item.icon ? (
-              <Ionicons
-                name={item.icon}
-                size={17}
-                color={selected ? colors.ink : colors.ink3}
-              />
-            ) : null}
+            {item.icon
+              ? renderIconSlot(item.icon, 17, selected ? colors.ink : colors.ink3)
+              : null}
             <Text
               className={`text-sm ${
                 selected

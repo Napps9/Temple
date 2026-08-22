@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, View } from 'react-native';
 import { Text } from '@/components/Text';
 
+import { AIMark } from '@/components/AIMark';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { Sheet, SheetAction } from '@/components/Sheet';
@@ -566,7 +567,7 @@ export default function AgentConversationScreen() {
             ) : (
               <ChipButton
                 label="Hand back to AI"
-                icon="sparkles-outline"
+                icon={<AIMark />}
                 tone="primary"
                 onPress={() => act.mutate({ action: 'reopen' })}
               />

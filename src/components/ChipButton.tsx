@@ -1,12 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
+import { renderIconSlot, type IconSlot } from './icon-slot';
+
 import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
-
-type IconName = ComponentProps<typeof Ionicons>['name'];
 
 // 'inverse' renders as the opposite of the current scheme — a dark
 // pill on a light surface, a light pill on a dark one. Useful for
@@ -66,7 +64,7 @@ export function ChipButton({
   className,
 }: {
   label: string;
-  icon: IconName;
+  icon: IconSlot;
   iconSide?: 'left' | 'right';
   tone?: Tone;
   // Omit onPress when the chip is a visual affordance inside a larger
@@ -88,7 +86,7 @@ export function ChipButton({
     filled: filledLabel,
     inverse: colors.surface,
   };
-  const iconEl = <Ionicons name={icon} size={13} color={iconColor[tone]} />;
+  const iconEl = renderIconSlot(icon, 13, iconColor[tone]);
   const containerClass = `flex-row items-center gap-1.5 px-3 py-1.5 rounded-full ${
     s.container
   } ${disabled ? 'opacity-50' : ''} ${className ?? ''}`;

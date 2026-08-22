@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { forwardRef, type ComponentProps, type ReactNode } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, View as RNView, type View } from 'react-native';
 import { Text } from './Text';
+
+import { renderIconSlot, type IconSlot } from './icon-slot';
 
 import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
 
 type Variant = 'primary' | 'plain' | 'secondary' | 'ghost' | 'destructive';
-type IconName = ComponentProps<typeof Ionicons>['name'];
 
 type Props = {
   children: ReactNode;
@@ -18,7 +19,7 @@ type Props = {
   variant?: Variant;
   // Leading icon. Pairs with the label so a primary action reads as an
   // action, not just text — the success checkmark takes precedence.
-  icon?: IconName;
+  icon?: IconSlot;
 };
 
 // WHICH VARIANT. The gym's colour is allowed on exactly one action per
@@ -118,7 +119,7 @@ export const Button = forwardRef<View, Props>(function Button(
               color={variant === 'primary' ? primaryLabel : successIconColor[variant]}
             />
           ) : icon ? (
-            <Ionicons name={icon} size={18} color={tint} />
+            renderIconSlot(icon, 18, tint)
           ) : null}
           <Text
             className={textStyles[variant]}

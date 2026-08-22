@@ -7,6 +7,7 @@ import { Text } from '@/components/Text';
 import { Ionicons } from '@expo/vector-icons';
 
 import { AgentBriefBuilder } from '@/components/AgentBriefBuilder';
+import { AIMark } from '@/components/AIMark';
 import { BrowserInterviewCall } from '@/components/BrowserInterviewCall';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
@@ -821,7 +822,7 @@ export function AgentSettings() {
           </FieldLabel>
           <ChipButton
             label="Rewrite with AI"
-            icon="sparkles"
+            icon={<AIMark />}
             tone="primary"
             onPress={() => {
               setBriefDraft(agentContext ?? '');

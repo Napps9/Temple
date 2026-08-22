@@ -1838,7 +1838,7 @@ function AgentActionCard({
     return (
       <SoftLine
         tone="neutral"
-        icon="sparkles-outline"
+        icon={<AIMark />}
         href={actionId ? `/timeline/${actionId}` : undefined}
         text={
           decided === 'approve'
@@ -2057,7 +2057,7 @@ function PaymentFailingCard({
             {jobOn && chipReady ? (
               <ChipButton
                 label={chase.isPending ? 'Handing over…' : 'Chase for me'}
-                icon="sparkles-outline"
+                icon={<AIMark />}
                 tone="primary"
                 disabled={chase.isPending}
                 onPress={() => chase.mutate()}

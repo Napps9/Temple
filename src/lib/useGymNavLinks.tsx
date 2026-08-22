@@ -1,12 +1,12 @@
-import type { Ionicons } from '@expo/vector-icons';
-
+import { AIMark } from '@/components/AIMark';
+import type { IconSlot } from '@/components/icon-slot';
 import { useGymMembership } from '@/lib/auth';
 import { useCan } from '@/lib/useCan';
 
 export type GymNavLink = {
   href: string;
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconSlot;
 };
 
 // The gym's own destinations, as the persistent nav names them — the
@@ -43,7 +43,7 @@ export function useGymNavLinks(): GymNavLink[] {
           {
             href: '/management/leads',
             label: 'AI Front Desk',
-            icon: 'sparkles-outline' as const,
+            icon: <AIMark />,
           },
         ]
       : []),

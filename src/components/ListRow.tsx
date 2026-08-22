@@ -4,6 +4,8 @@ import type { ComponentProps, ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
+import { renderIconSlot, type IconSlot } from './icon-slot';
+
 import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
 
@@ -137,7 +139,7 @@ export function IconTile({
   name,
   size = 34,
 }: {
-  name: ComponentProps<typeof Ionicons>['name'];
+  name: IconSlot;
   size?: number;
 }) {
   const colors = useThemeColors();
@@ -145,7 +147,7 @@ export function IconTile({
     <View
       style={{ width: size, height: size }}
       className="rounded-ctl bg-raised dark:bg-raised-dk items-center justify-center">
-      <Ionicons name={name} size={Math.round(size * 0.52)} color={colors.ink2} />
+      {renderIconSlot(name, Math.round(size * 0.52), colors.ink2)}
     </View>
   );
 }

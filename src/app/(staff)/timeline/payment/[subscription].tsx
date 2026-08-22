@@ -6,6 +6,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollVie
 import { EmptyState } from '@/components/EmptyState';
 import { Text, TextInput } from '@/components/Text';
 
+import { AIMark } from '@/components/AIMark';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
@@ -393,13 +394,13 @@ export default function PaymentStory() {
                 <SoftLine
                   text={`Handed over — my nudge to ${first} is on its way. The receipt lands in the Timeline.`}
                   tone="neutral"
-                  icon="sparkles-outline"
+                  icon={<AIMark />}
                 />
               ) : story.data?.chased ? (
                 <SoftLine
                   text="I'm on it — my nudge is on its way."
                   tone="neutral"
-                  icon="sparkles-outline"
+                  icon={<AIMark />}
                   href={
                     story.data.actionId
                       ? `/timeline/${story.data.actionId}`

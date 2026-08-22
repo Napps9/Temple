@@ -18,8 +18,10 @@ import { useThemeColors } from '@/lib/theme';
 //   2. In an avatar slot it takes a rounded SQUARE. Every person in the
 //      product is a circle; the shape says "an entity, not a human"
 //      before the glyph inside it does, and it survives greyscale.
-//   3. It is never the gym's colour. The accent means the gym; this means
-//      Temple. Two signals, two treatments.
+//   3. Standing alone it is ink, never the accent — the accent marks the
+//      page's one action, and the mark is a byline, not a call to act.
+//      Inside a control's icon slot it takes the label's tint like any
+//      icon, because a control's icon and label are never two colours.
 //
 // Sizes under 22 render bare, standing in for a line icon. 22 and up take
 // the tile.
@@ -42,8 +44,14 @@ export function AIMark({
   const glyph = tiled ? Math.round(size * 0.56) : size;
   const fill = color ?? (tiled ? colors.surface : colors.ink);
 
+  // Decorative in every position — the label beside it carries the name.
   const star = (
-    <Svg width={glyph} height={glyph} viewBox="0 0 24 24">
+    <Svg
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      width={glyph}
+      height={glyph}
+      viewBox="0 0 24 24">
       <Path d={STAR} fill={fill} />
     </Svg>
   );

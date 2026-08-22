@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from './Text';
+import { AIMark } from './AIMark';
 
 import { CardHeading } from '@/components/CardHeading';
 import { ChipButton } from '@/components/ChipButton';
@@ -331,8 +332,8 @@ function OverdueList({ gymId }: { gymId: string }) {
           <Pressable
             key={r.subscription_id}
             onPress={() => router.push(`/management/members/${r.profile_id}` as never)}
-            className="flex-row items-center gap-3 border border-line dark:border-line-dk rounded-lg px-3 py-2 active:opacity-70">
-            <View className="flex-1">
+            className="gap-3 md:flex-row md:items-center border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 active:opacity-70">
+            <View className="md:flex-1">
               <Text className="text-ink dark:text-ink-dk text-sm">
                 {r.full_name ?? 'Member'}
               </Text>
@@ -360,47 +361,49 @@ function OverdueList({ gymId }: { gymId: string }) {
                       : 'Not emailed — no address on file'}
               </Text>
             </View>
-            <Text className="text-ink dark:text-ink-dk text-sm font-semibold">
-              {formatMoney(r.amount_cents, r.currency)}
-            </Text>
-            <View className="items-stretch gap-1.5">
-              {jobOn ? (
-                chases.data?.has(r.subscription_id) ? (
-                  <ChipButton
-                    label="Chasing"
-                    icon="sparkles"
-                    tone="neutral"
-                  />
-                ) : (
-                  <ChipButton
-                    label={
-                      chase.isPending && chase.variables === r.subscription_id
-                        ? 'Handing over…'
-                        : 'Chase for me'
-                    }
-                    icon="sparkles-outline"
-                    tone="primary"
-                    disabled={chase.isPending}
-                    onPress={() => chase.mutate(r.subscription_id)}
-                  />
-                )
-              ) : null}
-              {/* The one action that needs no PII and no extra fetch. Email
-                  and phone live on the member's own screen, one member at a
-                  time, each behind its own capability. */}
-              <ChipButton
-                label="Message"
-                icon="chatbubble-outline"
-                tone="neutral"
-                onPress={() => router.push(`/inbox/direct/${r.profile_id}` as never)}
-              />
-              {chase.error && chase.variables === r.subscription_id ? (
-                <Text className="text-red-500 dark:text-red-400 text-xs max-w-[140px]">
-                  {errorMessage(chase.error, "That didn't go through")}
-                </Text>
-              ) : null}
+            <View className="flex-row items-center gap-3">
+              <Text className="flex-1 md:flex-none text-ink dark:text-ink-dk text-sm font-semibold">
+                {formatMoney(r.amount_cents, r.currency)}
+              </Text>
+              <View className="items-stretch gap-1.5">
+                {jobOn ? (
+                  chases.data?.has(r.subscription_id) ? (
+                    <ChipButton
+                      label="Chasing"
+                      icon={<AIMark />}
+                      tone="neutral"
+                    />
+                  ) : (
+                    <ChipButton
+                      label={
+                        chase.isPending && chase.variables === r.subscription_id
+                          ? 'Handing over…'
+                          : 'Chase for me'
+                      }
+                      icon={<AIMark />}
+                      tone="primary"
+                      disabled={chase.isPending}
+                      onPress={() => chase.mutate(r.subscription_id)}
+                    />
+                  )
+                ) : null}
+                {/* The one action that needs no PII and no extra fetch. Email
+                    and phone live on the member's own screen, one member at a
+                    time, each behind its own capability. */}
+                <ChipButton
+                  label="Message"
+                  icon="chatbubble-outline"
+                  tone="neutral"
+                  onPress={() => router.push(`/inbox/direct/${r.profile_id}` as never)}
+                />
+                {chase.error && chase.variables === r.subscription_id ? (
+                  <Text className="text-red-500 dark:text-red-400 text-xs max-w-[140px]">
+                    {errorMessage(chase.error, "That didn't go through")}
+                  </Text>
+                ) : null}
+              </View>
+              <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
             </View>
-            <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
           </Pressable>
         ))}
         {list.length > shown.length ? (

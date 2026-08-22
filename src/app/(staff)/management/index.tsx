@@ -7,6 +7,8 @@ import { Pressable, ScrollView, Switch, View } from 'react-native';
 import { CommunicationsHome, useCreateCampaign } from './communications';
 import { PlansPanel } from './plans';
 import { StoreHome } from './store';
+import { AIMark } from '@/components/AIMark';
+import type { IconSlot } from '@/components/icon-slot';
 import { PillNav } from '@/components/PillNav';
 import { PageHead } from '@/components/PageHead';
 import { ListRow } from '@/components/ListRow';
@@ -139,9 +141,9 @@ function ManagementCard({
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-const CATEGORY_ICONS: Record<BackOfficeCategory, IconName> = {
+const CATEGORY_ICONS: Record<BackOfficeCategory, IconSlot> = {
   members: 'people-outline',
-  crm: 'sparkles-outline',
+  crm: <AIMark />,
   comms: 'mail-outline',
   website: 'globe-outline',
   store: 'bag-handle-outline',

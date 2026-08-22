@@ -3,6 +3,7 @@ import { router, usePathname } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { NavAccountMenu } from './NavAccountMenu';
+import { renderIconSlot, type IconSlot } from './icon-slot';
 import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
 import { TempleWordmark } from './TempleMark';
@@ -123,7 +124,7 @@ export function SideNav({ sections }: { sections: NavSection[] }) {
     active,
     onPress,
   }: {
-    icon: NavSection['icon'];
+    icon: IconSlot;
     label: string;
     active: boolean;
     onPress: () => void;
@@ -139,7 +140,7 @@ export function SideNav({ sections }: { sections: NavSection[] }) {
             ? 'bg-raised dark:bg-raised-dk'
             : 'hover:bg-raised/60 dark:hover:bg-raised-dk/60'
         }`}>
-        <Ionicons name={icon} size={18} color={active ? colors.ink : colors.ink3} />
+        {renderIconSlot(icon, 18, active ? colors.ink : colors.ink3)}
         <Text
           className={`flex-1 text-[14px] ${
             active

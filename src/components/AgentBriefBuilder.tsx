@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { FieldLabel } from './SectionLabel';
+import { AIMark } from './AIMark';
 import { Text } from './Text';
 
 import { Button } from '@/components/Button';
@@ -199,7 +200,7 @@ export function AgentBriefBuilder({
           </View>
           <Button
             variant="secondary"
-            icon="sparkles"
+            icon={<AIMark />}
             onPress={() => generate.mutate()}
             loading={generate.isPending}>
             {value?.trim()

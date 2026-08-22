@@ -6,6 +6,7 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, useWindowDimensions
 import { Spinner } from '@/components/EmptyState';
 import { Text } from '@/components/Text';
 
+import { AIMark } from '@/components/AIMark';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
@@ -934,7 +935,7 @@ export default function WebsiteManageScreen() {
             tone="primary"
             className="self-start"
             label={backfilling ? 'Adding…' : 'Add intro sections'}
-            icon="sparkles"
+            icon={<AIMark />}
             disabled={backfilling}
             onPress={() => void backfillIntros()}
           />
