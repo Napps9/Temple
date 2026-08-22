@@ -123,7 +123,7 @@ export default function AttendanceScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/management" coveredByRail />
+        <BackLink fallbackHref="/management" coveredByNav />
         <PageHead
           title="Attendance"
           subtitle="Trends from check-ins recorded on class bookings."

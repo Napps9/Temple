@@ -238,7 +238,7 @@ export default function BillingScreen() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-          <BackLink fallbackHref="/management" coveredByRail />
+          <BackLink fallbackHref="/management" coveredByNav />
           <Text className="text-ink-2 dark:text-ink-2-dk">
             Only an owner can manage billing.
           </Text>
@@ -250,7 +250,7 @@ export default function BillingScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/management" coveredByRail />
+        <BackLink fallbackHref="/management" coveredByNav />
 
         <PageHead
           title="Billing & payments"

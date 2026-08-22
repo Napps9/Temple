@@ -98,7 +98,7 @@ export function LeadsShell({
         className="flex-1"
         contentContainerClassName="gap-5 py-6 px-4 lg:px-8 lg:max-w-5xl lg:w-full">
         <View className="gap-3">
-          <BackLink fallbackHref="/management" coveredByRail />
+          <BackLink fallbackHref="/management" coveredByNav />
           <LeadsPills tabs={tabs} active={active} />
         </View>
         {children}
