@@ -47,7 +47,8 @@ const randomSuffix = () =>
 
 const MAX_IMAGES = 8;
 
-// Reusable tab switcher + panels, also embedded in the Manage → Store tab.
+// The Store page's tab switcher + panels. The Manage → Store tab is a
+// door here now, not an embed.
 export function StoreHome() {
   const [tab, setTab] = useState<Tab>('products');
 

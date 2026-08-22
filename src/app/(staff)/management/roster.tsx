@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { SectionLabel } from '@/components/SectionLabel';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -154,9 +155,9 @@ export default function Roster() {
           ))}
         </View>
 
-        <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wide pt-2">
-          Temple&apos;s jobs
-        </Text>
+        <View className="pt-2">
+          <SectionLabel>Temple&apos;s jobs</SectionLabel>
+        </View>
 
         {/* Without this an owner who turns a sixth job on, sees nothing
             from it and concludes it is broken — the budget is silent

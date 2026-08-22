@@ -931,7 +931,7 @@ export function ClassesCalendar({
 
       {visibleClosure ? (
         <View className="w-full max-w-5xl mx-auto px-4 pb-3">
-          <View className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2">
+          <View className="rounded-ctl border border-amber-500/40 bg-amber-500/10 px-3 py-2">
             <Text className="text-amber-700 dark:text-amber-300 text-sm font-medium">
               Gym closed {fmtClosureRange(visibleClosure)}
               {visibleClosure.reason ? ` · ${visibleClosure.reason}` : ''}
@@ -1317,7 +1317,7 @@ function AgendaCard({
     <Pressable
       onPress={isPast ? undefined : onPress}
       disabled={isPast}
-      className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl p-3.5 border active:bg-raised dark:active:bg-raised-dk ${
+      className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk border rounded-card p-3.5 active:bg-raised dark:active:bg-raised-dk ${
         bookedByMe
           ? 'border-emerald-400 dark:border-emerald-600'
           : recommended
@@ -1602,13 +1602,13 @@ function DayGrid({
               {isOccupied ? null : canCreate ? (
                 <Pressable
                   onPress={() => onCreateAt(date, hour)}
-                  className="border border-dashed border-line-strong dark:border-line-strong-dk rounded-xl px-4 justify-center hover:bg-raised dark:hover:bg-raised-dk/60 hover:border-line-strong dark:hover:border-line-strong-dk active:bg-raised dark:active:bg-raised-dk"
+                  className="border border-dashed border-line-strong dark:border-line-strong-dk rounded-ctl px-4 justify-center hover:bg-raised dark:hover:bg-raised-dk/60 hover:border-line-strong dark:hover:border-line-strong-dk active:bg-raised dark:active:bg-raised-dk"
                   style={{ height: HOUR_HEIGHT - 12 }}>
                   <Text className="text-ink-3 dark:text-ink-3-dk text-sm">+ Add a class</Text>
                 </Pressable>
               ) : (
                 <View
-                  className="border border-dashed border-line dark:border-line-dk rounded-xl px-4 justify-center"
+                  className="border border-dashed border-line dark:border-line-dk rounded-ctl px-4 justify-center"
                   style={{ height: HOUR_HEIGHT - 12 }}>
                   <Text className="text-ink-3 dark:text-ink-3-dk text-sm">No class scheduled</Text>
                 </View>
@@ -1698,7 +1698,7 @@ function DayClassCard({
       style={
         inGrid ? { height: '100%', width: '100%' } : undefined
       }
-      className={`bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk flex-row items-start gap-3 active:bg-raised dark:active:bg-raised-dk overflow-hidden ${
+      className={`bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk flex-row items-start gap-3 active:bg-raised dark:active:bg-raised-dk overflow-hidden ${
         compact ? 'p-2' : 'p-4'
       } ${
         isPast

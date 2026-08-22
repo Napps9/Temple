@@ -17,6 +17,7 @@ import {
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
+import { labelOn } from '@/lib/contrast';
 
 type Tab = 'upcoming' | 'waitlisted' | 'past';
 
@@ -295,7 +296,11 @@ function BookingCard({
         <View
           style={{ backgroundColor: typeColor }}
           className="self-start rounded-full px-2 py-0.5">
-          <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
+          <Text
+            style={{ color: labelOn(typeColor) }}
+            className="text-[10px] font-semibold">
+            {typeName}
+          </Text>
         </View>
         <View className="flex-1">
           <Text className="text-ink dark:text-ink-dk font-medium">
@@ -352,7 +357,11 @@ function WaitlistCard({
         <View
           style={{ backgroundColor: typeColor }}
           className="self-start rounded-full px-2 py-0.5">
-          <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
+          <Text
+            style={{ color: labelOn(typeColor) }}
+            className="text-[10px] font-semibold">
+            {typeName}
+          </Text>
         </View>
         <View className="flex-1">
           <Text className="text-ink dark:text-ink-dk font-medium">

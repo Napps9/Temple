@@ -1382,8 +1382,9 @@ function InsightsStats({
 
 // ============================================================================
 // Members tab — one shared date range drives the insight KPIs and the
-// attendance summary; the member list sits high with Invite / Import / Tag
-// rules folded into CTA modals so it stays the focus of the page.
+// attendance summary, with Invite / Import / Tag rules folded into CTA
+// modals. The member list itself lives on /management/members; the tab's
+// door to it is the manifest tile below the actions.
 // ============================================================================
 
 function MembersTab() {
@@ -1395,7 +1396,6 @@ function MembersTab() {
   const canManageTags = useCan('can_manage_tags') ?? false;
   const canManageStaff = useCan('can_manage_staff') ?? false;
   const canInvite = useCan('can_invite') ?? false;
-  const canAssignPlan = useCan('can_assign_plan') ?? false;
   const exportMembers = useExportMembersCsv();
 
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -1597,8 +1597,7 @@ function MembersTab() {
 }
 
 // A compact tappable tile for the Members-tab actions (Invite, Import, Tag
-// rules, Export) — small enough to sit in one wrapping row so the member
-// list stays high on the page.
+// rules, Export) — small enough to sit in one wrapping row.
 function ActionCta({
   icon,
   label,

@@ -193,7 +193,7 @@ export default function TrackHome() {
         ) : null}
 
         {(logNudge.data?.length ?? 0) > 0 ? (
-          <View className="bg-surface dark:bg-surface-dk border border-emerald-300 dark:border-emerald-800 rounded-xl p-4 gap-2">
+          <View className="bg-surface dark:bg-surface-dk border border-emerald-300 dark:border-emerald-800 rounded-ctl p-4 gap-2">
             <View className="flex-row items-center gap-2">
               <Ionicons name="checkmark-done-circle" size={18} color="#10B981" />
               <Text
@@ -303,7 +303,7 @@ function Stat({
   label: string;
 }) {
   return (
-    <View className="flex-1 bg-raised dark:bg-raised-dk rounded-xl p-3 gap-1">
+    <View className="flex-1 bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-1">
       <View
         style={{ backgroundColor: `${tint}26` }}
         className="w-8 h-8 rounded-full items-center justify-center">

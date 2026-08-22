@@ -285,6 +285,10 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
   {
     href: '/management/members',
     title: 'Members',
+    // The tab's stat tile is gated on insights capabilities, so without
+    // this door a viewer holding only can_manage_tags had no way from the
+    // Members tab to the member list it names.
+    needsTile: true,
     blurb: 'Invite members, view them by cohort, see and edit their tags.',
     keywords: ['export', 'csv', 'cohort', 'tags', 'attendance', 'archive', 'remove'],
     category: 'members',

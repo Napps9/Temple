@@ -72,7 +72,8 @@ function useCreateCampaign() {
   return { create, error };
 }
 
-// Reusable overview + lists, also embedded in the Manage → Comms tab.
+// The Email page's overview + lists. The Manage → Comms tab is a door
+// here now, not an embed.
 export function CommunicationsHome({ onNew }: { onNew?: () => void }) {
   const campaigns = useCampaigns();
   const colors = useThemeColors();

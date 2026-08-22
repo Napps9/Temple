@@ -130,12 +130,14 @@ describe('nothing is built and then lost', () => {
     expect(gone).toEqual([]);
   });
 
-  // Goals and the Roster had no door in Manage at all — only two
-  // quick-links on the Timeline, which is not where anybody looks for
-  // them. They are the only two entries that render a tile, because every
-  // other category already shows a panel that is its own way in.
+  // Surfaces whose tab shows no panel that is its own way in. Goals and
+  // the Roster only ever had Timeline quick-links; Members joined them
+  // when the hub stopped embedding the member list — its stat tile is
+  // gated on insights capabilities, so the tile alone stranded a viewer
+  // holding only can_manage_tags.
   it('gives a tile to the surfaces that have no other door', () => {
     expect(BACK_OFFICE.filter((e) => e.needsTile).map((e) => e.href)).toEqual([
+      '/management/members',
       '/management/goals',
       '/management/roster',
     ]);

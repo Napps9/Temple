@@ -17,7 +17,7 @@ import {
 import { BackLink } from '@/components/BackLink';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
-import { FieldLabel } from '@/components/SectionLabel';
+import { FieldLabel, LABEL_TYPE } from '@/components/SectionLabel';
 import {
   computeMovementTrends,
   type MovementTrendSummary,
@@ -921,7 +921,7 @@ function PatternEnergyMatrix({
             <View key={e} className="flex-1 items-center">
               <Text
                 style={{ color: ENERGY_COLOURS[e] }}
-                className="text-[10px] font-semibold uppercase tracking-wider">
+                className={LABEL_TYPE}>
                 {energyLabels[e]}
               </Text>
             </View>
@@ -1006,7 +1006,7 @@ function EnergyMixCard({
           <View className="flex-row items-baseline gap-2">
             <Text
               style={{ color: ENERGY_COLOURS[m.system] }}
-              className="text-xs font-semibold uppercase tracking-wider">
+              className={LABEL_TYPE}>
               {ENERGY_LABELS[m.system]}
             </Text>
             <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs">
@@ -1091,7 +1091,7 @@ function LoadBalanceCard({
           <View className="flex-row items-baseline gap-2">
             <Text
               style={{ color: LOAD_COLOURS[m.level] }}
-              className="text-xs font-semibold uppercase tracking-wider">
+              className={LABEL_TYPE}>
               {LOAD_LABELS[m.level]}
             </Text>
             <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs">

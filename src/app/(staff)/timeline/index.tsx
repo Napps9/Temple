@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { LABEL_CLASS, LABEL_TYPE } from '@/components/SectionLabel';
 import { AIMark } from '@/components/AIMark';
 import { ListRow, RuledList } from '@/components/ListRow';
 import { Check } from '@/components/Check';
@@ -1028,7 +1029,7 @@ export default function Timeline() {
             <View className="gap-3 pt-2">
               <View className="flex-row items-center gap-2 px-1">
                 <Ionicons name="hand-left-outline" size={15} color="#F59E0B" />
-                <Text className="text-ink dark:text-ink-dk text-[12px] font-bold uppercase tracking-wider">
+                <Text className={`${LABEL_TYPE} text-ink dark:text-ink-dk`}>
                   Waiting on you
                 </Text>
                 <View className="bg-amber-500/15 rounded-full px-2 py-0.5">
@@ -1075,7 +1076,7 @@ export default function Timeline() {
             <View className="gap-3 pt-2">
               <View className="flex-row items-center gap-2 px-1">
                 <AIMark size={15} />
-                <Text className="text-ink-2 dark:text-ink-2-dk text-[12px] font-bold uppercase tracking-wider">
+                <Text className={`${LABEL_TYPE} text-ink-2 dark:text-ink-2-dk`}>
                   With me
                 </Text>
                 <View className="bg-sunken/70 dark:bg-raised-dk rounded-full px-2 py-0.5">
@@ -1486,7 +1487,7 @@ function EmailDraftPreview({ draft }: { draft: EmailDraftCard }) {
             key={`${e.subject}-${i}`}
             className={`px-4 py-3 gap-2 ${i > 0 ? 'border-t border-line dark:border-line-dk' : ''}`}>
             {e.when ? (
-              <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-bold uppercase tracking-wider">
+              <Text className={LABEL_CLASS}>
                 {e.when}
               </Text>
             ) : null}
