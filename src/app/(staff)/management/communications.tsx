@@ -29,7 +29,7 @@ import type { Json } from '@/types/database';
 // route with a spinner. It used to be /communications/new: a screen whose
 // entire job was to insert a row and redirect, which a member saw for
 // about a second and could not do anything on.
-function useCreateCampaign() {
+export function useCreateCampaign() {
   const { data: membership } = useGymMembership();
   const session = useSession();
   const brand = useGymBrand();
@@ -72,8 +72,8 @@ function useCreateCampaign() {
   return { create, error };
 }
 
-// The Email page's overview + lists. The Manage → Comms tab is a door
-// here now, not an embed.
+// The Email page's overview + lists, also rendered by the Manage →
+// Comms tab — one component, two doors, so the two cannot drift.
 export function CommunicationsHome({ onNew }: { onNew?: () => void }) {
   const campaigns = useCampaigns();
   const colors = useThemeColors();

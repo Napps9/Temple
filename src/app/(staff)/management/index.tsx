@@ -4,6 +4,10 @@ import { Link, router, useLocalSearchParams } from 'expo-router';
 import type { ComponentProps, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { CommunicationsHome, useCreateCampaign } from './communications';
+import { PlansPanel } from './plans';
+import { StoreHome } from './store';
+import { PillNav } from '@/components/PillNav';
 import { PageHead } from '@/components/PageHead';
 import { ListRow } from '@/components/ListRow';
 import { Text, TextInput } from '@/components/Text';
@@ -26,9 +30,7 @@ import { BrandingPanel } from '@/components/BrandingPanel';
 import { ClassTypesPanel } from '@/components/ClassTypesPanel';
 import { ClosuresCard } from '@/components/ClosuresCard';
 import { HealthScreeningPanel } from '@/components/HealthScreeningPanel';
-import { InviteMemberModal } from '@/components/InviteMemberModal';
 import { LeaderboardsPanel } from '@/components/LeaderboardsPanel';
-import { MemberSignupLinkCard } from '@/components/MemberSignupLinkCard';
 import { OperatingDefaultsPanel } from '@/components/OperatingDefaultsPanel';
 import { Screen } from '@/components/Screen';
 import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
@@ -161,53 +163,16 @@ function ManageNav({
   active: BackOfficeCategory;
   onSelect: (c: BackOfficeCategory) => void;
 }) {
-  const colors = useThemeColors();
-  const pills = categories.map((c) => {
-    const selected = c === active;
-    return (
-      <Pressable
-        key={c}
-        onPress={() => onSelect(c)}
-        accessibilityRole="tab"
-        accessibilityState={{ selected }}
-        // Selected is a soft tint, not the gym's colour — the last nav in
-        // the product that was still filling itself with the brand. A nav
-        // is on screen the whole time and is never the one action a page
-        // exists for.
-        className={`flex-row items-center gap-2.5 rounded-ctl px-3 py-2.5 active:opacity-80 ${
-          selected
-            ? 'bg-raised dark:bg-raised-dk'
-            : 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk hover:border-line-strong dark:hover:border-line-strong-dk'
-        }`}>
-        <Ionicons
-          name={CATEGORY_ICONS[c]}
-          size={17}
-          color={selected ? colors.ink : colors.ink3}
-        />
-        <Text
-          className={`text-sm ${
-            selected
-              ? 'text-ink dark:text-ink-dk font-semibold'
-              : 'text-ink-2 dark:text-ink-2-dk font-medium'
-          }`}>
-          {CATEGORY_LABELS[c]}
-        </Text>
-      </Pressable>
-    );
-  });
-
-  // A single horizontal strip that bleeds to the screen edges (the parent
-  // content padding is px-4) rather than wrapping into ragged rows. The
-  // last pill peeking off the right edge is the scroll affordance; on a
-  // wide window all eight fit and there is nothing to scroll.
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      className="-mx-4"
-      contentContainerClassName="flex-row gap-2 px-4">
-      {pills}
-    </ScrollView>
+    <PillNav
+      items={categories.map((c) => ({
+        key: c,
+        label: CATEGORY_LABELS[c],
+        icon: CATEGORY_ICONS[c],
+      }))}
+      active={active}
+      onSelect={onSelect}
+    />
   );
 }
 
@@ -436,26 +401,13 @@ export default function ManagementHome() {
           ) : activeCategory === 'members' ? (
           <MembersTab />
         ) : activeCategory === 'comms' ? (
-          <ManagementCard
-            title="Email campaigns"
-            description="Newsletters, automations, topics and sending settings."
-            href={'/management/communications' as never}
-          />
+          <CommsTab />
         ) : activeCategory === 'store' ? (
-          <ManagementCard
-            title="Store"
-            description="Products, orders and subscriptions."
-            href={'/management/store' as never}
-          />
+          <StoreHome />
         ) : activeCategory === 'team' ? (
           <TeamTab />
         ) : activeCategory === 'plans' ? (
           <View className="gap-4">
-            <ManagementCard
-              title="Plans"
-              description="Membership plans, prices and who is on what."
-              href={'/management/plans' as never}
-            />
             {role === 'owner' ? (
               <ManagementCard
                 title="Billing & payments"
@@ -463,6 +415,7 @@ export default function ManagementHome() {
                 href={'/management/billing' as never}
               />
             ) : null}
+            <PlansPanel />
             {role === 'owner' ? (
               <SettingsSection
                 title="Member Management Configuration"
@@ -786,6 +739,21 @@ type StaffMember = {
   role: GymRole;
   profiles: { full_name: string | null; avatar_url: string | null } | null;
 };
+
+// The Comms tab renders the Email page's own body, with the create
+// action the plain embed used to drop — CommunicationsHome takes onNew
+// as a prop, and a tab without it had no way to start a campaign.
+function CommsTab() {
+  const { create, error } = useCreateCampaign();
+  return (
+    <View className="gap-3">
+      {error ? (
+        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+      ) : null}
+      <CommunicationsHome onNew={() => create.mutate()} />
+    </View>
+  );
+}
 
 function TeamTab() {
   const { data: membership } = useGymMembership();
@@ -1395,10 +1363,8 @@ function MembersTab() {
   const canExport = useCan('can_export_members') ?? false;
   const canManageTags = useCan('can_manage_tags') ?? false;
   const canManageStaff = useCan('can_manage_staff') ?? false;
-  const canInvite = useCan('can_invite') ?? false;
   const exportMembers = useExportMembersCsv();
 
-  const [inviteOpen, setInviteOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [tagRulesOpen, setTagRulesOpen] = useState(false);
 
@@ -1527,16 +1493,9 @@ function MembersTab() {
         <FinanceBlock gymId={membership.gymId} />
       ) : null}
 
-      {canInvite || canManageStaff || canManageTags || canExport ? (
+      {canManageStaff || canManageTags || canExport ? (
         <View className="gap-2">
           <View className="flex-row flex-wrap gap-2">
-            {canInvite ? (
-              <ActionCta
-                icon="person-add-outline"
-                label="Invite a member"
-                onPress={() => setInviteOpen(true)}
-              />
-            ) : null}
             {canManageStaff ? (
               <ActionCta
                 icon="cloud-upload-outline"
@@ -1568,18 +1527,6 @@ function MembersTab() {
         </View>
       ) : null}
 
-      {/* Inviters get the branded signup link + QR inside the Invite modal;
-          front-desk staff who can't invite keep it inline so they can still
-          hand a walk-in the join link. */}
-      {!canInvite ? <MemberSignupLinkCard /> : null}
-
-      {canInvite ? (
-        <InviteMemberModal
-          visible={inviteOpen}
-          onClose={() => setInviteOpen(false)}
-          canInvite={canInvite}
-        />
-      ) : null}
       {canManageStaff ? (
         <ImportDataModal
           visible={importOpen}

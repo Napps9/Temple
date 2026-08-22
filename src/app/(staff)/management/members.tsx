@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { ScrollView, View } from 'react-native';
+import { MemberSignupLinkCard } from '@/components/MemberSignupLinkCard';
 import { Text } from '@/components/Text';
 
 import { ChipButton } from '@/components/ChipButton';
@@ -96,6 +97,11 @@ export default function MembersScreen() {
             initialRole="member"
           />
         ) : null}
+
+        {/* The branded signup link + QR. Inviters get it inside the invite
+            flow too, but front-desk staff who cannot invite still need to
+            hand a walk-in the join link. */}
+        <MemberSignupLinkCard />
 
         <MembersList />
       </ScrollView>

@@ -437,7 +437,7 @@ export function ClassesCalendar({
   topSlot?: React.ReactNode;
   // The session id the member's "Recommended" card is pointing at (see
   // useRecommendedClass in book.tsx) — the matching agenda row gets a
-  // purple border so the recommendation is visible in the day's list,
+  // found-by-eye border so the recommendation is visible in the day's list,
   // not just in the standalone card above it.
   recommendedSessionId?: string | null;
 }) {
@@ -1321,7 +1321,7 @@ function AgendaCard({
         bookedByMe
           ? 'border-emerald-400 dark:border-emerald-600'
           : recommended
-            ? 'border-purple-400 dark:border-purple-500'
+            ? 'border-line-strong dark:border-line-strong-dk'
             : 'border-line dark:border-line-dk'
       } ${isPast ? 'opacity-50' : ''}`}>
       <View className="w-14">

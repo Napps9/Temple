@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Redirect } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, Switch, View } from 'react-native';
+import { PillNav } from '@/components/PillNav';
 import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
@@ -47,39 +48,23 @@ const randomSuffix = () =>
 
 const MAX_IMAGES = 8;
 
-// The Store page's tab switcher + panels. The Manage → Store tab is a
-// door here now, not an embed.
+// The Store page's tab switcher + panels, also rendered by the Manage →
+// Store tab — one component, two doors, so the two cannot drift.
 export function StoreHome() {
   const [tab, setTab] = useState<Tab>('products');
 
   return (
     <View className="gap-5">
-      <View className="flex-row gap-2">
-        {(['products', 'orders', 'subscriptions', 'settings'] as Tab[]).map((t) => {
-          const selected = t === tab;
-          return (
-            <Pressable
-              key={t}
-              onPress={() => setTab(t)}
-              accessibilityRole="tab"
-              accessibilityState={{ selected }}
-              className={`px-4 py-2 rounded-full ${
-                selected
-                  ? 'bg-raised dark:bg-raised-dk'
-                  : 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk'
-              }`}>
-              <Text
-                className={`text-sm capitalize ${
-                  selected
-                    ? 'text-ink dark:text-ink-dk font-semibold'
-                    : 'text-ink-2 dark:text-ink-2-dk font-medium'
-                }`}>
-                {t}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <PillNav
+        items={[
+          { key: 'products', label: 'Products', icon: 'pricetag-outline' },
+          { key: 'orders', label: 'Orders', icon: 'receipt-outline' },
+          { key: 'subscriptions', label: 'Subscriptions', icon: 'repeat-outline' },
+          { key: 'settings', label: 'Settings', icon: 'options-outline' },
+        ]}
+        active={tab}
+        onSelect={setTab}
+      />
 
       {tab === 'products' ? (
         <ProductsTab />
