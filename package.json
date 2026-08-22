@@ -72,6 +72,7 @@
     "seed:demo": "tsx scripts/seed-demo-gym.ts",
     "sim": "tsx scripts/run-sim.ts",
     "e2e": "playwright test",
-    "eval:parser": "tsx scripts/run-parser-eval.ts"
+    "eval:parser": "tsx scripts/run-parser-eval.ts",
+    "shots": "node scripts/screenshot/build.mjs && (node scripts/screenshot/server.mjs &) && sleep 2 && node scripts/screenshot/shoot.mjs"
   }
 }
