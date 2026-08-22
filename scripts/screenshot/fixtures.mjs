@@ -146,8 +146,8 @@ export const TABLES = {
   ],
 
   email_campaigns: [
-    { id: 'e1', gym_id: GYM_ID, title: 'August newsletter', status: 'sent', created_at: iso(-12), sent_at: iso(-11) },
-    { id: 'e2', gym_id: GYM_ID, title: 'Bank holiday timetable', status: 'draft', created_at: iso(-3), sent_at: null },
+    { id: 'e1', gym_id: GYM_ID, title: 'August newsletter', status: 'sent', created_at: iso(-12), sent_at: iso(-11), recipient_count: 41 },
+    { id: 'e2', gym_id: GYM_ID, title: 'Bank holiday timetable', status: 'draft', created_at: iso(-3), sent_at: null, recipient_count: 0 },
   ],
 
   tasks: [
