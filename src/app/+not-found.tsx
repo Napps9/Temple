@@ -26,7 +26,7 @@ export default function NotFound() {
         <View className="w-full max-w-xs gap-3">
           <Link href="/" asChild>
             <Pressable className="bg-primary rounded-lg p-3 items-center active:opacity-80">
-              <Text className="text-white font-semibold">Go to home</Text>
+              <Text className="text-on-primary font-semibold">Go to home</Text>
             </Pressable>
           </Link>
           <Link href="/sign-in" asChild>

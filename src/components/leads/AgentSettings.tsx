@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Linking, Modal, Platform, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Animated, Easing, Linking, Platform, Pressable, ScrollView, Switch, View } from 'react-native';
 import { Text } from '@/components/Text';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -65,6 +65,7 @@ const STALE_CALL_MS = 15 * 60 * 1000;
 // VoiceOrb, just a single ring since there's no live audio to visualize on
 // an outbound phone call.
 function RingingIcon({ color }: { color: string }) {
+  const colors = useThemeColors();
   const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -94,7 +95,7 @@ function RingingIcon({ color }: { color: string }) {
         }}
       />
       <View className="w-12 h-12 rounded-full bg-primary items-center justify-center">
-        <Ionicons name="call" size={20} color="#FFFFFF" />
+        <Ionicons name="call" size={20} color={colors.onPrimary} />
       </View>
     </View>
   );

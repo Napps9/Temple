@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Platform, Pressable, ScrollView, View } from 'react-native';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -525,7 +525,7 @@ export default function AgentConversationScreen() {
                     <Ionicons
                       name={audio.playing ? 'pause' : 'play'}
                       size={22}
-                      color="#FFFFFF"
+                      color={colors.onPrimary}
                     />
                   </Pressable>
                   <ScrubBar

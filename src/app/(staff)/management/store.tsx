@@ -60,12 +60,18 @@ export function StoreHome() {
             <Pressable
               key={t}
               onPress={() => setTab(t)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected }}
               className={`px-4 py-2 rounded-full ${
-                selected ? 'bg-primary' : 'bg-sunken dark:bg-raised-dk'
+                selected
+                  ? 'bg-raised dark:bg-raised-dk'
+                  : 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk'
               }`}>
               <Text
-                className={`text-sm font-medium capitalize ${
-                  selected ? 'text-ink dark:text-ink-dk' : 'text-ink-2 dark:text-ink-2-dk'
+                className={`text-sm capitalize ${
+                  selected
+                    ? 'text-ink dark:text-ink-dk font-semibold'
+                    : 'text-ink-2 dark:text-ink-2-dk font-medium'
                 }`}>
                 {t}
               </Text>

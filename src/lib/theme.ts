@@ -14,8 +14,12 @@ const KEY = 'app_theme';
 // label on #F7F7F8 is too dark to read against #0A0B0D. `primaryDark` is
 // the pressed/hover step, not the dark-scheme partner.
 export const ACCENT = {
-  light: { primary: '#C2410C', primaryDark: '#A5370A', ink: '#14161A' },
-  dark: { primary: '#F0783C', primaryDark: '#CC6633', ink: '#F4F5F6' },
+  // `onPrimary` is the label colour for anything filled with the accent.
+  // White clears AA on the light accent; on the lifted dark accent white
+  // fails, so the label is near-black ink — the same pairing the design
+  // boards carry as --accent-ink.
+  light: { primary: '#C2410C', primaryDark: '#A5370A', ink: '#14161A', onPrimary: '#FFFFFF' },
+  dark: { primary: '#F0783C', primaryDark: '#CC6633', ink: '#F4F5F6', onPrimary: '#1A0D05' },
 } as const;
 
 export type Scheme = 'light' | 'dark';
@@ -62,6 +66,8 @@ export function useThemeColors() {
     // Temple's accent. Drives solid fills, active-state emphasis and
     // icon tints — the one action per page, never a repeated row action.
     primary: accent.primary,
+    // The label on an accent fill (`text-on-primary` / colors.onPrimary).
+    onPrimary: accent.onPrimary,
     // Links and CTA copy (`text-link`). Ink, not the accent: every
     // `text-link` in the product already carries font-medium or
     // font-semibold, so weight marks it as tappable and the colour was

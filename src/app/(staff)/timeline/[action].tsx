@@ -195,7 +195,7 @@ export default function NudgeStory() {
                   <View
                     key={i}
                     className="self-end max-w-[85%] bg-primary rounded-2xl rounded-br-md px-4 py-2.5">
-                    <Text className="text-white text-[15px] leading-[21px]">
+                    <Text className="text-on-primary text-[15px] leading-[21px]">
                       {t.text}
                     </Text>
                   </View>
@@ -249,7 +249,7 @@ export default function NudgeStory() {
                 disabled={busy || !input.trim()}
                 accessibilityLabel="Ask"
                 className={`w-9 h-9 rounded-full items-center justify-center ${busy || !input.trim() ? 'bg-sunken dark:bg-raised-dk' : 'bg-primary'}`}>
-                <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+                <Ionicons name="arrow-up" size={18} color={colors.onPrimary} />
               </Pressable>
             </View>
           </View>

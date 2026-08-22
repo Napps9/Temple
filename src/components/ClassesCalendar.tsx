@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Text } from './Text';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
@@ -26,6 +26,16 @@ import { supabase } from '@/lib/supabase';
 import { useClassRecurrences } from '@/lib/useClassCatalog';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
+import { contrastRatio } from '@/lib/contrast';
+
+// A class type's colour is the gym's own content, picked freely — so the
+// badge label has to be chosen per colour, the way Button chooses on the
+// accent. White wins on most saturated colours; near-black on pale ones.
+function labelOn(fill: string): string {
+  return contrastRatio(fill, '#FFFFFF') >= contrastRatio(fill, '#111827')
+    ? '#FFFFFF'
+    : '#111827';
+}
 
 type CreateRequest = { date?: Date; hour?: number };
 
@@ -910,8 +920,8 @@ export function ClassesCalendar({
                   <Pressable
                     onPress={() => setCreateAt({ date })}
                     className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 hover:opacity-90 active:bg-primary-dark shadow-float">
-                    <Ionicons name="add" size={16} color="#FFFFFF" />
-                    <Text className="hidden md:flex text-white text-sm font-semibold">
+                    <Ionicons name="add" size={16} color={colors.onPrimary} />
+                    <Text className="hidden md:flex text-on-primary text-sm font-semibold">
                       Add class
                     </Text>
                   </Pressable>
@@ -1073,19 +1083,23 @@ function FilterPill({
   return (
     <Pressable
       onPress={onPress}
-      style={active ? { backgroundColor: color ?? accent } : undefined}
+      accessibilityState={{ selected: active }}
       className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full active:opacity-70 ${
-        active ? '' : 'bg-raised dark:bg-raised-dk'
+        active
+          ? 'bg-raised dark:bg-raised-dk border border-line-strong dark:border-line-strong-dk'
+          : 'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk'
       }`}>
-      {color && !active ? (
+      {color ? (
         <View
           style={{ backgroundColor: color }}
           className="w-2 h-2 rounded-full"
         />
       ) : null}
       <Text
-        className={`text-xs font-semibold ${
-          active ? 'text-white' : 'text-ink-2 dark:text-ink-2-dk'
+        className={`text-xs ${
+          active
+            ? 'text-ink dark:text-ink-dk font-semibold'
+            : 'text-ink-2 dark:text-ink-2-dk font-medium'
         }`}>
         {label}
       </Text>
@@ -1197,12 +1211,12 @@ function AgendaView({
                 </Text>
                 <View
                   className={`w-9 h-9 rounded-full items-center justify-center ${
-                    selected ? 'bg-primary shadow-float' : ''
+                    selected ? 'bg-raised dark:bg-raised-dk border border-line-strong dark:border-line-strong-dk' : ''
                   }`}>
                   <Text
                     className={`font-bold text-base ${
                       selected
-                        ? 'text-white'
+                        ? 'text-ink dark:text-ink-dk'
                         : today
                           ? 'text-ink dark:text-ink-dk font-semibold'
                           : 'text-ink dark:text-ink-dk'
@@ -1327,7 +1341,7 @@ function AgendaCard({
             : 'border-line dark:border-line-dk'
       } ${isPast ? 'opacity-50' : ''}`}>
       <View className="w-14">
-        <Text className="text-ink dark:text-ink-dk text-[17px] font-extrabold">
+        <Text className="text-ink dark:text-ink-dk text-[17px] font-bold">
           {fmtTime(start)}
         </Text>
         <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] mt-0.5">
@@ -1480,12 +1494,12 @@ function DayView({
                 </Text>
                 <View
                   className={`w-9 h-9 rounded-full items-center justify-center ${
-                    selected ? 'bg-primary shadow-float' : ''
+                    selected ? 'bg-raised dark:bg-raised-dk border border-line-strong dark:border-line-strong-dk' : ''
                   }`}>
                   <Text
                     className={`font-bold text-base ${
                       selected
-                        ? 'text-white'
+                        ? 'text-ink dark:text-ink-dk'
                         : today
                           ? 'text-ink dark:text-ink-dk font-semibold'
                           : 'text-ink dark:text-ink-dk'
@@ -1718,7 +1732,9 @@ function DayClassCard({
           <View
             style={{ backgroundColor: sessionColor(session, colors.primary) }}
             className={`self-start rounded-full ${compact ? 'px-2 py-0.5' : 'px-2.5 py-1'}`}>
-            <Text className={`text-white font-semibold ${compact ? 'text-[10px]' : 'text-xs'}`}>
+            <Text
+              style={{ color: labelOn(sessionColor(session, colors.primary)) }}
+              className={`font-semibold ${compact ? 'text-[10px]' : 'text-xs'}`}>
               {sessionLabel(session)}
             </Text>
           </View>
@@ -2148,9 +2164,9 @@ function MonthView({
                       setDate(d);
                       gotoDay();
                     }}
-                    className={`flex-1 aspect-square m-0.5 rounded-xl p-2 border ${
+                    className={`flex-1 aspect-square m-0.5 rounded-ctl p-2 border ${
                       selected
-                        ? 'bg-primary border-primary'
+                        ? 'bg-raised dark:bg-raised-dk border-line-strong dark:border-line-strong-dk'
                         : today
                           ? 'border-primary bg-surface dark:bg-surface-dk'
                           : 'border-transparent bg-surface dark:bg-surface-dk'
@@ -2158,7 +2174,7 @@ function MonthView({
                     <Text
                       className={
                         selected
-                          ? 'text-white font-semibold'
+                          ? 'text-ink dark:text-ink-dk font-semibold'
                           : !inMonth
                             ? 'text-ink-3 dark:text-ink-3-dk'
                             : today
@@ -2174,17 +2190,13 @@ function MonthView({
                           (_, i) => (
                             <View
                               key={i}
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                selected ? 'bg-white' : 'bg-primary'
-                              }`}
+                              className="w-1.5 h-1.5 rounded-full bg-primary"
                             />
                           ),
                         )}
                         {dayClasses.length > 3 ? (
                           <Text
-                            className={`text-[10px] ml-0.5 ${
-                              selected ? 'text-white' : 'text-ink dark:text-ink-dk font-semibold'
-                            }`}>
+                            className="text-[10px] ml-0.5 text-ink dark:text-ink-dk font-semibold">
                             +{dayClasses.length - 3}
                           </Text>
                         ) : null}

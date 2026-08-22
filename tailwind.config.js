@@ -14,6 +14,9 @@ module.exports = {
         // keep working (e.g. `bg-primary/15`).
         primary: 'rgb(var(--color-primary) / <alpha-value>)',
         'primary-dark': 'rgb(var(--color-primary-dark) / <alpha-value>)',
+        // The label on an accent fill. White in light, near-black ink in
+        // dark — the lifted dark accent is too light to carry white.
+        'on-primary': 'rgb(var(--color-on-primary) / <alpha-value>)',
         // Brand "Text" colour — links and CTA copy. Brand "Secondary" —
         // accent chips / tints. Both runtime-driven like primary.
         link: 'rgb(var(--color-link) / <alpha-value>)',

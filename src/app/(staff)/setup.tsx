@@ -939,7 +939,7 @@ export default function SetupScreen() {
                 disabled={busy || !input.trim()}
                 accessibilityLabel="Send"
                 className={`w-9 h-9 rounded-full items-center justify-center ${busy || !input.trim() ? 'bg-sunken dark:bg-raised-dk' : 'bg-primary'}`}>
-                <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+                <Ionicons name="arrow-up" size={18} color={colors.onPrimary} />
               </Pressable>
             </View>
           </View>
@@ -974,9 +974,10 @@ function StepSkip({
 }
 
 function TempleAvatar() {
+  const colors = useThemeColors();
   return (
     <View className="w-7 h-7 rounded-full bg-primary items-center justify-center mt-0.5">
-      <Ionicons name="sparkles" size={13} color="#FFFFFF" />
+      <Ionicons name="sparkles" size={13} color={colors.onPrimary} />
     </View>
   );
 }
@@ -1025,7 +1026,7 @@ function MessageRow({
   if (msg.kind === 'mine') {
     return (
       <View className="self-end max-w-[82%] bg-primary rounded-2xl rounded-br-md px-4 py-2.5">
-        <Text className="text-white text-[15px] leading-5">{msg.text}</Text>
+        <Text className="text-on-primary text-[15px] leading-5">{msg.text}</Text>
       </View>
     );
   }

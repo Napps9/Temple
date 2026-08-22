@@ -156,8 +156,29 @@ export const TABLES = {
   ],
 };
 
-// RPCs answer by name. A missing name returns [] like a table.
+// RPCs answer by name. A missing name returns [] like a table — which is
+// right for set-returning functions and WRONG for scalar ones: an [] where
+// a number belongs coerces to 0 in arithmetic and to NaN in a division,
+// which is exactly how the first Manage render showed "NaN%" in the
+// Members tile. Scalar RPCs must have scalar fixtures.
 export const RPCS = {
+  count_members_as_of: 7,
+  count_attendance_attendees: 5,
+  compute_revenue_summary: [
+    { currency: 'GBP', gross_cents: 418000, refunds_cents: 0, net_cents: 418000 },
+  ],
+  compute_finance_summary: [
+    {
+      currency: 'GBP',
+      collected_cents: 418000,
+      pending_cents: 8900,
+      failing_cents: 0,
+      failing_count: 0,
+      projected_cents: 426900,
+      expected_monthly_cents: 426900,
+      active_membership_count: 7,
+    },
+  ],
   get_gym_setup_progress: [
     { step_key: 'settings', done: true, complete: 1, target: 1 },
     { step_key: 'class_type_and_schedule', done: true, complete: 2, target: 2 },

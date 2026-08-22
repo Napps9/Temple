@@ -158,7 +158,7 @@ function ReadyBody({
         <Pressable
           onPress={call.start}
           className="flex-1 py-2.5 rounded-lg items-center bg-primary">
-          <Text className="font-semibold text-sm" style={{ color: '#FFFFFF' }}>
+          <Text className="font-semibold text-sm text-on-primary">
             Allow &amp; start
           </Text>
         </Pressable>
@@ -297,7 +297,7 @@ function EndedBody({ call, onClose }: { call: CallState; onClose?: () => void })
             onClose?.();
           }}
           className="flex-1 py-2.5 rounded-lg items-center bg-primary">
-          <Text className="font-semibold text-sm" style={{ color: '#FFFFFF' }}>
+          <Text className="font-semibold text-sm text-on-primary">
             Close
           </Text>
         </Pressable>

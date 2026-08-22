@@ -107,7 +107,7 @@ export function CustomRuleChip({
           <Ionicons
             name="arrow-forward"
             size={big ? 15 : 13}
-            color={ready ? '#FFFFFF' : '#9CA3AF'}
+            color={ready ? colors.onPrimary : colors.ink3}
           />
         </Pressable>
       </View>

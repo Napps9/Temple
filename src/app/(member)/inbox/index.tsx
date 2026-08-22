@@ -258,6 +258,7 @@ function TabChip({
 }
 
 function DirectList() {
+  const colors = useThemeColors();
   const session = useSession();
   const inbox = useQuery({
     queryKey: ['dm-inbox', session?.user.id],
@@ -278,8 +279,8 @@ function DirectList() {
         <Pressable
           onPress={() => router.push('/inbox/direct/new' as never)}
           className="flex-row items-center gap-1 bg-primary active:bg-primary-dark rounded-full px-3 py-1.5">
-          <Ionicons name="add" size={14} color="#FFFFFF" />
-          <Text className="text-white text-xs font-semibold">New</Text>
+          <Ionicons name="add" size={14} color={colors.onPrimary} />
+          <Text className="text-on-primary text-xs font-semibold">New</Text>
         </Pressable>
       </View>
 
@@ -324,7 +325,7 @@ function DirectList() {
             </View>
             {row.unread_count > 0 ? (
               <View className="bg-primary rounded-full min-w-5 h-5 px-1.5 items-center justify-center">
-                <Text className="text-white text-xs font-semibold">
+                <Text className="text-on-primary text-xs font-semibold">
                   {row.unread_count}
                 </Text>
               </View>
@@ -436,9 +437,9 @@ function AnnouncementsTab({
               <Ionicons
                 name={composeOpen ? 'close' : 'add'}
                 size={14}
-                color="#FFFFFF"
+                color={colors.onPrimary}
               />
-              <Text className="text-white text-xs font-semibold">
+              <Text className="text-on-primary text-xs font-semibold">
                 {composeOpen ? 'Close' : 'Post'}
               </Text>
             </Pressable>
@@ -680,8 +681,8 @@ function ClassesTab({
                 router.push('/inbox/broadcast/new' as never)
               }
               className="flex-row items-center gap-1 bg-primary rounded-full px-3 py-1.5 active:opacity-70">
-              <Ionicons name="megaphone-outline" size={14} color="#FFFFFF" />
-              <Text className="text-white text-xs font-semibold">Broadcast</Text>
+              <Ionicons name="megaphone-outline" size={14} color={colors.onPrimary} />
+              <Text className="text-on-primary text-xs font-semibold">Broadcast</Text>
             </Pressable>
           ) : null}
         </View>

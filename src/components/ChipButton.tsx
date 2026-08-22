@@ -3,7 +3,6 @@ import type { ComponentProps } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
-import { contrastRatio } from '@/lib/contrast';
 import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
 
@@ -79,13 +78,8 @@ export function ChipButton({
 }) {
   const colors = useThemeColors();
   const s = TONE_STYLES[tone];
-  // The filled chip is the gym's own colour, so white is not guaranteed
-  // readable on it — same check the primary Button makes.
-  const filledLabel =
-    contrastRatio(colors.primary, '#FFFFFF') >=
-    contrastRatio(colors.primary, '#111827')
-      ? '#FFFFFF'
-      : '#111827';
+  // The label on the accent fill, same token the primary Button uses.
+  const filledLabel = colors.onPrimary;
   const iconColor: Record<Tone, string> = {
     neutral: colors.ink2,
     primary: colors.secondary,
