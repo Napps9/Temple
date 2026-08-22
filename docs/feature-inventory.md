@@ -4413,7 +4413,14 @@ without reading them.
   `TopNav` below it, and on the member side at every width. A section's
   own nav is a horizontal pill row, never a second column — the rail is
   246px the page never sees, which is also why it waits for 1024 rather
-  than 768 (see `lib/breakpoint.ts`).
+  than 768 (see `lib/breakpoint.ts`). Below the rail the staff Manage
+  pill opens the gym's destinations as a sheet (`ManageNavSheet`)
+  instead of routing every jump through the hub — the hub leads the
+  sheet, where the pill used to land. The rail and the sheet draw the
+  same capability-gated list from `useGymNavLinks`, and pages the nav
+  names this way pass `coveredByNav` on `BackLink`: no Back button at
+  any width, because the nav is the way back. Detail pages the nav
+  can't reach keep theirs.
 - **Type**: Geist for everything, Fraunces for the wordmark. React
   Native has no font inheritance and does not synthesise weights, so
   `components/Text.tsx` wraps `Text`/`TextInput` and every font-weight

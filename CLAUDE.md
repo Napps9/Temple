@@ -191,7 +191,9 @@ Gotchas seen in this codebase:
   Staff pages whose every way in is named by the persistent nav — their
   own rail entry, their hub parent's (`/management`), or Timeline's —
   pass `coveredByNav` and render no Back at any width: the rail does
-  the job at 1024+, the section pills and Manage hub below. Detail
+  the job at 1024+, the section pills below, where the Manage pill
+  opens the same gym destinations as a sheet (`ManageNavSheet`, fed by
+  `useGymNavLinks` like the rail). Detail
   pages entered from mid-level surfaces the nav can't reach (member
   profiles, imported members, a member's tags, the Stripe import, lead
   conversations, agent setup, website/domain, member programming) keep
