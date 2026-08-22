@@ -99,10 +99,7 @@ export default function CampaignDetailScreen() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-          <BackLink
-            fallbackHref="/management/communications"
-            coveredByRail={canManageComms === true}
-          />
+          <BackLink fallbackHref="/management/communications" coveredByNav />
           <Text className="text-red-500 dark:text-red-400">
             {errorMessage(campaign.error, 'Could not load this campaign')}
           </Text>
@@ -124,7 +121,6 @@ export default function CampaignDetailScreen() {
 
 function EditorView({ campaign }: { campaign: Campaign }) {
   const { data: membership } = useGymMembership();
-  const canManageComms = useCan('can_manage_comms');
   const brand = useGymBrand();
   const colors = useThemeColors();
   const settings = useCommsSettings();
@@ -420,10 +416,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink
-          fallbackHref="/management/communications"
-          coveredByRail={canManageComms === true}
-        />
+        <BackLink fallbackHref="/management/communications" coveredByNav />
         <PageHead
           title="Edit campaign"
           subtitle="Build your email, choose who gets it, then send."
@@ -776,7 +769,6 @@ function DeleteCampaignButton({ campaignId }: { campaignId: string }) {
 
 function ReportView({ campaign }: { campaign: Campaign }) {
   const brand = useGymBrand();
-  const canManageComms = useCan('can_manage_comms');
   const settings = useCommsSettings();
   const queryClient = useQueryClient();
 
@@ -887,10 +879,7 @@ function ReportView({ campaign }: { campaign: Campaign }) {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
-        <BackLink
-          fallbackHref="/management/communications"
-          coveredByRail={canManageComms === true}
-        />
+        <BackLink fallbackHref="/management/communications" coveredByNav />
       <PageHead
         title={campaign.title || 'Campaign'}
         subtitle={`${campaign.subject || 'No subject'}${
