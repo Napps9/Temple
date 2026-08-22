@@ -85,7 +85,7 @@ function PaymentFailedNotice({ sub }: { sub: MySubscription }) {
     hasInvoiceLink: !!invoiceUrl,
   });
   return (
-    <View className="rounded-xl border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 gap-2">
+    <View className="rounded-card border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 gap-2">
       <View className="flex-row items-center gap-2">
         <Ionicons name="alert-circle" size={18} color="#DC2626" />
         <Text className="text-red-800 dark:text-red-200 font-semibold flex-1">
@@ -335,7 +335,7 @@ function PendingMembershipCard({
         Your membership
       </SectionLabel>
       <View
-        className={`bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 border ${
+        className={`bg-surface dark:bg-surface-dk rounded-card p-4 gap-3 border ${
           stuck
             ? 'border-amber-300 dark:border-amber-700'
             : 'border-line dark:border-line-dk'
@@ -459,7 +459,7 @@ function MembershipActions({
         ? 'Cancellation requested'
         : `Plan change requested${pendingTargetName ? ` → ${pendingTargetName}` : ''}`;
     return (
-      <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-2">
+      <View className="bg-amber-500/10 border border-amber-500/30 rounded-card p-4 gap-2">
         <Text className="text-amber-800 dark:text-amber-300 text-sm font-medium">
           {label}
         </Text>
@@ -480,7 +480,7 @@ function MembershipActions({
   const cancelBusy = modify.isPending && modify.variables?.kind === 'cancel';
   if (cancelPolicy === 'self_serve') {
     return confirm ? (
-      <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 border border-red-300 dark:border-red-800">
+      <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-3 border border-red-300 dark:border-red-800">
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           Cancel at the end of your paid period? You'll keep access until then.
         </Text>
@@ -693,14 +693,14 @@ export default function MembershipScreen() {
         />
 
         {params.checkout === 'success' ? (
-          <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+          <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-card p-4">
             <Text className="text-emerald-700 dark:text-emerald-300 text-sm">
               Payment received — setting up your membership. It can take a few
               seconds to show here.
             </Text>
           </View>
         ) : params.checkout === 'cancelled' ? (
-          <View className="bg-ink-3/10 border border-ink-3/30 rounded-xl p-4">
+          <View className="bg-ink-3/10 border border-ink-3/30 rounded-card p-4">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Checkout cancelled — you haven't been charged.
             </Text>
@@ -709,7 +709,7 @@ export default function MembershipScreen() {
 
         {firstClassResult ? (
           firstClassResult.ok ? (
-            <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+            <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-card p-4">
               <Text className="text-emerald-700 dark:text-emerald-300 text-sm">
                 You're booked into {firstClassResult.name} on{' '}
                 {new Date(firstClassResult.starts_at).toLocaleString('en-GB', {
@@ -723,7 +723,7 @@ export default function MembershipScreen() {
               </Text>
             </View>
           ) : (
-            <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-2">
+            <View className="bg-amber-500/10 border border-amber-500/30 rounded-card p-4 gap-2">
               <Text className="text-amber-800 dark:text-amber-300 text-sm">
                 We couldn't book {firstClassResult.name} automatically
                 {firstClassResult.detail ? ` — ${firstClassResult.detail}` : ''}. Pick
@@ -740,7 +740,7 @@ export default function MembershipScreen() {
         ) : null}
 
         {agreedPlan.data && currentSubs.length === 0 && !awaitingActivation ? (
-          <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-3">
+          <View className="bg-amber-500/10 border border-amber-500/30 rounded-card p-4 gap-3">
             <Text className="text-amber-800 dark:text-amber-300 text-sm">
               You picked{' '}
               <Text className="font-semibold">{agreedPlan.data.plan_name}</Text>{' '}
@@ -838,9 +838,9 @@ export default function MembershipScreen() {
         ) : null}
 
         <View className="gap-3">
-          <FieldLabel>
+          <SectionLabel>
             {currentSubs.length > 0 ? 'Switch or add a plan' : 'Plans'}
-          </FieldLabel>
+          </SectionLabel>
 
           {plans.isLoading ? (
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
@@ -916,6 +916,7 @@ export default function MembershipScreen() {
                     if (plan.kind === 'credit_pack') {
                       return canSelfCheckout ? (
                         <Button
+                          variant="plain"
                           onPress={() => checkout.mutate(plan.plan_id)}
                           loading={busy}
                           icon="card-outline">
@@ -956,6 +957,7 @@ export default function MembershipScreen() {
                           modify.variables?.targetPlanId === plan.plan_id;
                         return (
                           <Button
+                            variant="plain"
                             icon="swap-horizontal-outline"
                             loading={switching}
                             onPress={() =>
@@ -993,6 +995,7 @@ export default function MembershipScreen() {
                     // No membership yet — start one.
                     return canSelfCheckout ? (
                       <Button
+                        variant="plain"
                         onPress={() => checkout.mutate(plan.plan_id)}
                         loading={busy}
                         icon="card-outline">
@@ -1006,7 +1009,7 @@ export default function MembershipScreen() {
           )}
 
           {!canSelfCheckout && (plans.data ?? []).length > 0 ? (
-            <View className="bg-raised dark:bg-raised-dk/50 border border-line dark:border-line-dk rounded-xl p-4">
+            <View className="bg-raised dark:bg-raised-dk/50 border border-line dark:border-line-dk rounded-card p-4">
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Your gym sets up memberships for you — ask a coach to put you on
                 a plan.

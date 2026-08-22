@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { type Href, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { PageHead } from './PageHead';
 import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
 
@@ -205,37 +206,35 @@ export function MovementDetailView({
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <View className="flex-row items-center gap-2">
-          <BackLink inline fallbackHref={backHref as Href} />
-          <View className="flex-1">
-            <FieldLabel>
-              {group.name}
-            </FieldLabel>
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-              {movement.name}
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => fav.toggleMovement(movementKey, !starred)}
-            hitSlop={8}
-            accessibilityLabel={starred ? 'Unstar movement' : 'Star movement'}
-            className="w-9 h-9 rounded-full items-center justify-center hover:opacity-80 active:opacity-60">
-            <Ionicons
-              name={starred ? 'star' : 'star-outline'}
-              size={20}
-              color={starred ? '#F59E0B' : colors.ink2}
-            />
-          </Pressable>
-          {isMember ? (
-            <Pressable
-              onPress={() => setRecording({})}
-              hitSlop={6}
-              className="bg-primary hover:opacity-90 active:bg-primary-dark rounded-full px-3 py-1.5 flex-row items-center gap-1">
-              <Ionicons name="add" size={14} color={colors.onPrimary} />
-              <Text className="text-on-primary text-xs font-semibold">Record</Text>
-            </Pressable>
-          ) : null}
-        </View>
+        <PageHead
+          lead={<BackLink inline fallbackHref={backHref as Href} />}
+          title={movement.name}
+          subtitle={group.name}
+          action={
+            <View className="flex-row items-center gap-2">
+              <Pressable
+                onPress={() => fav.toggleMovement(movementKey, !starred)}
+                hitSlop={8}
+                accessibilityLabel={starred ? 'Unstar movement' : 'Star movement'}
+                className="w-9 h-9 rounded-full items-center justify-center hover:opacity-80 active:opacity-60">
+                <Ionicons
+                  name={starred ? 'star' : 'star-outline'}
+                  size={20}
+                  color={starred ? '#F59E0B' : colors.ink2}
+                />
+              </Pressable>
+              {isMember ? (
+                <Pressable
+                  onPress={() => setRecording({})}
+                  hitSlop={6}
+                  className="bg-primary hover:opacity-90 active:bg-primary-dark rounded-full px-3 py-1.5 flex-row items-center gap-1">
+                  <Ionicons name="add" size={14} color={colors.onPrimary} />
+                  <Text className="text-on-primary text-xs font-semibold">Record</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          }
+        />
 
         <View className="gap-3">
           <View className="flex-row items-center justify-between">

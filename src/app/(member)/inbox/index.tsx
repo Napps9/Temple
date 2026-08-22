@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { EmptyState } from '@/components/EmptyState';
+import { SectionLabel } from '@/components/SectionLabel';
 import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
@@ -273,9 +275,7 @@ function DirectList() {
   return (
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
-        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
-          Direct messages
-        </Text>
+        <SectionLabel>Direct messages</SectionLabel>
         <Pressable
           onPress={() => router.push('/inbox/direct/new' as never)}
           className="flex-row items-center gap-1 bg-primary active:bg-primary-dark rounded-full px-3 py-1.5">
@@ -285,7 +285,7 @@ function DirectList() {
       </View>
 
       {inbox.isLoading ? (
-        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
+        <EmptyState kind="loading" rows={3} />
       ) : (inbox.data?.length ?? 0) === 0 ? (
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
@@ -324,8 +324,8 @@ function DirectList() {
               </Text>
             </View>
             {row.unread_count > 0 ? (
-              <View className="bg-primary rounded-full min-w-5 h-5 px-1.5 items-center justify-center">
-                <Text className="text-on-primary text-xs font-semibold">
+              <View className="bg-raised dark:bg-raised-dk rounded-full min-w-5 h-5 px-1.5 items-center justify-center">
+                <Text className="text-ink dark:text-ink-dk text-xs font-semibold">
                   {row.unread_count}
                 </Text>
               </View>
@@ -486,7 +486,7 @@ function AnnouncementsTab({
       ) : null}
 
       {list.isLoading ? (
-        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
+        <EmptyState kind="loading" rows={3} />
       ) : (list.data?.length ?? 0) === 0 ? (
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
@@ -590,7 +590,7 @@ function ClassChangeNotices({
       {list.map((n) => (
         <View
           key={n.id}
-          className="rounded-xl p-4 gap-1 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20">
+          className="rounded-card p-4 gap-1 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20">
           <View className="flex-row items-center gap-2">
             <Ionicons name="alert-circle" size={18} color="#D97706" />
             <Text className="text-amber-800 dark:text-amber-200 font-semibold flex-1">
@@ -689,7 +689,7 @@ function ClassesTab({
       </View>
 
       {list.isLoading ? (
-        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
+        <EmptyState kind="loading" rows={3} />
       ) : (list.data?.length ?? 0) === 0 ? (
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
@@ -811,7 +811,7 @@ function PaymentNoticeBanner({
   return (
     <Pressable
       onPress={() => router.push('/membership' as never)}
-      className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-xl p-4 gap-2 active:opacity-80">
+      className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-card p-4 gap-2 active:opacity-80">
       <View className="flex-row items-center gap-2">
         <Ionicons name="card-outline" size={18} color="#DC2626" />
         <Text
@@ -833,7 +833,7 @@ function InjuryCheckInBanner() {
   const due = dueCheckIns(injuries.data);
   if (due.length === 0) return null;
   return (
-    <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl p-4 gap-2">
+    <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-card p-4 gap-2">
       <View className="flex-row items-center gap-2">
         <Ionicons name="pulse" size={18} color="#D97706" />
         <Text className="flex-1 text-amber-700 dark:text-amber-300 font-semibold" numberOfLines={1}>
@@ -866,7 +866,7 @@ function LogNudgeBanner() {
   const items = nudge.data ?? [];
   if (items.length === 0) return null;
   return (
-    <View className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 rounded-xl p-4 gap-2">
+    <View className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 rounded-card p-4 gap-2">
       <View className="flex-row items-center gap-2">
         <Ionicons name="checkmark-done-circle" size={18} color="#059669" />
         <Text
@@ -934,7 +934,7 @@ function CoverTab({ gymId }: { gymId: string }) {
   return (
     <View className="gap-3">
       {rows.isLoading ? (
-        <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
+        <EmptyState kind="loading" rows={2} />
       ) : list.length === 0 ? (
         <Text className="text-ink-2 dark:text-ink-2-dk">
           Nothing yet. You'll hear here when a coach needs cover, or when
@@ -957,7 +957,7 @@ function CoverTab({ gymId }: { gymId: string }) {
           return (
             <View
               key={n.id}
-              className={`rounded-xl p-4 gap-2 border ${
+              className={`rounded-card p-4 gap-2 border ${
                 uncovered
                   ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
                   : 'border-transparent bg-surface dark:bg-surface-dk border border-line dark:border-line-dk'
@@ -1075,7 +1075,7 @@ function AlertsTab({ gymId }: { gymId: string }) {
         </Text>
       </View>
       {alerts.isLoading ? (
-        <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
+        <EmptyState kind="loading" rows={2} />
       ) : rows.length === 0 ? (
         <Text className="text-ink-2 dark:text-ink-2-dk">
           {showAcked
@@ -1089,7 +1089,7 @@ function AlertsTab({ gymId }: { gymId: string }) {
           return (
           <View
             key={a.id}
-            className={`rounded-xl p-4 gap-2 border ${
+            className={`rounded-card p-4 gap-2 border ${
               a.acknowledged_at
                 ? 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
                 : amber

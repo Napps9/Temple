@@ -399,18 +399,15 @@ function TrackHowItWorks() {
   );
 }
 
-// Same elevated white shadow-soft shell the movement tiles use — kept
-// identical so this row doesn't read as washed-out or lower-priority —
-// plus a colored top edge in the tile's own accent so the row still
-// reads as a distinct kind of tile (navigation/tools) rather than more
-// pinned-movement content.
+// The tools are navigation, so the tiles are a hairline and a tone step
+// like every other card — no invented accents, no coloured top edge.
+// Colour on this screen belongs to content: a movement's class type, a
+// PR, the one Record action.
 const TOOL_TILE_CLASS =
-  'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70 border-t-4';
+  'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3 min-h-[124px] flex-1 overflow-hidden active:opacity-70';
 
-// Group-tile shape (slate background, rounded icon, accent blob).
 function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
   const colors = useThemeColors();
-  const accent = colors.primary;
   const subtitle =
     workoutCount === 0
       ? 'No sessions logged yet'
@@ -418,16 +415,9 @@ function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
   return (
     <Pressable
       onPress={() => router.push('/track/journal' as never)}
-      style={{ borderTopColor: accent }}
       className={TOOL_TILE_CLASS}>
-      <View
-        style={{ backgroundColor: accent }}
-        className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
-      />
-      <View
-        style={{ backgroundColor: `${accent}26` }}
-        className="w-11 h-11 rounded-full items-center justify-center">
-        <Ionicons name="book-outline" size={22} color={accent} />
+      <View className="w-11 h-11 rounded-ctl bg-raised dark:bg-raised-dk items-center justify-center">
+        <Ionicons name="book-outline" size={22} color={colors.ink2} />
       </View>
       <View className="flex-1 justify-end">
         <Text className="text-ink dark:text-ink-dk font-semibold text-base">
@@ -442,20 +432,13 @@ function JournalEntryTile({ workoutCount }: { workoutCount: number }) {
 }
 
 function LeaderboardsTile() {
-  const accent = '#F59E0B';
+  const colors = useThemeColors();
   return (
     <Pressable
       onPress={() => router.push('/track/leaderboards' as never)}
-      style={{ borderTopColor: accent }}
       className={TOOL_TILE_CLASS}>
-      <View
-        style={{ backgroundColor: accent }}
-        className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
-      />
-      <View
-        style={{ backgroundColor: `${accent}26` }}
-        className="w-11 h-11 rounded-full items-center justify-center">
-        <Ionicons name="trophy-outline" size={22} color={accent} />
+      <View className="w-11 h-11 rounded-ctl bg-raised dark:bg-raised-dk items-center justify-center">
+        <Ionicons name="trophy-outline" size={22} color={colors.ink2} />
       </View>
       <View className="flex-1 justify-end">
         <Text className="text-ink dark:text-ink-dk font-semibold text-base">
@@ -477,20 +460,13 @@ function InjuryTile() {
   const injuries = useMyInjuries();
   const open = (injuries.data ?? []).filter((r) => r.status !== 'resolved');
   const due = dueCheckIns(injuries.data);
-  const accent = '#EF4444';
+  const colors = useThemeColors();
   return (
     <Pressable
       onPress={() => router.push('/track/injuries' as never)}
-      style={{ borderTopColor: accent }}
       className={TOOL_TILE_CLASS}>
-      <View
-        style={{ backgroundColor: accent }}
-        className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
-      />
-      <View
-        style={{ backgroundColor: `${accent}26` }}
-        className="w-11 h-11 rounded-full items-center justify-center">
-        <Ionicons name="body-outline" size={22} color={accent} />
+      <View className="w-11 h-11 rounded-ctl bg-raised dark:bg-raised-dk items-center justify-center">
+        <Ionicons name="body-outline" size={22} color={colors.ink2} />
       </View>
       {due.length > 0 ? (
         <View className="absolute right-3 top-3 bg-amber-500 rounded-full px-2 py-0.5">
@@ -519,20 +495,13 @@ function InjuryTile() {
 // the full catalog + starred favourites). Shares the grid tile shape so
 // it reads as a sibling of the movement groups / stations.
 function LibraryTile() {
-  const accent = '#6366F1';
+  const colors = useThemeColors();
   return (
     <Pressable
       onPress={() => router.push('/track/movements' as never)}
-      style={{ borderTopColor: accent }}
       className={TOOL_TILE_CLASS}>
-      <View
-        style={{ backgroundColor: accent }}
-        className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-10"
-      />
-      <View
-        style={{ backgroundColor: `${accent}26` }}
-        className="w-11 h-11 rounded-full items-center justify-center">
-        <Ionicons name="library-outline" size={22} color={accent} />
+      <View className="w-11 h-11 rounded-ctl bg-raised dark:bg-raised-dk items-center justify-center">
+        <Ionicons name="library-outline" size={22} color={colors.ink2} />
       </View>
       <View className="flex-1 justify-end">
         <Text

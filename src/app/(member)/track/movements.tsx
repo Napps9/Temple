@@ -148,13 +148,13 @@ function GroupSection({
   return (
     <View
       className={
-        open ? 'gap-2 rounded-2xl bg-primary/5 dark:bg-primary/10 p-2' : 'gap-2'
+        open ? 'gap-2 rounded-card bg-raised dark:bg-raised-dk p-2' : 'gap-2'
       }>
       <Pressable
         onPress={onToggleOpen}
-        className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk border rounded-xl px-4 py-3 active:opacity-70 ${
+        className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk border rounded-ctl px-4 py-3 active:opacity-70 ${
           open
-            ? 'border-primary/50'
+            ? 'border-line-strong dark:border-line-strong-dk'
             : 'border-line dark:border-line-dk hover:border-line-strong dark:hover:border-line-strong-dk'
         }`}>
         <View

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
+import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -74,20 +75,11 @@ export default function WorkoutDetail() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <View className="flex-row items-center gap-2">
-          <BackLink inline fallbackHref="/track/journal" />
-          <View className="flex-1">
-            <FieldLabel>
-              Session
-            </FieldLabel>
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-              {workout.data?.title?.trim() || 'Workout'}
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              {workout.data ? fmtDateLong(workout.data.performed_at) : ''}
-            </Text>
-          </View>
-        </View>
+        <PageHead
+          lead={<BackLink inline fallbackHref="/track/journal" />}
+          title={workout.data?.title?.trim() || 'Workout'}
+          subtitle={workout.data ? fmtDateLong(workout.data.performed_at) : undefined}
+        />
 
         {workout.isLoading ? (
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>

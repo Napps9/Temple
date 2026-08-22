@@ -68,7 +68,7 @@ export default function StoreScreen() {
         />
 
         {params.checkout === 'success' ? (
-          <View className="bg-green-50 dark:bg-green-950/40 rounded-xl p-3">
+          <View className="bg-green-50 dark:bg-green-950/40 rounded-card p-3">
             <Text className="text-green-800 dark:text-green-300 text-sm">
               Payment received — thanks! Your receipt is on its way by email.
               See it under{' '}
@@ -79,7 +79,7 @@ export default function StoreScreen() {
             </Text>
           </View>
         ) : params.checkout === 'cancelled' ? (
-          <View className="bg-amber-50 dark:bg-amber-950/40 rounded-xl p-3">
+          <View className="bg-amber-50 dark:bg-amber-950/40 rounded-card p-3">
             <Text className="text-amber-800 dark:text-amber-300 text-sm">
               Checkout cancelled — nothing was charged.
             </Text>
@@ -87,7 +87,7 @@ export default function StoreScreen() {
         ) : null}
 
         {checkout.error ? (
-          <View className="bg-red-50 dark:bg-red-950/40 rounded-xl p-3">
+          <View className="bg-red-50 dark:bg-red-950/40 rounded-card p-3">
             <Text className="text-red-700 dark:text-red-300 text-sm">
               {errorMessage(checkout.error, 'Could not start checkout')}
             </Text>

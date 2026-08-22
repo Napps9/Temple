@@ -39,12 +39,16 @@ const TYPES = {
 
 function json(res, body, status = 200) {
   const text = JSON.stringify(body);
+  // A real total in content-range: supabase-js reads `count: 'exact'`
+  // out of this header, and a `*` total parses to NaN — which is how the
+  // Journal tile said "NaN logged sessions".
+  const total = Array.isArray(body) ? body.length : body === null ? 0 : 1;
   res.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
     'access-control-allow-origin': '*',
     'access-control-allow-headers': '*',
     'access-control-expose-headers': 'content-range',
-    'content-range': '0-0/*',
+    'content-range': `0-${Math.max(0, total - 1)}/${total}`,
   });
   res.end(text);
 }

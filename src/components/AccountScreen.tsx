@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { PageHead } from './PageHead';
 import { Text } from './Text';
 
 import { AvatarUploader } from './AvatarUploader';
@@ -219,14 +220,7 @@ export function AccountScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-3xl lg:max-w-5xl md:mx-auto md:w-full">
         <BackLink />
-        <View className="gap-2">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Account
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Manage your name, email, and password.
-          </Text>
-        </View>
+        <PageHead title="Account" subtitle="Manage your name, email, and password." />
 
         {/* Two-column dashboard on desktop; the two groups stack in the
             same order on mobile. Left = identity + gym; right = account

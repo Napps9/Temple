@@ -813,7 +813,7 @@ export function ClassesCalendar({
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       {compactBook ? (
-        <View className="w-full max-w-5xl mx-auto px-2">
+        <View className="w-full max-w-5xl mx-auto px-4">
           {/* Phone Book: the date sits where the month used to — arrows
               step the current view (a day, or the 2-day week), and tapping
               the label opens a month grid to jump further. Equal side
@@ -872,7 +872,7 @@ export function ClassesCalendar({
           </View>
         </View>
       ) : (
-        <View className="w-full max-w-5xl mx-auto px-2">
+        <View className="w-full max-w-5xl mx-auto px-4">
           <View className="relative flex-row items-center justify-center gap-4 pt-6 pb-6">
             {/* View switcher sits left of the month header on md+,
                 mirroring the Add-class CTA on the right. On small screens
@@ -1189,7 +1189,7 @@ function AgendaView({
 
   return (
     <View className="flex-1">
-      <View className="w-full max-w-5xl mx-auto px-2">
+      <View className="w-full max-w-5xl mx-auto px-4">
         <View className="flex-row gap-2 pt-1 pb-4">
           {weekDays.map((d) => {
             const selected = isSameDay(d, date);
@@ -1259,9 +1259,9 @@ function AgendaView({
 
       <ScrollView className="flex-1" contentContainerClassName="pb-10">
         {topSlot ? (
-          <View className="w-full max-w-5xl mx-auto px-2 pt-1 pb-2">{topSlot}</View>
+          <View className="w-full max-w-5xl mx-auto px-4 pt-1 pb-2">{topSlot}</View>
         ) : null}
-        <View className="w-full max-w-5xl mx-auto px-2 gap-2.5">
+        <View className="w-full max-w-5xl mx-auto px-4 gap-2.5">
           {shownClasses.length === 0 ? (
             <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl p-6 items-center gap-2">
               <Ionicons
@@ -1472,7 +1472,7 @@ function DayView({
 
   return (
     <View className="flex-1">
-      <View className="w-full max-w-5xl mx-auto px-2">
+      <View className="w-full max-w-5xl mx-auto px-4">
         <View className="flex-row gap-2 md:gap-3 md:justify-center pt-2 pb-4 md:pb-6">
           {weekDays.map((d) => {
             const selected = isSameDay(d, date);
@@ -1535,7 +1535,7 @@ function DayView({
             {topSlot}
           </View>
         ) : null}
-        <View className="w-full max-w-5xl mx-auto px-2">
+        <View className="w-full max-w-5xl mx-auto px-4">
           {mode === 'book' ? (
             dayClasses.length === 0 ? (
               <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
@@ -1829,7 +1829,7 @@ function WeekView({
 
   return (
     <View className="flex-1">
-      <View className="w-full max-w-5xl mx-auto px-2">
+      <View className="w-full max-w-5xl mx-auto px-4">
         {/* On the phone (rolling window) the calendar header already
             carries the date + arrows, so this internal mover only shows
             on the wide 7-day week. */}
@@ -1911,7 +1911,7 @@ function WeekView({
             {topSlot}
           </View>
         ) : null}
-        <View className="w-full max-w-5xl mx-auto px-2">
+        <View className="w-full max-w-5xl mx-auto px-4">
           <WeekGrid
             weekDays={weekDays}
             sessions={sessions}
@@ -2130,7 +2130,7 @@ function MonthView({
 
   return (
     <View className="flex-1">
-      <View className="w-full max-w-5xl mx-auto px-2">
+      <View className="w-full max-w-5xl mx-auto px-4">
         <View className="flex-row pb-2">
           {weekLetters.map((l, i) => (
             <View key={i} className="flex-1 items-center">
@@ -2148,7 +2148,7 @@ function MonthView({
         {topSlot ? (
           <View className="w-full max-w-5xl mx-auto px-2 pt-4 pb-2">{topSlot}</View>
         ) : null}
-        <View className="w-full max-w-5xl mx-auto px-2">
+        <View className="w-full max-w-5xl mx-auto px-4">
           {Array.from({ length: 6 }, (_, w) => (
             <View key={w} className="flex-row">
               {grid.slice(w * 7, (w + 1) * 7).map((d) => {

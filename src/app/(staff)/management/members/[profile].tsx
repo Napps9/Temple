@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Linking, Pressable, ScrollView, Switch, View } from 'react-native';
+import { PageHead } from '@/components/PageHead';
 import { Spinner } from '@/components/EmptyState';
 import { Text } from '@/components/Text';
 
@@ -13,7 +14,7 @@ import { MemberTagChip } from '@/components/MemberTagChip';
 import { RefundDialog } from '@/components/RefundDialog';
 import { RemoveMemberDialog } from '@/components/RemoveMemberDialog';
 import { Screen } from '@/components/Screen';
-import { FieldLabel } from '@/components/SectionLabel';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { useUnreachableEmails } from '@/lib/comms';
 import { unreachableNote } from '@/lib/comms-report';
@@ -344,31 +345,30 @@ export default function MemberDetailScreen() {
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/members" />
 
-        <View className="flex-row items-center gap-3">
-          <Avatar
-            name={profile.data?.full_name}
-            avatarUrl={profile.data?.avatar_url}
-            size={56}
-          />
-          <View className="flex-1">
-            <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-              {profile.data?.full_name ?? 'Member'}
-            </Text>
-            {profile.data?.managed ? (
-              <Text className="text-violet-600 dark:text-violet-400 text-xs font-medium">
-                Child account (managed by a guardian)
-              </Text>
-            ) : null}
-            {gymMembership.data ? (
-              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-                Joined {formatDate(gymMembership.data.created_at)}
-                {isRemoved
-                  ? ` · Removed ${formatDate(gymMembership.data.left_at)}`
-                  : ''}
-              </Text>
-            ) : null}
-          </View>
-        </View>
+        <PageHead
+          lead={
+            <Avatar
+              name={profile.data?.full_name}
+              avatarUrl={profile.data?.avatar_url}
+              size={56}
+            />
+          }
+          title={profile.data?.full_name ?? 'Member'}
+          subtitle={
+            gymMembership.data
+              ? `Joined ${formatDate(gymMembership.data.created_at)}${
+                  isRemoved
+                    ? ` · Removed ${formatDate(gymMembership.data.left_at)}`
+                    : ''
+                }`
+              : undefined
+          }
+        />
+        {profile.data?.managed ? (
+          <Text className="text-violet-600 dark:text-violet-400 text-xs font-medium -mt-2">
+            Child account (managed by a guardian)
+          </Text>
+        ) : null}
 
         {isRemoved ? (
           <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 gap-2">
@@ -784,9 +784,9 @@ function PaymentTroubleCard({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View className="gap-2">
-      <FieldLabel>
+      <SectionLabel>
         {title}
-      </FieldLabel>
+      </SectionLabel>
       {children}
     </View>
   );

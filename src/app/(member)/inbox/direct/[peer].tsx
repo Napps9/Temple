@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { PageHead } from '@/components/PageHead';
 import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -96,13 +97,11 @@ export default function DirectThread() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <View className="flex-1 px-4 md:max-w-2xl md:mx-auto md:w-full py-6">
-        <View className="flex-row items-center gap-3 px-2 pb-3">
-          <BackLink inline fallbackHref="/inbox" />
-          <View className="flex-1">
-            <Text className="text-ink dark:text-ink-dk font-semibold">
-              {peerProfile.data?.full_name?.trim() || 'Member'}
-            </Text>
-          </View>
+        <View className="pb-3">
+          <PageHead
+            lead={<BackLink inline fallbackHref="/inbox" />}
+            title={peerProfile.data?.full_name?.trim() || 'Member'}
+          />
         </View>
 
         <ScrollView
