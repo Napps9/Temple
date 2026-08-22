@@ -32,6 +32,8 @@ export function SideNav({ sections }: { sections: NavSection[] }) {
 
   const canManagePlans = useCan('can_manage_plans') ?? false;
   const canManageComms = useCan('can_manage_comms') ?? false;
+  const canWorkLeads = useCan('can_work_leads') ?? false;
+  const canManageWebsite = useCan('can_manage_website') ?? false;
   const isOwner = membership?.role === 'owner';
 
   // Each destination carries the gate its own page checks. A rail that
@@ -48,6 +50,24 @@ export function SideNav({ sections }: { sections: NavSection[] }) {
             href: '/management/communications',
             label: 'Communications',
             icon: 'mail-outline' as const,
+          },
+        ]
+      : []),
+    ...(canWorkLeads
+      ? [
+          {
+            href: '/management/leads',
+            label: 'AI Front Desk',
+            icon: 'sparkles-outline' as const,
+          },
+        ]
+      : []),
+    ...(canManageWebsite
+      ? [
+          {
+            href: '/management/website',
+            label: 'Website',
+            icon: 'globe-outline' as const,
           },
         ]
       : []),

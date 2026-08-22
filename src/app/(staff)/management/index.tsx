@@ -29,7 +29,6 @@ import { HealthScreeningPanel } from '@/components/HealthScreeningPanel';
 import { InviteMemberModal } from '@/components/InviteMemberModal';
 import { LeaderboardsPanel } from '@/components/LeaderboardsPanel';
 import { MemberSignupLinkCard } from '@/components/MemberSignupLinkCard';
-import { MembersList } from '@/components/MembersList';
 import { OperatingDefaultsPanel } from '@/components/OperatingDefaultsPanel';
 import { Screen } from '@/components/Screen';
 import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
@@ -79,9 +78,6 @@ import {
 import { useSavedFlag } from '@/lib/useSavedFlag';
 import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
 import { useThemeColors } from '@/lib/theme';
-import { CommunicationsHome } from './communications';
-import { PlansPanel } from './plans';
-import { StoreHome } from './store';
 
 type LinkHref = ComponentProps<typeof Link>['href'];
 
@@ -309,7 +305,21 @@ export default function ManagementHome() {
   const searching = query.trim().length > 0;
   const results = searchBackOffice(query, entries);
 
-  const availableCategories = categoriesWithEntries(entries);
+  // The strip is for categories with a panel behind them. Website and AI
+  // Front Desk are whole workspaces — tabs for them used to router.push,
+  // which swapped the navigation for a Back button mid-thought. They are
+  // doors below the tab body instead, and the strip never navigates.
+  const TABBED: BackOfficeCategory[] = [
+    'members',
+    'comms',
+    'store',
+    'team',
+    'plans',
+    'settings',
+  ];
+  const allCategories = categoriesWithEntries(entries);
+  const availableCategories = allCategories.filter((c) => TABBED.includes(c));
+  const workspaceDoors = entries.filter((e) => !TABBED.includes(e.category));
   const [active, setActive] = useState<BackOfficeCategory>(
     availableCategories[0] ?? 'members',
   );
@@ -362,20 +372,7 @@ export default function ManagementHome() {
     (e) => e.needsTile && e.category === activeCategory,
   );
 
-  // The Website "category" is really just a doorway to the full-screen
-  // site builder — it has no inline panel, only a single card that
-  // links onward. So selecting it in the nav goes straight to the
-  // builder rather than parking the user on a one-card page.
   function selectCategory(c: BackOfficeCategory) {
-    if (c === 'website') {
-      router.push('/management/website');
-      return;
-    }
-    // AI Front Desk is a doorway to the leads page, like Website — no inline panel.
-    if (c === 'crm') {
-      router.push('/management/leads');
-      return;
-    }
     setActive(c);
   }
 
@@ -418,7 +415,7 @@ export default function ManagementHome() {
               exactly where the staff rail arrives — two bordered nav
               columns side by side, 490px of chrome before any of the
               page. There is one vertical nav in the product. */}
-          {searching ? null : availableCategories.length > 1 ? (
+          {availableCategories.length > 1 ? (
             <ManageNav
               categories={availableCategories}
               active={activeCategory}
@@ -439,13 +436,26 @@ export default function ManagementHome() {
           ) : activeCategory === 'members' ? (
           <MembersTab />
         ) : activeCategory === 'comms' ? (
-          <CommunicationsHome />
+          <ManagementCard
+            title="Email campaigns"
+            description="Newsletters, automations, topics and sending settings."
+            href={'/management/communications' as never}
+          />
         ) : activeCategory === 'store' ? (
-          <StoreHome />
+          <ManagementCard
+            title="Store"
+            description="Products, orders and subscriptions."
+            href={'/management/store' as never}
+          />
         ) : activeCategory === 'team' ? (
           <TeamTab />
         ) : activeCategory === 'plans' ? (
           <View className="gap-4">
+            <ManagementCard
+              title="Plans"
+              description="Membership plans, prices and who is on what."
+              href={'/management/plans' as never}
+            />
             {role === 'owner' ? (
               <ManagementCard
                 title="Billing & payments"
@@ -453,7 +463,6 @@ export default function ManagementHome() {
                 href={'/management/billing' as never}
               />
             ) : null}
-            <PlansPanel />
             {role === 'owner' ? (
               <SettingsSection
                 title="Member Management Configuration"
@@ -477,6 +486,23 @@ export default function ManagementHome() {
                 href={c.section ? undefined : (c.href as LinkHref)}
                 onPress={c.section ? () => openSettingsSection(c.section!) : undefined}
                 saidInstead={c.saidInstead}
+              />
+            ))}
+          </View>
+        )}
+        {/* Whole workspaces, not tab panels — the two categories that used
+            to hijack the tab strip. One group, on every tab, so they are
+            always one tap away without pretending to be tabs. */}
+        {searching || workspaceDoors.length === 0 ? null : (
+          <View className="gap-3">
+            <SectionLabel>Workspaces</SectionLabel>
+            {workspaceDoors.map((e) => (
+              <ManagementCard
+                key={e.title}
+                title={e.title}
+                description={e.blurb}
+                href={e.href as LinkHref}
+                saidInstead={e.saidInstead}
               />
             ))}
           </View>
@@ -1546,8 +1572,6 @@ function MembersTab() {
           front-desk staff who can't invite keep it inline so they can still
           hand a walk-in the join link. */}
       {!canInvite ? <MemberSignupLinkCard /> : null}
-
-      {canManageTags ? <MembersList /> : null}
 
       {canInvite ? (
         <InviteMemberModal
