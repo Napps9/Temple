@@ -507,7 +507,11 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
       'Week start, booking windows, PAR-Q expiry, plan resolution, retention.',
     keywords: ['cancellation', 'cutoff', 'booking window', 'timezone', 'retention', 'week start', 'parq expiry'],
     category: 'settings',
-    capabilities: ['can_manage_staff'],
+    // Owner-only, matching the panel: SettingsTab shows gym-settings on
+    // isOwner, and a search result that opens an absent section is worse
+    // than no result.
+    capabilities: [],
+    roles: ['owner'],
     saidInstead: 'make the cancel cutoff 2 hours',
     movedTo: ['gym.change_rules'],
     ends: 'moves',
@@ -537,7 +541,9 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     keywords: ['name', 'rename', 'join link', 'enquiry link', 'slug'],
     saidInstead: 'rename the gym',
     category: 'settings',
-    capabilities: ['can_manage_staff'],
+    // Owner-only for the same reason as gym-settings above.
+    capabilities: [],
+    roles: ['owner'],
     movedTo: ['gym.rename'],
     ends: 'moves',
     status: 'back-office',

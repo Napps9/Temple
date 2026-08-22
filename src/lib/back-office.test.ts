@@ -184,10 +184,14 @@ describe('who sees what', () => {
   });
 
   it('honours a role gate where one exists, without a capability', () => {
-    // Billing, Setup and the rule sheet are the owner-only surfaces with
-    // no capability key behind them. The sheet is owner-only because
-    // every setter it drives asks user_is_owner_of.
+    // The owner-only surfaces with no capability key behind them. Billing,
+    // Setup and the rule sheet drive setters that ask user_is_owner_of;
+    // Gym settings and Gym details are role-gated because SettingsTab
+    // shows their panels on isOwner, and a search result that opens an
+    // absent section is worse than no result.
     expect(visibleEntries(nobody, 'owner').map((e) => e.href).sort()).toEqual([
+      '/management',
+      '/management',
       '/management/billing',
       '/setup',
       '/timeline?rules=1',

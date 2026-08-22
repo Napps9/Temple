@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { EmptyState } from './EmptyState';
 import { AIMark } from './AIMark';
 import { Text } from './Text';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -1255,16 +1256,7 @@ function AgendaView({
         ) : null}
         <View className="w-full max-w-5xl mx-auto px-4 gap-2.5">
           {shownClasses.length === 0 ? (
-            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl p-6 items-center gap-2">
-              <Ionicons
-                name="calendar-clear-outline"
-                size={24}
-                color={colors.ink3}
-              />
-              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-                No classes on this day.
-              </Text>
-            </View>
+            <EmptyState icon="calendar-clear-outline" title="No classes on this day" />
           ) : (
             shownClasses.map((s) => (
               <AgendaCard
@@ -1528,11 +1520,7 @@ function DayView({
         <View className="w-full max-w-5xl mx-auto px-4">
           {mode === 'book' ? (
             dayClasses.length === 0 ? (
-              <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
-                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-                  No classes scheduled today.
-                </Text>
-              </View>
+              <EmptyState icon="calendar-clear-outline" title="No classes scheduled today" />
             ) : (
               // Wide-screen book mode (the phone width goes to the Agenda
               // list instead) — a compact stacked list, not the hourly
