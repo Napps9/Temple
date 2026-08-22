@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, Link, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, View } from 'react-native';
+import { AIMark } from '@/components/AIMark';
 import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
@@ -398,25 +399,18 @@ export default function LeadsScreen() {
             </View>
           </BrandGradientHero>
         ) : isOwner ? (
-          <Link href="/management/leads/agent-setup" asChild>
-            <Pressable className="flex-row items-center gap-3 bg-primary/10 border border-primary/30 rounded-xl p-4 active:opacity-80">
-              <Ionicons name="sparkles" size={22} color={colors.primary} />
-              <View className="flex-1">
-                <Text className="text-primary font-semibold">AI Sales Agent</Text>
-                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-                  Set up an assistant that answers and sells memberships to new leads.
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
-            </Pressable>
-          </Link>
+          <ListRow
+            wrap
+            lead={<AIMark size={34} />}
+            title="AI Sales Agent"
+            subtitle="Set up an assistant that answers and sells memberships to new leads."
+            href="/management/leads/agent-setup"
+          />
         ) : null}
 
         {firstRealLead.data && !milestoneDismissed ? (
-          <View className="flex-row items-center gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-300/50 dark:border-amber-700/40 rounded-xl px-4 py-3">
-            <View className="w-8 h-8 rounded-full items-center justify-center bg-amber-400">
-              <Ionicons name="sparkles" size={15} color="#3A2C05" />
-            </View>
+          <View className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card px-4 py-3">
+            <AIMark size={26} />
             <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs leading-5">
               <Text className="font-semibold">Your AI just had its first real conversation</Text>{' '}
               with a prospect.

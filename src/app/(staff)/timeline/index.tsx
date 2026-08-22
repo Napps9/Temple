@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { AIMark } from '@/components/AIMark';
 import { ListRow, RuledList } from '@/components/ListRow';
 import { Check } from '@/components/Check';
 import { EmptyState } from '@/components/EmptyState';
@@ -1073,11 +1074,7 @@ export default function Timeline() {
           {withMe.length > 0 ? (
             <View className="gap-3 pt-2">
               <View className="flex-row items-center gap-2 px-1">
-                <Ionicons
-                  name="sparkles-outline"
-                  size={15}
-                  color={colors.ink2}
-                />
+                <AIMark size={15} />
                 <Text className="text-ink-2 dark:text-ink-2-dk text-[12px] font-bold uppercase tracking-wider">
                   With me
                 </Text>
@@ -2037,7 +2034,7 @@ function PaymentFailingCard({
         // Handed over: the row shrinks to a status line. Chips here would
         // only repeat it, and the story page keeps the rest.
         <View className="pl-10 flex-row items-center gap-1.5">
-          <Ionicons name="sparkles-outline" size={12} color={colors.ink3} />
+          <AIMark size={12} />
           <Text className="text-[12.5px] text-ink-2 dark:text-ink-2-dk">
             {nextStepLine(
               { next_payment_attempt: retry, full_name: event.subject },

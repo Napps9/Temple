@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { AIMark } from '@/components/AIMark';
 import { Spinner } from '@/components/EmptyState';
 import { Text, TextInput } from '@/components/Text';
 
@@ -976,9 +977,7 @@ function StepSkip({
 function TempleAvatar() {
   const colors = useThemeColors();
   return (
-    <View className="w-7 h-7 rounded-full bg-primary items-center justify-center mt-0.5">
-      <Ionicons name="sparkles" size={13} color={colors.onPrimary} />
-    </View>
+    <AIMark size={24} />
   );
 }
 

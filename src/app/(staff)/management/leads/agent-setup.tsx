@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, Switch, View } from 'react-native';
+import { AIMark } from '@/components/AIMark';
 import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
@@ -287,12 +288,9 @@ export default function AgentSetupWizard() {
         <View className="gap-2">
           <PageHead
             lead={
-              <Ionicons
-                name="sparkles"
-                size={22}
-                color={colors.primary}
-                style={{ marginTop: 4 }}
-              />
+              <View style={{ marginTop: 2 }}>
+                <AIMark size={26} />
+              </View>
             }
             title="AI Sales Agent"
           />

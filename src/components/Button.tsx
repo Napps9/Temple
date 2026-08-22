@@ -104,7 +104,7 @@ export const Button = forwardRef<View, Props>(function Button(
       accessibilityState={{ disabled: isDisabled, busy: !!loading }}
       // Keep the accessible name while the spinner replaces the label.
       accessibilityLabel={typeof children === 'string' ? children : undefined}
-      className={`rounded-lg px-5 py-3 items-center justify-center ${containerStyles[variant]} ${
+      className={`rounded-ctl px-5 py-3 items-center justify-center ${containerStyles[variant]} ${
         isDisabled ? 'opacity-50' : ''
       }`}>
       {loading ? (

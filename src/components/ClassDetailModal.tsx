@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { AIMark } from './AIMark';
 import { FieldLabel, SectionLabel } from './SectionLabel';
 import { Text, TextInput } from './Text';
 
@@ -478,12 +479,12 @@ export function ClassDetailModal({
       })
     : '';
 
+  // The class a member is deciding about. The date is the title and the
+  // time is the subtitle, so the sheet's own head carries what used to be
+  // a block inside the body — which also retires the hand-placed close X
+  // and the z-index note explaining why it had to outrank its siblings.
   return (
     <>
-    // The class a member is deciding about. The date is the title and the
-    // time is the subtitle, so the sheet's own head carries what used to be
-    // a block inside the body — which also retires the hand-placed close X
-    // and the z-index note explaining why it had to outrank its siblings.
     <Sheet
       visible={visible}
       title={detail ? dateLabel : 'Class'}
@@ -508,9 +509,9 @@ export function ClassDetailModal({
             <>
               <View className="gap-2">
                 {recommended && mode === 'book' ? (
-                  <View className="self-start flex-row items-center gap-1 rounded-full border border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/40 px-2.5 py-1">
-                    <Ionicons name="sparkles" size={12} color="#A855F7" />
-                    <Text className="text-purple-600 dark:text-purple-300 text-[10px] font-semibold uppercase tracking-widest">
+                  <View className="self-start flex-row items-center gap-1 rounded-full border border-line dark:border-line-dk bg-raised dark:bg-raised-dk px-2.5 py-1">
+                    <AIMark size={12} />
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] font-semibold uppercase tracking-widest">
                       Recommended
                     </Text>
                   </View>

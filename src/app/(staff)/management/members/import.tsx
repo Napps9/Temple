@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, View } from 'react-native';
+import { AIMark } from '@/components/AIMark';
 import { Text, TextInput } from '@/components/Text';
 import QRCode from 'react-native-qrcode-svg';
 
@@ -786,13 +787,9 @@ export default function ImportMembersScreen() {
                     </FieldLabel>
                   </View>
                 ) : mappingSource === 'ai' ? (
-                  <View className="flex-row items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
-                    <Ionicons
-                      name="sparkles"
-                      size={12}
-                      color={colors.primary}
-                    />
-                    <Text className="text-primary text-[10px] font-semibold uppercase tracking-widest">
+                  <View className="flex-row items-center gap-1 rounded-full bg-raised dark:bg-raised-dk px-2 py-0.5">
+                    <AIMark size={12} />
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] font-semibold uppercase tracking-widest">
                       AI-matched
                     </Text>
                   </View>
@@ -1009,7 +1006,7 @@ function ReviewPanel({
     <View className="gap-4">
       <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
         <View className="flex-row items-center gap-2">
-          <Ionicons name="sparkles" size={18} color={colors.ink2} />
+          <AIMark size={18} />
           <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
             What we found in your CSV
           </Text>

@@ -35,3 +35,13 @@ export function contrastRatio(a: string, b: string): number {
   const [hi, lo] = la > lb ? [la, lb] : [lb, la];
   return (hi + 0.05) / (lo + 0.05);
 }
+
+// The label for text sitting on an arbitrary content fill — a class
+// type's colour, a tag's colour — picked the way Button used to pick on
+// the brand: whichever of white / near-black ink reads better. The
+// accent itself does not come through here; it has the on-primary token.
+export function labelOn(fill: string): string {
+  return contrastRatio(fill, '#FFFFFF') >= contrastRatio(fill, '#111827')
+    ? '#FFFFFF'
+    : '#111827';
+}

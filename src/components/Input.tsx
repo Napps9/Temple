@@ -60,7 +60,7 @@ export function Input({
       {label ? (
         <Text className={`${LABEL_TYPE} ${labelCls}`}>{label}</Text>
       ) : null}
-      <View className={`flex-row items-center border rounded-lg ${boxCls}`}>
+      <View className={`flex-row items-center border rounded-ctl ${boxCls}`}>
         <TextInput
           className={`flex-1 px-4 py-3 text-base ${inputCls} ${
             isPassword ? 'pr-2' : ''

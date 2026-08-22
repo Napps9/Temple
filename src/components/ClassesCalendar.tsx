@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { AIMark } from './AIMark';
 import { Text } from './Text';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
@@ -26,16 +27,7 @@ import { supabase } from '@/lib/supabase';
 import { useClassRecurrences } from '@/lib/useClassCatalog';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
-import { contrastRatio } from '@/lib/contrast';
-
-// A class type's colour is the gym's own content, picked freely — so the
-// badge label has to be chosen per colour, the way Button chooses on the
-// accent. White wins on most saturated colours; near-black on pale ones.
-function labelOn(fill: string): string {
-  return contrastRatio(fill, '#FFFFFF') >= contrastRatio(fill, '#111827')
-    ? '#FFFFFF'
-    : '#111827';
-}
+import { labelOn } from '@/lib/contrast';
 
 type CreateRequest = { date?: Date; hour?: number };
 
@@ -1355,9 +1347,7 @@ function AgendaCard({
             style={{ backgroundColor: color }}
             className="w-2 h-2 rounded-full"
           />
-          {recommended && !bookedByMe ? (
-            <Ionicons name="sparkles" size={13} color="#A855F7" />
-          ) : null}
+          {recommended && !bookedByMe ? <AIMark size={13} /> : null}
           <Text
             numberOfLines={1}
             className="text-ink dark:text-ink-dk font-semibold flex-1">

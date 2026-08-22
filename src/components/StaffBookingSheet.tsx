@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
+import { Sheet } from './Sheet';
 import { ListRow, RuledList } from './ListRow';
 import { FieldLabel } from './SectionLabel';
 import { Text, TextInput } from './Text';
@@ -188,30 +189,25 @@ export function StaffBookingSheet({
       : selectedMember?.full_name ?? 'Member';
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
-      <Pressable
-        onPress={close}
-        className="flex-1 bg-black/60 items-center justify-center px-6">
-        <Pressable
-          onPress={() => {}}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-6 w-full max-w-md md:max-w-lg gap-4 max-h-[80%]">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-              {mode === 'add' && !selectedMember
-                ? 'Add a member'
-                : mode === 'add'
-                ? `Book ${memberName}`
-                : `Switch ${memberName}'s plan`}
-            </Text>
-            <Pressable
-              onPress={close}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-              className="w-8 h-8 items-center justify-center rounded-full active:bg-raised dark:active:bg-raised-dk">
-              <Ionicons name="close" size={18} color={colors.ink2} />
-            </Pressable>
-          </View>
+    <Sheet
+      visible={visible}
+      onClose={close}
+      title={
+        mode === 'add' && !selectedMember
+          ? 'Add a member'
+          : mode === 'add'
+            ? `Book ${memberName}`
+            : `Switch ${memberName}'s plan`
+      }
+      onBack={
+        mode === 'add' && selectedMember
+          ? () => {
+              setSelectedMember(null);
+              setChosen(null);
+              setNoCharge(false);
+            }
+          : undefined
+      }>
 
           {showSearch ? (
             <>
@@ -222,7 +218,7 @@ export function StaffBookingSheet({
                 placeholderTextColor={colors.ink3}
                 autoCapitalize="none"
                 autoCorrect={false}
-                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
+                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk"
               />
               <ScrollView className="max-h-72">
                 {candidates.isLoading ? (
@@ -338,41 +334,20 @@ export function StaffBookingSheet({
                   {error}
                 </Text>
               ) : null}
-              <View className="flex-row gap-3">
-                <View className="flex-1">
-                  <Button
-                    variant="secondary"
-                    onPress={() => {
-                      if (mode === 'add') {
-                        setSelectedMember(null);
-                        setChosen(null);
-                        setNoCharge(false);
-                      } else {
-                        close();
-                      }
-                    }}>
-                    Back
-                  </Button>
-                </View>
-                <View className="flex-1">
-                  <Button
-                    onPress={() => {
-                      if (mode === 'add') book.mutate();
-                      else swap.mutate();
-                    }}
-                    loading={book.isPending || swap.isPending}
-                    disabled={
-                      entitlements.isLoading ||
-                      (!noCharge && (entitlements.data?.length ?? 0) === 0)
-                    }>
-                    {mode === 'add' ? 'Book' : 'Swap'}
-                  </Button>
-                </View>
-              </View>
+              <Button
+                onPress={() => {
+                  if (mode === 'add') book.mutate();
+                  else swap.mutate();
+                }}
+                loading={book.isPending || swap.isPending}
+                disabled={
+                  entitlements.isLoading ||
+                  (!noCharge && (entitlements.data?.length ?? 0) === 0)
+                }>
+                {mode === 'add' ? 'Book' : 'Swap'}
+              </Button>
             </>
           ) : null}
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </Sheet>
   );
 }

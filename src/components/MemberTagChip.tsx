@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, View } from 'react-native';
+import { AIMark } from './AIMark';
 import { Text } from './Text';
+import { labelOn } from '@/lib/contrast';
 
 // Small coloured pill: label + colour from the tag, optional close button
 // for manual tags. Auto tags are read-only (the rule materialises them);
@@ -40,10 +42,10 @@ export function MemberTagChip({
     <View
       style={{ backgroundColor: color }}
       className="flex-row items-center gap-1 rounded-full px-2.5 py-1">
-      {source === 'auto' ? (
-        <Ionicons name="sparkles" size={11} color="#FFFFFF" />
-      ) : null}
-      <Text className="text-white text-xs font-medium">{label}</Text>
+      {source === 'auto' ? <AIMark size={11} color={labelOn(color)} /> : null}
+      <Text style={{ color: labelOn(color) }} className="text-xs font-medium">
+        {label}
+      </Text>
       {onToggleVisible ? (
         <Pressable
           onPress={onToggleVisible}

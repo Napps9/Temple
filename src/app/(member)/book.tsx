@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { AIMark } from '@/components/AIMark';
 import { Text } from '@/components/Text';
 
 import { ChipButton } from '@/components/ChipButton';
@@ -23,6 +24,7 @@ import {
 } from '@/lib/recommend';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
+import { labelOn } from '@/lib/contrast';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -246,11 +248,15 @@ function RecommendedClassCard() {
         <View
           style={{ backgroundColor: typeColor }}
           className="rounded-full px-2 py-0.5">
-          <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
+          <Text
+            style={{ color: labelOn(typeColor) }}
+            className="text-[10px] font-semibold">
+            {typeName}
+          </Text>
         </View>
         <View className="flex-1">
           <View className="flex-row items-center gap-1">
-            <Ionicons name="sparkles" size={11} color="#A855F7" />
+            <AIMark size={11} />
             <FieldLabel>
               Recommended
             </FieldLabel>
@@ -337,7 +343,11 @@ function NextClassCard() {
         <View
           style={{ backgroundColor: typeColor }}
           className="rounded-full px-2 py-0.5">
-          <Text className="text-white text-[10px] font-semibold">{typeName}</Text>
+          <Text
+            style={{ color: labelOn(typeColor) }}
+            className="text-[10px] font-semibold">
+            {typeName}
+          </Text>
         </View>
       ) : null}
       <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
