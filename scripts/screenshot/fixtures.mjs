@@ -150,6 +150,10 @@ export const TABLES = {
     { id: 'e2', gym_id: GYM_ID, title: 'Bank holiday timetable', status: 'draft', created_at: iso(-3), sent_at: null, recipient_count: 0 },
   ],
 
+  agent_authority: [
+    { gym_id: GYM_ID, action_kind: 'chase_message', level: 'ask_first' },
+  ],
+
   tasks: [
     { id: 't1', gym_id: GYM_ID, title: 'Order more chalk', status: 'open', due_date: '2026-08-27', notes: null, assignee: { full_name: 'Priya Raman' } },
     { id: 't2', gym_id: GYM_ID, title: 'Fix the rower display', status: 'open', due_date: null, notes: 'Seat 3, screen flickers.', assignee: null },
@@ -170,13 +174,51 @@ export const RPCS = {
   compute_finance_summary: [
     {
       currency: 'GBP',
-      collected_cents: 418000,
+      confirmed_cents: 418000,
+      confirmed_count: 6,
       pending_cents: 8900,
-      failing_cents: 0,
-      failing_count: 0,
-      projected_cents: 426900,
-      expected_monthly_cents: 426900,
-      active_membership_count: 7,
+      pending_count: 2,
+      at_risk_cents: 4500,
+      at_risk_count: 1,
+      forward_mrr_cents: 426900,
+      forward_count: 7,
+    },
+  ],
+  // The epoch above is 2026-08-24; iso(-2) was "today" when the boards
+  // were first shot. Old events just age into past-day threads.
+  timeline_feed: [
+    {
+      item_id: 'tl-1',
+      kind: 'member_joined',
+      occurred_at: iso(-2, 8),
+      subject: 'Maya Okafor',
+      detail: {},
+    },
+    {
+      item_id: 'tl-2',
+      kind: 'agent_action',
+      occurred_at: iso(-2, 7),
+      subject: 'Leo Park',
+      detail: {
+        status: 'executed',
+        action_kind: 'retention_message',
+        payload: { member_name: 'Leo Park', weeks_absent: 3 },
+      },
+    },
+  ],
+  gym_overdue_memberships: [
+    {
+      subscription_id: 'sub-leo',
+      profile_id: 'p-leo',
+      full_name: 'Leo Park',
+      plan_name: 'Unlimited',
+      amount_cents: 4500,
+      currency: 'GBP',
+      past_due_since: iso(-6),
+      payment_failure_count: 2,
+      next_payment_attempt: iso(1),
+      last_payment_error: 'Your card was declined.',
+      notice_status: null,
     },
   ],
   get_gym_setup_progress: [
