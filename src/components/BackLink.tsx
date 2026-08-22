@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, router, useLocalSearchParams } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Pressable, useWindowDimensions } from 'react-native';
 import { Text } from './Text';
 
+import { LG } from '@/lib/breakpoint';
 import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
 
@@ -33,18 +34,32 @@ import { useThemeColors } from '@/lib/theme';
 // so the component renders nothing rather than a dead chevron.
 // canGoBack() isn't reactive — a phantom render can only degrade to a
 // safe no-op in onPress, never a wrong navigation.
+//
+// `railDestination` is for pages that have their own entry in the staff
+// rail: with the rail visible the nav already names where the user is and
+// every way back, so a "Back" above the title is redundant chrome and the
+// component renders nothing. Below the rail width those pages are reached
+// through the Manage hub and the affordance returns. Pass it gated the
+// way the rail gates the link (capability / role) — a viewer whose rail
+// has no entry for the page still needs the way back. The
+// `?backTo=setup|checklist` override still renders regardless: the setup
+// flow has no rail entry to lean on.
 export function BackLink({
   fallbackHref,
   inline = false,
+  railDestination = false,
 }: {
   fallbackHref?: Href;
   inline?: boolean;
+  railDestination?: boolean;
 }) {
   const colors = useThemeColors();
+  const { width } = useWindowDimensions();
   const { backTo } = useLocalSearchParams<{ backTo?: string }>();
   const toSetup = backTo === 'setup' || backTo === 'checklist';
   const label = toSetup ? 'Setup' : 'Back';
 
+  if (railDestination && !toSetup && width >= LG) return null;
   if (!toSetup && !fallbackHref && !router.canGoBack()) return null;
 
   function onPress() {

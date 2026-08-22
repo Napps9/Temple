@@ -1110,10 +1110,11 @@ export function PlansPanel() {
 
 export default function PlansScreen() {
   useSetupAutoReturn('plan');
+  const canManagePlans = useCan('can_manage_plans') ?? false;
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/management" />
+        <BackLink fallbackHref="/management" railDestination={canManagePlans} />
         <PageHead
           title="Plans"
           subtitle="Define your membership plans. Existing subscribers keep the price and credits they signed up with — editing a plan only changes what new subscribers get."
