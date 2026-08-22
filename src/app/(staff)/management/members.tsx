@@ -64,7 +64,7 @@ export default function MembersScreen() {
           if (scrollKey) setScrollPosition(scrollKey, e.nativeEvent.contentOffset.y);
         }}
         scrollEventThrottle={100}>
-        <BackLink fallbackHref="/management" railDestination />
+        <BackLink fallbackHref="/management" coveredByRail />
         <PageHead
           title="Members"
           subtitle={`${totalQuery.data ?? 0} members. Filter by cohort or search by name. Tap a member to open their detail page.`}

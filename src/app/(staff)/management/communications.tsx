@@ -114,7 +114,7 @@ export default function CommunicationsScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/management" railDestination={canManageComms === true} />
+        <BackLink fallbackHref="/management" coveredByRail />
         <PageHead
           title="Email"
           subtitle="Campaigns you send, and the ones that send themselves."

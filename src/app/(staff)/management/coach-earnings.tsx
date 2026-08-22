@@ -182,7 +182,7 @@ export default function CoachEarningsPage() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/management" />
+        <BackLink fallbackHref="/management" coveredByRail />
         <PageHead
           title="Coach earnings"
           subtitle="Set per-class-type rates and review what each coach has earned."
