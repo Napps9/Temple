@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ManageNavSheet } from './ManageNavSheet';
 import { TempleMark } from './TempleMark';
 import { NavAccountMenu } from './NavAccountMenu';
 import { haptic } from '@/lib/haptic';
@@ -45,6 +47,7 @@ export function TopNav({
   const brand = useGymBrand();
   const colors = useThemeColors();
   const canAccessStaff = useCan('can_access_staff_area') ?? false;
+  const [manageOpen, setManageOpen] = useState(false);
 
   const gymName = brand.gymName;
 
@@ -84,6 +87,14 @@ export function TopNav({
             key={s.name}
             onPress={() => {
               haptic.selection();
+              // The widths that show this bar have no rail, so the gym's
+              // destinations would otherwise all route through the hub.
+              // The Manage pill opens them as a sheet instead; the hub
+              // leads the sheet, where the pill used to land.
+              if (s.name === 'management') {
+                setManageOpen(true);
+                return;
+              }
               router.replace((s.navigateTo ?? s.href) as never);
             }}
             hitSlop={4}
@@ -169,6 +180,9 @@ export function TopNav({
         </View>
       </View>
 
+      {variant === 'staff' ? (
+        <ManageNavSheet visible={manageOpen} onClose={() => setManageOpen(false)} />
+      ) : null}
     </View>
   );
 }
