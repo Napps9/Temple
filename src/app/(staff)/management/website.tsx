@@ -518,7 +518,7 @@ export default function WebsiteManageScreen() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-          <BackLink fallbackHref="/management" />
+          <BackLink fallbackHref="/management" coveredByRail />
           <PageHead
             title="Website"
             subtitle={`A public site for ${brand.gymName}, built from your own schedule and pricing.`}
@@ -633,7 +633,7 @@ export default function WebsiteManageScreen() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-          <BackLink fallbackHref="/management" />
+          <BackLink fallbackHref="/management" coveredByRail />
           <PageHead
             title="Website"
             subtitle="Pick a starting point — every word, block and theme can be changed later."
@@ -971,7 +971,7 @@ export default function WebsiteManageScreen() {
             page tabs stay visible while previewing, so switching pages
             doesn't need dropping back into the editor first. */}
         <View className="flex-row items-center gap-2 py-2 px-4 md:px-6 border-b border-line dark:border-line-dk flex-wrap">
-          <BackLink inline fallbackHref="/management" />
+          <BackLink inline fallbackHref="/management" coveredByRail />
           <Text className="text-ink dark:text-ink-dk font-semibold">Website</Text>
           {Platform.OS === 'web' ? (
             <Button

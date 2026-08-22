@@ -127,7 +127,7 @@ export default function Goals() {
       <ScrollView
         className="flex-1"
         contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/timeline" />
+        <BackLink fallbackHref="/timeline" coveredByRail />
         <PageHead title="Goals" />
 
         {(goals.data ?? []).map((g) => {

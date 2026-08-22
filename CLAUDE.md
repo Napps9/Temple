@@ -188,10 +188,16 @@ Gotchas seen in this codebase:
   explicit way back. Strict came-from contract: `router.back()` when
   history exists, `fallbackHref` (the page's logical parent) only on a
   cold open. The label is always "Back" — no destination labels.
-  Pages with their own staff-rail entry (Members, Plans,
-  Communications, Billing) pass `railDestination`, gated the way the
-  rail gates the link: at rail widths the sidebar itself is the way
-  back, so the Back row hides there and returns below 1024px.
+  Staff pages whose every way in is a rail row — their own entry, their
+  hub parent's (`/management`), or Timeline's — pass `coveredByRail`:
+  at rail widths the sidebar itself is the way back, so the Back row
+  hides there and returns below 1024px. Gate it by the rail row the
+  page leans on (unconditional under Manage/Timeline/Members,
+  `can_manage_comms` under Communications). Detail pages entered from
+  mid-level surfaces the rail can't reach (member profiles, imported
+  members, a member's tags, the Stripe import, lead conversations,
+  agent setup, website/domain, member programming) keep their Back at
+  every width.
 - **`<ChipButton>`** for inline actions (Copy, Share, Edit, etc.).
   Tones: `primary` / `neutral` / `amber` / `red` / `filled`.
 - **`<Button>`** for the main page action. Variants:

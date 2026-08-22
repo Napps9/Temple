@@ -299,7 +299,7 @@ export default function AnalysisScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-4xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/(staff)/programming" />
+        <BackLink fallbackHref="/(staff)/programming" coveredByRail />
         <PageHead
           title="Programming analysis"
           subtitle="Is the month balanced? Start with the verdicts, then drill into the cards."

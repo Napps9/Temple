@@ -95,7 +95,7 @@ export default function StoreManageScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/management" />
+        <BackLink fallbackHref="/management" coveredByRail />
         <PageHead
           title="Store"
           subtitle="Sell merch, programmes and tickets to your members."

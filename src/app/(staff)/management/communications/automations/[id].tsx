@@ -638,7 +638,10 @@ export default function AutomationEditor() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <View className="py-6 px-4">
-          <BackLink fallbackHref="/management/communications" />
+          <BackLink
+            fallbackHref="/management/communications"
+            coveredByRail={canManageComms === true}
+          />
           <Text className="text-ink-2 dark:text-ink-2-dk mt-4">Loading…</Text>
         </View>
       </Screen>
@@ -731,7 +734,10 @@ export default function AutomationEditor() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/management/communications" />
+        <BackLink
+          fallbackHref="/management/communications"
+          coveredByRail={canManageComms === true}
+        />
 
         <PageHead
           title="Edit automation"

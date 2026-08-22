@@ -35,23 +35,28 @@ import { useThemeColors } from '@/lib/theme';
 // canGoBack() isn't reactive — a phantom render can only degrade to a
 // safe no-op in onPress, never a wrong navigation.
 //
-// `railDestination` is for pages that have their own entry in the staff
-// rail: with the rail visible the nav already names where the user is and
-// every way back, so a "Back" above the title is redundant chrome and the
-// component renders nothing. Below the rail width those pages are reached
-// through the Manage hub and the affordance returns. Pass it gated the
-// way the rail gates the link (capability / role) — a viewer whose rail
-// has no entry for the page still needs the way back. The
+// `coveredByRail` is for staff pages whose every way in is a staff-rail
+// row — the page's own entry, its hub parent's, or Timeline's. With the
+// rail visible the row Back would navigate to is already on screen, so
+// the affordance is redundant chrome and the component renders nothing;
+// below the rail width it returns. Pass it gated by the rail row the
+// page leans on: unconditionally when that row is unconditional (Manage,
+// Timeline, Members), by the capability when the row is gated (e.g.
+// `can_manage_comms` for pages under Communications) — a viewer whose
+// rail lacks the row still needs the way back. Detail pages entered from
+// mid-level surfaces the rail can't reach (a member profile opened from
+// a roster, a lead conversation, website/domain) never pass it: for them
+// Back preserves a level the rail would lose. The
 // `?backTo=setup|checklist` override still renders regardless: the setup
 // flow has no rail entry to lean on.
 export function BackLink({
   fallbackHref,
   inline = false,
-  railDestination = false,
+  coveredByRail = false,
 }: {
   fallbackHref?: Href;
   inline?: boolean;
-  railDestination?: boolean;
+  coveredByRail?: boolean;
 }) {
   const colors = useThemeColors();
   const { width } = useWindowDimensions();
@@ -59,7 +64,7 @@ export function BackLink({
   const toSetup = backTo === 'setup' || backTo === 'checklist';
   const label = toSetup ? 'Setup' : 'Back';
 
-  if (railDestination && !toSetup && width >= LG) return null;
+  if (coveredByRail && !toSetup && width >= LG) return null;
   if (!toSetup && !fallbackHref && !router.canGoBack()) return null;
 
   function onPress() {

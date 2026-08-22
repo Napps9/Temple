@@ -16,12 +16,14 @@ import { useCommsSettings, useSendingDomain } from '@/lib/comms';
 import { errorMessage } from '@/lib/errors';
 import { fromAddress } from '@/lib/sending-domain';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
 export default function CommsSettingsScreen() {
   const { data: membership } = useGymMembership();
   const session = useSession();
+  const canManageComms = useCan('can_manage_comms');
   const brand = useGymBrand();
   const settings = useCommsSettings();
   const sendingDomain = useSendingDomain();
@@ -90,7 +92,10 @@ export default function CommsSettingsScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/management/communications" />
+        <BackLink
+          fallbackHref="/management/communications"
+          coveredByRail={canManageComms === true}
+        />
         <PageHead
           title="Email settings"
           subtitle="How your emails are addressed, the postal address every marketing email is legally required to carry, and what a member can unsubscribe from separately."

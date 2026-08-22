@@ -249,7 +249,7 @@ export default function ImportWorkoutsScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/management" />
+        <BackLink fallbackHref="/management" coveredByRail />
         <PageHead
           title="Import workout history"
           subtitle="Drop in a CSV of past workouts: one row per result. Weighted lifts (movement + weight + reps), benchmark WODs scored For Time or AMRAP, and Hyrox station splits + race times all import. We match each row's email to an existing member and group results on the same date into one workout. Movements are matched against the built-in vocab — unknowns show up below, where AI can match them for you."

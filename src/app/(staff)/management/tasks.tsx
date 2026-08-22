@@ -140,7 +140,7 @@ export default function TasksScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/management" />
+        <BackLink fallbackHref="/management" coveredByRail />
         <PageHead
           title="Tasks"
           subtitle={canManage ? 'Day-to-day work assigned across your team.' : 'Tasks assigned to you. Tap a task to mark it done.'}

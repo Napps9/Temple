@@ -206,7 +206,7 @@ function RulesEditor() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <BackLink fallbackHref="/management" />
+        <BackLink fallbackHref="/management" coveredByRail />
         <PageHead title="Tag rules" />
         <TagRulesPanel />
       </ScrollView>
