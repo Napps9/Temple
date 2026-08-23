@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Switch, View } from 'react-native';
+import { Switch } from 'react-native';
+
+import { SettingCard } from './SettingCard';
 import { Text } from './Text';
 
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -52,24 +54,17 @@ export function LeaderboardPrivacyCard() {
   const value = state.data ?? true;
 
   return (
-    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
-      <View className="flex-row items-center gap-3">
-        <View className="flex-1">
-          <Text className="text-ink dark:text-ink-dk font-semibold">
-            Show me on leaderboards
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-            Compare your scores with other gym members on class WODs and
-            strength PRs.
-          </Text>
-        </View>
+    <SettingCard
+      title="Show me on leaderboards"
+      description="Compare your scores with other gym members on class WODs and strength PRs."
+      control={
         <Switch
           accessibilityLabel="Show me on leaderboards"
           value={value}
           onValueChange={(v) => flip.mutate(v)}
           disabled={state.isLoading || flip.isPending}
         />
-      </View>
-    </View>
+      }
+    />
   );
 }

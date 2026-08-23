@@ -6,6 +6,7 @@ import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
 import { PageHead } from '@/components/PageHead';
+import { ListRow } from '@/components/ListRow';
 import { SearchField } from '@/components/SearchField';
 import { Screen } from '@/components/Screen';
 import {
@@ -251,38 +252,37 @@ function MovementRow({
 }) {
   const colors = useThemeColors();
   return (
-    <Pressable
+    <ListRow
       onPress={() => router.push(`/track/movement/${movement.key}` as never)}
-      className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card px-4 py-3 hover:border-line-strong dark:hover:border-line-strong-dk active:opacity-70">
-      <View
-        style={{ backgroundColor: `${group.accent}26` }}
-        className="w-9 h-9 rounded-full items-center justify-center">
-        <Ionicons
-          name={group.icon as IoniconName}
-          size={18}
-          color={group.accent}
-        />
-      </View>
-      <View className="flex-1">
-        <Text className="text-ink dark:text-ink-dk font-medium">
-          {movement.name}
-        </Text>
-        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
-          {group.name}
-        </Text>
-      </View>
-      <Pressable
-        onPress={onToggle}
-        hitSlop={10}
-        accessibilityLabel={starred ? 'Unstar movement' : 'Star movement'}
-        className="hover:opacity-80 active:opacity-60">
-        <Ionicons
-          name={starred ? 'star' : 'star-outline'}
-          size={20}
-          color={starred ? '#F59E0B' : colors.ink3}
-        />
-      </Pressable>
-      <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
-    </Pressable>
+      lead={
+        <View
+          style={{ backgroundColor: `${group.accent}26` }}
+          className="w-9 h-9 rounded-full items-center justify-center">
+          <Ionicons
+            name={group.icon as IoniconName}
+            size={18}
+            color={group.accent}
+          />
+        </View>
+      }
+      title={movement.name}
+      subtitle={group.name}
+      trailing={
+        <View className="flex-row items-center gap-2">
+          <Pressable
+            onPress={onToggle}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={starred ? 'Unstar movement' : 'Star movement'}>
+            <Ionicons
+              name={starred ? 'star' : 'star-outline'}
+              size={18}
+              color={starred ? '#F59E0B' : colors.ink3}
+            />
+          </Pressable>
+          <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
+        </View>
+      }
+    />
   );
 }

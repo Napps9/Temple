@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 
 import { ChipButton } from '@/components/ChipButton';
 import { EmptyState } from '@/components/EmptyState';
+import { ListRow } from '@/components/ListRow';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
@@ -337,8 +338,8 @@ function BookingCard({
   const att = attendanceLabel(row);
 
   return (
-    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
-      <View className="flex-row items-center gap-3">
+    <ListRow
+      lead={
         <View
           style={{ backgroundColor: typeColor }}
           className="self-start rounded-full px-2 py-0.5">
@@ -348,15 +349,20 @@ function BookingCard({
             {typeName}
           </Text>
         </View>
-        <View className="flex-1">
-          <Text className="text-ink dark:text-ink-dk font-medium">
-            {fmtDate(start)} · {fmtTime(start)}
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-            {row.duration_minutes} min
-          </Text>
-        </View>
-        {isPast ? (
+      }
+      title={`${fmtDate(start)} · ${fmtTime(start)}`}
+      subtitle={`${row.duration_minutes} min`}
+      foot={
+        row.promoted_from_waitlist && !isPast ? (
+          <View className="self-start rounded-full px-2 py-0.5 border border-amber-300 dark:border-amber-700 mt-1">
+            <Text className="text-amber-700 dark:text-amber-300 text-[10px] font-semibold">
+              Promoted from waitlist
+            </Text>
+          </View>
+        ) : null
+      }
+      trailing={
+        isPast ? (
           <AttendanceBadge label={att} />
         ) : onCancel ? (
           <ChipButton
@@ -366,16 +372,11 @@ function BookingCard({
             onPress={onCancel}
             disabled={cancelling}
           />
-        ) : null}
-      </View>
-      {row.promoted_from_waitlist && !isPast ? (
-        <View className="self-start rounded-full px-2 py-0.5 border border-amber-300 dark:border-amber-700">
-          <Text className="text-amber-700 dark:text-amber-300 text-[10px] font-semibold">
-            Promoted from waitlist
-          </Text>
-        </View>
-      ) : null}
-    </View>
+        ) : (
+          <View />
+        )
+      }
+    />
   );
 }
 
