@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import { ChipButton } from '@/components/ChipButton';
 import { EmptyState } from '@/components/EmptyState';
 import { ListRow } from '@/components/ListRow';
+import { PillNav } from '@/components/PillNav';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
@@ -173,23 +174,18 @@ export default function BookingsScreen() {
           subtitle="Your upcoming classes and past attendance."
         />
 
-        <View className="flex-row gap-2 flex-wrap">
-          <TabChip
-            label={`Upcoming (${upcoming.length})`}
-            active={tab === 'upcoming'}
-            onPress={() => setTab('upcoming')}
-          />
-          <TabChip
-            label={`Waitlisted (${waitlist.data?.length ?? 0})`}
-            active={tab === 'waitlisted'}
-            onPress={() => setTab('waitlisted')}
-          />
-          <TabChip
-            label={`Past (${past.length})`}
-            active={tab === 'past'}
-            onPress={() => setTab('past')}
-          />
-        </View>
+        <PillNav
+          items={[
+            { key: 'upcoming', label: `Upcoming (${upcoming.length})` },
+            {
+              key: 'waitlisted',
+              label: `Waitlisted (${waitlist.data?.length ?? 0})`,
+            },
+            { key: 'past', label: `Past (${past.length})` },
+          ]}
+          active={tab}
+          onSelect={setTab}
+        />
 
         {bookings.isLoading ? (
           <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
@@ -309,35 +305,6 @@ export default function BookingsScreen() {
         }}
       />
     </Screen>
-  );
-}
-
-function TabChip({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className={`px-3 py-1 rounded-full border ${
-        active
-          ? 'border-transparent bg-raised dark:bg-raised-dk'
-          : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
-      }`}>
-      <Text
-        className={
-          active
-            ? 'text-ink dark:text-ink-dk text-sm font-semibold'
-            : 'text-ink-2 dark:text-ink-2-dk text-sm'
-        }>
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 

@@ -10,11 +10,20 @@ import { Text } from '@/components/Text';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
+import { ListRow, RuledList } from '@/components/ListRow';
 import { PageHead } from '@/components/PageHead';
+import { PillNav } from '@/components/PillNav';
 import { Screen } from '@/components/Screen';
-import { useGymMembership, useRole, useSession } from '@/lib/auth';
+import { useGymMembership, useSession } from '@/lib/auth';
 import { formatDate } from '@/lib/format-date';
 import { errorMessage } from '@/lib/errors';
+import {
+  buildGymFeed,
+  classChangeTitle,
+  unreadOnly,
+  type GymFeedItem,
+  type InboxChip,
+} from '@/lib/inbox-feed';
 import { injuryTitle } from '@/lib/injuries';
 import {
   snippet,
@@ -32,8 +41,6 @@ import {
 import { dueCheckIns, useMyInjuries } from '@/lib/useInjuries';
 import { useThemeColors } from '@/lib/theme';
 import type { StaffAlertKind } from '@/types/database';
-
-type Tab = 'direct' | 'announcements' | 'classes' | 'alerts' | 'cover';
 
 type CoverNotificationRow = {
   id: string;
@@ -95,11 +102,39 @@ type ClassBroadcastWithSession = ClassBroadcastRow & {
   class_sessions: ClassSessionLite | null;
 };
 
+type ClassChangeRow = {
+  id: string;
+  kind: string;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+};
+
+// Session-only view memory: coming back to the inbox lands on the chip
+// you left, and "Not now" on the payment card holds for the session —
+// the payment is still failing, so it returns next visit rather than
+// being silenced by one tap.
+let lastInboxChip: InboxChip = 'new';
+let paymentDismissedThisSession = false;
+
+function fmtSessionTime(iso: string): string {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+  const time = `${d.getHours().toString().padStart(2, '0')}:${d
+    .getMinutes()
+    .toString()
+    .padStart(2, '0')}`;
+  return `${date} · ${time}`;
+}
+
 export default function Inbox() {
-  const [tab, setTab] = useState<Tab>('direct');
+  const colors = useThemeColors();
   const session = useSession();
   const { data: membership } = useGymMembership();
-  const role = useRole();
   const canPostAnnouncements = useCan('can_post_announcements');
   const canBroadcast = useCan('can_broadcast_to_class');
   const canSeeHealthFlag = useCan('can_see_health_flag') ?? false;
@@ -109,9 +144,19 @@ export default function Inbox() {
   const unreadCover = useUnreadCoverNotifications();
   const queryClient = useQueryClient();
 
+  const [chip, setChipState] = useState<InboxChip>(lastInboxChip);
+  const setChip = (next: InboxChip) => {
+    lastInboxChip = next;
+    setChipState(next);
+  };
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const gymId = membership?.gymId;
+  const uid = session?.user.id;
+
   const unread = useQuery({
-    queryKey: ['inbox-unread-summary', session?.user.id],
-    enabled: !!session?.user.id,
+    queryKey: ['inbox-unread-summary', uid],
+    enabled: !!uid,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('inbox_unread_summary');
       if (error) throw error;
@@ -136,135 +181,13 @@ export default function Inbox() {
     },
   });
 
-  // The Classes tab holds both broadcasts and closure/reschedule notices.
-  const classesUnread =
-    (unread.data?.class_broadcast_unread ?? 0) +
-    (unread.data?.class_change_unread ?? 0);
-
   function refreshUnread() {
     queryClient.invalidateQueries({ queryKey: ['inbox-unread-summary'] });
   }
 
-  if (!session || !membership) return null;
-
-  return (
-    <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <PageHead title="Inbox" subtitle="Messages from coaches and the gym." />
-
-        <PaymentNoticeBanner
-          gymId={membership.gymId}
-          profileId={session.user.id}
-        />
-        <InjuryCheckInBanner />
-        <LogNudgeBanner />
-
-        <View className="flex-row gap-2 flex-wrap">
-          <TabChip
-            label={`Direct${
-              (unread.data?.dm_unread ?? 0) > 0
-                ? ` · ${unread.data!.dm_unread}`
-                : ''
-            }`}
-            active={tab === 'direct'}
-            onPress={() => setTab('direct')}
-          />
-          <TabChip
-            label={`Announcements${
-              (unread.data?.announcement_unread ?? 0) > 0
-                ? ` · ${unread.data!.announcement_unread}`
-                : ''
-            }`}
-            active={tab === 'announcements'}
-            onPress={() => setTab('announcements')}
-          />
-          <TabChip
-            label={`Classes${
-              classesUnread > 0 ? ` · ${classesUnread}` : ''
-            }`}
-            active={tab === 'classes'}
-            onPress={() => setTab('classes')}
-          />
-          {canSeeHealthFlag ? (
-            <TabChip
-              label="Alerts"
-              active={tab === 'alerts'}
-              onPress={() => setTab('alerts')}
-            />
-          ) : null}
-          {canCover ? (
-            <TabChip
-              label={`Cover${
-                (unreadCover.data ?? 0) > 0 ? ` · ${unreadCover.data}` : ''
-              }`}
-              active={tab === 'cover'}
-              onPress={() => setTab('cover')}
-            />
-          ) : null}
-        </View>
-
-        {tab === 'direct' ? (
-          <DirectList />
-        ) : tab === 'announcements' ? (
-          <AnnouncementsTab
-            canPost={canPostAnnouncements === true}
-            gymId={membership.gymId}
-            posterId={session.user.id}
-            onChange={refreshUnread}
-          />
-        ) : tab === 'classes' ? (
-          <ClassesTab
-            canBroadcast={canBroadcast === true}
-            gymId={membership.gymId}
-            profileId={session.user.id}
-            role={role}
-            onChange={refreshUnread}
-          />
-        ) : tab === 'cover' ? (
-          <CoverTab gymId={membership.gymId} />
-        ) : (
-          <AlertsTab gymId={membership.gymId} />
-        )}
-      </ScrollView>
-    </Screen>
-  );
-}
-
-function TabChip({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className={`px-3 py-1 rounded-full border ${
-        active
-          ? 'border-transparent bg-raised dark:bg-raised-dk'
-          : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
-      }`}>
-      <Text
-        className={
-          active
-            ? 'text-ink dark:text-ink-dk text-sm font-semibold'
-            : 'text-ink-2 dark:text-ink-2-dk text-sm'
-        }>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
-function DirectList() {
-  const colors = useThemeColors();
-  const session = useSession();
-  const inbox = useQuery({
-    queryKey: ['dm-inbox', session?.user.id],
-    enabled: !!session?.user.id,
+  const dms = useQuery({
+    queryKey: ['dm-inbox', uid],
+    enabled: !!uid,
     queryFn: async (): Promise<DmInboxRow[]> => {
       const { data, error } = await supabase.rpc('dm_inbox');
       if (error) throw error;
@@ -272,104 +195,537 @@ function DirectList() {
     },
   });
 
-  return (
-    <View className="gap-3">
-      <View className="flex-row items-center justify-between">
-        <SectionLabel>Direct messages</SectionLabel>
-        <Pressable
-          onPress={() => router.push('/inbox/direct/new' as never)}
-          className="flex-row items-center gap-1 bg-primary active:bg-primary-dark rounded-full px-3 py-1.5">
-          <Ionicons name="add" size={14} color={colors.onPrimary} />
-          <Text className="text-on-primary text-xs font-semibold">New</Text>
-        </Pressable>
-      </View>
+  const announcements = useQuery({
+    queryKey: ['gym-announcements', gymId],
+    enabled: !!gymId,
+    queryFn: async (): Promise<AnnouncementRow[]> => {
+      const { data, error } = await supabase
+        .from('gym_announcements')
+        .select('id, gym_id, posted_by, title, body, pinned, created_at')
+        .eq('gym_id', gymId!)
+        .order('pinned', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as AnnouncementRow[];
+    },
+  });
 
-      {inbox.isLoading ? (
-        <EmptyState kind="loading" rows={3} />
-      ) : (inbox.data?.length ?? 0) === 0 ? (
-        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
-          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-            No conversations yet. Tap New to send a message.
-          </Text>
-        </View>
+  const announcementReads = useQuery({
+    queryKey: ['my-announcement-reads', uid],
+    enabled: !!uid,
+    queryFn: async (): Promise<Set<string>> => {
+      const { data, error } = await supabase
+        .from('announcement_reads')
+        .select('announcement_id')
+        .eq('profile_id', uid!);
+      if (error) throw error;
+      return new Set(
+        (data ?? []).map((r) => (r as { announcement_id: string }).announcement_id),
+      );
+    },
+  });
+
+  const broadcasts = useQuery({
+    queryKey: ['class-session-broadcasts', gymId],
+    enabled: !!gymId,
+    queryFn: async (): Promise<ClassBroadcastWithSession[]> => {
+      const { data, error } = await supabase
+        .from('class_session_broadcasts')
+        .select(
+          'id, gym_id, class_session_id, sender_id, body, created_at, class_sessions(id, starts_at, duration_minutes, class_types(name, color))',
+        )
+        .eq('gym_id', gymId!)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as ClassBroadcastWithSession[];
+    },
+  });
+
+  const broadcastReads = useQuery({
+    queryKey: ['my-broadcast-reads', uid],
+    enabled: !!uid,
+    queryFn: async (): Promise<Set<string>> => {
+      const { data, error } = await supabase
+        .from('class_session_broadcast_reads')
+        .select('broadcast_id')
+        .eq('profile_id', uid!);
+      if (error) throw error;
+      return new Set(
+        (data ?? []).map((r) => (r as { broadcast_id: string }).broadcast_id),
+      );
+    },
+  });
+
+  const classChanges = useQuery({
+    queryKey: ['class-change-notifications', gymId],
+    enabled: !!gymId,
+    queryFn: async (): Promise<ClassChangeRow[]> => {
+      const { data, error } = await supabase
+        .from('class_change_notifications')
+        .select('id, kind, body, created_at, read_at')
+        .eq('gym_id', gymId!)
+        .eq('channel', 'in_app')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []) as ClassChangeRow[];
+    },
+  });
+
+  // Closures and cancellations carry their whole message in `body` (the
+  // classes they describe may be deleted), so seeing them IS reading
+  // them — mark once per mount, only while a chip that shows them is up.
+  const markedChanges = useRef(false);
+  const showsGymFeed = chip === 'new' || chip === 'all' || chip === 'gym';
+  useEffect(() => {
+    if (markedChanges.current || !gymId || !showsGymFeed) return;
+    if (!(classChanges.data ?? []).some((r) => r.read_at === null)) return;
+    markedChanges.current = true;
+    supabase
+      .rpc('mark_class_change_notifications_read', { p_gym_id: gymId })
+      .then(() => refreshUnread());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classChanges.data, gymId, showsGymFeed]);
+
+  if (!session || !membership) return null;
+
+  const summary = unread.data;
+  const gymUnread =
+    (summary?.announcement_unread ?? 0) +
+    (summary?.class_broadcast_unread ?? 0) +
+    (summary?.class_change_unread ?? 0);
+  const newCount =
+    gymUnread + (summary?.dm_unread ?? 0) + (summary?.payment_unread ?? 0);
+
+  const gymFeed = buildGymFeed([
+    ...(announcements.data ?? []).map(
+      (a): GymFeedItem => ({
+        kind: 'announcement',
+        id: a.id,
+        ts: a.created_at,
+        unread: announcementReads.data ? !announcementReads.data.has(a.id) : false,
+        pinned: a.pinned,
+        title: a.title,
+        body: a.body,
+        dotColor: null,
+      }),
+    ),
+    ...(broadcasts.data ?? []).map(
+      (b): GymFeedItem => ({
+        kind: 'broadcast',
+        id: b.id,
+        ts: b.created_at,
+        unread: broadcastReads.data ? !broadcastReads.data.has(b.id) : false,
+        pinned: false,
+        title: b.class_sessions?.class_types?.name ?? 'Class',
+        body: b.class_sessions
+          ? `${fmtSessionTime(b.class_sessions.starts_at)} — ${b.body}`
+          : b.body,
+        dotColor: b.class_sessions?.class_types?.color ?? null,
+      }),
+    ),
+    ...(classChanges.data ?? []).map(
+      (n): GymFeedItem => ({
+        kind: 'class_change',
+        id: n.id,
+        ts: n.created_at,
+        unread: n.read_at === null,
+        pinned: false,
+        title: classChangeTitle(n.kind),
+        body: n.body,
+        dotColor: null,
+      }),
+    ),
+  ]);
+
+  const dmRows = dms.data ?? [];
+  const shownGym = chip === 'new' ? unreadOnly(gymFeed) : gymFeed;
+  const shownDms =
+    chip === 'new' ? dmRows.filter((r) => r.unread_count > 0) : dmRows;
+
+  const loading =
+    unread.isLoading ||
+    dms.isLoading ||
+    announcements.isLoading ||
+    broadcasts.isLoading ||
+    classChanges.isLoading;
+
+  const chips = [
+    { key: 'new' as const, label: newCount > 0 ? `New · ${newCount}` : 'New' },
+    { key: 'all' as const, label: 'All' },
+    {
+      key: 'gym' as const,
+      label: gymUnread > 0 ? `From the gym · ${gymUnread}` : 'From the gym',
+    },
+    {
+      key: 'direct' as const,
+      label:
+        (summary?.dm_unread ?? 0) > 0
+          ? `Direct · ${summary!.dm_unread}`
+          : 'Direct',
+    },
+    ...(canSeeHealthFlag ? [{ key: 'alerts' as const, label: 'Alerts' }] : []),
+    ...(canCover
+      ? [
+          {
+            key: 'cover' as const,
+            label:
+              (unreadCover.data ?? 0) > 0
+                ? `Cover · ${unreadCover.data}`
+                : 'Cover',
+          },
+        ]
+      : []),
+  ];
+  // A remembered staff chip degrades for a viewer who can no longer see it.
+  const activeChip = chips.some((c) => c.key === chip) ? chip : 'new';
+
+  const toggleExpanded = (key: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const gymSection = (
+    <GymFeedSection
+      items={shownGym}
+      loading={loading}
+      showLabel={activeChip !== 'gym'}
+      canPost={canPostAnnouncements === true}
+      canBroadcast={canBroadcast === true}
+      gymId={membership.gymId}
+      posterId={session.user.id}
+      allIds={(announcements.data ?? []).map((a) => a.id)}
+      allBroadcastIds={(broadcasts.data ?? []).map((b) => b.id)}
+      expanded={expanded}
+      onToggle={toggleExpanded}
+      onChange={() => {
+        refreshUnread();
+        queryClient.invalidateQueries({ queryKey: ['my-announcement-reads'] });
+        queryClient.invalidateQueries({ queryKey: ['my-broadcast-reads'] });
+      }}
+      emptyCopy={
+        activeChip === 'new' ? null : 'Nothing from the gym yet.'
+      }
+    />
+  );
+
+  const directSection = (
+    <View className="gap-2">
+      {activeChip !== 'direct' ? <SectionLabel>Direct</SectionLabel> : null}
+      {dms.isLoading ? (
+        <EmptyState kind="loading" rows={2} />
+      ) : shownDms.length === 0 ? (
+        activeChip === 'direct' ? (
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
+              No conversations yet. Tap New message to start one.
+            </Text>
+          </View>
+        ) : null
       ) : (
-        inbox.data!.map((row) => (
-          <Pressable
-            key={row.peer_profile_id}
-            onPress={() =>
-              router.push(`/inbox/direct/${row.peer_profile_id}` as never)
-            }
-            className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 active:opacity-70 flex-row items-center gap-3">
-            <View className="flex-1">
-              <View className="flex-row items-center gap-2">
-                <Text className="flex-1 text-ink dark:text-ink-dk font-semibold" numberOfLines={1}>
-                  {row.peer_full_name}
-                </Text>
-                {row.peer_role && row.peer_role !== 'member' ? (
-                  <View className="rounded-full bg-raised dark:bg-raised-dk px-2 py-0.5">
-                    <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] uppercase tracking-wider">
-                      {row.peer_role}
-                    </Text>
-                  </View>
-                ) : null}
-                <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
-                  {timeAgo(row.last_message_at)}
-                </Text>
-              </View>
-              <Text
-                className="text-ink-2 dark:text-ink-2-dk text-sm"
-                numberOfLines={1}>
-                {row.last_message_from_me ? 'You: ' : ''}
-                {snippet(row.last_message_body, 60)}
+        <RuledList>
+          {shownDms.map((row, i) => (
+            <ListRow
+              key={row.peer_profile_id}
+              ruled
+              first={i === 0}
+              href={`/inbox/direct/${row.peer_profile_id}` as never}
+              title={row.peer_full_name ?? 'Member'}
+              subtitle={`${row.last_message_from_me ? 'You: ' : ''}${snippet(
+                row.last_message_body,
+                60,
+              )}`}
+              chip={
+                <View className="flex-row items-center gap-2">
+                  {row.peer_role && row.peer_role !== 'member' ? (
+                    <View className="rounded-full bg-raised dark:bg-raised-dk px-2 py-0.5">
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] uppercase tracking-wider">
+                        {row.peer_role}
+                      </Text>
+                    </View>
+                  ) : null}
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+                    {timeAgo(row.last_message_at)}
+                  </Text>
+                  {row.unread_count > 0 ? (
+                    <View className="bg-primary rounded-full min-w-5 h-5 px-1.5 items-center justify-center">
+                      <Text className="text-on-primary text-xs font-semibold">
+                        {row.unread_count}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              }
+            />
+          ))}
+        </RuledList>
+      )}
+    </View>
+  );
+
+  const decisionCards = (
+    <>
+      <PaymentDecisionCard
+        gymId={membership.gymId}
+        profileId={session.user.id}
+      />
+      <InjuryCheckInCard />
+      <LogNudgeCard />
+    </>
+  );
+
+  const caughtUp =
+    activeChip === 'new' &&
+    !loading &&
+    shownGym.length === 0 &&
+    shownDms.length === 0;
+
+  return (
+    <Screen edges={['bottom', 'left', 'right']}>
+      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <PageHead
+          title="Inbox"
+          subtitle="Messages from coaches and the gym."
+          action={
+            <Pressable
+              onPress={() => router.push('/inbox/direct/new' as never)}
+              accessibilityRole="button"
+              accessibilityLabel="New message"
+              className="flex-row items-center gap-1 bg-primary active:bg-primary-dark rounded-full px-3 py-1.5">
+              <Ionicons name="add" size={14} color={colors.onPrimary} />
+              <Text className="text-on-primary text-xs font-semibold">
+                New message
               </Text>
-            </View>
-            {row.unread_count > 0 ? (
-              <View className="bg-raised dark:bg-raised-dk rounded-full min-w-5 h-5 px-1.5 items-center justify-center">
-                <Text className="text-ink dark:text-ink-dk text-xs font-semibold">
-                  {row.unread_count}
-                </Text>
-              </View>
-            ) : null}
-          </Pressable>
-        ))
+            </Pressable>
+          }
+        />
+
+        <PillNav items={chips} active={activeChip} onSelect={setChip} />
+
+        {activeChip === 'alerts' ? (
+          <AlertsTab gymId={membership.gymId} />
+        ) : activeChip === 'cover' ? (
+          <CoverTab gymId={membership.gymId} />
+        ) : (
+          <>
+            {activeChip === 'new' || activeChip === 'all'
+              ? decisionCards
+              : null}
+            {caughtUp ? (
+              <EmptyState
+                icon="checkmark-done-outline"
+                title="You're all caught up"
+                description="Nothing new from the gym or your conversations."
+                actionLabel="See everything"
+                actionIcon="albums-outline"
+                onAction={() => setChip('all')}
+              />
+            ) : (
+              <>
+                {activeChip !== 'direct' ? gymSection : null}
+                {activeChip !== 'gym' ? directSection : null}
+              </>
+            )}
+          </>
+        )}
+      </ScrollView>
+    </Screen>
+  );
+}
+
+function GymFeedSection({
+  items,
+  loading,
+  showLabel,
+  canPost,
+  canBroadcast,
+  gymId,
+  posterId,
+  allIds,
+  allBroadcastIds,
+  expanded,
+  onToggle,
+  onChange,
+  emptyCopy,
+}: {
+  items: GymFeedItem[];
+  loading: boolean;
+  showLabel: boolean;
+  canPost: boolean;
+  canBroadcast: boolean;
+  gymId: string;
+  posterId: string;
+  allIds: string[];
+  allBroadcastIds: string[];
+  expanded: Set<string>;
+  onToggle: (key: string) => void;
+  emptyCopy: string | null;
+  onChange: () => void;
+}) {
+  const colors = useThemeColors();
+  const [composeOpen, setComposeOpen] = useState(false);
+
+  // Marks every announcement and broadcast on the page read in one go.
+  const markAllRead = useMutation({
+    mutationFn: async () => {
+      if (allIds.length > 0) {
+        const { error } = await supabase.from('announcement_reads').upsert(
+          allIds.map((id) => ({ announcement_id: id, profile_id: posterId })),
+          { onConflict: 'announcement_id,profile_id' },
+        );
+        if (error) throw error;
+      }
+      if (allBroadcastIds.length > 0) {
+        const { error } = await supabase
+          .from('class_session_broadcast_reads')
+          .upsert(
+            allBroadcastIds.map((id) => ({
+              broadcast_id: id,
+              profile_id: posterId,
+            })),
+            { onConflict: 'broadcast_id,profile_id' },
+          );
+        if (error) throw error;
+      }
+    },
+    onSuccess: onChange,
+  });
+
+  const header = (
+    <View className="flex-row items-center justify-between gap-3">
+      {showLabel ? (
+        <SectionLabel>From the gym</SectionLabel>
+      ) : (
+        <View className="flex-1" />
+      )}
+      <View className="flex-row gap-2">
+        {items.some((i) => i.unread) ? (
+          <ChipButton
+            tone="neutral"
+            label="Mark all read"
+            icon="checkmark-done-outline"
+            onPress={() => markAllRead.mutate()}
+            disabled={markAllRead.isPending}
+          />
+        ) : null}
+        {canBroadcast ? (
+          <ChipButton
+            tone="neutral"
+            label="Broadcast"
+            icon="megaphone-outline"
+            onPress={() => router.push('/inbox/broadcast/new' as never)}
+          />
+        ) : null}
+        {canPost ? (
+          <ChipButton
+            tone="neutral"
+            label={composeOpen ? 'Close' : 'Post'}
+            icon={composeOpen ? 'close' : 'add'}
+            onPress={() => setComposeOpen((v) => !v)}
+          />
+        ) : null}
+      </View>
+    </View>
+  );
+
+  return (
+    <View className="gap-2">
+      {header}
+      {composeOpen ? (
+        <AnnouncementComposer
+          gymId={gymId}
+          posterId={posterId}
+          onPosted={() => {
+            setComposeOpen(false);
+            onChange();
+          }}
+        />
+      ) : null}
+      {loading ? (
+        <EmptyState kind="loading" rows={3} />
+      ) : items.length === 0 ? (
+        emptyCopy ? (
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
+            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
+              {emptyCopy}
+            </Text>
+          </View>
+        ) : null
+      ) : (
+        <RuledList>
+          {items.map((item, i) => {
+            const key = `${item.kind}:${item.id}`;
+            const isOpen = expanded.has(key);
+            return (
+              <ListRow
+                key={key}
+                ruled
+                first={i === 0}
+                title={item.title}
+                subtitle={isOpen ? undefined : snippet(item.body, 80)}
+                onPress={() => onToggle(key)}
+                lead={
+                  item.dotColor ? (
+                    <View
+                      style={{ backgroundColor: item.dotColor }}
+                      className="w-2.5 h-2.5 rounded-full"
+                    />
+                  ) : undefined
+                }
+                chip={
+                  item.pinned ? (
+                    <View className="flex-row items-center gap-1 rounded-full bg-raised dark:bg-raised-dk px-2 py-0.5">
+                      <Ionicons name="pin" size={10} color={colors.ink2} />
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] font-semibold">
+                        Pinned
+                      </Text>
+                    </View>
+                  ) : undefined
+                }
+                trailing={
+                  <View className="items-end gap-1">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+                      {timeAgo(item.ts)}
+                    </Text>
+                    {item.unread ? (
+                      <View className="w-2 h-2 rounded-full bg-primary" />
+                    ) : null}
+                  </View>
+                }
+                foot={
+                  isOpen ? (
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-sm pt-1">
+                      {item.body}
+                    </Text>
+                  ) : undefined
+                }
+              />
+            );
+          })}
+        </RuledList>
       )}
     </View>
   );
 }
 
-function AnnouncementsTab({
-  canPost,
+function AnnouncementComposer({
   gymId,
   posterId,
-  onChange,
+  onPosted,
 }: {
-  canPost: boolean;
   gymId: string;
   posterId: string;
-  onChange: () => void;
+  onPosted: () => void;
 }) {
-  const colors = useThemeColors();
   const queryClient = useQueryClient();
-  const [composeOpen, setComposeOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [pinned, setPinned] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const list = useQuery({
-    queryKey: ['gym-announcements', gymId],
-    enabled: !!gymId,
-    queryFn: async (): Promise<AnnouncementRow[]> => {
-      const { data, error: err } = await supabase
-        .from('gym_announcements')
-        .select('id, gym_id, posted_by, title, body, pinned, created_at')
-        .eq('gym_id', gymId)
-        .order('pinned', { ascending: false })
-        .order('created_at', { ascending: false });
-      if (err) throw err;
-      return (data ?? []) as AnnouncementRow[];
-    },
-  });
 
   const post = useMutation({
     mutationFn: async () => {
@@ -389,385 +745,68 @@ function AnnouncementsTab({
       setTitle('');
       setBody('');
       setPinned(false);
-      setComposeOpen(false);
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['gym-announcements'] });
-      onChange();
+      onPosted();
     },
     onError: (e) => setError(errorMessage(e, 'Could not post')),
   });
 
-  // Mark all unread announcements visible on the page as read.
-  const markAllRead = useMutation({
-    mutationFn: async () => {
-      const ids = (list.data ?? []).map((a) => a.id);
-      if (ids.length === 0) return;
-      const rows = ids.map((id) => ({
-        announcement_id: id,
-        profile_id: posterId,
-      }));
-      // Upsert ignoring conflicts so re-marking is cheap.
-      const { error: err } = await supabase
-        .from('announcement_reads')
-        .upsert(rows, { onConflict: 'announcement_id,profile_id' });
-      if (err) throw err;
-    },
-    onSuccess: onChange,
-  });
-
   return (
-    <View className="gap-3">
-      <View className="flex-row items-center justify-between">
-        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
-          Gym announcements
-        </Text>
-        <View className="flex-row gap-2">
-          <Pressable
-            onPress={() => markAllRead.mutate()}
-            disabled={markAllRead.isPending}
-            className="rounded-full border border-line dark:border-line-dk px-3 py-1.5 active:opacity-70">
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-              Mark all read
-            </Text>
-          </Pressable>
-          {canPost ? (
-            <Pressable
-              onPress={() => setComposeOpen((v) => !v)}
-              className="flex-row items-center gap-1 bg-primary rounded-full px-3 py-1.5 active:opacity-70">
-              <Ionicons
-                name={composeOpen ? 'close' : 'add'}
-                size={14}
-                color={colors.onPrimary}
-              />
-              <Text className="text-on-primary text-xs font-semibold">
-                {composeOpen ? 'Close' : 'Post'}
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
+      <Input
+        label="Title"
+        value={title}
+        onChangeText={setTitle}
+        placeholder="Closed Monday"
+        autoCapitalize="sentences"
+      />
+      <Input
+        label="Body"
+        value={body}
+        onChangeText={setBody}
+        placeholder="Cleaning the floor — reopening Tuesday at 6am."
+        multiline
+        numberOfLines={4}
+        style={{ minHeight: 100, textAlignVertical: 'top' }}
+        autoCapitalize="sentences"
+      />
+      <View className="flex-row items-center gap-2">
+        <Switch
+          accessibilityLabel="Pin to top"
+          value={pinned}
+          onValueChange={setPinned}
+        />
+        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Pin to top</Text>
       </View>
-
-      {composeOpen ? (
-        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
-          <Input
-            label="Title"
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Closed Monday"
-            autoCapitalize="sentences"
-          />
-          <Input
-            label="Body"
-            value={body}
-            onChangeText={setBody}
-            placeholder="Cleaning the floor — reopening Tuesday at 6am."
-            multiline
-            numberOfLines={4}
-            style={{ minHeight: 100, textAlignVertical: 'top' }}
-            autoCapitalize="sentences"
-          />
-          <View className="flex-row items-center gap-2">
-            <Switch
-              accessibilityLabel="Pin to top"
-              value={pinned}
-              onValueChange={setPinned}
-            />
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              Pin to top
-            </Text>
-          </View>
-          {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>
-          ) : null}
-          <Button onPress={() => post.mutate()} loading={post.isPending}>
-            Post announcement
-          </Button>
-        </View>
+      {error ? (
+        <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>
       ) : null}
-
-      {list.isLoading ? (
-        <EmptyState kind="loading" rows={3} />
-      ) : (list.data?.length ?? 0) === 0 ? (
-        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
-          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-            No announcements yet.
-          </Text>
-        </View>
-      ) : (
-        list.data!.map((a) => (
-          <View
-            key={a.id}
-            className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
-            <View className="flex-row items-center gap-2">
-              {a.pinned ? (
-                <Ionicons name="pin" size={14} color={colors.primary} />
-              ) : null}
-              <Text className="flex-1 text-ink dark:text-ink-dk font-semibold" numberOfLines={1}>
-                {a.title}
-              </Text>
-              <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
-                {timeAgo(a.created_at)}
-              </Text>
-            </View>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              {a.body}
-            </Text>
-          </View>
-        ))
-      )}
+      <Button onPress={() => post.mutate()} loading={post.isPending}>
+        Post announcement
+      </Button>
     </View>
   );
 }
 
-type ClassChangeRow = {
-  id: string;
-  kind:
-    | 'gym_closed'
-    | 'classes_rescheduled'
-    | 'classes_reopened'
-    | 'class_cancelled'
-    | 'class_coach_changed';
-  body: string;
-  created_at: string;
-  read_at: string | null;
-};
-
-// Closures and bulk reschedules (0169). Opening the tab marks them read —
-// they carry their whole message in `body` (the classes they describe have
-// been deleted), so there is nothing further to open.
-// One label per kind. It was a two-branch ternary that fell through to
-// "Class times changed" for anything it did not know — which is how a
-// cancelled class (0212) has been announcing itself as a time change ever
-// since, and what a coach change would have done next.
-const NOTICE_TITLE: Record<string, string> = {
-  gym_closed: 'Gym closed',
-  classes_reopened: 'Classes are back on',
-  classes_rescheduled: 'Class times changed',
-  class_cancelled: 'Class cancelled',
-  class_coach_changed: 'Different coach',
-};
-
-function ClassChangeNotices({
-  gymId,
-  onChange,
-}: {
-  gymId: string;
-  onChange: () => void;
-}) {
-  const queryClient = useQueryClient();
-  const marked = useRef(false);
-
-  const rows = useQuery({
-    queryKey: ['class-change-notifications', gymId],
-    enabled: !!gymId,
-    queryFn: async (): Promise<ClassChangeRow[]> => {
-      const { data, error } = await supabase
-        .from('class_change_notifications')
-        .select('id, kind, body, created_at, read_at')
-        .eq('gym_id', gymId)
-        .eq('channel', 'in_app')
-        .order('created_at', { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return (data ?? []) as ClassChangeRow[];
-    },
-  });
-
-  useEffect(() => {
-    if (marked.current || rows.data === undefined) return;
-    if (!rows.data.some((r) => r.read_at === null)) return;
-    marked.current = true;
-    supabase
-      .rpc('mark_class_change_notifications_read', { p_gym_id: gymId })
-      .then(() => onChange());
-  }, [rows.data, gymId, onChange, queryClient]);
-
-  const list = rows.data ?? [];
-  if (list.length === 0) return null;
-
-  return (
-    <View className="gap-2">
-      {list.map((n) => (
-        <View
-          key={n.id}
-          className="rounded-card p-4 gap-1 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20">
-          <View className="flex-row items-center gap-2">
-            <Ionicons name="alert-circle" size={18} color="#D97706" />
-            <Text className="text-amber-800 dark:text-amber-200 font-semibold flex-1">
-              {NOTICE_TITLE[n.kind] ?? 'Class times changed'}
-            </Text>
-          </View>
-          <Text className="text-amber-900 dark:text-amber-100 text-sm">
-            {n.body}
-          </Text>
-          <Text className="text-amber-700/70 dark:text-amber-300/70 text-xs">
-            {formatDate(n.created_at)}
-          </Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-function ClassesTab({
-  canBroadcast,
-  gymId,
-  profileId,
-  role,
-  onChange,
-}: {
-  canBroadcast: boolean;
-  gymId: string;
-  profileId: string;
-  role: ReturnType<typeof useRole>;
-  onChange: () => void;
-}) {
-  const colors = useThemeColors();
-  const queryClient = useQueryClient();
-  const list = useQuery({
-    queryKey: ['class-session-broadcasts', gymId],
-    enabled: !!gymId,
-    queryFn: async (): Promise<ClassBroadcastWithSession[]> => {
-      const { data, error: err } = await supabase
-        .from('class_session_broadcasts')
-        .select(
-          'id, gym_id, class_session_id, sender_id, body, created_at, class_sessions(id, starts_at, duration_minutes, class_types(name, color))',
-        )
-        .eq('gym_id', gymId)
-        .order('created_at', { ascending: false });
-      if (err) throw err;
-      return (data ?? []) as unknown as ClassBroadcastWithSession[];
-    },
-  });
-
-  const markAllRead = useMutation({
-    mutationFn: async () => {
-      const ids = (list.data ?? []).map((b) => b.id);
-      if (ids.length === 0) return;
-      const rows = ids.map((id) => ({
-        broadcast_id: id,
-        profile_id: profileId,
-      }));
-      const { error: err } = await supabase
-        .from('class_session_broadcast_reads')
-        .upsert(rows, { onConflict: 'broadcast_id,profile_id' });
-      if (err) throw err;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['class-session-broadcasts'] });
-      onChange();
-    },
-  });
-
-  return (
-    <View className="gap-3">
-      <ClassChangeNotices gymId={gymId} onChange={onChange} />
-
-      <View className="flex-row items-center justify-between">
-        <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
-          Class messages
-        </Text>
-        <View className="flex-row gap-2">
-          <Pressable
-            onPress={() => markAllRead.mutate()}
-            className="rounded-full border border-line dark:border-line-dk px-3 py-1.5 active:opacity-70">
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-              Mark all read
-            </Text>
-          </Pressable>
-          {canBroadcast ? (
-            <Pressable
-              onPress={() =>
-                router.push('/inbox/broadcast/new' as never)
-              }
-              className="flex-row items-center gap-1 bg-primary rounded-full px-3 py-1.5 active:opacity-70">
-              <Ionicons name="megaphone-outline" size={14} color={colors.onPrimary} />
-              <Text className="text-on-primary text-xs font-semibold">Broadcast</Text>
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
-
-      {list.isLoading ? (
-        <EmptyState kind="loading" rows={3} />
-      ) : (list.data?.length ?? 0) === 0 ? (
-        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
-          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-            {role === 'member'
-              ? 'No class messages yet. You\'ll see anything your coach sends to a class you\'re booked into.'
-              : 'No class messages yet. Tap Broadcast to send one.'}
-          </Text>
-        </View>
-      ) : (
-        list.data!.map((b) => {
-          const sess = b.class_sessions;
-          const start = sess ? new Date(sess.starts_at) : null;
-          const typeColor = sess?.class_types?.color ?? colors.primary;
-          const typeName = sess?.class_types?.name ?? 'Class';
-          return (
-            <View
-              key={b.id}
-              className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
-              <View className="flex-row items-center gap-2">
-                <View
-                  style={{ backgroundColor: typeColor }}
-                  className="rounded-full px-2 py-0.5">
-                  <Text className="text-white text-[10px] font-semibold">
-                    {typeName}
-                  </Text>
-                </View>
-                {start ? (
-                  <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-xs">
-                    {start.toLocaleDateString(undefined, {
-                      weekday: 'short',
-                      day: 'numeric',
-                      month: 'short',
-                    })}{' '}
-                    ·{' '}
-                    {`${start.getHours().toString().padStart(2, '0')}:${start
-                      .getMinutes()
-                      .toString()
-                      .padStart(2, '0')}`}
-                  </Text>
-                ) : null}
-                <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
-                  {timeAgo(b.created_at)}
-                </Text>
-              </View>
-              <Text className="text-ink dark:text-ink-dk text-sm">
-                {b.body}
-              </Text>
-            </View>
-          );
-        })
-      )}
-    </View>
-  );
-}
-
-// The weekly injury nudge: when a member's open injury hasn't been
-// checked in on for a week, the inbox asks for an update.
 // A failing payment is the one inbox item that costs the member their
-// membership if ignored, so it sits above the tabs as a banner rather than
-// inside one — the same treatment as an overdue injury check-in.
-// Shown for as long as the payment is ACTUALLY failing, not for as long as
-// the notice is unread. Reading it once on day 1 used to silence Temple for
-// the rest of the fortnight, because one-notice-per-run collapses Stripe's
-// remaining retries onto that same already-read row.
-//
-// The badge stays read-based on purpose (payment_unread in
-// inbox_unread_summary): the badge means "something new", this banner means
-// "something ongoing". Tying them together would either nag forever or go
-// quiet mid-run.
-function PaymentNoticeBanner({
+// membership if ignored, so it leads the feed as a decision card with
+// its two real choices. Shown for as long as the payment is ACTUALLY
+// failing (dunning row present), not for as long as the notice is
+// unread; "Not now" holds for the session only, because the payment is
+// still failing tomorrow. The badge stays read-based on purpose — the
+// badge means "something new", this card means "something ongoing".
+function PaymentDecisionCard({
   gymId,
   profileId,
 }: {
   gymId: string;
   profileId: string;
 }) {
+  const [dismissed, setDismissed] = useState(paymentDismissedThisSession);
+
   // Presence of a dunning row IS past-due (0176), and recovery deletes it,
-  // so the banner clears itself without needing to be told.
+  // so the card clears itself without needing to be told.
   const failing = useQuery({
     queryKey: ['my-dunning', gymId, profileId],
     enabled: !!gymId && !!profileId,
@@ -789,9 +828,6 @@ function PaymentNoticeBanner({
       // Scoped to the reader. RLS lets can_see_money staff read every
       // member's rows, so without this an owner sees a member's failed
       // payment as their own.
-      //
-      // Read or unread — the stored in-app body is deliberately dateless
-      // (0176), so it is still true when re-read a week into the run.
       const { data, error } = await supabase
         .from('payment_notifications')
         .select('id, kind, body')
@@ -806,12 +842,10 @@ function PaymentNoticeBanner({
   });
 
   const notice = notices.data?.[0];
-  if (!(failing.data ?? 0) || !notice) return null;
+  if (dismissed || !(failing.data ?? 0) || !notice) return null;
 
   return (
-    <Pressable
-      onPress={() => router.push('/membership' as never)}
-      className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-card p-4 gap-2 active:opacity-80">
+    <View className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-card p-4 gap-2">
       <View className="flex-row items-center gap-2">
         <Ionicons name="card-outline" size={18} color="#DC2626" />
         <Text
@@ -821,14 +855,35 @@ function PaymentNoticeBanner({
             ? 'Your membership is about to stop'
             : "We couldn't take your payment"}
         </Text>
-        <Ionicons name="chevron-forward" size={15} color="#DC2626" />
       </View>
-      <Text className="text-red-900 dark:text-red-100 text-sm">{notice.body}</Text>
-    </Pressable>
+      <Text className="text-red-900 dark:text-red-100 text-sm">
+        {notice.body}
+      </Text>
+      <View className="flex-row gap-2">
+        <ChipButton
+          tone="red"
+          label="Update card"
+          icon="card-outline"
+          onPress={() => router.push('/membership' as never)}
+        />
+        <ChipButton
+          tone="neutral"
+          label="Not now"
+          icon="close"
+          onPress={() => {
+            paymentDismissedThisSession = true;
+            setDismissed(true);
+          }}
+        />
+      </View>
+    </View>
   );
 }
 
-function InjuryCheckInBanner() {
+// The weekly injury nudge, as a feed decision card: when a member's open
+// injury hasn't been checked in on for a week, the inbox asks for an
+// update. Clears itself once the check-in happens.
+function InjuryCheckInCard() {
   const injuries = useMyInjuries();
   const due = dueCheckIns(injuries.data);
   if (due.length === 0) return null;
@@ -836,7 +891,9 @@ function InjuryCheckInBanner() {
     <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-card p-4 gap-2">
       <View className="flex-row items-center gap-2">
         <Ionicons name="pulse" size={18} color="#D97706" />
-        <Text className="flex-1 text-amber-700 dark:text-amber-300 font-semibold" numberOfLines={1}>
+        <Text
+          className="flex-1 text-amber-700 dark:text-amber-300 font-semibold"
+          numberOfLines={1}>
           {due.length === 1
             ? `How's your ${injuryTitle(due[0].body_region, due[0].side).toLowerCase()}?`
             : `${due.length} injuries need a check-in`}
@@ -859,9 +916,9 @@ function InjuryCheckInBanner() {
 }
 
 // Nudge to log results after an attended class — mirrors the injury
-// banner. Routes to Track, where the post-class prompt opens the
-// recorder pre-filled for that session.
-function LogNudgeBanner() {
+// card. Routes to Track, where the post-class prompt opens the recorder
+// pre-filled for that session.
+function LogNudgeCard() {
   const nudge = useLogNudge();
   const items = nudge.data ?? [];
   if (items.length === 0) return null;
@@ -893,7 +950,7 @@ function LogNudgeBanner() {
   );
 }
 
-// Cover notifications (0165). Opening the tab marks them read — every
+// Cover notifications (0165). Opening the chip marks them read — every
 // one of them points at the same place, and that place is one tap away.
 function CoverTab({ gymId }: { gymId: string }) {
   const colors = useThemeColors();
@@ -1087,59 +1144,61 @@ function AlertsTab({ gymId }: { gymId: string }) {
           const copy = ALERT_COPY[a.kind] ?? ALERT_COPY.parq_flag;
           const amber = a.kind === 'injury_update';
           return (
-          <View
-            key={a.id}
-            className={`rounded-card p-4 gap-2 border ${
-              a.acknowledged_at
-                ? 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
-                : amber
-                  ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
-                  : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
-            }`}>
-            <View className="flex-row items-center gap-2">
-              <Ionicons
-                name={copy.icon}
-                size={18}
-                color={amber ? '#D97706' : '#DC2626'}
-              />
-              <Text className="text-ink dark:text-ink-dk font-semibold flex-1" numberOfLines={1}>
-                {a.subject?.full_name ?? 'Member'} {copy.title}
-              </Text>
-              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-                {formatDate(a.created_at)}
-              </Text>
-            </View>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              {copy.body}
-            </Text>
-            <View className="flex-row gap-2">
-              {a.subject_profile_id ? (
-                <ChipButton
-                  tone="neutral"
-                  label="Open profile"
-                  icon="person-outline"
-                  onPress={() =>
-                    router.push(
-                      `/management/members/${a.subject_profile_id}` as never,
-                    )
-                  }
+            <View
+              key={a.id}
+              className={`rounded-card p-4 gap-2 border ${
+                a.acknowledged_at
+                  ? 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
+                  : amber
+                    ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
+                    : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
+              }`}>
+              <View className="flex-row items-center gap-2">
+                <Ionicons
+                  name={copy.icon}
+                  size={18}
+                  color={amber ? '#D97706' : '#DC2626'}
                 />
-              ) : null}
-              {!a.acknowledged_at ? (
-                <ChipButton
-                  tone="filled"
-                  label="Acknowledge"
-                  icon="checkmark"
-                  onPress={() => ack.mutate(a.id)}
-                  disabled={ack.isPending}
-                />
-              ) : (
-                <Text className="text-ink-2 dark:text-ink-2-dk text-xs self-center">
-                  Acknowledged
+                <Text
+                  className="text-ink dark:text-ink-dk font-semibold flex-1"
+                  numberOfLines={1}>
+                  {a.subject?.full_name ?? 'Member'} {copy.title}
                 </Text>
-              )}
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
+                  {formatDate(a.created_at)}
+                </Text>
+              </View>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
+                {copy.body}
+              </Text>
+              <View className="flex-row gap-2">
+                {a.subject_profile_id ? (
+                  <ChipButton
+                    tone="neutral"
+                    label="Open profile"
+                    icon="person-outline"
+                    onPress={() =>
+                      router.push(
+                        `/management/members/${a.subject_profile_id}` as never,
+                      )
+                    }
+                  />
+                ) : null}
+                {!a.acknowledged_at ? (
+                  <ChipButton
+                    tone="filled"
+                    label="Acknowledge"
+                    icon="checkmark"
+                    onPress={() => ack.mutate(a.id)}
+                    disabled={ack.isPending}
+                  />
+                ) : (
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-xs self-center">
+                    Acknowledged
+                  </Text>
+                )}
+              </View>
             </View>
-          </View>
           );
         })
       )}
