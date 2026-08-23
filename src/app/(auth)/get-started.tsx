@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, PanResponder, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Animated, Easing, PanResponder, Pressable, ScrollView, View } from 'react-native';
 import { Text } from '@/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,25 +12,19 @@ import { useThemePreference } from '@/lib/theme';
 
 // Logged-out landing (served at app.jointemple.io). Theme-aware (the
 // top-right toggle flips the app-wide scheme), navless.
-// The three paths are a stacked deck mirroring the logo — each card is one
-// of the brand colours (cream → steel-blue → gold). Advancing shuffles the
-// front card to the back and brings the next colour forward (the deck
-// cycles). Every card fills to the tallest so the deck never resizes, and
-// the CTA is pinned to the bottom; foreground flips ink/cream per card.
+// The three paths are a stacked deck mirroring the mark: one solid front
+// card — ink on the light page, paper on the dark one — with the cards
+// behind reduced to hairline ghosts, exactly the logo's own treatment.
+// The deck used to wear the old logo's three colours (cream, steel blue,
+// gold); those went when the mark went monochrome. Advancing shuffles the
+// front card to the back (the deck cycles); every card fills to the
+// tallest so the deck never resizes, and the CTA is pinned to the bottom.
 
-const CREAM = '#F4F2ED';
-const INK = '#111111';
-const BLUE = '#3B6BA5';
-const GOLD = '#E8B620';
+const INK = '#14161A';
+const PAPER = '#F4F5F6';
 
 type Path = {
   key: string;
-  bg: string;
-  fg: string;
-  border: string;
-  gradient: string;
-  ctaBg: string;
-  ctaText: string;
   icon: keyof typeof Ionicons.glyphMap;
   kicker: string;
   title: string;
@@ -38,28 +32,11 @@ type Path = {
   bullets: string[];
   cta: string;
   href: string;
-  // Light-mode override: the neutral card flips cream → ink so it
-  // contrasts on the light page (mirrors the logo's front layer, which is
-  // ink on light and cream on dark). Blue / gold don't need it.
-  light?: {
-    bg: string;
-    fg: string;
-    border: string;
-    gradient: string;
-    ctaBg: string;
-    ctaText: string;
-  };
 };
 
 const PATHS: Path[] = [
   {
     key: 'member',
-    bg: CREAM,
-    fg: INK,
-    border: '#E2DDD1',
-    gradient: 'linear-gradient(180deg, #FFFFFF 0%, #EFEDE4 100%)',
-    ctaBg: INK,
-    ctaText: CREAM,
     icon: 'people-outline',
     kicker: 'Member',
     title: 'Join a gym',
@@ -72,23 +49,9 @@ const PATHS: Path[] = [
     ],
     cta: 'I have an invite',
     href: '/accept-invite',
-    light: {
-      bg: INK,
-      fg: CREAM,
-      border: '#2A2A2A',
-      gradient: 'linear-gradient(180deg, #2A2A2A 0%, #121212 100%)',
-      ctaBg: CREAM,
-      ctaText: INK,
-    },
   },
   {
     key: 'owner',
-    bg: BLUE,
-    fg: CREAM,
-    border: '#335E91',
-    gradient: 'linear-gradient(180deg, #4878B2 0%, #335E91 100%)',
-    ctaBg: CREAM,
-    ctaText: INK,
     icon: 'business-outline',
     kicker: 'Owner',
     title: 'Start a gym',
@@ -105,12 +68,6 @@ const PATHS: Path[] = [
   },
   {
     key: 'solo',
-    bg: GOLD,
-    fg: INK,
-    border: '#CFA017',
-    gradient: 'linear-gradient(180deg, #F1C53C 0%, #DBA713 100%)',
-    ctaBg: INK,
-    ctaText: CREAM,
     icon: 'flame-outline',
     kicker: 'Solo',
     title: 'Train solo',
@@ -126,6 +83,36 @@ const PATHS: Path[] = [
   },
 ];
 
+// The one card treatment, per scheme — the front layer of the mark.
+type Look = {
+  bg: string;
+  fg: string;
+  border: string;
+  // The ghost cards behind, front-to-back — the mark's 0.55 / 0.3 strokes.
+  ghosts: [string, string];
+  ctaBg: string;
+  ctaText: string;
+};
+
+const LOOKS: Record<'light' | 'dark', Look> = {
+  light: {
+    bg: INK,
+    fg: PAPER,
+    border: '#2A2E33',
+    ghosts: ['rgba(20,22,26,0.55)', 'rgba(20,22,26,0.30)'],
+    ctaBg: PAPER,
+    ctaText: INK,
+  },
+  dark: {
+    bg: PAPER,
+    fg: INK,
+    border: '#E2E4E6',
+    ghosts: ['rgba(244,245,246,0.55)', 'rgba(244,245,246,0.30)'],
+    ctaBg: INK,
+    ctaText: PAPER,
+  },
+};
+
 const N = PATHS.length;
 const TALLEST = PATHS.reduce((a, b) =>
   b.bullets.length > a.bullets.length ? b : a,
@@ -136,16 +123,10 @@ const CARD_PAD = 28;
 const CARD_RADIUS = 24;
 const CTA_GAP = 24;
 
-// In light mode the neutral (cream) card flips to ink so it reads on the
-// light page; the coloured cards (blue, gold) are unchanged.
-function resolveCard(p: Path, dark: boolean): Path {
-  return dark || !p.light ? p : { ...p, ...p.light };
-}
-
 export default function GetStartedScreen() {
   const { scheme } = useThemePreference();
   const dark = scheme === 'dark';
-  const cards = PATHS.map((p) => resolveCard(p, dark));
+  const look = LOOKS[dark ? 'dark' : 'light'];
   const [page, setPage] = useState(0);
 
   // One animated "slot" per card (0 front … N-1 back). Initial arrangement
@@ -214,7 +195,7 @@ export default function GetStartedScreen() {
             </Text>
           </View>
 
-          {/* Deck — reserve room (pr/pb) for the offset cards behind. */}
+          {/* Deck — reserve room (pr/pb) for the ghost cards behind. */}
           <View className="pr-7 pb-7" {...pan.panHandlers}>
             <View className="relative">
               {/* Invisible sizer: tallest card sets the deck height so the
@@ -222,20 +203,20 @@ export default function GetStartedScreen() {
               <View style={{ opacity: 0 }} pointerEvents="none">
                 <View
                   style={{
-                    backgroundColor: TALLEST.bg,
-                    borderColor: TALLEST.border,
+                    backgroundColor: look.bg,
+                    borderColor: look.border,
                     borderWidth: 1,
                     borderRadius: CARD_RADIUS,
                     padding: CARD_PAD,
                   }}>
-                  <CardContent path={TALLEST} />
+                  <CardContent path={TALLEST} look={look} />
                   <View style={{ paddingTop: CTA_GAP }}>
-                    <CardCta path={TALLEST} interactive={false} />
+                    <CardCta path={TALLEST} look={look} interactive={false} />
                   </View>
                 </View>
               </View>
 
-              {cards.map((p, i) => {
+              {PATHS.map((p, i) => {
                 const depth = depthOf(i, page);
                 const sv = slots[i];
                 const off = sv.interpolate({
@@ -246,38 +227,49 @@ export default function GetStartedScreen() {
                   inputRange: [0, 1, 2],
                   outputRange: [1, 0, 0],
                 });
+                // A card behind the front is a ghost: no fill, a hairline in
+                // the page's ink — the same 0.55 / 0.3 steps the mark uses.
+                const bg = sv.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [look.bg, 'rgba(0,0,0,0)'],
+                  extrapolate: 'clamp',
+                });
+                const borderColor = sv.interpolate({
+                  inputRange: [0, 1, 2],
+                  outputRange: [look.border, look.ghosts[0], look.ghosts[1]],
+                });
+                const shadowOpacity = sv.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.25, 0],
+                  extrapolate: 'clamp',
+                });
                 return (
                   <Animated.View
                     key={p.key}
                     pointerEvents={depth === 0 ? 'auto' : 'none'}
-                    style={[
-                      {
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        zIndex: N - depth,
-                        backgroundColor: p.bg,
-                        borderColor: p.border,
-                        borderWidth: 1,
-                        borderRadius: CARD_RADIUS,
-                        padding: CARD_PAD,
-                        transform: [{ translateX: off }, { translateY: off }],
-                        shadowColor: '#000',
-                        shadowOpacity: 0.25,
-                        shadowRadius: 24,
-                        shadowOffset: { width: 0, height: 14 },
-                        elevation: 8,
-                      },
-                      Platform.OS === 'web'
-                        ? ({ backgroundImage: p.gradient } as any)
-                        : null,
-                    ]}>
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      zIndex: N - depth,
+                      backgroundColor: bg,
+                      borderColor,
+                      borderWidth: 1,
+                      borderRadius: CARD_RADIUS,
+                      padding: CARD_PAD,
+                      transform: [{ translateX: off }, { translateY: off }],
+                      shadowColor: '#000',
+                      shadowOpacity,
+                      shadowRadius: 24,
+                      shadowOffset: { width: 0, height: 14 },
+                      elevation: depth === 0 ? 8 : 0,
+                    }}>
                     <Animated.View style={{ opacity: contentOpacity, flex: 1 }}>
-                      <CardContent path={p} />
+                      <CardContent path={p} look={look} />
                       <View style={{ marginTop: 'auto', paddingTop: CTA_GAP }}>
-                        <CardCta path={p} interactive={depth === 0} />
+                        <CardCta path={p} look={look} interactive={depth === 0} />
                       </View>
                     </Animated.View>
                   </Animated.View>
@@ -290,7 +282,7 @@ export default function GetStartedScreen() {
           <View className="flex-row items-center justify-center gap-4">
             <Arrow dir="left" onPress={() => goRel(-1)} />
             <View className="flex-row items-center gap-2">
-              {cards.map((p, i) => {
+              {PATHS.map((p, i) => {
                 const active = i === page;
                 return (
                   <Pressable
@@ -301,19 +293,16 @@ export default function GetStartedScreen() {
                       width: active ? 12 : 6,
                       height: active ? 12 : 6,
                       borderRadius: 6,
-                      // Filled with the card colour, plus a contrasting
-                      // hairline so a near-white card (cream) stays visible
-                      // on the light background.
                       backgroundColor: active
-                        ? p.bg
+                        ? look.bg
                         : dark
                           ? '#4B5563'
                           : '#CBD5E1',
                       borderWidth: active ? 1 : 0,
                       borderColor: active
                         ? dark
-                          ? 'rgba(255,255,255,0.45)'
-                          : 'rgba(17,17,17,0.30)'
+                          ? 'rgba(17,17,17,0.30)'
+                          : 'rgba(255,255,255,0.45)'
                         : 'transparent',
                     }}
                   />
@@ -327,7 +316,7 @@ export default function GetStartedScreen() {
           <View className="items-center pt-1">
             <Link href="/sign-in" asChild>
               <Pressable hitSlop={8}>
-                <Text className="text-[#3B6BA5] dark:text-[#6E97C6]">
+                <Text className="text-ink-2 dark:text-ink-2-dk underline">
                   Already have an account? Sign in
                 </Text>
               </Pressable>
@@ -341,37 +330,37 @@ export default function GetStartedScreen() {
   );
 }
 
-function CardContent({ path }: { path: Path }) {
+function CardContent({ path, look }: { path: Path; look: Look }) {
   return (
     <View style={{ gap: CTA_GAP }}>
       <View className="flex-row items-center gap-4">
         <View
-          style={{ borderColor: path.fg }}
+          style={{ borderColor: look.fg }}
           className="w-14 h-14 rounded-full border items-center justify-center">
-          <Ionicons name={path.icon} size={24} color={path.fg} />
+          <Ionicons name={path.icon} size={24} color={look.fg} />
         </View>
         <View className="flex-1">
           <Text
-            style={{ color: path.fg }}
+            style={{ color: look.fg }}
             className="text-[10px] font-semibold uppercase tracking-[3px] opacity-70">
             {path.kicker}
           </Text>
-          <Text style={{ color: path.fg }} className="text-2xl font-semibold">
+          <Text style={{ color: look.fg }} className="text-2xl font-semibold">
             {path.title}
           </Text>
         </View>
       </View>
 
-      <Text style={{ color: path.fg }} className="text-lg font-medium">
+      <Text style={{ color: look.fg }} className="text-lg font-medium">
         {path.headline}
       </Text>
 
       <View className="gap-2.5">
         {path.bullets.map((b) => (
           <View key={b} className="flex-row gap-2.5">
-            <Ionicons name="checkmark-circle" size={18} color={path.fg} />
+            <Ionicons name="checkmark-circle" size={18} color={look.fg} />
             <Text
-              style={{ color: path.fg }}
+              style={{ color: look.fg }}
               className="flex-1 text-sm leading-5 opacity-90">
               {b}
             </Text>
@@ -384,13 +373,15 @@ function CardContent({ path }: { path: Path }) {
 
 function CardCta({
   path,
+  look,
   interactive,
 }: {
   path: Path;
+  look: Look;
   interactive: boolean;
 }) {
   const label = (
-    <Text style={{ color: path.ctaText }} className="font-semibold">
+    <Text style={{ color: look.ctaText }} className="font-semibold">
       {path.cta}
     </Text>
   );
@@ -398,7 +389,7 @@ function CardCta({
     return (
       <Link href={path.href as never} asChild>
         <Pressable
-          style={{ backgroundColor: path.ctaBg }}
+          style={{ backgroundColor: look.ctaBg }}
           className="rounded-ctl p-4 items-center active:opacity-80">
           {label}
         </Pressable>
@@ -407,7 +398,7 @@ function CardCta({
   }
   return (
     <View
-      style={{ backgroundColor: path.ctaBg }}
+      style={{ backgroundColor: look.ctaBg }}
       className="rounded-ctl p-4 items-center">
       {label}
     </View>

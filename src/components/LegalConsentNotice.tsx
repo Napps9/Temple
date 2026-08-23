@@ -9,13 +9,13 @@ export function LegalConsentNotice() {
     <Text className="text-center text-xs text-ink-3 dark:text-ink-3-dk leading-5">
       By continuing you agree to Temple’s{' '}
       <Text
-        className="text-[#3B6BA5] dark:text-[#6E97C6] underline"
+        className="text-ink-2 dark:text-ink-2-dk underline"
         onPress={() => router.push('/terms' as never)}>
         Terms of Service
       </Text>{' '}
       and{' '}
       <Text
-        className="text-[#3B6BA5] dark:text-[#6E97C6] underline"
+        className="text-ink-2 dark:text-ink-2-dk underline"
         onPress={() => router.push('/privacy' as never)}>
         Privacy Policy
       </Text>

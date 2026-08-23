@@ -30,7 +30,7 @@ export function CookieBanner() {
           We use only essential storage to run the app. We’d also like to use
           non-essential analytics to improve it — your choice.{' '}
           <Text
-            className="text-[#3B6BA5] underline dark:text-[#6E97C6]"
+            className="text-ink-2 dark:text-ink-2-dk underline"
             onPress={() => router.push('/privacy' as never)}>
             Privacy Policy
           </Text>
