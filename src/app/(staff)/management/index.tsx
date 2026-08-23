@@ -430,6 +430,7 @@ export default function ManagementHome() {
             <PlansPanel />
             {role === 'owner' ? (
               <SettingsSection
+                id="membership-policies"
                 title="Member Management Configuration"
                 description="Which membership changes are self-serve vs need your approval."
                 icon="swap-horizontal-outline">
@@ -566,6 +567,7 @@ function SettingsTab({ open }: { open: SettingsSectionId | null }) {
       {ordered.map((s) => (
         <SettingsSection
           key={s.id}
+          id={s.id}
           title={s.title}
           description={s.description}
           icon={s.icon}
@@ -577,23 +579,40 @@ function SettingsTab({ open }: { open: SettingsSectionId | null }) {
   );
 }
 
+// Which settings cards are expanded, across unmounts — the tab body is
+// swapped out on every tab switch and search, and cards snapping shut
+// each time made multi-card sessions start over. Session-only, same
+// idiom as the hub's remembered tab. Broader than SettingsSectionId
+// because the Plans tab reuses the card outside the Settings manifest.
+type SettingsCardId = SettingsSectionId | 'membership-policies';
+const openSettingsCards = new Set<SettingsCardId>();
+
 // Collapsed-by-default section card: the header row is the CTA, the
 // panel renders only while open. Keeps the Settings tab scannable —
 // five fully-expanded editors stacked end to end was a wall.
 function SettingsSection({
+  id,
   title,
   description,
   icon,
   defaultOpen,
   children,
 }: {
+  id: SettingsCardId;
   title: string;
   description: string;
   icon: IconName;
   defaultOpen?: boolean;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen ?? false);
+  const [open, setOpenState] = useState(
+    (defaultOpen ?? false) || openSettingsCards.has(id),
+  );
+  const setOpen = (next: boolean) => {
+    if (next) openSettingsCards.add(id);
+    else openSettingsCards.delete(id);
+    setOpenState(next);
+  };
   // Opens on a deep link and never force-closes: somebody who arrived at
   // one section and then collapsed it has said what they want.
   useEffect(() => {
@@ -603,7 +622,7 @@ function SettingsSection({
   return (
     <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card">
       <Pressable
-        onPress={() => setOpen((v) => !v)}
+        onPress={() => setOpen(!open)}
         className="flex-row items-center gap-3 p-4 active:opacity-70">
         <View className="w-9 h-9 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
           <Ionicons name={icon} size={18} color={colors.ink2} />
@@ -1055,7 +1074,7 @@ function CoachQualifications({ profileId }: { profileId: string }) {
   return (
     <View>
       <Pressable
-        onPress={() => setOpen((v) => !v)}
+        onPress={() => setOpen(!open)}
         className="flex-row items-center justify-between active:opacity-70 py-1">
         <View className="flex-row items-center gap-2">
           <Ionicons name="ribbon-outline" size={16} color={colors.ink2} />
@@ -1367,6 +1386,10 @@ function InsightsStats({
 // door to it is the manifest tile below the actions.
 // ============================================================================
 
+// The chosen reporting range, across unmounts — same session-only idiom.
+let lastRange: { preset: Preset; customStart: string; customEnd: string } | null =
+  null;
+
 function MembersTab() {
   const { data: membership } = useGymMembership();
   const canViewAttendance = useCan('can_view_attendance') ?? false;
@@ -1384,9 +1407,16 @@ function MembersTab() {
   // extends to coaches/staff, who then get the member + attendance tiles.
   const showInsights = canSeeInsights || canSeeMoney || canViewAttendance;
 
-  const [preset, setPreset] = useState<Preset>('month');
-  const [customStart, setCustomStart] = useState(() => isoDate(new Date()));
-  const [customEnd, setCustomEnd] = useState(() => isoDate(new Date()));
+  const [preset, setPreset] = useState<Preset>(lastRange?.preset ?? 'month');
+  const [customStart, setCustomStart] = useState(
+    () => lastRange?.customStart ?? isoDate(new Date()),
+  );
+  const [customEnd, setCustomEnd] = useState(
+    () => lastRange?.customEnd ?? isoDate(new Date()),
+  );
+  useEffect(() => {
+    lastRange = { preset, customStart, customEnd };
+  }, [preset, customStart, customEnd]);
   const range = useMemo(() => {
     if (preset === 'custom') return { start: customStart, end: customEnd };
     return presetRange(preset, new Date());
