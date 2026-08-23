@@ -220,6 +220,12 @@ function SearchResults({
   );
 }
 
+// The last tab the user chose, across remounts: the persistent navs
+// replace() onto this screen, so coming back from anywhere remounts it,
+// and always landing on Members made every return trip start over. Same
+// session-only idiom as the Store panel's section.
+let lastCategory: BackOfficeCategory | null = null;
+
 export default function ManagementHome() {
   const colors = useThemeColors();
   const role = useRole();
@@ -288,8 +294,12 @@ export default function ManagementHome() {
   const availableCategories = allCategories.filter((c) => TABBED.includes(c));
   const workspaceDoors = entries.filter((e) => !TABBED.includes(e.category));
   const [active, setActive] = useState<BackOfficeCategory>(
-    availableCategories[0] ?? 'members',
+    lastCategory ?? availableCategories[0] ?? 'members',
   );
+  function rememberActive(c: BackOfficeCategory) {
+    lastCategory = c;
+    setActive(c);
+  }
 
   // Six settings surfaces have no route any more — their door is a section
   // of this screen. Asking for one lands on Settings with that section
@@ -311,12 +321,12 @@ export default function ManagementHome() {
   );
   useEffect(() => {
     if (!arrived) return;
-    setActive('settings');
+    rememberActive('settings');
     setOpenSection(arrived);
   }, [arrived]);
 
   function openSettingsSection(id: SettingsSectionId) {
-    setActive('settings');
+    rememberActive('settings');
     setOpenSection(id);
     setQuery('');
   }
@@ -340,7 +350,7 @@ export default function ManagementHome() {
   );
 
   function selectCategory(c: BackOfficeCategory) {
-    setActive(c);
+    rememberActive(c);
   }
 
   return (

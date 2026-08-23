@@ -48,10 +48,20 @@ const randomSuffix = () =>
 
 const MAX_IMAGES = 8;
 
+// Which section, across unmounts: the hub swaps this panel out on every
+// tab switch and search, and forgetting the section each time made the
+// Store feel like it reset itself. Module scope, session-only — the
+// GymSetupChecklist / list-scroll-position idiom.
+let lastTab: Tab = 'products';
+
 // The Store page's tab switcher + panels, also rendered by the Manage →
 // Store tab — one component, two doors, so the two cannot drift.
 export function StoreHome() {
-  const [tab, setTab] = useState<Tab>('products');
+  const [tab, setTabState] = useState<Tab>(lastTab);
+  const setTab = (next: Tab) => {
+    lastTab = next;
+    setTabState(next);
+  };
 
   return (
     <View className="gap-5">
