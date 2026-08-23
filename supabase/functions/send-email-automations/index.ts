@@ -94,7 +94,7 @@ Deno.serve(async (req: Request) => {
           <h1 style="font-size:1.25rem;">Unsubscribe</h1>
           <p style="color:#475569;">Stop receiving these automated emails?</p>
           <form method="POST">
-            <button style="background:#3B6BA5;color:#fff;border:0;border-radius:8px;padding:12px 24px;font-size:16px;cursor:pointer;">
+            <button style="background:#C2410C;color:#fff;border:0;border-radius:8px;padding:12px 24px;font-size:16px;cursor:pointer;">
               Yes, unsubscribe
             </button>
           </form>

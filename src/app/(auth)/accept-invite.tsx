@@ -28,12 +28,6 @@ import type { GymRole } from '@/types/database';
 type InviteGym = {
   gym_id: string;
   name: string;
-  logo_url: string | null;
-  primary_color: string;
-  secondary_color: string;
-  text_color: string;
-  logo_url_dark: string | null;
-  primary_color_dark: string | null;
   role: GymRole;
 };
 
@@ -84,16 +78,9 @@ export default function AcceptInviteScreen() {
   const info: InviteGym = realInfo ?? {
     gym_id: '',
     name: 'your gym',
-    logo_url: null,
-    primary_color: '#3B6BA5',
-    secondary_color: '#3B6BA5',
-    text_color: '#111111',
-    logo_url_dark: null,
-    primary_color_dark: null,
     role: 'member',
   };
   const branded = !!realInfo;
-  const primary = info.primary_color;
 
   const signUpAndAccept = useMutation({
     mutationFn: async () => {
@@ -159,9 +146,7 @@ export default function AcceptInviteScreen() {
             <View className="items-center">
               <Link href="/sign-in" asChild>
                 <Pressable hitSlop={8}>
-                  <Text
-                    className="text-sm"
-                    style={primary ? { color: primary } : undefined}>
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-sm underline">
                     Already have an account? Sign in
                   </Text>
                 </Pressable>
@@ -279,12 +264,11 @@ export default function AcceptInviteScreen() {
           {error ? (
             <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
           ) : null}
-          <BrandButton
-            color={info.primary_color}
+          <Button
             onPress={() => acceptSignedIn.mutate()}
             loading={acceptSignedIn.isPending}>
             {`Join ${info.name}`}
-          </BrandButton>
+          </Button>
         </>
       );
     }
@@ -322,12 +306,11 @@ export default function AcceptInviteScreen() {
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
-        <BrandButton
-          color={info.primary_color}
+        <Button
           onPress={() => signUpAndAccept.mutate()}
           loading={signUpAndAccept.isPending}>
           Create account & join
-        </BrandButton>
+        </Button>
         <LegalConsentNotice />
       </>
     );
@@ -343,8 +326,8 @@ function Header() {
   );
 }
 
-// Gym-branded header once we know the inviting gym — logo, "You're
-// joining" eyebrow, gym name. Mirrors the /join/[slug] welcome.
+// Named header once we know the inviting gym — "You're joining" eyebrow,
+// gym name. Mirrors the /join/[slug] welcome.
 function GymHeader({ info }: { info: InviteGym }) {
   return (
     <View className="items-center gap-3 pt-2">
@@ -356,31 +339,5 @@ function GymHeader({ info }: { info: InviteGym }) {
         {info.name}
       </Text>
     </View>
-  );
-}
-
-// The primary CTA in the gym's own colour (matches the /join screen). The
-// shared <Button> uses the app's default primary; here we want the gym's.
-function BrandButton({
-  color,
-  onPress,
-  loading,
-  children,
-}: {
-  color: string;
-  onPress: () => void;
-  loading?: boolean;
-  children: string;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={loading}
-      style={{ backgroundColor: color }}
-      className="rounded-ctl px-5 py-3 items-center justify-center active:opacity-80 disabled:opacity-60">
-      <Text className="text-white font-semibold">
-        {loading ? 'Working…' : children}
-      </Text>
-    </Pressable>
   );
 }

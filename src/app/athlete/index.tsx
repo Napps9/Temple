@@ -20,31 +20,21 @@ import {
   waitingLine,
   type TrainingSummary,
 } from '@/lib/training-export';
-import { useThemeColors, useThemePreference } from '@/lib/theme';
+import { useThemeColors } from '@/lib/theme';
 
 type LoggedMovement = { key: string; name: string; group: string; last: string };
 
-// Company identity colours (the Temple mark), not the per-gym runtime
-// `primary` token — see docs/brand-assets.md. The three panels below echo
-// the mark's offset gold/steel/ink-or-cream stack.
-const BRAND_GOLD = '#E8B620';
-const BRAND_STEEL = '#3B6BA5';
-const BRAND_INK = '#111111';
-const BRAND_CREAM = '#F4F2ED';
-
-function AccentCard({
-  accent,
-  children,
-}: {
-  accent: string;
-  children: ReactNode;
-}) {
+// The offset plate behind each panel echoes the Temple mark — a hairline
+// ghost card, the same treatment as the two cards behind the mark's front
+// card, in the mark's one ink (docs/brand-assets.md).
+function GhostCard({ children }: { children: ReactNode }) {
+  const colors = useThemeColors();
   return (
     <View className="relative">
       <View
         pointerEvents="none"
-        className="absolute rounded-card"
-        style={{ backgroundColor: accent, top: 5, left: 5, right: -5, bottom: -5 }}
+        className="absolute rounded-card border-2"
+        style={{ borderColor: colors.ink + '4D', top: 5, left: 5, right: -5, bottom: -5 }}
       />
       <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
         {children}
@@ -56,8 +46,6 @@ function AccentCard({
 export default function AthleteHome() {
   const session = useSession();
   const colors = useThemeColors();
-  const { scheme } = useThemePreference();
-  const inkOrCream = scheme === 'dark' ? BRAND_CREAM : BRAND_INK;
   const queryClient = useQueryClient();
   const [recording, setRecording] = useState(false);
   const [activateError, setActivateError] = useState<string | null>(null);
@@ -211,12 +199,12 @@ export default function AthleteHome() {
             history is theirs and then shows them nothing, because the
             tracked_* reads are gated on the subscription (0237). */}
         {lockedHistory ? (
-          <AccentCard accent={BRAND_STEEL}>
+          <GhostCard>
             <View className="flex-row items-center gap-3">
               <View
                 className="w-10 h-10 rounded-full items-center justify-center"
-                style={{ backgroundColor: BRAND_STEEL + '26' }}>
-                <Ionicons name="lock-closed-outline" size={20} color={BRAND_STEEL} />
+                style={{ backgroundColor: colors.ink + '14' }}>
+                <Ionicons name="lock-closed-outline" size={20} color={colors.ink} />
               </View>
               <View className="flex-1">
                 <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -245,17 +233,17 @@ export default function AthleteHome() {
               loading={exporting}>
               Download my history
             </Button>
-          </AccentCard>
+          </GhostCard>
         ) : null}
 
         {/* Solo tracking — the paid athlete tier (free during beta). */}
         {athleteActive.data ? (
-          <AccentCard accent={BRAND_GOLD}>
+          <GhostCard>
             <View className="flex-row items-center gap-3">
               <View
                 className="w-10 h-10 rounded-full items-center justify-center"
-                style={{ backgroundColor: BRAND_GOLD + '26' }}>
-                <Ionicons name="barbell-outline" size={20} color={BRAND_GOLD} />
+                style={{ backgroundColor: colors.ink + '14' }}>
+                <Ionicons name="barbell-outline" size={20} color={colors.ink} />
               </View>
               <View className="flex-1">
                 <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -267,14 +255,14 @@ export default function AthleteHome() {
               </View>
             </View>
             <Button onPress={() => setRecording(true)}>Log a result</Button>
-          </AccentCard>
+          </GhostCard>
         ) : (
-          <AccentCard accent={BRAND_GOLD}>
+          <GhostCard>
             <View className="flex-row items-center gap-3">
               <View
                 className="w-10 h-10 rounded-full items-center justify-center"
-                style={{ backgroundColor: BRAND_GOLD + '26' }}>
-                <Ionicons name="barbell-outline" size={20} color={BRAND_GOLD} />
+                style={{ backgroundColor: colors.ink + '14' }}>
+                <Ionicons name="barbell-outline" size={20} color={colors.ink} />
               </View>
               <View className="flex-1 flex-row items-center gap-2">
                 <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
@@ -301,16 +289,16 @@ export default function AthleteHome() {
             <Button onPress={() => activate.mutate()} loading={activate.isPending}>
               Start solo tracking
             </Button>
-          </AccentCard>
+          </GhostCard>
         )}
 
         {/* Join / start CTAs replace /welcome for gymless users. */}
-        <AccentCard accent={BRAND_STEEL}>
+        <GhostCard>
           <View className="flex-row items-center gap-3">
             <View
               className="w-10 h-10 rounded-full items-center justify-center"
-              style={{ backgroundColor: BRAND_STEEL + '26' }}>
-              <Ionicons name="people-outline" size={20} color={BRAND_STEEL} />
+              style={{ backgroundColor: colors.ink + '14' }}>
+              <Ionicons name="people-outline" size={20} color={colors.ink} />
             </View>
             <Text className="text-ink dark:text-ink-dk font-semibold flex-1">
               Train with a gym
@@ -330,14 +318,14 @@ export default function AthleteHome() {
               </Pressable>
             </Link>
           </View>
-        </AccentCard>
+        </GhostCard>
 
-        <AccentCard accent={inkOrCream}>
+        <GhostCard>
           <View className="flex-row items-center gap-3">
             <View
               className="w-10 h-10 rounded-full items-center justify-center"
-              style={{ backgroundColor: inkOrCream + '26' }}>
-              <Ionicons name="time-outline" size={20} color={inkOrCream} />
+              style={{ backgroundColor: colors.ink + '14' }}>
+              <Ionicons name="time-outline" size={20} color={colors.ink} />
             </View>
             <View className="flex-1 flex-row items-center justify-between">
               <FieldLabel>
@@ -373,7 +361,7 @@ export default function AthleteHome() {
               ))}
             </View>
           )}
-        </AccentCard>
+        </GhostCard>
       </ScrollView>
 
       <RecordMovementResultModal

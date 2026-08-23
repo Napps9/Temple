@@ -111,6 +111,10 @@ const WIDE = [
     960,
     240,
   ],
+  // Every Temple email embeds this as a foreground <img> — Gmail strips
+  // SVGs, so it has to be a PNG at a public URL. 560px for a 196px slot.
+  ['public/email/temple-lockup.png', lockupSvg({ ink: INK }), 560, 140],
+  ['public/email/temple-lockup-on-dark.png', lockupSvg({ ink: PAPER }), 560, 140],
 ];
 
 function write(path, contents) {

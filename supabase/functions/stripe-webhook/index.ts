@@ -175,7 +175,7 @@ async function sendStoreReceipt(
     ? `<div style="margin:20px 0 0;"><p style="margin:0 0 8px;font-size:15px;font-weight:600;color:#0f172a;">Your downloads</p>${links
         .map(
           (l) =>
-            `<a href="${l.url}" style="display:inline-block;margin:4px 0;background:#3B6BA5;color:#fff;text-decoration:none;font-weight:600;padding:10px 16px;border-radius:8px;">Download ${escapeHtml(l.name)}</a><br>`,
+            `<a href="${l.url}" style="display:inline-block;margin:4px 0;background:#C2410C;color:#fff;text-decoration:none;font-weight:600;padding:10px 16px;border-radius:8px;">Download ${escapeHtml(l.name)}</a><br>`,
         )
         .join('')}<p style="margin:8px 0 0;font-size:12px;color:#94a3b8;">These links expire in 7 days — you can always re-download from the store in the app.</p></div>`
     : '';
@@ -187,7 +187,7 @@ async function sendStoreReceipt(
       <table style="width:100%;border-collapse:collapse;font-size:14px;">${itemsHtml}
         <tr><td style="padding:6px 0;border-top:1px solid #e2e8f0;color:#64748b;">Subtotal</td><td style="padding:6px 0;border-top:1px solid #e2e8f0;text-align:right;color:#64748b;">${money(order.subtotal_cents, cur)}</td></tr>
         ${shippingRow}
-        <tr><td style="padding:6px 0;font-weight:700;color:#111111;">Total</td><td style="padding:6px 0;text-align:right;font-weight:700;color:#111111;">${money(order.total_cents, cur)}</td></tr>
+        <tr><td style="padding:6px 0;font-weight:700;color:#14161A;">Total</td><td style="padding:6px 0;text-align:right;font-weight:700;color:#14161A;">${money(order.total_cents, cur)}</td></tr>
       </table>
       ${downloadsBlock}
       ${shippingBlock}`,

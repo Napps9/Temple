@@ -22,17 +22,14 @@ import {
   useSignOut,
 } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
-
-// Temple steel blue (the company mark's middle card) — this screen is
-// brandless chrome (the user has no gym yet), so it wears Temple's own
-// colour, the same as the logged-out landing.
-const BLUE = '#3B6BA5';
+import { useThemeColors } from '@/lib/theme';
 
 // Shown when a user is signed in but has no gym membership yet — either
 // they just confirmed an email from the create-gym or join flow (and we
 // finish the job, fully branded, in one tap), they joined via
 // /join/[slug] but the binding failed, or they cleared their membership.
 export default function WelcomeScreen() {
+  const colors = useThemeColors();
   const signOut = useSignOut();
   const session = useSession();
   const membership = useGymMembership();
@@ -111,10 +108,8 @@ export default function WelcomeScreen() {
           </View>
 
           <View className="items-center gap-4">
-            <View
-              style={{ backgroundColor: BLUE + '1A', borderColor: BLUE + '40' }}
-              className="w-16 h-16 rounded-card border items-center justify-center">
-              <Ionicons name={icon} size={28} color={BLUE} />
+            <View className="w-16 h-16 rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk items-center justify-center">
+              <Ionicons name={icon} size={28} color={colors.ink} />
             </View>
             <View className="gap-2">
               <Text className="text-ink dark:text-ink-dk text-2xl font-semibold text-center">

@@ -24,10 +24,6 @@ type GymInfo = {
   id: string;
   name: string;
   slug: string;
-  logo_url: string | null;
-  primary_color: string;
-  secondary_color: string;
-  text_color: string;
   public_signup_enabled: boolean;
 };
 
@@ -200,8 +196,6 @@ export default function JoinGymScreen() {
     );
   }
 
-  const primary = info.primary_color;
-
   if (!info.public_signup_enabled) {
     return (
       <Screen>
@@ -244,15 +238,9 @@ export default function JoinGymScreen() {
                 {error ? (
                   <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
                 ) : null}
-                <Pressable
-                  onPress={() => justJoin.mutate()}
-                  disabled={justJoin.isPending}
-                  style={{ backgroundColor: primary }}
-                  className="rounded-ctl px-5 py-3 items-center justify-center active:opacity-80">
-                  <Text className="text-white font-semibold">
-                    {justJoin.isPending ? 'Joining…' : `Join ${info.name}`}
-                  </Text>
-                </Pressable>
+                <Button onPress={() => justJoin.mutate()} loading={justJoin.isPending}>
+                  {`Join ${info.name}`}
+                </Button>
               </View>
             ) : pendingEmail ? (
               <View className="gap-4">
@@ -354,17 +342,11 @@ export default function JoinGymScreen() {
                 {error ? (
                   <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
                 ) : null}
-                <Pressable
+                <Button
                   onPress={() => signupAndJoin.mutate()}
-                  disabled={signupAndJoin.isPending}
-                  style={{ backgroundColor: primary }}
-                  className="rounded-ctl px-5 py-3 items-center justify-center active:opacity-80">
-                  <Text className="text-white font-semibold">
-                    {signupAndJoin.isPending
-                      ? 'Joining…'
-                      : `Sign up and join ${info.name}`}
-                  </Text>
-                </Pressable>
+                  loading={signupAndJoin.isPending}>
+                  {`Sign up and join ${info.name}`}
+                </Button>
                 <View className="items-center">
                   <Link href="/sign-in" asChild>
                     <Pressable hitSlop={8}>
