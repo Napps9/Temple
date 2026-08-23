@@ -129,9 +129,9 @@ export const TABLES = {
   member_contact_details: [{ profile_id: USER_ID, phone: '07700 900123' }],
 
   class_types: [
-    { id: 'ct1', gym_id: GYM_ID, name: 'Barbell Club', color: '#7C3AED', archived_at: null },
-    { id: 'ct2', gym_id: GYM_ID, name: 'Metcon', color: '#6366F1', archived_at: null },
-    { id: 'ct3', gym_id: GYM_ID, name: 'Open Gym', color: '#0F766E', archived_at: null },
+    { id: 'ct1', gym_id: GYM_ID, name: 'Barbell Club', color: '#7C3AED', archived_at: null, booking_window_hours_ahead: null, booking_cutoff_minutes_before: null, cancel_cutoff_minutes_before: null, cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_days_before: null },
+    { id: 'ct2', gym_id: GYM_ID, name: 'Metcon', color: '#6366F1', archived_at: null, booking_window_hours_ahead: null, booking_cutoff_minutes_before: null, cancel_cutoff_minutes_before: null, cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_days_before: null },
+    { id: 'ct3', gym_id: GYM_ID, name: 'Open Gym', color: '#0F766E', archived_at: null, booking_window_hours_ahead: null, booking_cutoff_minutes_before: null, cancel_cutoff_minutes_before: null, cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_days_before: null },
   ],
 
   membership_plans: [
