@@ -157,13 +157,13 @@ export default function OnboardingScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gym-onboarding-dismissed'] });
-      router.replace('/classes' as never);
+      router.replace('/timeline' as never);
     },
     onError: () => {
       // Dismissal failed to save — still let them through this visit
       // rather than trap them here, but they'll see the screen again
       // next sign-in since the flag never got stamped server-side.
-      router.replace('/classes' as never);
+      router.replace('/timeline' as never);
     },
   });
 
@@ -271,7 +271,7 @@ export default function OnboardingScreen() {
         ) : null}
 
         {allRequiredDone ? (
-          <Button onPress={() => router.replace('/classes' as never)}>
+          <Button onPress={() => router.replace('/timeline' as never)}>
             Take me to my gym
           </Button>
         ) : (

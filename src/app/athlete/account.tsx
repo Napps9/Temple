@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Text } from '@/components/Text';
 
+import { PageHead } from '@/components/PageHead';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
@@ -44,12 +45,7 @@ export default function AthleteAccount() {
   return (
     <Screen edges={['top', 'bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
-        <View className="flex-row items-center gap-2">
-          <BackLink inline fallbackHref="/athlete" />
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            Account
-          </Text>
-        </View>
+        <PageHead lead={<BackLink inline fallbackHref="/athlete" />} title="Account" />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-1">
           <FieldLabel>

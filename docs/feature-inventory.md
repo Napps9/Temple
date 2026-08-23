@@ -4376,9 +4376,25 @@ actions are owner-only by policy:
 
 Every surface in the product is drawn from one set of parts, one neutral
 ramp, one modal and one rule about the gym's colour. The proposal and the
-record are `docs/design/contra-refresh/` (33 boards, `node build.mjs &&
+record are `docs/design/contra-refresh/` (34 boards, `node build.mjs &&
 node shot.mjs` to rebuild); this is what a contributor needs to know
 without reading them.
+
+- **The UX pass (2026-08-23).** Six pushes reworked the platform around
+  three outcomes — obvious to a first-time user, navigable without prior
+  knowledge, key actions in three taps or fewer, driven by a tap-by-tap
+  audit of 19 member and staff journeys. What shipped: visible labels on
+  every nav pill at phone width; doors for Tasks, Coach pay and Invite
+  plus four lost surfaces added to the Manage search; timeline lead
+  lines open their conversation (migration 0252); one-tap booking from
+  the class row with an undo (cutoff-aware); Record pre-fills from
+  today's programming; the coach's classes lead their Timeline and are
+  marked in the calendar; a guarded cancel with the late-cancel warning
+  everywhere; one `SearchField` (was eight shapes); zero stray radii
+  (was 351); StatTile money scales instead of ellipsizing; teaching
+  empty states; and session-only view-state memory across the app
+  (tabs, drafts, filters, ranges, expanded cards). Setup and onboarding
+  now exit to `/timeline`, where every later open lands.
 
 - **The ramp.** `ground` / `surface` / `raised` / `sunken` / `line` /
   `line-strong` / `ink` / `ink-2` / `ink-3`, each with a `-dk` partner,

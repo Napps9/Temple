@@ -685,7 +685,7 @@ export default function SetupScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gym-onboarding-dismissed'] });
-      router.replace('/classes');
+      router.replace('/timeline');
     },
   });
 
@@ -907,7 +907,7 @@ export default function SetupScreen() {
               allDone={allRequiredDone}
               finishing={dismiss.isPending}
               onFinish={() =>
-                allRequiredDone ? router.replace('/classes') : dismiss.mutate()
+                allRequiredDone ? router.replace('/timeline') : dismiss.mutate()
               }
               onReopen={openStep}
               handled={handled.current}

@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { InviteSection } from '@/components/InviteSection';
 import { Screen } from '@/components/Screen';
+import { PageHead } from '@/components/PageHead';
 import { BackLink } from '@/components/BackLink';
 import { FieldLabel } from '@/components/SectionLabel';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
@@ -121,6 +122,10 @@ export default function TeamScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" coveredByNav />
+        <PageHead
+          title="Team"
+          subtitle="Invite teammates, and decide what each role can do."
+        />
         <InviteSection
           title="Invites"
           subtitle="Email a teammate an invite to join your team."

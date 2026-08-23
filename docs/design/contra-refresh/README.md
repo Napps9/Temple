@@ -106,11 +106,10 @@ a subtly recut sparkle that is one line to switch to.
 
 ## Deliberate departures from the reference
 
-- **The primary action keeps the gym's colour.** Contra's primary button
-  is near-black; Temple sells "make it look like your gym". One token if
-  you would rather it were ink.
 - **Dark mode is derived, not observed** — every screenshot of the
-  reference is light.
+  reference is light. (An earlier departure — "the primary action keeps
+  the gym's colour" — was reversed: gyms no longer recolour Temple, and
+  the accent is Temple's burnt orange for everyone.)
 
 ## Answered (board 23)
 
@@ -130,8 +129,7 @@ Still open:
 ## Shipping it — where this has got to
 
 1. ~~`tailwind.config.js` — the cool ramp as tokens.~~ **Done.** The old
-   `card` / `pop` / `pill` shadows are still there, marked deprecated;
-   they go once nothing references them.
+   `card` / `pop` / `pill` shadows are gone — two shadows remain.
 2. ~~`src/lib/theme.ts` — the ramp per scheme.~~ **Done**, including the
    runtime twins for Ionicon tints and SVG fills.
 3. ~~Load Geist + Fraunces via `expo-font`.~~ **Done.** React Native has
@@ -152,10 +150,10 @@ Still open:
    for the biggest offender: Record a workout's four nested sheets are
    steps of one sheet (board 33). `Sheet` gained `onBack` for it.
 6. The app shell: ground colour and the nav rail. **Done.**
-7. **The neutral ramp, everywhere.** **Done to 197 occurrences**, from
-   5,604 — thirteen exact light/dark pairs by codemod, then 57 more
-   behind hover/active prefixes. What is left is genuinely unpaired and
-   travels with its surface.
+7. **The neutral ramp, everywhere.** **Done to zero**, from 5,604.
+   The same is now true of the radii: 351 stray rounded-* utilities
+   swept onto the two-radius system, with only the four chat-bubble
+   tails keeping their deliberate shape.
 8. **The shared components.** **Done**: ChipButton (54 importers),
    BackLink (54), Input (47), EmptyState — which grew the four states
    board 20 defines — plus Avatar, StatTile and CardHeading. The four
@@ -204,16 +202,30 @@ Still open:
     injuries — and merging those makes the hub worse rather than
     smaller.
 
-    Next: every other directory still hand-rolls its rows, and the three
-    heaviest screens (`setup.tsx`, `timeline/index`, `management/index`)
-    have the right colours, type, controls, labels and modals but not
-    yet the right structure. The most repeated shape left is the
-    **door** — an icon tile, a title, a wrapping blurb and a chevron, in
-    the Manage hub, Email, the agent settings and three checklists.
-    `ListRow`'s subtitle is one line by design, so a door is either a
-    seventh part or a `wrap` prop on this one; that is a design decision
-    rather than a migration, so it is written down here rather than
-    guessed at.
+    The door question was answered: `ListRow` grew a `wrap` prop, a
+    `foot` slot and an `IconTile` export, and the doors use it.
+
+    A UX pass then reworked the platform around three outcomes —
+    obvious to a first-time user, navigable without prior knowledge,
+    key actions in three taps: every nav pill carries its visible
+    label at phone width; Tasks, Coach pay and Invite got real doors
+    and the search manifest got its four lost surfaces; lead lines
+    open their conversation (one tap, was five); booking from the
+    class row is one tap with an undo, recording pre-fills from
+    today's programming (three taps, was seven), and a coach's day
+    leads the Timeline; one `SearchField` replaced eight hand-rolled
+    shapes; and view state stopped resetting on remount everywhere
+    (tabs, drafts, filters, ranges, expanded cards — module-scope,
+    session-only).
+
+    Next, in honesty rather than urgency: seven directories still
+    hand-roll their rows onto their own markup rather than `ListRow`
+    (visual parity is already there — this is dedup, not UX);
+    `SettingCard` still has no production caller; `setup.tsx` keeps
+    its conversational structure (its radii and colours now conform;
+    a page-parts rewrite remains unjudged); and the member-side
+    boards 07-12/21 remain proposals. The icons question is still
+    open, softened by the labels now beside every nav glyph.
 
 ## Rebuilding
 
