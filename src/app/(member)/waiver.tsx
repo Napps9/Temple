@@ -10,6 +10,7 @@ import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { SignaturePad, type SignatureValue } from '@/components/SignaturePad';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -110,13 +111,10 @@ export default function WaiverForm() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            No waiver yet
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Your gym hasn't published a waiver to sign. You can keep using
-            the app normally.
-          </Text>
+          <PageHead
+            title="No waiver yet"
+            subtitle="Your gym hasn't published a waiver to sign. You can keep using the app normally."
+          />
           <Button onPress={() => router.replace('/book' as never)}>
             Continue
           </Button>
@@ -152,9 +150,7 @@ export default function WaiverForm() {
         </Pressable>
 
         <View className="gap-2">
-          <Text className="text-ink-2 dark:text-ink-2-dk font-medium">
-            Your signature
-          </Text>
+          <FieldLabel>Your signature</FieldLabel>
           <SignaturePad onChange={setSignature} />
         </View>
 
@@ -180,6 +176,11 @@ export default function WaiverForm() {
           disabled={!signature || !agreed}>
           Submit signature
         </Button>
+
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+          Your signed waiver is kept on record as a legal document, even if
+          you later leave the gym.
+        </Text>
       </ScrollView>
     </Screen>
   );

@@ -14,8 +14,11 @@ import { BackLink } from '@/components/BackLink';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { PageHead } from '@/components/PageHead';
 import { useSession } from '@/lib/auth';
+import { SectionLabel } from '@/components/SectionLabel';
 import {
   attendanceLabel,
+  describeCancelPolicy,
+  groupUpcomingBookings,
   invalidateBookingCaches,
   isLateCancel,
   splitBookings,
@@ -215,15 +218,33 @@ export default function BookingsScreen() {
                 onAction={() => router.push('/book' as never)}
               />
             ) : (
-              upcoming.map((r) => (
-                <BookingCard
-                  key={r.id}
-                  row={r}
-                  isPast={false}
-                  onCancel={() => setConfirmCancel(r)}
-                  cancelling={cancel.isPending}
-                />
-              ))
+              <>
+                {groupUpcomingBookings(
+                  upcoming,
+                  gymDefaults?.week_starts_on ?? 'mon',
+                ).map((g) => (
+                  <View key={g.label} className="gap-2">
+                    <SectionLabel>{g.label}</SectionLabel>
+                    {g.rows.map((r) => (
+                      <BookingCard
+                        key={r.id}
+                        row={r}
+                        isPast={false}
+                        onCancel={() => setConfirmCancel(r)}
+                        cancelling={cancel.isPending}
+                      />
+                    ))}
+                  </View>
+                ))}
+                {(() => {
+                  const line = describeCancelPolicy(upcoming, gymDefaults);
+                  return line ? (
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs pt-1">
+                      {line}
+                    </Text>
+                  ) : null;
+                })()}
+              </>
             )
           ) : tab === 'waitlisted' ? (
             (waitlist.data?.length ?? 0) === 0 ? (

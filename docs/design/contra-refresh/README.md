@@ -218,14 +218,25 @@ Still open:
     (tabs, drafts, filters, ranges, expanded cards — module-scope,
     session-only).
 
-    Next, in honesty rather than urgency: seven directories still
-    hand-roll their rows onto their own markup rather than `ListRow`
-    (visual parity is already there — this is dedup, not UX);
-    `SettingCard` still has no production caller; `setup.tsx` keeps
-    its conversational structure (its radii and colours now conform;
-    a page-parts rewrite remains unjudged); and the member-side
-    boards 07-12/21 remain proposals. The icons question is still
-    open, softened by the labels now beside every nav glyph.
+    Next, in honesty rather than urgency: `ListRow` now carries the
+    movements and bookings directories too, and the other five keep
+    their own markup for cause (strike-through task rows, roster fact
+    tables, the compound approve/remove member card, plan editor
+    cards, calendar cards); `SettingCard` has its first production
+    callers (the leaderboard toggles and the privacy card);
+    `setup.tsx` keeps its conversational structure (its radii and
+    colours now conform; a page-parts rewrite remains unjudged). The
+    member-side boards 07-12/21 landed their no-schema deltas — the
+    member-voiced leave dialog, the recommendation as a row chip,
+    honest day dots and a day heading on the agenda, week-grouped
+    bookings with the cancel-policy line, Track's group labels, the
+    DM thread's role subtitle and named composer, gym-named email
+    preferences, the waiver and injury retention lines, and Written
+    by attribution on programming — while the deltas that need schema
+    (one-feed inbox, notice read counts, the store grid and bag,
+    movement detail tabs, comps visibility) remain proposals. The
+    icons question is still open, softened by the labels now beside
+    every nav glyph.
 
 ## Rebuilding
 

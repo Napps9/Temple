@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { attendanceLabel, splitBookings, type BookingRow } from './bookings';
+import {
+  attendanceLabel,
+  describeCancelPolicy,
+  groupUpcomingBookings,
+  splitBookings,
+  type BookingRow,
+} from './bookings';
 
 function mkRow(id: string, startsAt: string, extras: Partial<BookingRow> = {}): BookingRow {
   return {
@@ -58,6 +64,102 @@ describe('splitBookings', () => {
     const { upcoming } = splitBookings(rows, NOW);
     expect(upcoming.map((r) => r.id)).toEqual(['promoted', 'normal']);
     expect(upcoming[0].promoted_from_waitlist).toBe(true);
+  });
+});
+
+describe('groupUpcomingBookings', () => {
+  // Thursday 4 June 2026. Monday-start week: 1–7 June; next week 8–14.
+  const NOW = new Date(2026, 5, 4, 10, 0, 0);
+
+  it('splits on the gym week boundary, not seven days from now', () => {
+    const rows = [
+      mkRow('fri', new Date(2026, 5, 5, 9, 0).toISOString()),
+      mkRow('sun', new Date(2026, 5, 7, 9, 0).toISOString()),
+      mkRow('mon-next', new Date(2026, 5, 8, 9, 0).toISOString()),
+      mkRow('later', new Date(2026, 5, 20, 9, 0).toISOString()),
+    ];
+    const groups = groupUpcomingBookings(rows, 'mon', NOW);
+    expect(groups.map((g) => [g.label, g.rows.map((r) => r.id)])).toEqual([
+      ['This week', ['fri', 'sun']],
+      ['Next week', ['mon-next']],
+      ['Later', ['later']],
+    ]);
+  });
+
+  it('respects a Sunday-start week', () => {
+    const rows = [
+      mkRow('sat', new Date(2026, 5, 6, 9, 0).toISOString()),
+      mkRow('sun', new Date(2026, 5, 7, 9, 0).toISOString()),
+    ];
+    const groups = groupUpcomingBookings(rows, 'sun', NOW);
+    expect(groups.map((g) => [g.label, g.rows.map((r) => r.id)])).toEqual([
+      ['This week', ['sat']],
+      ['Next week', ['sun']],
+    ]);
+  });
+
+  it('omits empty groups', () => {
+    const rows = [mkRow('later', new Date(2026, 6, 1, 9, 0).toISOString())];
+    const groups = groupUpcomingBookings(rows, 'mon', NOW);
+    expect(groups.map((g) => g.label)).toEqual(['Later']);
+  });
+});
+
+describe('describeCancelPolicy', () => {
+  const cutoff = (min: number | null): BookingRow['cancelCutoffs'] => ({
+    cancel_cutoff_minutes_before: min,
+    cancel_cutoff_mode: min == null ? null : 'relative',
+    cancel_cutoff_time: null,
+    cancel_cutoff_days_before: null,
+  });
+
+  it('names the single shared window in hours', () => {
+    const rows = [
+      mkRow('a', '2026-06-05T09:00:00Z', { cancelCutoffs: cutoff(120) }),
+      mkRow('b', '2026-06-06T09:00:00Z', { cancelCutoffs: cutoff(120) }),
+    ];
+    expect(describeCancelPolicy(rows, null)).toBe(
+      'Cancel up to 2 hours before a class to keep your credit.',
+    );
+  });
+
+  it('falls back to the gym default when the class type has none', () => {
+    const rows = [mkRow('a', '2026-06-05T09:00:00Z', { cancelCutoffs: cutoff(null) })];
+    expect(describeCancelPolicy(rows, { cancel_cutoff_minutes_before: 1440 })).toBe(
+      'Cancel up to 24 hours before a class to keep your credit.',
+    );
+  });
+
+  it('is null when cancelling is always free', () => {
+    const rows = [mkRow('a', '2026-06-05T09:00:00Z', { cancelCutoffs: cutoff(null) })];
+    expect(describeCancelPolicy(rows, null)).toBeNull();
+    expect(describeCancelPolicy([], null)).toBeNull();
+  });
+
+  it('generalises when cutoffs differ between class types', () => {
+    const rows = [
+      mkRow('a', '2026-06-05T09:00:00Z', { cancelCutoffs: cutoff(120) }),
+      mkRow('b', '2026-06-06T09:00:00Z', { cancelCutoffs: cutoff(60) }),
+    ];
+    expect(describeCancelPolicy(rows, null)).toBe(
+      "Cancel before each class's deadline to keep your credit — later forfeits it.",
+    );
+  });
+
+  it('describes the day-before mode without inventing a time', () => {
+    const rows = [
+      mkRow('a', '2026-06-05T09:00:00Z', {
+        cancelCutoffs: {
+          cancel_cutoff_minutes_before: null,
+          cancel_cutoff_mode: 'day_before',
+          cancel_cutoff_time: '17:00',
+          cancel_cutoff_days_before: 1,
+        },
+      }),
+    ];
+    expect(describeCancelPolicy(rows, null)).toBe(
+      'Cancel by the day-before deadline to keep your credit.',
+    );
   });
 });
 

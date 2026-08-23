@@ -142,6 +142,11 @@ export default function InjuriesScreen() {
               : null}
           </View>
         ) : null}
+
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+          Injury notes are health data: only you and the coaching team can see
+          them, and they are erased if you leave the gym.
+        </Text>
       </ScrollView>
     </Screen>
   );

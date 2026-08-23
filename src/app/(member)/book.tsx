@@ -195,101 +195,6 @@ function useRecommendedClass() {
   return recommendation;
 }
 
-function RecommendedClassCard() {
-  const colors = useThemeColors();
-  const queryClient = useQueryClient();
-  const [error, setError] = useState<string | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const recommendation = useRecommendedClass();
-
-  const book = useMutation({
-    mutationFn: async () => {
-      const rec = recommendation.data;
-      if (!rec) throw new Error('No class to book');
-      const { error: e } = await supabase.rpc('book_class', { session_id: rec.id });
-      if (e) throw e;
-    },
-    onSuccess: () => {
-      haptic.success();
-      setError(null);
-      invalidateBookingCaches(queryClient);
-    },
-    onError: (e) => {
-      if (isWaiverRequiredError(e)) {
-        router.push('/waiver');
-        return;
-      }
-      if (isParqRequiredError(e)) {
-        // Send the booker straight to the screening form rather than
-        // making them parse a raw error.
-        router.push('/parq');
-        return;
-      }
-      haptic.error();
-      setError(errorMessage(e, 'Could not book this class'));
-    },
-  });
-
-  const rec = recommendation.data;
-  if (!rec || !rec.class_types) return null;
-
-  const start = new Date(rec.starts_at);
-  const typeColor = rec.class_types.color ?? colors.primary;
-  const typeName = rec.class_types.name ?? 'Class';
-
-  return (
-    <View className="gap-1">
-      <Pressable
-        onPress={() => {
-          haptic.tap();
-          setDetailOpen(true);
-        }}
-        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 flex-row items-center gap-3 active:opacity-70">
-        <View
-          style={{ backgroundColor: typeColor }}
-          className="rounded-full px-2 py-0.5">
-          <Text
-            style={{ color: labelOn(typeColor) }}
-            className="text-[10px] font-semibold">
-            {typeName}
-          </Text>
-        </View>
-        <View className="flex-1">
-          <View className="flex-row items-center gap-1">
-            <AIMark size={11} />
-            <FieldLabel>
-              Recommended
-            </FieldLabel>
-          </View>
-          <Text className="text-ink dark:text-ink-dk font-medium">
-            {fmtNext(start)}
-          </Text>
-        </View>
-        {/* Its own onPress — a nested Pressable inside the row, same
-            pattern as the programming card's "View leaderboard" chip —
-            so quick-booking stays a one-tap shortcut without the row
-            tap (which opens full class details) firing at the same time. */}
-        <ChipButton
-          label={book.isPending ? 'Booking…' : 'Quick book'}
-          icon="flash"
-          disabled={book.isPending}
-          onPress={() => book.mutate()}
-        />
-      </Pressable>
-      {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-xs px-3">{error}</Text>
-      ) : null}
-      <ClassDetailModal
-        visible={detailOpen}
-        sessionId={rec.id}
-        mode="book"
-        recommended
-        onClose={() => setDetailOpen(false)}
-      />
-    </View>
-  );
-}
-
 // One card doing two jobs: headline the member's next booked class,
 // and route into the full bookings list (both used to be separate
 // tiles navigating to the same place). Renders even with nothing
@@ -365,7 +270,6 @@ export default function Book() {
         <View className="gap-2">
           <MemberGetStartedChecklist />
           <PostClassLogPrompt />
-          <RecommendedClassCard />
           <NextClassCard />
         </View>
       }

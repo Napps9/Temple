@@ -37,6 +37,7 @@ import {
 import { useStartStoreCheckout } from '@/lib/store';
 import { intervalSuffix } from '@/lib/store-format';
 import { supabase } from '@/lib/supabase';
+import { FieldLabel } from '@/components/SectionLabel';
 import { useThemeColors } from '@/lib/theme';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
@@ -60,6 +61,7 @@ type ProgrammingRow = {
   class_type_id: string;
   date: string;
   sections: Section[];
+  author_name: string | null;
 };
 
 type DayClassType = {
@@ -215,13 +217,18 @@ export function ProgrammingCalendar({
       const end = fmtDateLocal(addDays(startOfMonth(addMonths(date, 1)), 7));
       const { data, error } = await supabase
         .from('class_programming')
-        .select('id, class_type_id, date, sections')
+        .select(
+          'id, class_type_id, date, sections, author:profiles!author_id(full_name)',
+        )
         .gte('date', start)
         .lt('date', end);
       if (error) throw error;
       return (data ?? []).map((row) => ({
         ...row,
         sections: parseSections(row.sections),
+        author_name:
+          (row.author as unknown as { full_name: string | null } | null)
+            ?.full_name ?? null,
       })) as ProgrammingRow[];
     },
   });
@@ -246,7 +253,7 @@ export function ProgrammingCalendar({
       const end = fmtDateLocal(addDays(startOfMonth(addMonths(date, 1)), 7));
       const { data, error } = await supabase
         .from('member_programming')
-        .select('id, date, sections')
+        .select('id, date, sections, author:profiles!author_id(full_name)')
         .eq('gym_id', membership!.gymId)
         .eq('profile_id', personalProfileId!)
         .gte('date', start)
@@ -256,6 +263,9 @@ export function ProgrammingCalendar({
         id: row.id as string,
         date: row.date as string,
         sections: parseSections(row.sections),
+        author_name:
+          (row.author as unknown as { full_name: string | null } | null)
+            ?.full_name ?? null,
       }));
     },
   });
@@ -296,11 +306,14 @@ export function ProgrammingCalendar({
   const dateStr = fmtDateLocal(date);
   const programmingByTypeId = new Map<
     string,
-    { id: string; sections: Section[] }
+    { id: string; sections: Section[]; authorName: string | null }
   >(
     (programmingMonthQuery.data ?? [])
       .filter((p) => p.date === dateStr)
-      .map((p) => [p.class_type_id, { id: p.id, sections: p.sections }]),
+      .map((p) => [
+        p.class_type_id,
+        { id: p.id, sections: p.sections, authorName: p.author_name },
+      ]),
   );
 
   const personalDay =
@@ -370,20 +383,23 @@ export function ProgrammingCalendar({
         ) : null}
 
         {activeBlock ? (
-          <View className="flex-row items-center gap-2 rounded-ctl bg-primary/10 px-3 py-2 mb-4 -mt-1">
-            <View
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ backgroundColor: activeBlock.color }}
-            />
-            <Text className="flex-1 text-primary text-[13px] font-semibold">
-              {blockStripText(activeBlock, fmtDateLocal(date))}
-            </Text>
-            {activeBlock.note ? (
-              <Text
-                className="text-ink-2 dark:text-ink-2-dk text-xs max-w-[45%]"
-                numberOfLines={1}>
-                {activeBlock.note}
+          <View className="rounded-ctl bg-primary/10 px-3 py-2 mb-4 -mt-1 gap-1.5">
+            <View className="flex-row items-center gap-2">
+              <View
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ backgroundColor: activeBlock.color }}
+              />
+              <Text className="flex-1 text-primary text-[13px] font-semibold">
+                {blockStripText(activeBlock, fmtDateLocal(date))}
               </Text>
+            </View>
+            {activeBlock.note ? (
+              <View className="gap-0.5">
+                <FieldLabel>Coach's note</FieldLabel>
+                <Text className="text-ink-2 dark:text-ink-2-dk text-[13px] leading-5">
+                  {activeBlock.note}
+                </Text>
+              </View>
             ) : null}
           </View>
         ) : null}
@@ -477,6 +493,7 @@ export function ProgrammingCalendar({
                   sections={personalDay?.sections ?? []}
                   files={personalFiles}
                   mode="view"
+                  writtenBy={personalDay?.author_name ?? null}
                   repMaxLookup={showMyPercentages ? repMaxLookup : undefined}
                 />
               ) : null}
@@ -498,6 +515,7 @@ export function ProgrammingCalendar({
                       programmingId={prog?.id ?? null}
                       sections={prog?.sections ?? []}
                       mode={mode}
+                      writtenBy={prog?.authorName ?? null}
                       repMaxLookup={showMyPercentages ? repMaxLookup : undefined}
                       onEdit={() =>
                         setOpenFor({
@@ -551,6 +569,7 @@ function ClassTypeCard({
   sections,
   mode,
   onEdit,
+  writtenBy,
   repMaxLookup,
 }: {
   classType: DayClassType;
@@ -558,6 +577,7 @@ function ClassTypeCard({
   sections: Section[];
   mode: 'manage' | 'view';
   onEdit: () => void;
+  writtenBy?: string | null;
   repMaxLookup?: RepMaxLookup;
 }) {
   const [leaderboardOpenFor, setLeaderboardOpenFor] = useState<
@@ -649,6 +669,11 @@ function ClassTypeCard({
       <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
         {header}
         {body}
+        {writtenBy && sections.length > 0 ? (
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+            Written by {writtenBy}
+          </Text>
+        ) : null}
       </View>
       <ClassLeaderboardModal
         visible={leaderboardOpenFor !== null}
@@ -669,6 +694,7 @@ function PersonalCard({
   files,
   mode,
   onEdit,
+  writtenBy,
   repMaxLookup,
 }: {
   title: string;
@@ -676,6 +702,7 @@ function PersonalCard({
   files: MemberProgrammingFile[];
   mode: 'manage' | 'view';
   onEdit?: () => void;
+  writtenBy?: string | null;
   repMaxLookup?: RepMaxLookup;
 }) {
   const colors = useThemeColors();
@@ -770,6 +797,11 @@ function PersonalCard({
     <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       {header}
       {body}
+      {writtenBy && sections.length > 0 ? (
+        <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+          Written by {writtenBy}
+        </Text>
+      ) : null}
       {filesFooter}
     </View>
   );

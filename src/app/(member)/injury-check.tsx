@@ -50,7 +50,7 @@ export default function InjuryCheck() {
           <Text className="text-ink-2 dark:text-ink-2-dk text-center">
             Tell your coaches what to work around and they can scale movements
             for you before class. It stays private to you and the coaching team,
-            and you can update it any time.
+            you can update it any time, and it is erased if you leave the gym.
           </Text>
         </View>
 

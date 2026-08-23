@@ -66,6 +66,7 @@ export default function EmailPreferencesScreen() {
 
   const blanketUnsub = prefs.data?.[0]?.blanket_unsub ?? false;
   const topics = prefs.data ?? [];
+  const gymName = membership.gymName ?? 'this gym';
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -73,17 +74,19 @@ export default function EmailPreferencesScreen() {
         <BackLink fallbackHref="/account" />
         <PageHead
           title="Email preferences"
-          subtitle="Choose which messages from this gym land in your inbox."
+          subtitle={`Choose which emails from ${gymName} land in your inbox. Changes save instantly and apply from the next send.`}
         />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <View className="flex-row items-center justify-between gap-3">
             <View className="flex-1">
               <Text className="text-ink dark:text-ink-dk font-semibold">
-                Receive any emails from this gym
+                {`Receive any emails from ${gymName}`}
               </Text>
               <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-                Turn this off to stop everything. Per-topic choices below come back the next time you turn it on.
+                Turn this off to stop everything — including class-change and
+                booking notices. Per-topic choices below come back the next
+                time you turn it on.
               </Text>
             </View>
             <Switch
@@ -107,9 +110,7 @@ export default function EmailPreferencesScreen() {
           />
         ) : (
           <View className="gap-2">
-            <SectionLabel>
-              Topics
-            </SectionLabel>
+            <SectionLabel>{`Topics from ${gymName}`}</SectionLabel>
             {topics.map((t) => (
               <Pressable
                 key={t.topic_id}

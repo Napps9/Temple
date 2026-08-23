@@ -16,6 +16,7 @@ import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { CreateClassModal } from '@/components/CreateClassModal';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
 import { Screen } from '@/components/Screen';
+import { SectionLabel } from '@/components/SectionLabel';
 import { TodayButton } from '@/components/TodayButton';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
@@ -146,6 +147,14 @@ function fmtDayShort(d: Date) {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
+  });
+}
+
+function fmtDayLong(d: Date) {
+  return d.toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
   });
 }
 
@@ -1285,6 +1294,25 @@ function AgendaView({
     },
   });
 
+  // "Full" alone hides the queue. One count query answers "how many are
+  // waiting" for every full class on the day.
+  const waitlistCounts = useQuery({
+    queryKey: ['agenda-waitlist-counts', gymId, isoDay, dayIds.join(',')],
+    enabled: dayIds.length > 0,
+    queryFn: async (): Promise<Map<string, number>> => {
+      const { data, error } = await supabase
+        .from('class_waitlist')
+        .select('class_session_id')
+        .in('class_session_id', dayIds);
+      if (error) throw error;
+      const m = new Map<string, number>();
+      for (const r of (data ?? []) as { class_session_id: string }[]) {
+        m.set(r.class_session_id, (m.get(r.class_session_id) ?? 0) + 1);
+      }
+      return m;
+    },
+  });
+
   return (
     <View className="flex-1">
       <View className="w-full max-w-5xl mx-auto px-4">
@@ -1292,6 +1320,12 @@ function AgendaView({
           {weekDays.map((d) => {
             const selected = isSameDay(d, date);
             const today = isSameDay(d, new Date());
+            // The month's sessions are already in memory, so each day can
+            // say whether it has classes — the empty state points at
+            // exactly this dot.
+            const hasClasses = (sessions ?? []).some((s) =>
+              isSameDay(new Date(s.starts_at), d),
+            );
             return (
               <Pressable
                 key={d.toISOString()}
@@ -1322,6 +1356,11 @@ function AgendaView({
                     {d.getDate()}
                   </Text>
                 </View>
+                <View
+                  className={`w-1 h-1 rounded-full ${
+                    hasClasses ? 'bg-ink-3 dark:bg-ink-3-dk' : 'bg-transparent'
+                  }`}
+                />
               </Pressable>
             );
           })}
@@ -1360,6 +1399,13 @@ function AgendaView({
           <View className="w-full max-w-5xl mx-auto px-4 pt-1 pb-2">{topSlot}</View>
         ) : null}
         <View className="w-full max-w-5xl mx-auto px-4 gap-2.5">
+          {shownClasses.length > 0 ? (
+            <SectionLabel>
+              {`${fmtDayLong(date)} · ${shownClasses.length} ${
+                shownClasses.length === 1 ? 'class' : 'classes'
+              }`}
+            </SectionLabel>
+          ) : null}
           {shownClasses.length === 0 ? (
             <EmptyState
               icon="calendar-clear-outline"
@@ -1376,6 +1422,7 @@ function AgendaView({
                 recommended={recommendedSessionId === s.id}
                 onPress={() => onSessionPress(s.id)}
                 dimPast={dimPast}
+                waitingCount={waitlistCounts.data?.get(s.id) ?? 0}
                 bookState={rowBook?.sessionId === s.id ? rowBook.state : null}
                 onBook={onBook ? () => onBook(s) : undefined}
                 onUndoBook={onUndoBook ? () => onUndoBook(s.id) : undefined}
@@ -1396,6 +1443,7 @@ function AgendaCard({
   recommended,
   onPress,
   dimPast,
+  waitingCount = 0,
   bookState,
   onBook,
   onUndoBook,
@@ -1407,6 +1455,7 @@ function AgendaCard({
   recommended?: boolean;
   onPress: () => void;
   dimPast?: boolean;
+  waitingCount?: number;
   bookState?: 'booking' | 'booked' | null;
   onBook?: () => void;
   onUndoBook?: () => void;
@@ -1428,7 +1477,9 @@ function AgendaCard({
   const statusText = bookedByMe
     ? 'Booked in'
     : full
-      ? 'Full'
+      ? waitingCount > 0
+        ? `Full — ${waitingCount} waiting`
+        : 'Full'
       : `${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left`;
   const statusClass = bookedByMe
     ? 'text-emerald-600 dark:text-emerald-400'
@@ -1464,7 +1515,17 @@ function AgendaCard({
             style={{ backgroundColor: color }}
             className="w-2 h-2 rounded-full"
           />
-          {recommended && !bookedByMe ? <AIMark size={13} /> : null}
+          {recommended && !bookedByMe ? (
+            // The board's "For you" — the mark plus the words, on the row
+            // itself. The standalone Recommended card this replaces was a
+            // second way to book the same class on the same screen.
+            <View className="flex-row items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
+              <AIMark size={11} color={colors.primary} />
+              <Text className="text-primary text-[10px] font-semibold">
+                For you
+              </Text>
+            </View>
+          ) : null}
           <Text
             numberOfLines={1}
             className="text-ink dark:text-ink-dk font-semibold flex-1">
@@ -1616,6 +1677,12 @@ function DayView({
           {weekDays.map((d) => {
             const selected = isSameDay(d, date);
             const today = isSameDay(d, new Date());
+            // The month's sessions are already in memory, so each day can
+            // say whether it has classes — the empty state points at
+            // exactly this dot.
+            const hasClasses = (sessions ?? []).some((s) =>
+              isSameDay(new Date(s.starts_at), d),
+            );
             return (
               <Pressable
                 key={d.toISOString()}
@@ -1646,6 +1713,11 @@ function DayView({
                     {d.getDate()}
                   </Text>
                 </View>
+                <View
+                  className={`w-1 h-1 rounded-full ${
+                    hasClasses ? 'bg-ink-3 dark:bg-ink-3-dk' : 'bg-transparent'
+                  }`}
+                />
               </Pressable>
             );
           })}

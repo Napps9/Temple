@@ -10,7 +10,7 @@ import { Text } from '@/components/Text';
 
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
-import { FieldLabel } from '@/components/SectionLabel';
+import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { TileGrid } from '@/components/TileGrid';
 import { WorkoutHeatmap } from '@/components/WorkoutHeatmap';
 import { useSession } from '@/lib/auth';
@@ -580,7 +580,7 @@ function deriveTiles(
 // The member's pinned movements & groups, rendered from their
 // favourites (which default to the gym discipline's catalog), below a
 // fixed row of the four utility tiles (Journal, Leaderboards, Library,
-// Injury). Each gets its own heading and grid — Tools uses a fixed
+// Injury). Each gets its own label and grid — Tools uses a fixed
 // 2/4-column layout (right for exactly four tiles; TileGrid's 3-column
 // tier would strand two empty cells at that count) and a colored top
 // edge per tile, so the row reads as its own distinct kind of tile
@@ -596,7 +596,6 @@ function MyMovementsCard({
   recentByGroup: Record<string, number>;
   journalCount: number;
 }) {
-  const colors = useThemeColors();
   const fav = useMovementFavourites(discipline);
   const favTiles = useMemo(
     () => deriveTiles(fav.groups, fav.movements, discipline),
@@ -605,20 +604,8 @@ function MyMovementsCard({
 
   return (
     <View className="gap-5">
-      <View className="gap-3">
-        <View className="flex-row items-center gap-3">
-          <View className="w-11 h-11 rounded-full bg-ink-3/15 items-center justify-center">
-            <Ionicons name="grid-outline" size={22} color={colors.ink3} />
-          </View>
-          <View className="flex-1">
-            <Text className="text-ink dark:text-ink-dk font-semibold">
-              Tools
-            </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-              Journal, leaderboards, the library &amp; injuries.
-            </Text>
-          </View>
-        </View>
+      <View className="gap-2">
+        <SectionLabel>Tools</SectionLabel>
 
         <View className="flex-row flex-wrap -m-1">
           <View className="w-1/2 md:w-1/4 p-1">
@@ -636,20 +623,15 @@ function MyMovementsCard({
         </View>
       </View>
 
-      <View className="gap-3">
-        <View className="flex-row items-center gap-3">
-          <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
-            <Ionicons name="barbell-outline" size={22} color={colors.primary} />
-          </View>
-          <View className="flex-1">
-            <Text className="text-ink dark:text-ink-dk font-semibold">
-              Movements
+      <View className="gap-2">
+        <SectionLabel
+          right={
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+              Edit in the Library
             </Text>
-            <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-              Your pinned movements &amp; groups — edit in the Library.
-            </Text>
-          </View>
-        </View>
+          }>
+          Movements
+        </SectionLabel>
 
         {favTiles.length > 0 ? (
           <TileGrid>

@@ -63,7 +63,7 @@ export default function FamilyScreen() {
 
         <PageHead
           title="Family"
-          subtitle="Add children you look after. You book their classes and complete their health screening on their behalf."
+          subtitle="Add children you look after. They don't get their own login — you book their classes, sign their waiver and complete their health screening from this account."
         />
 
         {!allowMinors ? (

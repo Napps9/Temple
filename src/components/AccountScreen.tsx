@@ -15,7 +15,7 @@ import { CoachEarningsCard } from './CoachEarningsCard';
 import { GymShareCard } from './GymShareCard';
 import { Input } from './Input';
 import { LeaderboardPrivacyCard } from './LeaderboardPrivacyCard';
-import { RemoveMemberDialog } from './RemoveMemberDialog';
+import { LeaveGymDialog } from './LeaveGymDialog';
 import { Screen } from './Screen';
 import {
   useGymMembership,
@@ -506,13 +506,13 @@ export function AccountScreen() {
       </ScrollView>
 
       {membership && session ? (
-        <RemoveMemberDialog
+        <LeaveGymDialog
           visible={showLeave}
           gymId={membership.gymId}
           profileId={session.user.id}
-          memberName="yourself"
+          gymName={membership.gymName ?? 'this gym'}
           onClose={() => setShowLeave(false)}
-          onRemoved={() => signOut.mutate()}
+          onLeft={() => signOut.mutate()}
         />
       ) : null}
 

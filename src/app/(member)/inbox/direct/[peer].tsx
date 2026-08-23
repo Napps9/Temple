@@ -41,6 +41,23 @@ export default function DirectThread() {
     },
   });
 
+  // Who you are talking to, not just their name — a member DMing "Dani"
+  // should see they have the gym's coach, not another member.
+  const peerRole = useQuery({
+    queryKey: ['peer-role', membership?.gymId, peer],
+    enabled: !!membership?.gymId && !!peer,
+    queryFn: async () => {
+      const { data, error: err } = await supabase
+        .from('gym_memberships')
+        .select('role')
+        .eq('gym_id', membership!.gymId)
+        .eq('profile_id', peer!)
+        .limit(1);
+      if (err) throw err;
+      return (data?.[0]?.role ?? null) as string | null;
+    },
+  });
+
   const messages = useQuery({
     queryKey: ['dm-thread', session?.user.id, peer],
     enabled: !!session?.user.id && !!peer,
@@ -93,6 +110,15 @@ export default function DirectThread() {
   });
 
   const grouped = groupByDay(messages.data ?? []);
+  const peerName = peerProfile.data?.full_name?.trim() || 'Member';
+  const firstName = peerName.split(' ')[0];
+  const staffRoles: Record<string, string> = {
+    owner: 'Owner',
+    admin: 'Admin',
+    coach: 'Coach',
+    staff: 'Staff',
+  };
+  const roleLabel = peerRole.data ? (staffRoles[peerRole.data] ?? null) : null;
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -100,7 +126,8 @@ export default function DirectThread() {
         <View className="pb-3">
           <PageHead
             lead={<BackLink inline fallbackHref="/inbox" />}
-            title={peerProfile.data?.full_name?.trim() || 'Member'}
+            title={peerName}
+            subtitle={roleLabel ?? undefined}
           />
         </View>
 
@@ -164,7 +191,9 @@ export default function DirectThread() {
           <TextInput
             value={draft}
             onChangeText={setDraft}
-            placeholder="Type a message"
+            placeholder={
+              peerProfile.data?.full_name ? `Message ${firstName}…` : 'Type a message'
+            }
             placeholderTextColor={colors.ink3}
             multiline
             className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card px-4 py-3 text-ink dark:text-ink-dk text-base"

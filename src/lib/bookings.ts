@@ -105,6 +105,84 @@ export function splitBookings(rows: BookingRow[], now: Date = new Date()): Split
   return { upcoming, past };
 }
 
+export type UpcomingGroup = { label: string; rows: BookingRow[] };
+
+// "This week" ends at the gym's own week boundary (week_starts_on), not
+// seven days from now — a Sunday booking is "this week" on Saturday only
+// for Sunday-start gyms.
+export function groupUpcomingBookings(
+  rows: BookingRow[],
+  weekStartsOn: 'mon' | 'sun',
+  now: Date = new Date(),
+): UpcomingGroup[] {
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = start.getDay();
+  const diff = weekStartsOn === 'sun' ? -day : day === 0 ? -6 : 1 - day;
+  start.setDate(start.getDate() + diff);
+  const nextWeek = new Date(start);
+  nextWeek.setDate(start.getDate() + 7);
+  const weekAfter = new Date(start);
+  weekAfter.setDate(start.getDate() + 14);
+
+  const groups: UpcomingGroup[] = [
+    { label: 'This week', rows: [] },
+    { label: 'Next week', rows: [] },
+    { label: 'Later', rows: [] },
+  ];
+  for (const r of rows) {
+    const at = new Date(r.starts_at).getTime();
+    if (at < nextWeek.getTime()) groups[0].rows.push(r);
+    else if (at < weekAfter.getTime()) groups[1].rows.push(r);
+    else groups[2].rows.push(r);
+  }
+  return groups.filter((g) => g.rows.length > 0);
+}
+
+// One line under the upcoming list saying what cancelling costs, derived
+// from the same cutoff fields isLateCancel reads so the footnote can never
+// disagree with the warning. Null when cancelling is always free.
+export function describeCancelPolicy(
+  rows: BookingRow[],
+  gymDefaults: { cancel_cutoff_minutes_before?: number | null } | null | undefined,
+): string | null {
+  const cutoffs = new Set<string>();
+  for (const r of rows) {
+    const ct = r.cancelCutoffs;
+    if (ct?.cancel_cutoff_mode === 'day_before' && ct.cancel_cutoff_time) {
+      cutoffs.add('day_before');
+    } else {
+      const min =
+        ct?.cancel_cutoff_minutes_before ??
+        gymDefaults?.cancel_cutoff_minutes_before ??
+        0;
+      cutoffs.add(`rel:${min}`);
+    }
+  }
+  if (cutoffs.size === 0) return null;
+  if (cutoffs.size === 1) {
+    const only = [...cutoffs][0];
+    if (only === 'day_before') {
+      return 'Cancel by the day-before deadline to keep your credit.';
+    }
+    const min = Number(only.slice(4));
+    if (min <= 0) return null;
+    return `Cancel up to ${fmtCutoffWindow(min)} before a class to keep your credit.`;
+  }
+  return "Cancel before each class's deadline to keep your credit — later forfeits it.";
+}
+
+function fmtCutoffWindow(minutes: number): string {
+  if (minutes % 1440 === 0) {
+    const days = minutes / 1440;
+    return days === 1 ? '24 hours' : `${days} days`;
+  }
+  if (minutes % 60 === 0) {
+    const hours = minutes / 60;
+    return hours === 1 ? '1 hour' : `${hours} hours`;
+  }
+  return `${minutes} minutes`;
+}
+
 export type AttendanceLabel = 'Attended' | 'No-show' | 'Unmarked';
 
 export function attendanceLabel(row: Pick<BookingRow, 'attended_at' | 'no_show'>): AttendanceLabel {
