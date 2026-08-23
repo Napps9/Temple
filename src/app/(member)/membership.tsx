@@ -35,6 +35,7 @@ import {
   useGymSelfCheckout,
   useMyAgreedPlan,
   useMyInvoices,
+  useBillingPortal,
   useMySubscriptions,
   useStartCheckout,
   type GymPlan,
@@ -108,10 +109,19 @@ const TONE_CLASS: Record<'active' | 'warn' | 'muted', string> = {
 
 // A failed payment leaves the membership 'active' on purpose — Stripe
 // retries for about two weeks and the member keeps training meanwhile
-// (0174). But nothing gets fixed unless they know, and Temple has no
-// billing portal, so the Stripe-hosted invoice is the only place they can
-// actually pay. Without that link this notice would be a dead end.
-function PaymentFailedNotice({ sub }: { sub: MySubscription }) {
+// (0174). The way out is fixing the card: Update card opens Stripe's
+// billing portal on the card form, and the retries then succeed on
+// their own. Pay now (the Stripe-hosted invoice) settles the failed
+// invoice immediately when a link exists.
+function PaymentFailedNotice({
+  sub,
+  onUpdateCard,
+  updatingCard,
+}: {
+  sub: MySubscription;
+  onUpdateCard?: () => void;
+  updatingCard?: boolean;
+}) {
   const dunning = embedOne(sub.plan_subscription_dunning);
   const invoiceUrl = embedOne(sub.membership_invoice_links)?.invoice_url ?? null;
   const copy = paymentNoticeCopy({
@@ -138,11 +148,24 @@ function PaymentFailedNotice({ sub }: { sub: MySubscription }) {
           className="bg-red-600 rounded-ctl px-3 py-2 items-center active:opacity-80">
           <Text className="text-white text-sm font-semibold">Pay now</Text>
         </Pressable>
-      ) : copy.action === 'plans' ? null : (
-        <Text className="text-red-900 dark:text-red-100 text-xs">
-          Speak to the gym to update your card.
-        </Text>
-      )}
+      ) : null}
+      {copy.action !== 'plans' ? (
+        onUpdateCard ? (
+          <View className="flex-row">
+            <ChipButton
+              label={updatingCard ? 'Opening…' : 'Update card'}
+              icon="card-outline"
+              tone="red"
+              disabled={updatingCard}
+              onPress={onUpdateCard}
+            />
+          </View>
+        ) : !invoiceUrl ? (
+          <Text className="text-red-900 dark:text-red-100 text-xs">
+            Speak to the gym to update your card.
+          </Text>
+        ) : null
+      ) : null}
     </View>
   );
 }
@@ -252,10 +275,14 @@ function CurrentSubCard({
   sub,
   onContinueBilling,
   continuingBilling,
+  onUpdateCard,
+  updatingCard,
 }: {
   sub: MySubscription;
   onContinueBilling?: () => void;
   continuingBilling?: boolean;
+  onUpdateCard?: () => void;
+  updatingCard?: boolean;
 }) {
   const currency = useGymCurrency();
   const plan = sub.membership_plans;
@@ -365,6 +392,18 @@ function CurrentSubCard({
               Add payment method to continue
             </Button>
           ) : null}
+        </View>
+      ) : null}
+
+      {sub.stripe_subscription_id && onUpdateCard ? (
+        <View className="flex-row">
+          <ChipButton
+            label={updatingCard ? 'Opening…' : 'Payment method'}
+            icon="card-outline"
+            tone="neutral"
+            disabled={updatingCard}
+            onPress={onUpdateCard}
+          />
         </View>
       ) : null}
     </View>
@@ -594,6 +633,7 @@ export default function MembershipScreen() {
   const canSelfCheckout = selfCheckout.data ?? true;
 
   const checkout = useStartCheckout(gymId);
+  const portal = useBillingPortal();
   const agreedPlan = useMyAgreedPlan(gymId);
   const clearAgreed = useClearAgreedPlan(gymId);
   const invoices = useMyInvoices(gymId, session?.user.id);
@@ -768,7 +808,17 @@ export default function MembershipScreen() {
       <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/account" />
 
-        {failingSub ? <PaymentFailedNotice sub={failingSub} /> : null}
+        {failingSub ? (
+          <PaymentFailedNotice
+            sub={failingSub}
+            onUpdateCard={
+              failingSub.stripe_subscription_id
+                ? () => portal.mutate(failingSub.id)
+                : undefined
+            }
+            updatingCard={portal.isPending && portal.variables === failingSub.id}
+          />
+        ) : null}
 
         <PageHead
           title="Membership"
@@ -879,6 +929,8 @@ export default function MembershipScreen() {
                         })
                     : undefined
                 }
+                onUpdateCard={() => portal.mutate(s.id)}
+                updatingCard={portal.isPending && portal.variables === s.id}
               />
             ))}
             {recurringSub ? (
@@ -895,6 +947,11 @@ export default function MembershipScreen() {
             {changeError ? (
               <Text className="text-red-500 dark:text-red-400 text-sm">
                 {errorMessage(changeError, 'Could not update your membership')}
+              </Text>
+            ) : null}
+            {portal.error ? (
+              <Text className="text-red-500 dark:text-red-400 text-sm">
+                {errorMessage(portal.error, 'Could not open the billing portal')}
               </Text>
             ) : null}
             {params.book ? (

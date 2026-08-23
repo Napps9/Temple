@@ -21,8 +21,11 @@ export const IDS = { GYM_ID, USER_ID };
 //   SHOT_DM=1 — Priya's profile and coach membership row come first, so
 //     the DM thread's peer lookups resolve to her ("Coach" subtitle,
 //     "Message Priya…" placeholder) instead of the viewer's own row.
+//   SHOT_DUNNING=1 — the Unlimited subscription carries a live dunning
+//     row and an invoice link, so the failed-payment notice renders.
 const MEMBER_VIEW = process.env.SHOT_MEMBER === '1';
 const DM_VIEW = process.env.SHOT_DM === '1';
+const DUNNING_VIEW = process.env.SHOT_DUNNING === '1';
 
 const iso = (daysFromNow, hour = 9) => {
   // Fixed epoch so a rebuild does not change every caption. 2026-08-24.
@@ -446,9 +449,14 @@ export const TABLES = {
       cancelled_at: null,
       created_at: iso(-200),
       price_cents: 8900,
+      stripe_subscription_id: 'sub_fixture_live',
       imported_legacy: false,
-      plan_subscription_dunning: [],
-      membership_invoice_links: [],
+      plan_subscription_dunning: DUNNING_VIEW
+        ? [{ past_due_since: iso(-3), payment_failure_count: 2, last_payment_error: 'Your card was declined.', next_payment_attempt: iso(2) }]
+        : [],
+      membership_invoice_links: DUNNING_VIEW
+        ? [{ invoice_url: 'https://invoice.stripe.com/i/fixture' }]
+        : [],
       membership_plans: { name: 'Unlimited', kind: 'unlimited', credit_count: null, monthly_price_cents: 8900, notice_period_days: 30 },
     },
     {
@@ -461,6 +469,7 @@ export const TABLES = {
       cancelled_at: null,
       created_at: iso(-30),
       price_cents: 4500,
+      stripe_subscription_id: null,
       imported_legacy: false,
       plan_subscription_dunning: [],
       membership_invoice_links: [],

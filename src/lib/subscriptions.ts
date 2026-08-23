@@ -64,6 +64,46 @@ export function useStartCheckout(
   });
 }
 
+// Opens Stripe's billing portal on the member's own card-update flow via
+// the stripe-billing-portal edge function. Same redirect contract as
+// useStartCheckout: web only, the browser leaves for Stripe and the
+// return_url brings it back to /membership.
+export function useBillingPortal() {
+  return useMutation({
+    mutationFn: async (planSubscriptionId: string) => {
+      const { data, error } = await supabase.functions.invoke(
+        'stripe-billing-portal',
+        {
+          body: {
+            plan_subscription_id: planSubscriptionId,
+            origin: checkoutOrigin(),
+          },
+        },
+      );
+      if (error) {
+        const ctx = (error as { context?: Response }).context;
+        let msg = error.message;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const body = await ctx.json();
+            if (body?.error) msg = String(body.error);
+          } catch {
+            // not JSON — keep the generic message
+          }
+        }
+        throw new Error(msg);
+      }
+      const url = (data as { url?: string } | null)?.url;
+      if (!url) throw new Error('Could not open the billing portal');
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.href = url;
+        return;
+      }
+      throw new Error('Updating your card is only available on the web for now.');
+    },
+  });
+}
+
 export type GymPlan = {
   plan_id: string;
   name: string;
@@ -83,6 +123,10 @@ export type MySubscription = {
   cancelled_at: string | null;
   created_at: string;
   price_cents: number | null;
+  // Present only when real Stripe billing backs this subscription — the
+  // gate for member billing actions (update card). Null for imported
+  // legacy rows and one-off credit packs.
+  stripe_subscription_id: string | null;
   // True for a plan carried over from a member import with no live
   // Stripe billing behind it yet (see 0124) — Temple bypasses billing
   // on purpose so a migrated member isn't double-charged against
@@ -161,7 +205,7 @@ export function useMySubscriptions(
       const { data, error } = await supabase
         .from('plan_subscriptions')
         .select(
-          'id, plan_id, status, credit_balance, paid_period_end, period_resets_at, cancelled_at, created_at, price_cents, imported_legacy, plan_subscription_dunning(past_due_since, payment_failure_count, last_payment_error, next_payment_attempt), membership_invoice_links(invoice_url), membership_plans(name, kind, credit_count, monthly_price_cents, notice_period_days)',
+          'id, plan_id, status, credit_balance, paid_period_end, period_resets_at, cancelled_at, created_at, price_cents, stripe_subscription_id, imported_legacy, plan_subscription_dunning(past_due_since, payment_failure_count, last_payment_error, next_payment_attempt), membership_invoice_links(invoice_url), membership_plans(name, kind, credit_count, monthly_price_cents, notice_period_days)',
         )
         .eq('gym_id', gymId!)
         .eq('profile_id', profileId!)
