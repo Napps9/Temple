@@ -233,14 +233,21 @@ export const RPCS = {
     {
       item_id: 'tl-1',
       kind: 'member_joined',
-      occurred_at: iso(-2, 8),
+      occurred_at: iso(-1, 8),
       subject: 'Maya Okafor',
       detail: {},
     },
     {
+      item_id: 'lead:l1',
+      kind: 'lead_captured',
+      occurred_at: iso(-1, 6),
+      subject: 'Dan Mercer',
+      detail: { source: 'AI Front Desk', status: 'new', conversation_id: 'conv-1' },
+    },
+    {
       item_id: 'tl-2',
       kind: 'agent_action',
-      occurred_at: iso(-2, 7),
+      occurred_at: iso(-1, 7),
       subject: 'Leo Park',
       detail: {
         status: 'executed',
