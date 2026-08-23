@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Image, Pressable, ScrollView, View } from 'react-native';
 import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
@@ -95,6 +95,36 @@ export default function Journal() {
   });
 
   const rows = journal.data ?? [];
+
+  // Who else logged the same class sessions — one batch call, consent
+  // riding the leaderboard gate server-side (0258).
+  const classSessionIds = [
+    ...new Set(
+      rows
+        .map((w) => w.class_session_id)
+        .filter((id): id is string => !!id),
+    ),
+  ];
+  const partners = useQuery({
+    queryKey: ['training-partners', session?.user.id, classSessionIds],
+    enabled: classSessionIds.length > 0,
+    queryFn: async (): Promise<Map<string, TrainingPartner[]>> => {
+      const { data, error } = await supabase.rpc(
+        'class_session_training_partners',
+        { p_session_ids: classSessionIds },
+      );
+      if (error) throw error;
+      const by = new Map<string, TrainingPartner[]>();
+      for (const r of data ?? []) {
+        const list = by.get(r.class_session_id) ?? [];
+        list.push(r);
+        by.set(r.class_session_id, list);
+      }
+      return by;
+    },
+  });
+  const partnersFor = (sessionId: string | null): TrainingPartner[] =>
+    (sessionId ? partners.data?.get(sessionId) : undefined) ?? [];
   const categories = [
     ...new Set(
       rows.flatMap((w) => w.sections.map((s) => s.section_category)),
@@ -180,6 +210,11 @@ export default function Journal() {
                         />
                       ) : undefined
                     }
+                    foot={
+                      partnersFor(w.class_session_id).length > 0 ? (
+                        <PartnerStack people={partnersFor(w.class_session_id)} />
+                      ) : undefined
+                    }
                   />
                 ))}
               </RuledList>
@@ -193,6 +228,45 @@ export default function Journal() {
         onClose={() => setRecording(false)}
       />
     </Screen>
+  );
+}
+
+type TrainingPartner = {
+  class_session_id: string;
+  profile_id: string;
+  full_name: string;
+  avatar_url: string | null;
+};
+
+// Up to three faces, then "+N" — the same people the class leaderboard
+// shows, because it is the same consent.
+function PartnerStack({ people }: { people: TrainingPartner[] }) {
+  const shown = people.slice(0, 3);
+  const extra = people.length - shown.length;
+  const firstNames = shown.map((p) => p.full_name.split(' ')[0]);
+  return (
+    <View className="flex-row items-center gap-1.5 pt-1">
+      <View className="flex-row">
+        {shown.map((p, i) => (
+          <View
+            key={p.profile_id}
+            style={i > 0 ? { marginLeft: -6 } : undefined}
+            className="w-5 h-5 rounded-full bg-raised dark:bg-raised-dk border border-surface dark:border-surface-dk items-center justify-center overflow-hidden">
+            {p.avatar_url ? (
+              <Image source={{ uri: p.avatar_url }} className="w-5 h-5" />
+            ) : (
+              <Text className="text-ink-2 dark:text-ink-2-dk text-[9px] font-semibold">
+                {p.full_name.charAt(0).toUpperCase()}
+              </Text>
+            )}
+          </View>
+        ))}
+      </View>
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs" numberOfLines={1}>
+        with {firstNames.join(', ')}
+        {extra > 0 ? ` +${extra}` : ''}
+      </Text>
+    </View>
   );
 }
 

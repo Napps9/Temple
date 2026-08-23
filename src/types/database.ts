@@ -5219,6 +5219,15 @@ export type Database = {
         Args: { p_gym_id: string };
         Returns: null;
       };
+      class_session_training_partners: {
+        Args: { p_session_ids: string[] };
+        Returns: {
+          class_session_id: string;
+          profile_id: string;
+          full_name: string;
+          avatar_url: string | null;
+        }[];
+      };
       close_gym_dates: {
         Args: {
           p_gym_id: string;

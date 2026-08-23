@@ -656,6 +656,12 @@ export const RPCS = {
   ],
   mark_class_change_notifications_read: null,
   announcement_read_stats: [{ read_count: 186, member_count: 214 }],
+  class_session_training_partners: [
+    { class_session_id: 'cs1', profile_id: 'a3', full_name: 'Priya Raman', avatar_url: null },
+    { class_session_id: 'cs1', profile_id: 'a4', full_name: 'Maya Okafor', avatar_url: null },
+    { class_session_id: 'cs1', profile_id: 'a5', full_name: 'Dan Mercer', avatar_url: null },
+    { class_session_id: 'cs1', profile_id: 'a6', full_name: 'Leo Fischer', avatar_url: null },
+  ],
   my_gyms: [
     { gym_id: GYM_ID, gym_name: 'Forge Athletic', role: MEMBER_VIEW ? 'member' : 'owner', joined_at: iso(-400), left_at: null },
     { gym_id: '99999999-9999-4999-8999-999999999999', gym_name: 'Ironworks CrossFit', role: 'member', joined_at: iso(-900), left_at: iso(-420) },
