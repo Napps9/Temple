@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, Switch, View } from 'react-native';
 import { Check } from './Check';
 import { Text } from './Text';
 
@@ -19,6 +19,7 @@ import {
 import { dateRangeWindow, validateDateRange } from '@/lib/date-range';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
+import { useCan } from '@/lib/useCan';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 
 type PreviewRow = {
@@ -41,6 +42,7 @@ type Props = {
     end: string;
     reason: string;
     excludeSessionIds: string[];
+    postNotice: boolean;
   }) => void;
   onEdit: (args: {
     start: string;
@@ -82,6 +84,8 @@ export function BulkClassEditModal({
   const [shift, setShift] = useState('');
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState(false);
+  const canPostNotice = useCan('can_post_announcements') === true;
+  const [postNotice, setPostNotice] = useState(true);
 
   useEffect(() => {
     if (!visible) {
@@ -94,6 +98,7 @@ export function BulkClassEditModal({
       setShift('');
       setExcluded(new Set());
       setConfirming(false);
+      setPostNotice(true);
     }
   }, [visible]);
 
@@ -269,12 +274,32 @@ export function BulkClassEditModal({
           ) : null}
 
           {mode === 'close' ? (
-            <Input
-              label="Reason (optional)"
-              value={reason}
-              onChangeText={setReason}
-              placeholder="Christmas closure"
-            />
+            <View className="gap-4">
+              <Input
+                label="Reason (optional)"
+                value={reason}
+                onChangeText={setReason}
+                placeholder="Christmas closure"
+              />
+              {canPostNotice ? (
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1 pr-3">
+                    <Text className="text-ink dark:text-ink-dk font-medium">
+                      Post a pinned notice
+                    </Text>
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
+                      Tells every member the gym is closed — and each reader
+                      sees which of their own classes it cancelled.
+                    </Text>
+                  </View>
+                  <Switch
+                    accessibilityLabel="Post a pinned notice"
+                    value={postNotice}
+                    onValueChange={setPostNotice}
+                  />
+                </View>
+              ) : null}
+            </View>
           ) : (
             <View className="gap-3">
               <View className="flex-row gap-3">
@@ -402,6 +427,7 @@ export function BulkClassEditModal({
             end,
             reason,
             excludeSessionIds: [...excluded],
+            postNotice: canPostNotice && postNotice,
           });
         }}
         pending={pending}

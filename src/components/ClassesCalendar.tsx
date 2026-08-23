@@ -19,6 +19,7 @@ import { Screen } from '@/components/Screen';
 import { SectionLabel } from '@/components/SectionLabel';
 import { TodayButton } from '@/components/TodayButton';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { closureNoticeCopy } from '@/lib/closure-notice';
 import { isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
 import { invalidateBookingCaches, isLateCancel } from '@/lib/bookings';
 import type { BulkEditResult } from '@/lib/bulk-class-edit';
@@ -758,8 +759,9 @@ export function ClassesCalendar({
       end: string;
       reason: string;
       excludeSessionIds: string[];
+      postNotice: boolean;
     }) => {
-      const { error } = await supabase.rpc('close_gym_dates', {
+      const { data, error } = await supabase.rpc('close_gym_dates', {
         p_gym_id: membership!.gymId,
         p_start: args.start,
         p_end: args.end,
@@ -767,6 +769,26 @@ export function ClassesCalendar({
         p_exclude_session_ids: args.excludeSessionIds,
       });
       if (error) throw error;
+      const closureId =
+        (data as { closure_id?: string } | null)?.closure_id ?? null;
+      if (args.postNotice && closureId && session?.user.id) {
+        const copy = closureNoticeCopy(args.start, args.end, args.reason);
+        // Best-effort: the closure has already landed, and surfacing a
+        // failed notice as "Could not close those dates" would be a lie —
+        // staff can always post one by hand from the inbox.
+        try {
+          await supabase.from('gym_announcements').insert({
+            gym_id: membership!.gymId,
+            posted_by: session.user.id,
+            title: copy.title,
+            body: copy.body,
+            pinned: true,
+            closure_id: closureId,
+          });
+        } catch {
+          // see above
+        }
+      }
     },
     onSuccess: () => {
       afterBulkChange();

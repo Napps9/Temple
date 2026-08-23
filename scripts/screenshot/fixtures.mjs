@@ -373,7 +373,7 @@ export const TABLES = {
   ],
 
   gym_announcements: [
-    { id: 'ann1', gym_id: GYM_ID, posted_by: 'a3', author: { full_name: 'Priya Raman' }, title: 'Closed bank holiday Monday', body: 'The gym is closed Monday 31 August. Saturday and Sunday run as normal — Tuesday is back to the full timetable.', pinned: true, created_at: iso(-4, 10) },
+    { id: 'ann1', gym_id: GYM_ID, posted_by: 'a3', author: { full_name: 'Priya Raman' }, title: 'Closed bank holiday Monday', body: 'The gym is closed Monday 31 August. Saturday and Sunday run as normal — Tuesday is back to the full timetable.', pinned: true, closure_id: 'cl1', created_at: iso(-4, 10) },
     { id: 'ann2', gym_id: GYM_ID, posted_by: 'a3', title: 'New barbells have landed', body: 'Twelve new competition bars are on the racks. The old ones move to the garage gym rail.', pinned: false, created_at: iso(-1, 7) },
     { id: 'ann3', gym_id: GYM_ID, posted_by: 'a3', title: 'Car park resurfacing', body: 'The council are resurfacing the car park Thursday morning. Street parking on Foundry Lane is free before 10am.', pinned: false, created_at: iso(-9, 9) },
   ],
@@ -400,7 +400,12 @@ export const TABLES = {
   ],
   class_session_broadcast_reads: [],
 
+  gym_closures: [
+    { id: 'cl1', gym_id: GYM_ID, starts_on: '2026-08-31', ends_on: '2026-08-31', reason: 'Bank holiday', lifted_at: null },
+  ],
+
   class_change_notifications: [
+    { id: 'ccn0', gym_id: GYM_ID, closure_id: 'cl1', kind: 'gym_closed', channel: 'in_app', body: 'Mon 31 Aug 06:00 Metcon was cancelled and your booking refunded.', created_at: iso(-4, 10), read_at: iso(-3, 9) },
     { id: 'ccn1', gym_id: GYM_ID, kind: 'class_cancelled', body: "Thursday's 06:00 Metcon is cancelled — Priya is unwell and no cover was available. Your booking has been refunded.", created_at: iso(-2, 15), read_at: null },
   ],
 

@@ -53,6 +53,7 @@ pg_prove --ext .sql supabase/tests/
 | `the_shop_gets_aisles.sql` | `store_products.category` reaches members through `list_store_products`, category-less products still list, the catalogue stays members-only, and writing the column stays behind `can_manage_store`. |
 | `your_gyms_and_your_data.sql` | `my_gyms` names LEFT gyms (which a plain `gyms` select refuses) and returns only the caller's rows; `export_my_account_data` carries bookings, both directions of the member's messages, PAR-Q answers with prompts and the nested training export — never a third party's thread. anon can execute neither. |
 | `a_tee_comes_in_sizes.sql` | A variant order line decrements and restocks the variant's stock, never the product's; the catalogue embeds variants with per-variant `sold_out`; the product flips sold-out only when every variant is tracked-and-zero; the variants table is staff-only under `can_manage_store`. |
+| `the_notice_knows_what_it_cancelled.sql` | An announcement may link its own gym's closure and never another's (composite FK); the reader's impact query returns only their own cancelled-class rows; the closure window is member-readable; the notice stays inside its gym. |
 
 ## Conventions
 

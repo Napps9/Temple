@@ -21,6 +21,7 @@ type AnnouncementDetail = {
   title: string;
   body: string;
   pinned: boolean;
+  closure_id: string | null;
   created_at: string;
   author: { full_name: string | null } | null;
 };
@@ -47,7 +48,7 @@ export default function AnnouncementDetail() {
       const { data, error } = await supabase
         .from('gym_announcements')
         .select(
-          'id, gym_id, title, body, pinned, created_at, author:profiles!posted_by(full_name)',
+          'id, gym_id, title, body, pinned, closure_id, created_at, author:profiles!posted_by(full_name)',
         )
         .eq('id', id!)
         .limit(1);
@@ -82,6 +83,42 @@ export default function AnnouncementDetail() {
       return (data ?? [])[0] as
         | { read_count: number; member_count: number }
         | undefined;
+    },
+  });
+
+  // The closure this notice is about (0257): the reader's own cancelled
+  // classes, not a generic list — "what changed for YOU".
+  const closureId = announcement.data?.closure_id ?? null;
+  const closure = useQuery({
+    queryKey: ['announcement-closure', closureId],
+    enabled: !!closureId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('gym_closures')
+        .select('id, starts_on, ends_on, lifted_at')
+        .eq('id', closureId!)
+        .limit(1);
+      if (error) throw error;
+      return (
+        ((data ?? [])[0] as
+          | { starts_on: string; ends_on: string; lifted_at: string | null }
+          | undefined) ?? null
+      );
+    },
+  });
+  const impact = useQuery({
+    queryKey: ['announcement-impact', closureId, session?.user.id],
+    enabled: !!closureId && !!session?.user.id,
+    queryFn: async (): Promise<string[]> => {
+      const { data, error } = await supabase
+        .from('class_change_notifications')
+        .select('body')
+        .eq('closure_id', closureId!)
+        .eq('recipient_profile_id', session!.user.id)
+        .eq('channel', 'in_app')
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data ?? []).map((r) => r.body as string);
     },
   });
 
@@ -136,6 +173,46 @@ export default function AnnouncementDetail() {
                 {a.body}
               </Text>
             </View>
+
+            {a.closure_id && !impact.isLoading ? (
+              <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2.5">
+                <Text className="text-ink dark:text-ink-dk font-semibold">
+                  What changed for you
+                </Text>
+                {(impact.data ?? []).length === 0 ? (
+                  <View className="flex-row items-center gap-2">
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={16}
+                      color={colors.ink3}
+                    />
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-sm flex-1">
+                      None of your bookings were affected.
+                    </Text>
+                  </View>
+                ) : (
+                  (impact.data ?? []).map((line, i) => (
+                    <View key={i} className="flex-row items-start gap-2">
+                      <Ionicons
+                        name="calendar-outline"
+                        size={15}
+                        color={colors.ink3}
+                        style={{ marginTop: 2 }}
+                      />
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-sm flex-1">
+                        {line}
+                      </Text>
+                    </View>
+                  ))
+                )}
+                {closure.data?.lifted_at ? (
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+                    The gym has since reopened — cancelled classes are back on
+                    the timetable, but your bookings were not restored.
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
 
             {canSeeReach && stats.data ? (
               <View className="flex-row items-center gap-2 border-t border-line dark:border-line-dk pt-3">

@@ -912,6 +912,8 @@ export type Database = {
           title: string;
           body: string;
           pinned: boolean;
+          // The closure this notice is about (0257); FK guards same-gym.
+          closure_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -921,6 +923,7 @@ export type Database = {
           title: string;
           body: string;
           pinned?: boolean;
+          closure_id?: string | null;
           created_at?: string;
         };
         Update: Partial<{
@@ -930,6 +933,7 @@ export type Database = {
           title: string;
           body: string;
           pinned: boolean;
+          closure_id: string | null;
           created_at: string;
         }>;
         Relationships: [];
