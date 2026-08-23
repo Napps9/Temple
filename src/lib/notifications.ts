@@ -173,6 +173,21 @@ export function useUnreadCoverNotifications() {
   });
 }
 
+// Unread that actually lives in the inbox. The Messages row used to
+// wear the everything-total, so "Messages · 3" could mean an injury
+// check-in and two unlogged workouts — a badge that lied about where
+// the three things were.
+export function useInboxUnreadCount(): number {
+  const unread = useInboxUnread();
+  return (
+    (unread.data?.dm_unread ?? 0) +
+    (unread.data?.announcement_unread ?? 0) +
+    (unread.data?.class_broadcast_unread ?? 0) +
+    (unread.data?.class_change_unread ?? 0) +
+    (unread.data?.payment_unread ?? 0)
+  );
+}
+
 // Total count behind the nav badges: unread messages + injury
 // check-ins due + classes waiting to be logged + open staff alerts.
 export function useNotificationCount(): number {

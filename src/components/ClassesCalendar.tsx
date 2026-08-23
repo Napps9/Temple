@@ -18,7 +18,8 @@ import { MonthPickerModal } from '@/components/MonthPickerModal';
 import { Screen } from '@/components/Screen';
 import { TodayButton } from '@/components/TodayButton';
 import { useGymMembership, useSession } from '@/lib/auth';
-import { invalidateBookingCaches } from '@/lib/bookings';
+import { isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
+import { invalidateBookingCaches, isLateCancel } from '@/lib/bookings';
 import type { BulkEditResult } from '@/lib/bulk-class-edit';
 import { drainClassChangeEmails } from '@/lib/class-change-notifications';
 import { errorMessage } from '@/lib/errors';
@@ -66,6 +67,10 @@ type ClassSession = {
     name: string;
     color: string;
     archived_at: string | null;
+    cancel_cutoff_minutes_before: number | null;
+    cancel_cutoff_mode: 'relative' | 'day_before' | null;
+    cancel_cutoff_time: string | null;
+    cancel_cutoff_days_before: number | null;
   } | null;
   coach_id: string | null;
   coach: { full_name: string | null; avatar_url: string | null } | null;
@@ -507,7 +512,7 @@ export function ClassesCalendar({
       const { data, error } = await supabase
         .from('class_sessions')
         .select(
-          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color, archived_at), coach_id, coach:profiles!coach_id(full_name, avatar_url)',
+          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color, archived_at, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before), coach_id, coach:profiles!coach_id(full_name, avatar_url)',
         )
         .gte('starts_at', start.toISOString())
         .lt('starts_at', end.toISOString())
@@ -648,6 +653,65 @@ export function ClassesCalendar({
         onChange={setTypeFilter}
       />
     ) : null;
+
+  // One-tap booking from the agenda row's Book pill, which used to be a
+  // drawing of a button (a plain View whose row opened the sheet). The
+  // server picks the entitlement, exactly like the Quick-book card; the
+  // sheet keeps the picker, the waitlist and the purchase flow. Undo is
+  // offered only while cancelling is still free — inside the cancel
+  // cutoff the pill routes through the sheet instead, whose confirm
+  // carries the forfeit warning.
+  const [rowBook, setRowBook] = useState<
+    { sessionId: string; state: 'booking' | 'booked' } | null
+  >(null);
+  const rowBookTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bookFromRow = useMutation({
+    mutationFn: async (s: ClassSession) => {
+      const { error } = await supabase.rpc('book_class', { session_id: s.id });
+      if (error) throw error;
+      return s;
+    },
+    onMutate: (s) => setRowBook({ sessionId: s.id, state: 'booking' }),
+    onSuccess: (s) => {
+      haptic.success();
+      invalidateBookingCaches(queryClient);
+      setRowBook({ sessionId: s.id, state: 'booked' });
+      if (rowBookTimer.current) clearTimeout(rowBookTimer.current);
+      rowBookTimer.current = setTimeout(() => setRowBook(null), 6000);
+    },
+    onError: (e, s) => {
+      setRowBook(null);
+      if (isWaiverRequiredError(e)) {
+        router.push('/waiver' as never);
+        return;
+      }
+      if (isParqRequiredError(e)) {
+        router.push('/parq' as never);
+        return;
+      }
+      // Membership required, class filled up, anything else: the sheet
+      // explains it and offers what applies.
+      haptic.error();
+      openSession(s.id);
+    },
+  });
+  const undoRowBook = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const { error } = await supabase
+        .from('class_bookings')
+        .delete()
+        .eq('class_session_id', sessionId)
+        .eq('profile_id', session!.user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateBookingCaches(queryClient);
+      setRowBook(null);
+    },
+  });
+  const canDirectBook = (s: ClassSession) =>
+    mode === 'book' &&
+    !isLateCancel(s.starts_at, s.class_types ?? null, gymDefaults);
 
   const afterBulkChange = () => {
     invalidateBookingCaches(queryClient);
@@ -956,6 +1020,12 @@ export function ClassesCalendar({
               dimPast={mode === 'book'}
               topSlot={topSlot}
               recommendedSessionId={recommendedSessionId}
+              rowBook={rowBook}
+              onBook={(s) =>
+                canDirectBook(s) ? bookFromRow.mutate(s) : openSession(s.id)
+              }
+              onUndoBook={(id) => undoRowBook.mutate(id)}
+              undoPending={undoRowBook.isPending}
             />
           ) : null}
           {view === 'day' ? (
@@ -1118,6 +1188,10 @@ function AgendaView({
   dimPast,
   topSlot,
   recommendedSessionId,
+  rowBook,
+  onBook,
+  onUndoBook,
+  undoPending,
 }: {
   date: Date;
   setDate: (d: Date) => void;
@@ -1129,6 +1203,10 @@ function AgendaView({
   dimPast?: boolean;
   topSlot?: React.ReactNode;
   recommendedSessionId?: string | null;
+  rowBook?: { sessionId: string; state: 'booking' | 'booked' } | null;
+  onBook?: (s: ClassSession) => void;
+  onUndoBook?: (sessionId: string) => void;
+  undoPending?: boolean;
 }) {
   const colors = useThemeColors();
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
@@ -1258,7 +1336,11 @@ function AgendaView({
         ) : null}
         <View className="w-full max-w-5xl mx-auto px-4 gap-2.5">
           {shownClasses.length === 0 ? (
-            <EmptyState icon="calendar-clear-outline" title="No classes on this day" />
+            <EmptyState
+              icon="calendar-clear-outline"
+              title="No classes on this day"
+              description="Try another day on the strip above — days with classes show a dot."
+            />
           ) : (
             shownClasses.map((s) => (
               <AgendaCard
@@ -1269,6 +1351,10 @@ function AgendaView({
                 recommended={recommendedSessionId === s.id}
                 onPress={() => onSessionPress(s.id)}
                 dimPast={dimPast}
+                bookState={rowBook?.sessionId === s.id ? rowBook.state : null}
+                onBook={onBook ? () => onBook(s) : undefined}
+                onUndoBook={onUndoBook ? () => onUndoBook(s.id) : undefined}
+                undoPending={undoPending}
               />
             ))
           )}
@@ -1285,6 +1371,10 @@ function AgendaCard({
   recommended,
   onPress,
   dimPast,
+  bookState,
+  onBook,
+  onUndoBook,
+  undoPending,
 }: {
   session: ClassSession;
   count: number;
@@ -1292,6 +1382,10 @@ function AgendaCard({
   recommended?: boolean;
   onPress: () => void;
   dimPast?: boolean;
+  bookState?: 'booking' | 'booked' | null;
+  onBook?: () => void;
+  onUndoBook?: () => void;
+  undoPending?: boolean;
 }) {
   const colors = useThemeColors();
   const start = new Date(session.starts_at);
@@ -1359,13 +1453,33 @@ function AgendaCard({
               <Text className="text-ink-3 dark:text-ink-3-dk text-xs">·</Text>
             </>
           ) : null}
-          <Text className={`text-xs font-semibold ${statusClass}`}>
-            {statusText}
-          </Text>
+          {bookState === 'booked' ? null : (
+            <Text
+              numberOfLines={1}
+              className={`text-xs font-semibold ${statusClass}`}>
+              {statusText}
+            </Text>
+          )}
         </View>
       </View>
 
-      {bookedByMe ? (
+      {bookState === 'booked' && onUndoBook ? (
+        <View className="flex-row items-center gap-2">
+          <View className="flex-row items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-full px-3 py-1.5">
+            <Ionicons name="checkmark" size={14} color="#059669" />
+            <Text className="text-emerald-700 dark:text-emerald-300 text-xs font-bold">
+              Booked
+            </Text>
+          </View>
+          <ChipButton
+            label={undoPending ? 'Undoing…' : 'Undo'}
+            icon="arrow-undo-outline"
+            tone="neutral"
+            disabled={undoPending}
+            onPress={onUndoBook}
+          />
+        </View>
+      ) : bookedByMe ? (
         <View className="flex-row items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-full px-3 py-1.5">
           <Ionicons name="checkmark" size={14} color="#059669" />
           <Text className="text-emerald-700 dark:text-emerald-300 text-xs font-bold">
@@ -1378,8 +1492,20 @@ function AgendaCard({
         // one" — they just make the list loud. The accent is spent on the
         // single action a page exists for, which here is the primary in
         // the class sheet this row opens.
-        <View
-          className={`rounded-full px-4 py-2 border ${
+        //
+        // The pill is a real button now: Book books this class on the
+        // spot (its own nested Pressable, like the Quick-book chip), and
+        // Waitlist opens the sheet, where joining lives. It looked like
+        // a button for months while only the row was tappable.
+        <Pressable
+          onPress={
+            !onBook || full || bookState === 'booking' ? onPress : onBook
+          }
+          disabled={bookState === 'booking'}
+          accessibilityRole="button"
+          accessibilityLabel={full ? 'Open waitlist' : 'Book this class'}
+          hitSlop={6}
+          className={`rounded-full px-4 py-2 border active:opacity-70 ${
             full
               ? 'bg-raised dark:bg-raised-dk border-transparent'
               : 'bg-surface dark:bg-surface-dk border-line-strong dark:border-line-strong-dk'
@@ -1388,9 +1514,9 @@ function AgendaCard({
             className={`text-xs font-bold ${
               full ? 'text-ink-3 dark:text-ink-3-dk' : 'text-ink dark:text-ink-dk'
             }`}>
-            {full ? 'Waitlist' : 'Book'}
+            {bookState === 'booking' ? 'Booking…' : full ? 'Waitlist' : 'Book'}
           </Text>
-        </View>
+        </Pressable>
       )}
     </Pressable>
   );

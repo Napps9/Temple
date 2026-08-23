@@ -60,6 +60,9 @@ export default function MovementLibrary() {
             placeholder="Search movements"
             placeholderTextColor={colors.ink2}
             autoCorrect={false}
+            // The library's job is nearly always "find one movement", so
+            // the cursor starts in the search box — typing is tap zero.
+            autoFocus
             className="flex-1 py-3 text-ink dark:text-ink-dk"
           />
           {searching ? (

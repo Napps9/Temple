@@ -359,14 +359,32 @@ export function RecordWorkoutModal({
   // reset effect because programmingQuery resolves asynchronously,
   // after the reset has already run.
   useEffect(() => {
-    if (!visible || !initialClassTypeId || autoPrefilledRef.current) return;
-    const group = programmingByClassType.find(
-      (g) => g.class_type_id === initialClassTypeId,
-    );
-    if (!group) return;
-    autoPrefilledRef.current = true;
-    prefillFromClassType(initialClassTypeId);
-  }, [visible, initialClassTypeId, programmingByClassType]);
+    if (!visible || autoPrefilledRef.current) return;
+    if (initialClassTypeId) {
+      const group = programmingByClassType.find(
+        (g) => g.class_type_id === initialClassTypeId,
+      );
+      if (!group) return;
+      autoPrefilledRef.current = true;
+      prefillFromClassType(initialClassTypeId);
+      return;
+    }
+    // No class handed in, but today's programming is unambiguous — one
+    // class type published and no personal programme, or only the
+    // personal programme. Opening on an empty form that demanded a
+    // category and a format made the plain Record button a seven-tap
+    // job; when there is exactly one answer, give it.
+    const hasOwn = (myProgramme?.sections.length ?? 0) > 0;
+    if (programmingByClassType.length === 1 && !hasOwn) {
+      autoPrefilledRef.current = true;
+      prefillFromClassType(programmingByClassType[0].class_type_id);
+      return;
+    }
+    if (programmingByClassType.length === 0 && hasOwn) {
+      autoPrefilledRef.current = true;
+      prefillFromMemberProgramming();
+    }
+  }, [visible, initialClassTypeId, programmingByClassType, myProgramme]);
 
   function updateDraft(idx: number, next: Partial<SectionDraft>) {
     setDrafts((cur) =>

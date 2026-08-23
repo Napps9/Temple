@@ -14,7 +14,7 @@ import { Avatar } from './Avatar';
 import { Text } from './Text';
 import { useGymMembership, useMyProfile, useSession } from '@/lib/auth';
 import { haptic } from '@/lib/haptic';
-import { useNotificationCount } from '@/lib/notifications';
+import { useInboxUnreadCount, useNotificationCount } from '@/lib/notifications';
 import { useGymStoreConfig } from '@/lib/store';
 import { CURRENT_SUB_STATUSES, useGymPlans, useMySubscriptions } from '@/lib/subscriptions';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
@@ -48,6 +48,7 @@ export function NavAccountMenu({
   const { scheme, set } = useThemePreference();
   const colors = useThemeColors();
   const notifCount = useNotificationCount();
+  const inboxCount = useInboxUnreadCount();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const [open, setOpen] = useState(false);
 
@@ -154,7 +155,7 @@ export function NavAccountMenu({
               icon="chatbubble-ellipses-outline"
               label="Messages"
               iconColor={colors.ink}
-              badge={notifCount}
+              badge={inboxCount}
               onPress={() => go('/inbox')}
             />
             <MenuRow

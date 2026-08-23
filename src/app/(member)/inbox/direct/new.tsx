@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { PageHead } from '@/components/PageHead';
+import { SectionLabel } from '@/components/SectionLabel';
 import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -133,27 +134,43 @@ export default function NewDirectMessage() {
             No matches.
           </Text>
         ) : (
-          filtered.map((c) => (
-            <Pressable
-              key={c.profile_id}
-              onPress={() =>
-                router.replace(`/inbox/direct/${c.profile_id}` as never)
-              }
-              className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 flex-row items-center gap-3 active:opacity-70">
-              <View className="flex-1">
-                <Text className="text-ink dark:text-ink-dk font-medium">
-                  {c.full_name?.trim() || 'Member'}
-                </Text>
+          // Coaches and staff lead under their own heading: "message the
+          // gym" is the job this screen mostly exists for, and a flat
+          // every-member list made the member pick a human by name.
+          (query.trim()
+            ? [{ label: null as string | null, rows: filtered }]
+            : [
+                { label: 'The gym', rows: filtered.filter((c) => c.role !== 'member') },
+                { label: 'Members', rows: filtered.filter((c) => c.role === 'member') },
+              ]
+          )
+            .filter((g) => g.rows.length > 0)
+            .map((g) => (
+              <View key={g.label ?? 'results'} className="gap-2">
+                {g.label ? <SectionLabel>{g.label}</SectionLabel> : null}
+                {g.rows.map((c) => (
+                  <Pressable
+                    key={c.profile_id}
+                    onPress={() =>
+                      router.replace(`/inbox/direct/${c.profile_id}` as never)
+                    }
+                    className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 flex-row items-center gap-3 active:opacity-70">
+                    <View className="flex-1">
+                      <Text className="text-ink dark:text-ink-dk font-medium">
+                        {c.full_name?.trim() || 'Member'}
+                      </Text>
+                    </View>
+                    {c.role !== 'member' ? (
+                      <View className="rounded-full bg-raised dark:bg-raised-dk px-2 py-0.5">
+                        <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] uppercase tracking-wider">
+                          {c.role}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                ))}
               </View>
-              {c.role !== 'member' ? (
-                <View className="rounded-full bg-raised dark:bg-raised-dk px-2 py-0.5">
-                  <Text className="text-ink-2 dark:text-ink-2-dk text-[10px] uppercase tracking-wider">
-                    {c.role}
-                  </Text>
-                </View>
-              ) : null}
-            </Pressable>
-          ))
+            ))
         )}
       </ScrollView>
     </Screen>

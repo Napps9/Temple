@@ -10,6 +10,7 @@ import { Text } from './Text';
 import { BackLink } from '@/components/BackLink';
 import { ChipButton } from '@/components/ChipButton';
 import { RecordHyroxRaceModal } from '@/components/RecordHyroxRaceModal';
+import { EmptyState } from '@/components/EmptyState';
 import { RecordMovementResultModal } from '@/components/RecordMovementResultModal';
 import { Screen } from '@/components/Screen';
 import { Sparkline } from '@/components/Sparkline';
@@ -337,11 +338,13 @@ export function MovementDetailView({
               Loading…
             </Text>
           ) : merged.length === 0 ? (
-            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
-              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-                No results for {movement.name} yet.
-              </Text>
-            </View>
+            <EmptyState
+              icon="trending-up-outline"
+              title={`No results for ${movement.name} yet`}
+              description="Record one and your history and PRs start here."
+              actionLabel={isMember ? 'Record a result' : undefined}
+              onAction={isMember ? () => setRecording({}) : undefined}
+            />
           ) : (
             <View className="gap-2">
               {merged.map((r) => (

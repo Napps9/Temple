@@ -7,6 +7,7 @@ import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
+import { EmptyState } from '@/components/EmptyState';
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
@@ -121,13 +122,15 @@ export default function Journal() {
         />
 
         {journal.isLoading ? (
-          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
+          <EmptyState kind="loading" />
         ) : (journal.data?.length ?? 0) === 0 ? (
-          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4">
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              No workouts yet.
-            </Text>
-          </View>
+          <EmptyState
+            icon="barbell-outline"
+            title="No workouts yet"
+            description="Log a session and it lands here, PRs and all."
+            actionLabel="Record a workout"
+            onAction={() => setRecording(true)}
+          />
         ) : (
           journal.data!.map((w) => <WorkoutCard key={w.id} workout={w} />)
         )}

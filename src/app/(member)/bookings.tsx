@@ -3,7 +3,10 @@ import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Text } from '@/components/Text';
 
+import { router } from 'expo-router';
+
 import { ChipButton } from '@/components/ChipButton';
+import { EmptyState } from '@/components/EmptyState';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
@@ -202,9 +205,14 @@ export default function BookingsScreen() {
         <View className="gap-2">
           {tab === 'upcoming' ? (
             upcoming.length === 0 ? (
-              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-                No upcoming classes.
-              </Text>
+              <EmptyState
+                icon="calendar-clear-outline"
+                title="No upcoming classes"
+                description="Find a class you like and book it — it shows up here."
+                actionLabel="Find a class"
+                actionIcon="calendar-outline"
+                onAction={() => router.push('/book' as never)}
+              />
             ) : (
               upcoming.map((r) => (
                 <BookingCard
@@ -218,9 +226,11 @@ export default function BookingsScreen() {
             )
           ) : tab === 'waitlisted' ? (
             (waitlist.data?.length ?? 0) === 0 ? (
-              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-                Not on any waitlists.
-              </Text>
+              <EmptyState
+                icon="hourglass-outline"
+                title="Not on any waitlists"
+                description="Full classes offer a waitlist spot — you're first in line when someone drops out."
+              />
             ) : (
               waitlist.data!.map((w) => (
                 <WaitlistCard
@@ -236,9 +246,11 @@ export default function BookingsScreen() {
               ))
             )
           ) : past.length === 0 ? (
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              No past bookings.
-            </Text>
+            <EmptyState
+              icon="checkmark-done-outline"
+              title="No past bookings"
+              description="Attendance for classes you've been to lands here."
+            />
           ) : (
             past.map((r) => <BookingCard key={r.id} row={r} isPast />)
           )}
