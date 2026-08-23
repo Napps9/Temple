@@ -102,6 +102,49 @@ export const TABLES = {
       logo_url_dark: null,
       primary_color: '#C2410C',
       week_starts_on: 1,
+      timezone: 'Europe/London',
+      default_class_capacity: 12,
+      default_class_minutes: 60,
+      // 24h cutoff so tomorrow-morning bookings are already "late" —
+      // exercises the forfeit warning in the cancel confirm.
+      cancel_cutoff_minutes_before: 1440,
+    },
+  ],
+
+  class_sessions: [
+    {
+      id: 'cs1',
+      gym_id: GYM_ID,
+      name: null,
+      starts_at: iso(-1, 22),
+      duration_minutes: 60,
+      capacity: 12,
+      notes: null,
+      class_type_id: 'ct2',
+      recurrence_id: null,
+      coach_id: 'coach-1',
+      coach: { full_name: 'Priya Raman', avatar_url: null },
+      class_types: { name: 'Metcon', color: '#6366F1', archived_at: null, cancel_cutoff_minutes_before: null, cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_days_before: null },
+    },
+  ],
+
+  class_bookings: [
+    {
+      id: 'cb1',
+      class_session_id: 'cs1',
+      profile_id: USER_ID,
+      attended_at: null,
+      no_show: false,
+      promoted_from_waitlist: false,
+      used_entitlement_kind: null,
+      used_entitlement_id: null,
+      created_at: iso(-1),
+      profiles: { full_name: 'Nick Apps', avatar_url: null },
+      class_sessions: {
+        starts_at: iso(-1, 22),
+        duration_minutes: 60,
+        class_types: { name: 'Metcon', color: '#6366F1', cancel_cutoff_minutes_before: null, cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_days_before: null },
+      },
     },
   ],
 
