@@ -362,7 +362,7 @@ export const TABLES = {
   ],
 
   gym_announcements: [
-    { id: 'ann1', gym_id: GYM_ID, posted_by: 'a3', title: 'Closed bank holiday Monday', body: 'The gym is closed Monday 31 August. Saturday and Sunday run as normal — Tuesday is back to the full timetable.', pinned: true, created_at: iso(-4, 10) },
+    { id: 'ann1', gym_id: GYM_ID, posted_by: 'a3', author: { full_name: 'Priya Raman' }, title: 'Closed bank holiday Monday', body: 'The gym is closed Monday 31 August. Saturday and Sunday run as normal — Tuesday is back to the full timetable.', pinned: true, created_at: iso(-4, 10) },
     { id: 'ann2', gym_id: GYM_ID, posted_by: 'a3', title: 'New barbells have landed', body: 'Twelve new competition bars are on the racks. The old ones move to the garage gym rail.', pinned: false, created_at: iso(-1, 7) },
     { id: 'ann3', gym_id: GYM_ID, posted_by: 'a3', title: 'Car park resurfacing', body: 'The council are resurfacing the car park Thursday morning. Street parking on Foundry Lane is free before 10am.', pinned: false, created_at: iso(-9, 9) },
   ],
@@ -527,6 +527,7 @@ export const RPCS = {
     { dm_unread: 2, announcement_unread: 2, class_broadcast_unread: 1, class_change_unread: 1, payment_unread: 1 },
   ],
   mark_class_change_notifications_read: null,
+  announcement_read_stats: [{ read_count: 186, member_count: 214 }],
   mark_cover_notifications_read: null,
   is_booking_eligible: true,
   list_my_email_preferences: [

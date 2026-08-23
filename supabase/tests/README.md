@@ -49,6 +49,7 @@ pg_prove --ext .sql supabase/tests/
 | `claim_cover_no_strand.sql` | Cancelling a request returns the class to its original coach; `coach_id` is never null. |
 | `claim_cover_no_double_book.sql` | A coach already scheduled at an overlapping time cannot claim the offer. |
 | `v_member_cohort_parity.sql` | Per-row flags on `v_member_cohort` match the TS classifier in `src/lib/insights.ts` for the shared fixture set. SQL half of SQL↔TS parity. |
+| `read_by_186_of_214.sql` | `announcement_read_stats` is aggregate-only, scoped to current members on both sides of the fraction, refused inside the function for anyone without `can_post_announcements`, and unexecutable by anon. |
 
 ## Conventions
 

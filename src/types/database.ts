@@ -4456,6 +4456,10 @@ export type Database = {
         Args: { p_alert_id: string };
         Returns: null;
       };
+      announcement_read_stats: {
+        Args: { p_announcement_id: string };
+        Returns: { read_count: number; member_count: number }[];
+      };
       record_consent: {
         Args: {
           p_gym_id: string;

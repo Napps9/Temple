@@ -660,6 +660,10 @@ function GymFeedSection({
           {items.map((item, i) => {
             const key = `${item.kind}:${item.id}`;
             const isOpen = expanded.has(key);
+            // Announcements open their own page (full body, Got it);
+            // broadcasts and class-change notices carry their whole
+            // message already, so they expand in place instead.
+            const opensDetail = item.kind === 'announcement';
             return (
               <ListRow
                 key={key}
@@ -667,7 +671,12 @@ function GymFeedSection({
                 first={i === 0}
                 title={item.title}
                 subtitle={isOpen ? undefined : snippet(item.body, 80)}
-                onPress={() => onToggle(key)}
+                href={
+                  opensDetail
+                    ? (`/inbox/announcement/${item.id}` as never)
+                    : undefined
+                }
+                onPress={opensDetail ? undefined : () => onToggle(key)}
                 lead={
                   item.dotColor ? (
                     <View
