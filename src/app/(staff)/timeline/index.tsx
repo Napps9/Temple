@@ -999,6 +999,7 @@ export default function Timeline() {
               onRefresh={() => feed.refetch()}
             />
           }>
+          {page.isToday ? <CoachingToday gymId={gymId} /> : null}
           {feed.isLoading ? (
             <View className="px-4 py-4">
               <EmptyState kind="loading" rows={4} title="Loading the timeline" />
@@ -1106,8 +1107,6 @@ export default function Timeline() {
               onDismiss={dismissSetup}
             />
           ) : null}
-
-          {page.isToday ? <CoachingToday gymId={gymId} /> : null}
 
           {showMoneyJobCard ? (
             <MoneyJobCard
