@@ -483,6 +483,64 @@ export const TABLES = {
     },
   ],
 
+  parq_questionnaires: [
+    { id: 'pq1', gym_id: GYM_ID, version: 2, is_active: true },
+  ],
+  parq_questions: [
+    { id: 'q1', questionnaire_id: 'pq1', sort_order: 1, prompt: 'Has your doctor ever said you have a heart condition and should only do physical activity recommended by a doctor?', flag_on_yes: true },
+    { id: 'q2', questionnaire_id: 'pq1', sort_order: 2, prompt: 'Do you feel pain in your chest when you do physical activity?', flag_on_yes: true },
+    { id: 'q3', questionnaire_id: 'pq1', sort_order: 3, prompt: 'In the past month, have you had chest pain when you were not doing physical activity?', flag_on_yes: true },
+    { id: 'q4', questionnaire_id: 'pq1', sort_order: 4, prompt: 'Do you lose your balance because of dizziness, or do you ever lose consciousness?', flag_on_yes: true },
+    { id: 'q5', questionnaire_id: 'pq1', sort_order: 5, prompt: 'Do you have a bone or joint problem that could be made worse by a change in your physical activity?', flag_on_yes: true },
+    { id: 'q6', questionnaire_id: 'pq1', sort_order: 6, prompt: 'Is your doctor currently prescribing drugs for your blood pressure or heart condition?', flag_on_yes: true },
+    { id: 'q7', questionnaire_id: 'pq1', sort_order: 7, prompt: 'Do you know of any other reason why you should not do physical activity?', flag_on_yes: true },
+  ],
+
+  tracked_workouts: [
+    {
+      id: 'tw1', profile_id: USER_ID, performed_at: iso(-2, 18), title: 'Metcon',
+      class_session_id: 'cs1',
+      class_sessions: { class_types: { name: 'Metcon', color: '#6366F1' } },
+      sections: [
+        { id: 'ts1', section_category: 'wod', section_format: 'amrap', title: 'Engine builder', body: null, notes: null, sort_order: 1, total_time_seconds: null, total_rounds: 12, total_extra_reps: 4, total_distance_m: null, total_calories: null, did_not_finish: false, free_text_result: null },
+        { id: 'ts2', section_category: 'strength_and_skill', section_format: 'strength_sets', title: 'Back squat 5x5', body: null, notes: null, sort_order: 2, total_time_seconds: null, total_rounds: null, total_extra_reps: null, total_distance_m: null, total_calories: null, did_not_finish: null, free_text_result: null },
+      ],
+      legacy_results: [],
+    },
+    {
+      id: 'tw2', profile_id: USER_ID, performed_at: iso(-8, 7), title: 'Barbell Club',
+      class_session_id: null, class_sessions: null,
+      sections: [
+        { id: 'ts3', section_category: 'strength_and_skill', section_format: 'strength_sets', title: 'Heavy singles', body: null, notes: null, sort_order: 1, total_time_seconds: null, total_rounds: null, total_extra_reps: null, total_distance_m: null, total_calories: null, did_not_finish: null, free_text_result: null },
+      ],
+      legacy_results: [{ id: 'lr1' }],
+    },
+    {
+      id: 'tw3', profile_id: USER_ID, performed_at: iso(-16, 9), title: 'For time',
+      class_session_id: null, class_sessions: null,
+      sections: [
+        { id: 'ts4', section_category: 'wod', section_format: 'for_time', title: 'Nancy', body: null, notes: null, sort_order: 1, total_time_seconds: 812, total_rounds: null, total_extra_reps: null, total_distance_m: null, total_calories: null, did_not_finish: false, free_text_result: null },
+      ],
+      legacy_results: [],
+    },
+    {
+      id: 'tw4', profile_id: USER_ID, performed_at: iso(-38, 10), title: 'Long row',
+      class_session_id: null, class_sessions: null,
+      sections: [
+        { id: 'ts5', section_category: 'wod', section_format: 'max_distance', title: '30 min row', body: null, notes: null, sort_order: 1, total_time_seconds: null, total_rounds: null, total_extra_reps: null, total_distance_m: 7250, total_calories: null, did_not_finish: null, free_text_result: null },
+      ],
+      legacy_results: [],
+    },
+  ],
+
+  tracked_movement_results: [
+    { id: 'mr1', workout_id: 'tw2', movement_key: 'back_squat', track_key: '1rm', value_numeric: 142.5, value_seconds: null, value_unit: 'kg', notes: null, performed_at: iso(-8, 7), profile_id: USER_ID },
+    { id: 'mr2', workout_id: null, movement_key: 'back_squat', track_key: '1rm', value_numeric: 137.5, value_seconds: null, value_unit: 'kg', notes: null, performed_at: iso(-60, 7), profile_id: USER_ID },
+    { id: 'mr3', workout_id: null, movement_key: 'back_squat', track_key: '1rm', value_numeric: 130, value_seconds: null, value_unit: 'kg', notes: null, performed_at: iso(-120, 7), profile_id: USER_ID },
+    { id: 'mr4', workout_id: null, movement_key: 'back_squat', track_key: '5rm', value_numeric: 120, value_seconds: null, value_unit: 'kg', notes: 'Belt on', performed_at: iso(-20, 7), profile_id: USER_ID },
+  ],
+  tracked_section_movement_tags: [],
+
   tasks: [
     { id: 't1', gym_id: GYM_ID, title: 'Order more chalk', status: 'open', due_date: '2026-08-27', notes: null, assignee: { full_name: 'Priya Raman' } },
     { id: 't2', gym_id: GYM_ID, title: 'Fix the rower display', status: 'open', due_date: null, notes: 'Seat 3, screen flickers.', assignee: null },

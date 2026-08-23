@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { type Href, router } from 'expo-router';
+import { type Href, router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { PageHead } from './PageHead';
@@ -11,6 +11,8 @@ import { BackLink } from '@/components/BackLink';
 import { ChipButton } from '@/components/ChipButton';
 import { RecordHyroxRaceModal } from '@/components/RecordHyroxRaceModal';
 import { EmptyState } from '@/components/EmptyState';
+import { ListRow, RuledList } from '@/components/ListRow';
+import { PillNav } from '@/components/PillNav';
 import { RecordMovementResultModal } from '@/components/RecordMovementResultModal';
 import { Screen } from '@/components/Screen';
 import { Sparkline } from '@/components/Sparkline';
@@ -101,6 +103,15 @@ export function MovementDetailView({
     null,
   );
   const [recordingRace, setRecordingRace] = useState(false);
+  // ?tab= deep-links a tab open (and lets the harness photograph each);
+  // read once so it doesn't fight later taps.
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<'history' | 'percentages' | 'leaderboard'>(
+    params.tab === 'percentages' || params.tab === 'leaderboard'
+      ? params.tab
+      : 'history',
+  );
+  const [heroWidth, setHeroWidth] = useState(0);
 
   const direct = useQuery({
     queryKey: ['tracked-results-by-movement', session?.user.id, movementKey],
@@ -199,9 +210,6 @@ export function MovementDetailView({
   }
 
   const { group, movement } = meta;
-  // Hyrox stations log a single best time rather than a ladder of rep
-  // maxes — relabel the bests section so it reads right for both.
-  const isStation = group.key.startsWith('hyrox');
   const backHref = isMember ? `/track/group/${group.key}` : '/athlete';
 
   return (
@@ -238,134 +246,183 @@ export function MovementDetailView({
         />
 
         <View className="gap-3">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-              {isStation ? 'Personal bests' : 'Rep maxes'}
-            </Text>
-            {isMember && movement.key === HYROX_SIM.key ? (
+          {(() => {
+            const primary = movement.schemes[0];
+            if (!primary) return null;
+            const best = bestOfMerged(merged, primary.key, primary);
+            const display = best
+              ? formatResultValue(best, primary.metric, weightUnit)
+              : null;
+            const series = normaliseForPlot(
+              trendPoints(merged, primary.key, primary.metric),
+              primary.better,
+            );
+            return (
               <Pressable
-                onPress={() => setRecordingRace(true)}
-                hitSlop={6}
-                className="flex-row items-center gap-1 active:opacity-70">
-                <Ionicons name="flag-outline" size={13} color={colors.primary} />
-                <Text className="text-primary text-xs font-semibold">
-                  Log full splits
-                </Text>
-              </Pressable>
-            ) : null}
-          </View>
-          <View className="gap-2">
-            {movement.schemes.map((scheme) => {
-              const best = bestOfMerged(merged, scheme.key, scheme);
-              const display = best
-                ? formatResultValue(best, scheme.metric, weightUnit)
-                : null;
-              const series = normaliseForPlot(
-                trendPoints(merged, scheme.key, scheme.metric),
-                scheme.better,
-              );
-              const row = (
-                <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 flex-row items-center gap-3">
-                  <View className="flex-1">
-                    <Text className="text-ink dark:text-ink-dk font-semibold">
-                      {scheme.label}
-                    </Text>
-                    {best ? (
-                      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-                        Set {fmtDateShort(best.performed_at)}
-                        {best.source === 'tag' ? ' · from session' : ''}
+                disabled={!isMember}
+                onPress={() => setRecording({ trackKey: primary.key })}
+                onLayout={(e) => setHeroWidth(e.nativeEvent.layout.width)}
+                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2 active:opacity-80">
+                <View className="flex-row items-center justify-between">
+                  <FieldLabel>
+                    {`Best ${primary.label.toLowerCase()}`}
+                  </FieldLabel>
+                  {isMember && movement.key === HYROX_SIM.key ? (
+                    <Pressable
+                      onPress={() => setRecordingRace(true)}
+                      hitSlop={6}
+                      className="flex-row items-center gap-1 active:opacity-70">
+                      <Ionicons
+                        name="flag-outline"
+                        size={13}
+                        color={colors.primary}
+                      />
+                      <Text className="text-primary text-xs font-semibold">
+                        Log full splits
                       </Text>
-                    ) : (
-                      <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
-                        {isMember
-                          ? `Tap to log a ${scheme.label.toLowerCase()}`
-                          : 'No result logged'}
-                      </Text>
-                    )}
-                  </View>
-                  {series.length >= 2 ? (
-                    <Sparkline
-                      values={series}
-                      color={colors.primary}
-                      width={88}
-                      height={32}
-                      label={`${scheme.label} trend, ${series.length} results`}
-                    />
+                    </Pressable>
                   ) : null}
+                </View>
+                <View className="flex-row items-end justify-between gap-3">
                   <Text
                     className={
                       display
-                        ? 'text-ink dark:text-ink-dk text-lg font-semibold'
-                        : 'text-ink-3 dark:text-ink-3-dk text-sm'
+                        ? 'text-ink dark:text-ink-dk text-[34px] font-bold leading-10 tracking-[-0.5px]'
+                        : 'text-ink-3 dark:text-ink-3-dk text-lg'
                     }>
-                    {display ?? (isMember ? '+' : '—')}
+                    {display ?? (isMember ? 'Tap to log one' : 'No result yet')}
                   </Text>
+                  {best ? (
+                    <View className="rounded-full bg-amber-500/15 px-2 py-0.5 flex-row items-center gap-1">
+                      <Ionicons name="trophy" size={10} color="#F59E0B" />
+                      <Text className="text-amber-600 dark:text-amber-400 text-[10px] font-semibold">
+                        {`PR \u00B7 ${fmtDateShort(best.performed_at)}`}
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
-              );
-              return isMember ? (
-                <Pressable
-                  key={scheme.key}
-                  onPress={() => setRecording({ trackKey: scheme.key })}
-                  className="active:opacity-70">
-                  {row}
-                </Pressable>
-              ) : (
-                <View key={scheme.key}>{row}</View>
-              );
-            })}
-          </View>
+                {series.length >= 2 && heroWidth > 0 ? (
+                  <Sparkline
+                    values={series}
+                    color={colors.primary}
+                    width={heroWidth - 32}
+                    height={44}
+                    label={`${primary.label} trend, ${series.length} results`}
+                  />
+                ) : null}
+              </Pressable>
+            );
+          })()}
+
+          {movement.schemes.length > 1 ? (
+            <RuledList>
+              {movement.schemes.slice(1).map((scheme, i) => {
+                const best = bestOfMerged(merged, scheme.key, scheme);
+                const display = best
+                  ? formatResultValue(best, scheme.metric, weightUnit)
+                  : null;
+                return (
+                  <ListRow
+                    key={scheme.key}
+                    ruled
+                    first={i === 0}
+                    title={scheme.label}
+                    subtitle={
+                      best
+                        ? `Set ${fmtDateShort(best.performed_at)}${
+                            best.source === 'tag' ? ' \u00B7 from session' : ''
+                          }`
+                        : isMember
+                          ? 'Tap to log one'
+                          : 'No result logged'
+                    }
+                    onPress={
+                      isMember
+                        ? () => setRecording({ trackKey: scheme.key })
+                        : undefined
+                    }
+                    trailing={
+                      <Text
+                        className={
+                          display
+                            ? 'text-ink dark:text-ink-dk text-base font-semibold'
+                            : 'text-ink-3 dark:text-ink-3-dk text-sm'
+                        }>
+                        {display ?? (isMember ? '+' : '\u2014')}
+                      </Text>
+                    }
+                  />
+                );
+              })}
+            </RuledList>
+          ) : null}
         </View>
 
-        <MovementPercentagesCard
-          movement={movement}
-          merged={merged}
-          onRecord={isMember ? () => setRecording({ trackKey: '1rm' }) : null}
+        <PillNav
+          items={[
+            { key: 'history' as const, label: 'History' },
+            ...(movement.schemes.some(
+              (sch) => sch.metric === 'weight' && sch.better === 'higher',
+            )
+              ? [{ key: 'percentages' as const, label: 'Percentages' }]
+              : []),
+            ...(isMember
+              ? [{ key: 'leaderboard' as const, label: 'Leaderboard' }]
+              : []),
+          ]}
+          active={tab}
+          onSelect={setTab}
         />
 
-        {isMember ? (
+        {tab === 'percentages' ? (
+          <MovementPercentagesCard
+            movement={movement}
+            merged={merged}
+            onRecord={isMember ? () => setRecording({ trackKey: '1rm' }) : null}
+          />
+        ) : tab === 'leaderboard' && isMember ? (
           <MovementLeaderboardSection
             movementKey={movement.key}
             schemes={movement.schemes}
           />
-        ) : null}
-
-        <View className="gap-3">
-          <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-            Journal
-          </Text>
-          {direct.isLoading || tags.isLoading ? (
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              Loading…
-            </Text>
-          ) : merged.length === 0 ? (
-            <EmptyState
-              icon="trending-up-outline"
-              title={`No results for ${movement.name} yet`}
-              description="Record one and your history and PRs start here."
-              actionLabel={isMember ? 'Record a result' : undefined}
-              onAction={isMember ? () => setRecording({}) : undefined}
-            />
-          ) : (
-            <View className="gap-2">
-              {merged.map((r) => (
-                <JournalRowView
-                  key={r.id}
-                  row={r}
-                  schemeLabel={
-                    movement.schemes.find((s) => s.key === r.track_key)?.label ??
-                    r.track_key ??
-                    'Untagged'
-                  }
-                  metric={
-                    movement.schemes.find((s) => s.key === r.track_key)?.metric
-                  }
-                  isPR={prIds.has(r.id)}
-                  linkable={isMember}
-                />
-              ))}
-            </View>
-          )}
-        </View>
+        ) : (
+          <View className="gap-3">
+            {direct.isLoading || tags.isLoading ? (
+              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
+                Loading…
+              </Text>
+            ) : merged.length === 0 ? (
+              <EmptyState
+                icon="trending-up-outline"
+                title={`No results for ${movement.name} yet`}
+                description="Record one and your history and PRs start here."
+                actionLabel={isMember ? 'Record a result' : undefined}
+                onAction={isMember ? () => setRecording({}) : undefined}
+              />
+            ) : (
+              <View className="gap-2">
+                {merged.map((r) => (
+                  <JournalRowView
+                    key={r.id}
+                    row={r}
+                    schemeLabel={
+                      movement.schemes.find((s) => s.key === r.track_key)
+                        ?.label ??
+                      r.track_key ??
+                      'Untagged'
+                    }
+                    metric={
+                      movement.schemes.find((s) => s.key === r.track_key)
+                        ?.metric
+                    }
+                    isPR={prIds.has(r.id)}
+                    linkable={isMember}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
 
       {isMember ? (
@@ -411,9 +468,6 @@ function MovementPercentagesCard({
 
   return (
     <View className="gap-3">
-      <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
-        Percentages
-      </Text>
       <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
         {resolved === null ? (
           <>
@@ -487,12 +541,6 @@ function MovementLeaderboardSection({
   const scheme = schemes.find((s) => s.key === activeScheme) ?? schemes[0];
   return (
     <View className="gap-3">
-      <View className="flex-row items-center gap-2">
-        <Ionicons name="trophy" size={18} color={colors.primary} />
-        <Text className="flex-1 text-ink dark:text-ink-dk text-lg font-semibold">
-          Leaderboard
-        </Text>
-      </View>
       <View className="flex-row flex-wrap gap-2">
         {schemes.map((s) => (
           <Pressable

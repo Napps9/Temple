@@ -6,11 +6,21 @@ import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { EmptyState } from '@/components/EmptyState';
+import { ListRow, RuledList } from '@/components/ListRow';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
+import { FieldLabel } from '@/components/SectionLabel';
 import { useThemeColors } from '@/lib/theme';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import {
+  canAdvance,
+  initialStep,
+  isReview,
+  progressFraction,
+  progressLabel,
+} from '@/lib/parq-steps';
 import { supabase } from '@/lib/supabase';
 
 type Questionnaire = {
@@ -31,6 +41,11 @@ type Answer = {
   explanation: string;
 };
 
+// Who sees a health answer, stated on every screen of the form rather
+// than once in a privacy policy nobody opens.
+const PRIVACY_LINE =
+  'Only your coaches see this, and only while you are a member here.';
+
 export default function ParqForm() {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
@@ -38,8 +53,16 @@ export default function ParqForm() {
   const queryClient = useQueryClient();
   // When opened for a dependent (from the Family screen), the guardian
   // completes the child's PAR-Q and returns there.
-  const { subject } = useLocalSearchParams<{ subject?: string }>();
+  const params = useLocalSearchParams<{ subject?: string; step?: string }>();
+  const subject = params.subject;
   const [answers, setAnswers] = useState<Answer[]>([]);
+  // null = not chosen yet; set once the questions land (?step= wins for
+  // deep links and the harness, otherwise the first unanswered question).
+  const [step, setStep] = useState<number | null>(
+    typeof params.step === 'string' && /^\d+$/.test(params.step)
+      ? Number(params.step)
+      : null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const active = useQuery({
@@ -133,83 +156,180 @@ export default function ParqForm() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
-          <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
-            No PAR-Q yet
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk">
-            Your gym hasn't published a health screening questionnaire yet.
-            You can keep using the app normally.
-          </Text>
-          <Button onPress={() => router.replace('/book' as never)}>
-            Continue
-          </Button>
+          <EmptyState
+            icon="medkit-outline"
+            title="No PAR-Q yet"
+            description="Your gym hasn't published a health screening questionnaire yet. You can keep using the app normally."
+            actionLabel="Continue"
+            actionIcon="arrow-forward"
+            onAction={() => router.replace('/book' as never)}
+          />
         </ScrollView>
       </Screen>
     );
   }
 
   const list = questions.data ?? [];
+  const total = list.length;
+  // Pin the step the first time the questions land: deriving it live
+  // from the answers would auto-advance on every selection, and a "yes"
+  // would jump away before its explanation box could be used.
+  if (step === null && answers.length > 0) {
+    setStep(initialStep(answers));
+  }
+  const current = Math.min(step ?? initialStep(answers), total);
+  const onReview = isReview(current, total);
+  const question = onReview ? null : list[current];
+  const answer = onReview ? null : answers[current];
 
   function set(idx: number, patch: Partial<Answer>) {
     setAnswers((a) => a.map((x, i) => (i === idx ? { ...x, ...patch } : x)));
   }
 
+  if (total === 0 || !answers.length) {
+    return (
+      <Screen>
+        <Text className="text-ink-2 dark:text-ink-2-dk p-6">Loading…</Text>
+      </Screen>
+    );
+  }
+
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="gap-5 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
         <BackLink />
         <PageHead
           title="Health screening"
-          subtitle={'Please answer honestly. Any "yes" answer on a flagged question tells the team to follow up before your first session — you can still book.'}
+          subtitle={
+            current === 0
+              ? 'Please answer honestly. Any "yes" answer on a flagged question tells the team to follow up before your first session — you can still book.'
+              : undefined
+          }
         />
 
-        {list.map((q, idx) => {
-          const answer = answers[idx];
-          if (!answer) return null;
-          return (
-            <View
-              key={q.id}
-              className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
-              <Text className="text-ink dark:text-ink-dk font-medium">
-                {q.prompt}
+        <View className="gap-1.5">
+          <View className="flex-row items-center justify-between">
+            <FieldLabel>{progressLabel(current, total)}</FieldLabel>
+            {!onReview ? (
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+                Once a year, then you are done
               </Text>
-              <View className="flex-row gap-2">
-                <YesNoOption
-                  label="Yes"
-                  selected={answer.answeredYes === true}
-                  onPress={() => set(idx, { answeredYes: true })}
+            ) : null}
+          </View>
+          <View className="h-1 rounded-full bg-raised dark:bg-raised-dk overflow-hidden">
+            <View
+              className="h-1 rounded-full bg-primary"
+              style={{ width: `${progressFraction(current, total) * 100}%` }}
+            />
+          </View>
+        </View>
+
+        {onReview ? (
+          <View className="gap-2">
+            <RuledList>
+              {list.map((q, idx) => (
+                <ListRow
+                  key={q.id}
+                  ruled
+                  first={idx === 0}
+                  title={q.prompt}
+                  subtitle={
+                    answers[idx]?.explanation.trim()
+                      ? answers[idx].explanation.trim()
+                      : undefined
+                  }
+                  onPress={() => setStep(idx)}
+                  chip={
+                    <View
+                      className={`rounded-full px-2.5 py-0.5 ${
+                        answers[idx]?.answeredYes
+                          ? 'bg-amber-500/15'
+                          : 'bg-raised dark:bg-raised-dk'
+                      }`}>
+                      <Text
+                        className={`text-xs font-semibold ${
+                          answers[idx]?.answeredYes
+                            ? 'text-amber-700 dark:text-amber-300'
+                            : 'text-ink-2 dark:text-ink-2-dk'
+                        }`}>
+                        {answers[idx]?.answeredYes ? 'Yes' : 'No'}
+                      </Text>
+                    </View>
+                  }
                 />
-                <YesNoOption
-                  label="No"
-                  selected={answer.answeredYes === false}
-                  onPress={() => set(idx, { answeredYes: false })}
-                />
-              </View>
-              {answer.answeredYes === true && q.flag_on_yes ? (
-                <TextInput
-                  value={answer.explanation}
-                  onChangeText={(t) => set(idx, { explanation: t })}
-                  placeholder="Add detail (optional but helpful)"
-                  placeholderTextColor={colors.ink3}
-                  multiline
-                  numberOfLines={3}
-                  style={{ minHeight: 60, textAlignVertical: 'top' }}
-                  autoCapitalize="sentences"
-                  className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2 text-ink dark:text-ink-dk text-sm"
-                />
-              ) : null}
+              ))}
+            </RuledList>
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+              Tap an answer to change it. {PRIVACY_LINE}
+            </Text>
+          </View>
+        ) : question && answer ? (
+          <View className="gap-4">
+            <Text className="text-ink dark:text-ink-dk text-xl font-semibold leading-7">
+              {question.prompt}
+            </Text>
+            <View className="flex-row gap-2">
+              <YesNoOption
+                label="Yes"
+                selected={answer.answeredYes === true}
+                onPress={() => set(current, { answeredYes: true })}
+              />
+              <YesNoOption
+                label="No"
+                selected={answer.answeredYes === false}
+                onPress={() => set(current, { answeredYes: false })}
+              />
             </View>
-          );
-        })}
+            {answer.answeredYes === true && question.flag_on_yes ? (
+              <TextInput
+                value={answer.explanation}
+                onChangeText={(t) => set(current, { explanation: t })}
+                placeholder="Add detail (optional but helpful)"
+                placeholderTextColor={colors.ink3}
+                multiline
+                numberOfLines={3}
+                style={{ minHeight: 72, textAlignVertical: 'top' }}
+                autoCapitalize="sentences"
+                className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2 text-ink dark:text-ink-dk text-sm"
+              />
+            ) : null}
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+              {PRIVACY_LINE}
+            </Text>
+          </View>
+        ) : null}
 
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
-
-        <Button onPress={() => submit.mutate()} loading={submit.isPending}>
-          Submit screening
-        </Button>
       </ScrollView>
+
+      <View className="border-t border-line dark:border-line-dk px-4 py-3 md:max-w-xl md:mx-auto md:w-full flex-row gap-2">
+        {current > 0 ? (
+          <View className="flex-1">
+            <Button
+              variant="secondary"
+              onPress={() => setStep(Math.max(0, current - 1))}>
+              Back
+            </Button>
+          </View>
+        ) : null}
+        <View className="flex-1">
+          {onReview ? (
+            <Button onPress={() => submit.mutate()} loading={submit.isPending}>
+              Submit screening
+            </Button>
+          ) : (
+            <Button
+              onPress={() => setStep(current + 1)}
+              disabled={!canAdvance(current, answers)}>
+              Next
+            </Button>
+          )}
+        </View>
+      </View>
     </Screen>
   );
 }
@@ -226,7 +346,9 @@ function YesNoOption({
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-1 px-4 py-3 rounded-ctl border items-center active:opacity-70 ${
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      className={`flex-1 px-4 py-4 rounded-ctl border items-center active:opacity-70 ${
         selected
           ? 'border-transparent bg-raised dark:bg-raised-dk'
           : 'border-line dark:border-line-dk'
@@ -234,8 +356,8 @@ function YesNoOption({
       <Text
         className={
           selected
-            ? 'text-ink dark:text-ink-dk font-semibold'
-            : 'text-ink-2 dark:text-ink-2-dk'
+            ? 'text-ink dark:text-ink-dk font-semibold text-base'
+            : 'text-ink-2 dark:text-ink-2-dk text-base'
         }>
         {label}
       </Text>
