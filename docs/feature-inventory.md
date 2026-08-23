@@ -167,7 +167,13 @@ rental, or a **physical subscription box** shipped every cycle.
   bag** beside **Buy now**. The **bag** is session-only client state
   (`lib/store-bag`) checked out in one payment — the `store-checkout`
   edge function always took a line-item array. Subscriptions and
-  digital goods stay buy-now-only. Sold-out state on tracked items. Buy
+  digital goods stay buy-now-only. Sold-out state on tracked items.
+  A product can carry **sizes/options** (`store_product_variants`,
+  0256): the sheet requires a pick (sold-out sizes struck and
+  disabled), the bag keeps each size as its own line, checkout
+  validates the variant's own stock, settlement decrements and refunds
+  restock that variant's shelf (never the product's), and the product
+  reads sold out only when every option is gone. Buy
   opens Stripe Checkout on the gym's connected account (direct charge,
   no platform fee — the same rails as memberships). `/purchases` lists
   past orders with their lines, totals, shipping status and
@@ -185,7 +191,9 @@ rental, or a **physical subscription box** shipped every cycle.
 - **Staff side** (Manage → Store) [`can_manage_store`] — add / price /
   hide / remove products, mark one recurring, upload up to 8 photos (drag
   to reorder; the first is the cover) and (for digital) the download file,
-  set stock; an orders queue with the buyer,
+  set stock; a physical one-off's **Sizes & options** editor (add,
+  restock per row, remove; blank stock = unlimited; product-level stock
+  steps aside once options exist); an orders queue with the buyer,
   items, shipping address and a **Mark shipped / done** action; a **Sales
   this month** tile [`can_see_store_revenue`].
 - **Owner settings** — switch the store off/on (on by default for
@@ -290,7 +298,12 @@ rental, or a **physical subscription box** shipped every cycle.
 - **Workout journal** — a scannable directory: one ruled row per
   session (weekday-over-day date gutter, title, an honest one-line
   result, the class type's dot when it came from a class) grouped under
-  month labels, with a category filter. Grouping and the one-liner live
+  month labels, with a category filter. A class-linked row also shows
+  **who else logged that session** — an avatar stack and "with Priya,
+  Maya +1" via `class_session_training_partners` (0258), riding the
+  leaderboard consent exactly (`appear_in_leaderboards`, gym
+  `class_leaderboards_enabled`, current members, never the reader).
+  Grouping and the one-liner live
   in `src/lib/journal-directory.ts`, unit-tested. Per-set detail is one
   tap in, on the workout page.
 - **Record workout modal** — pre-fill from today's programming for
@@ -362,6 +375,13 @@ rental, or a **physical subscription box** shipped every cycle.
   `can_post_announcements` also see **"Read by X of Y members"** there —
   aggregate only, current members on both sides of the fraction,
   enforced in `announcement_read_stats` (0253), never identities.
+  A notice can be **about a closure** (`gym_announcements.closure_id`,
+  0257, composite-FK'd to its own gym's closure): the close-gym flow
+  offers **Post a pinned notice** (on by default for staff who can
+  post; copy composed from the dates and reason), and the notice then
+  shows each reader **"What changed for you"** — their own cancelled
+  classes for that closure, "none were affected" when so, and a note
+  when the closure has since been lifted.
 - **One-feed inbox** — filter chips (New / All / From the gym / Direct,
   plus capability-gated Alerts and Cover) over a single feed: pinned
   announcements first, then broadcasts and closure/cancellation notices
@@ -2445,7 +2465,13 @@ The staff area shows up when `can_access_staff_area` is on.
   together via `_clear_payment_failure`.
   **Member side**: the member is told (0175) — an in-app notice the DB
   writes instantly, plus a queued email drained by
-  `send-payment-notifications`. **One notice per dunning run, not per
+  `send-payment-notifications`. The way out is one tap: **Update card**
+  on the failed-payment notice (and a **Payment method** action on the
+  membership card whenever a live Stripe subscription backs it) opens
+  Stripe's hosted billing portal on the gym's connected account,
+  deep-linked to the card form (`stripe-billing-portal`; the function
+  creates a minimal portal configuration on first use). Imported legacy
+  plans and one-off packs show no dead button. **One notice per dunning run, not per
   retry**: Stripe attempts a failing card three or four times over about
   two weeks, and mailing each would train the member to ignore the sender
   by the time it matters, so the idempotency key carries `past_due_since`.
@@ -4478,7 +4504,12 @@ without reading them.
   same capability-gated list from `useGymNavLinks`, and pages the nav
   names this way pass `coveredByNav` on `BackLink`: no Back button at
   any width, because the nav is the way back. Detail pages the nav
-  can't reach keep theirs.
+  can't reach keep theirs. The Temple mark no longer holds the bar or
+  the rail: the gym's name is the top-left identity (and the home
+  press) at md+, the rail opens on the gym-name card, and below md the
+  section pills sit in the single top row as icon-over-label — a
+  scrollable strip that stays centred while it fits, with the
+  view-switch tightened to an icon circle.
 - **Type**: Geist for everything, Fraunces for the wordmark. React
   Native has no font inheritance and does not synthesise weights, so
   `components/Text.tsx` wraps `Text`/`TextInput` and every font-weight

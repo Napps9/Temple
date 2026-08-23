@@ -239,13 +239,20 @@ Still open:
     three-stat row with comps and packs under "Also on your account",
     Account's "Your gyms" and Article-15 "Download everything"
     (0255), the PAR-Q stepper, the journal directory, and the
-    movement record's Best hero with tabs. Still proposals, by
-    explicit decision: store variants and sizes (their own schema
-    design), the notice "what changed for you" block (no
-    announcement-to-session linkage exists), the journal's
-    training-partner avatars (no privacy-safe data path), and a
-    Payment-method action (no billing portal integration). The
-    icons question is still open, softened by the labels now beside
+    movement record's Best hero with tabs. The four items parked as
+    proposals then landed too, each on the schema it was waiting
+    for: the Payment-method action (stripe-billing-portal opens
+    Stripe's hosted card form; the dunning notice's Update card is
+    the same exit), store variants and sizes (0256 — per-variant
+    stock through checkout, settlement, refund and the sheet's size
+    chips), the notice's "What changed for you" block (0257 — an
+    announcement links its closure, the close-gym flow posts it,
+    the reader sees their own cancelled classes), and the journal's
+    training partners (0258 — the avatar stack rides the
+    leaderboard consent). Alongside them, the Temple mark left the
+    top bar and rail: the gym's name is the identity, and on a
+    phone the pills take the row the logo used to rent. The icons
+    question is still open, softened by the labels now beside
     every nav glyph.
 
 ## Rebuilding
