@@ -14,6 +14,16 @@ const USER_ID = '22222222-2222-4222-8222-222222222222';
 
 export const IDS = { GYM_ID, USER_ID };
 
+// Two shoot modes, because the fake applies no filters and single-object
+// reads take the FIRST row of a table:
+//   SHOT_MEMBER=1 — the signed-in user's membership row reads role
+//     'member', so member-only surfaces (the Leave-gym card) render.
+//   SHOT_DM=1 — Priya's profile and coach membership row come first, so
+//     the DM thread's peer lookups resolve to her ("Coach" subtitle,
+//     "Message Priya…" placeholder) instead of the viewer's own row.
+const MEMBER_VIEW = process.env.SHOT_MEMBER === '1';
+const DM_VIEW = process.env.SHOT_DM === '1';
+
 const iso = (daysFromNow, hour = 9) => {
   // Fixed epoch so a rebuild does not change every caption. 2026-08-24.
   const base = Date.UTC(2026, 7, 24, hour, 0, 0);
@@ -150,6 +160,7 @@ export const TABLES = {
       class_type_id: 'ct2',
       date: iso(-1).slice(0, 10),
       class_types: { name: 'Metcon', color: '#6366F1' },
+      author: { full_name: 'Priya Raman' },
       sections: [
         {
           section_category: 'wod',
@@ -180,6 +191,81 @@ export const TABLES = {
         class_types: { name: 'Metcon', color: '#6366F1', cancel_cutoff_minutes_before: null, cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_days_before: null },
       },
     },
+    // Next week and later: the bookings page groups its upcoming list on
+    // the gym week boundary, so one row per group.
+    {
+      id: 'cb2',
+      class_session_id: 'cs-n1',
+      profile_id: USER_ID,
+      attended_at: null,
+      no_show: false,
+      promoted_from_waitlist: true,
+      used_entitlement_kind: null,
+      used_entitlement_id: null,
+      created_at: iso(-1),
+      profiles: { full_name: 'Nick Apps', avatar_url: null },
+      class_sessions: {
+        starts_at: iso(3, 18),
+        duration_minutes: 60,
+        class_types: { name: 'Metcon', color: '#6366F1', cancel_cutoff_minutes_before: null, cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_days_before: null },
+      },
+    },
+    {
+      id: 'cb3',
+      class_session_id: 'cs-n2',
+      profile_id: USER_ID,
+      attended_at: null,
+      no_show: false,
+      promoted_from_waitlist: false,
+      used_entitlement_kind: null,
+      used_entitlement_id: null,
+      created_at: iso(-1),
+      profiles: { full_name: 'Nick Apps', avatar_url: null },
+      class_sessions: {
+        starts_at: iso(10, 17),
+        duration_minutes: 90,
+        class_types: { name: 'Open Gym', color: '#0F766E', cancel_cutoff_minutes_before: null, cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_days_before: null },
+      },
+    },
+    // Attended history: fills the Past tab, and teaches the recommender
+    // that this member goes to Barbell Club late — which is what makes
+    // the "For you" chip land on tonight's Barbell session.
+    {
+      id: 'cb-att1',
+      class_session_id: 'cs-old1',
+      profile_id: USER_ID,
+      attended_at: iso(-7, 23),
+      no_show: false,
+      promoted_from_waitlist: false,
+      used_entitlement_kind: null,
+      used_entitlement_id: null,
+      created_at: iso(-8),
+      profiles: { full_name: 'Nick Apps', avatar_url: null },
+      class_sessions: {
+        class_type_id: 'ct1',
+        starts_at: iso(-7, 23),
+        duration_minutes: 60,
+        class_types: { name: 'Barbell Club', color: '#7C3AED', cancel_cutoff_minutes_before: null, cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_days_before: null },
+      },
+    },
+    {
+      id: 'cb-att2',
+      class_session_id: 'cs-old2',
+      profile_id: USER_ID,
+      attended_at: iso(-14, 23),
+      no_show: false,
+      promoted_from_waitlist: false,
+      used_entitlement_kind: null,
+      used_entitlement_id: null,
+      created_at: iso(-15),
+      profiles: { full_name: 'Nick Apps', avatar_url: null },
+      class_sessions: {
+        class_type_id: 'ct1',
+        starts_at: iso(-14, 23),
+        duration_minutes: 60,
+        class_types: { name: 'Barbell Club', color: '#7C3AED', cancel_cutoff_minutes_before: null, cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_days_before: null },
+      },
+    },
   ],
 
   // The embed the membership query asks for is `gyms!gym_id ( name )`, so
@@ -187,16 +273,23 @@ export const TABLES = {
   // resolve joins.
   gym_memberships: [
     // The signed-in user's row stays FIRST: single-object reads take the
-    // first row, and the fake does not apply .eq filters.
+    // first row, and the fake does not apply .eq filters. In DM mode the
+    // coach's row leads instead so the thread's peer-role lookup reads
+    // 'coach'; in member mode the user's own row reads 'member'.
+    ...(DM_VIEW
+      ? [{ gym_id: GYM_ID, profile_id: 'a3', role: 'coach', left_at: null, created_at: iso(-300), profiles: { full_name: 'Priya Raman' }, gyms: { name: 'Forge Athletic' } }]
+      : []),
     {
       gym_id: GYM_ID,
       profile_id: USER_ID,
-      role: 'owner',
+      role: MEMBER_VIEW ? 'member' : 'owner',
       left_at: null,
       created_at: iso(-400),
       gyms: { name: 'Forge Athletic' },
     },
-    { gym_id: GYM_ID, profile_id: 'a3', role: 'coach', left_at: null, created_at: iso(-300), profiles: { full_name: 'Priya Raman' }, gyms: { name: 'Forge Athletic' } },
+    ...(DM_VIEW
+      ? []
+      : [{ gym_id: GYM_ID, profile_id: 'a3', role: 'coach', left_at: null, created_at: iso(-300), profiles: { full_name: 'Priya Raman' }, gyms: { name: 'Forge Athletic' } }]),
     { gym_id: GYM_ID, profile_id: 'a1', role: 'member', left_at: null, created_at: iso(-200), profiles: { full_name: 'Amara Nwosu' }, gyms: { name: 'Forge Athletic' } },
     { gym_id: GYM_ID, profile_id: 'a2', role: 'member', left_at: null, created_at: iso(-150), profiles: { full_name: 'Dan Whitcombe' }, gyms: { name: 'Forge Athletic' } },
   ],
@@ -206,7 +299,9 @@ export const TABLES = {
   gym_role_capabilities: [],
   member_capability_overrides: [],
 
-  profiles: [person(USER_ID, 'Nick Apps'), ...PEOPLE],
+  profiles: DM_VIEW
+    ? [person('a3', 'Priya Raman'), person(USER_ID, 'Nick Apps'), ...PEOPLE.filter((p) => p.id !== 'a3')]
+    : [person(USER_ID, 'Nick Apps'), ...PEOPLE],
 
   member_contact_details: [{ profile_id: USER_ID, phone: '07700 900123' }],
 
@@ -234,6 +329,36 @@ export const TABLES = {
 
   agent_authority: [
     { gym_id: GYM_ID, action_kind: 'chase_message', level: 'ask_first' },
+  ],
+
+  programming_blocks: [
+    {
+      id: 'blk1',
+      gym_id: GYM_ID,
+      name: 'Engine block',
+      starts_on: iso(-14).slice(0, 10),
+      ends_on: iso(14).slice(0, 10),
+      color: '#0F766E',
+      note: 'Aerobic base for four weeks. Keep the WODs at conversational pace — the tests come in the final week, so resist the urge to sprint the Tuesday intervals.',
+    },
+  ],
+
+  waiver_documents: [
+    {
+      id: 'w1',
+      gym_id: GYM_ID,
+      version: 2,
+      title: 'Membership waiver',
+      file_url: 'https://example.test/waiver.pdf',
+      is_active: true,
+    },
+  ],
+
+  direct_messages: [
+    { id: 'dm1', gym_id: GYM_ID, sender_id: USER_ID, recipient_id: 'a3', body: 'Hi Priya — is tonight still on for barbell?', created_at: iso(-2, 18), read_at: iso(-2, 19) },
+    { id: 'dm2', gym_id: GYM_ID, sender_id: 'a3', recipient_id: USER_ID, body: 'Yes! 11pm as usual. Bring your belt, we are pulling heavy.', created_at: iso(-2, 19), read_at: iso(-2, 20) },
+    { id: 'dm3', gym_id: GYM_ID, sender_id: USER_ID, recipient_id: 'a3', body: 'Great — should I warm up before or is there time in class?', created_at: iso(-1, 8), read_at: null },
+    { id: 'dm4', gym_id: GYM_ID, sender_id: 'a3', recipient_id: USER_ID, body: 'There is a 15 minute primer built in, come as you are.', created_at: iso(-1, 9), read_at: null },
   ],
 
   tasks: [
@@ -322,4 +447,10 @@ export const RPCS = {
   ],
   record_route_open: null,
   get_member_consent_state: [{ analytics: true, decided_at: iso(-90) }],
+  is_booking_eligible: true,
+  list_my_email_preferences: [
+    { topic_id: 'tp1', label: 'News & events', description: 'What is happening at the gym this month.', subscribed: true, blanket_unsub: false },
+    { topic_id: 'tp2', label: 'Programming updates', description: 'When a new training block starts.', subscribed: true, blanket_unsub: false },
+    { topic_id: 'tp3', label: 'Offers', description: 'Discounts on plans and the store.', subscribed: false, blanket_unsub: false },
+  ],
 };

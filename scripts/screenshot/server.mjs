@@ -122,7 +122,14 @@ const server = createServer(async (req, res) => {
     }
     const rows = TABLES[table];
     if (!rows) console.log(`  rest ${table} -> [] (no fixture)`);
-    return json(res, shape(rows ?? [], req));
+    // Honour limit even though filters stay ignored: maybeSingle() sends a
+    // plain list request and ERRORS client-side on >1 row, so a fixture
+    // table with several rows breaks every `.limit(1).maybeSingle()` read
+    // unless the cap is applied.
+    const limit = Number(url.searchParams.get('limit'));
+    const capped =
+      Number.isFinite(limit) && limit > 0 ? (rows ?? []).slice(0, limit) : (rows ?? []);
+    return json(res, shape(capped, req));
   }
 
   // -------------------------------------------------------------- static
