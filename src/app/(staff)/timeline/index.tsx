@@ -1107,6 +1107,8 @@ export default function Timeline() {
             />
           ) : null}
 
+          {page.isToday ? <CoachingToday gymId={gymId} /> : null}
+
           {showMoneyJobCard ? (
             <MoneyJobCard
               gymId={gymId}
@@ -2307,6 +2309,60 @@ function RequestCard({
 // Setup is never lost: while any required step is outstanding, the
 // Timeline carries the checklist's own progress header with a way back
 // in. (Typing "continue setup" in the bar does the same thing.)
+// The coach's opening question — "what am I teaching today?" — had no
+// answer on the landing screen: today's page renders only the event
+// stream, and classes appeared only on future-day pages. One line per
+// session you coach today, straight into its register.
+function CoachingToday({ gymId }: { gymId: string | undefined }) {
+  const session = useSession();
+  const mine = useQuery({
+    queryKey: ['my-coaching-today', gymId, session?.user.id],
+    enabled: !!gymId && !!session?.user.id,
+    queryFn: async () => {
+      const dayStart = new Date();
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+      const { data, error } = await supabase
+        .from('class_sessions')
+        .select('id, starts_at, class_types(name)')
+        .eq('gym_id', gymId!)
+        .eq('coach_id', session!.user.id)
+        .gte('starts_at', dayStart.toISOString())
+        .lt('starts_at', dayEnd.toISOString())
+        .order('starts_at');
+      if (error) throw error;
+      return (data ?? []) as unknown as {
+        id: string;
+        starts_at: string;
+        class_types: { name: string } | null;
+      }[];
+    },
+  });
+  if (!mine.data?.length) return null;
+  return (
+    <View className="gap-1">
+      {mine.data.map((s) => {
+        const start = new Date(s.starts_at);
+        const done = start.getTime() < Date.now();
+        if (done) return null;
+        const hh = `${start.getHours().toString().padStart(2, '0')}:${start
+          .getMinutes()
+          .toString()
+          .padStart(2, '0')}`;
+        return (
+          <SoftLine
+            key={s.id}
+            tone="neutral"
+            icon="calendar-outline"
+            text={`You're coaching ${s.class_types?.name ?? 'a class'} at ${hh} — open the register.`}
+            href={`/classes?session=${s.id}`}
+          />
+        );
+      })}
+    </View>
+  );
+}
+
 function SetupCard({
   done,
   total,

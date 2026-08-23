@@ -89,6 +89,11 @@ export default function MembersScreen() {
           </View>
         ) : null}
 
+        {/* The branded signup link + QR. Inviters get it inside the invite
+            flow too, but front-desk staff who cannot invite still need to
+            hand a walk-in the join link. */}
+        <MemberSignupLinkCard />
+
         {canInvite ? (
           <InviteSection
             title="Invite members"
@@ -97,11 +102,6 @@ export default function MembersScreen() {
             initialRole="member"
           />
         ) : null}
-
-        {/* The branded signup link + QR. Inviters get it inside the invite
-            flow too, but front-desk staff who cannot invite still need to
-            hand a walk-in the join link. */}
-        <MemberSignupLinkCard />
 
         <MembersList />
       </ScrollView>

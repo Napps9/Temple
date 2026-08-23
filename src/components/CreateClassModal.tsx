@@ -73,6 +73,14 @@ export function CreateClassModal({
   const { data: gymDefaults } = useGymOperatingDefaults();
   const gymTz = gymDefaults?.timezone ?? 'UTC';
   const [classTypeId, setClassTypeId] = useState<string | null>(null);
+  // A gym with exactly one class type has already answered the first
+  // question — pre-select it so a one-off class is type, time, done.
+  const allTypes = useClassTypes();
+  useEffect(() => {
+    if (!visible || classTypeId) return;
+    const active = (allTypes.data ?? []).filter((t) => !t.archived_at);
+    if (active.length === 1) setClassTypeId(active[0].id);
+  }, [visible, classTypeId, allTypes.data]);
   const [dateStr, setDateStr] = useState('');
   const [timeStr, setTimeStr] = useState('');
   const [recurring, setRecurring] = useState(false);
@@ -174,6 +182,16 @@ export function CreateClassModal({
     }
     setError(null);
     setStage('confirm');
+  }
+
+  function onCreateDirect() {
+    const err = validate();
+    if (err) {
+      setError(err);
+      return;
+    }
+    setError(null);
+    create.mutate();
   }
 
   const create = useMutation({
@@ -311,7 +329,15 @@ export function CreateClassModal({
               </Button>
             </SheetAction>
             <SheetAction grow>
-              <Button onPress={onReview}>Review</Button>
+              {/* A single class shows everything it will create right on
+                  the form, so the form's primary IS the confirm. A
+                  recurrence materialises a whole timetable — that still
+                  deserves the read-back step. */}
+              <Button
+                onPress={recurring ? onReview : onCreateDirect}
+                loading={!recurring && create.isPending}>
+                {recurring ? 'Review' : 'Add class'}
+              </Button>
             </SheetAction>
           </>
         ) : (

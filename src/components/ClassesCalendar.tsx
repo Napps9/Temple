@@ -1394,7 +1394,11 @@ function AgendaCard({
   const spotsLeft = Math.max(0, session.capacity - count);
   const full = spotsLeft <= 0;
   const color = sessionColor(session, colors.primary);
-  const coachName = session.coach?.full_name?.trim() || null;
+  const me = useSession();
+  const coachName =
+    session.coach_id && session.coach_id === me?.user.id
+      ? 'you'
+      : session.coach?.full_name?.trim() || null;
 
   const statusText = bookedByMe
     ? 'Booked in'
@@ -1803,6 +1807,9 @@ function DayClassCard({
   dimPast?: boolean;
 }) {
   const colors = useThemeColors();
+  const me = useSession();
+  // "Which of these am I coaching?" had no answer but scanning avatars.
+  const mine = !!session.coach_id && session.coach_id === me?.user.id;
   const start = new Date(session.starts_at);
   const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
   const inGrid = heightPx != null;
@@ -1849,6 +1856,13 @@ function DayClassCard({
               <Ionicons name="checkmark-circle" size={12} color="#10B981" />
               <Text className="text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold uppercase tracking-widest">
                 Booked
+              </Text>
+            </View>
+          ) : null}
+          {mine ? (
+            <View className="rounded-full px-2 py-0.5 bg-raised dark:bg-raised-dk border border-line-strong dark:border-line-strong-dk">
+              <Text className="text-ink dark:text-ink-dk text-[10px] font-semibold uppercase tracking-widest">
+                You
               </Text>
             </View>
           ) : null}
