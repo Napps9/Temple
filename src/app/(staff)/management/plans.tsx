@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Text } from '@/components/Text';
 
@@ -161,6 +161,18 @@ function coverageDiffers(r: EditablePlan): boolean {
   return false;
 }
 
+// Unsaved work, across unmounts: the hub swaps this panel out on every
+// tab switch and search, and a half-typed plan died with it. Only rows
+// open in the editor are kept — a closed card has nothing unsaved — so
+// pristine rows still reseed from the server on every mount and archive,
+// restore and delete stay exactly as fresh as before. Session-only and
+// keyed by gym so a gym switch cannot leak drafts; the GymSetupChecklist
+// / list-scroll-position idiom.
+const unsavedByGym = new Map<
+  string,
+  { rows: EditablePlan[]; editingIds: Set<string> }
+>();
+
 export function PlansPanel() {
   const colors = useThemeColors();
   const currency = useGymCurrency();
@@ -310,15 +322,44 @@ export function PlansPanel() {
   // still-unsaved card. Waiting on coverage.isLoading (rather than
   // coverage.data itself) means the first seed already carries the
   // allowlist instead of defaulting to 'all' and never catching up.
-  const seededRef = useRef(false);
+  //
+  // Seeded state (not a ref) so the write-through effect below can tell
+  // the pre-seed render apart and not wipe the cache it is about to eat.
+  const [seeded, setSeeded] = useState(false);
   useEffect(() => {
-    if (seededRef.current) return;
+    if (seeded) return;
+    if (!membership?.gymId) return;
     if (!plans.data) return;
     if (coverage.isLoading) return;
     const cov = coverage.data ?? new Map<string, string[]>();
-    setRows(plans.data.map((p) => fromServer(p, cov.get(p.plan_id) ?? [])));
-    seededRef.current = true;
-  }, [plans.data, coverage.data, coverage.isLoading]);
+    const fresh = plans.data.map((p) => fromServer(p, cov.get(p.plan_id) ?? []));
+    const cached = unsavedByGym.get(membership.gymId);
+    if (!cached) {
+      setRows(fresh);
+      setSeeded(true);
+      return;
+    }
+    // Overlay the cached drafts: an edit of an existing plan replaces its
+    // fresh row (a draft of a plan deleted elsewhere is dropped with it);
+    // never-saved new cards go back on top, where addRow put them.
+    const drafts = new Map(
+      cached.rows.filter((r) => r.serverId !== null).map((r) => [r.serverId!, r]),
+    );
+    const merged = fresh.map((r) => drafts.get(r.serverId!) ?? r);
+    const newRows = cached.rows.filter((r) => r.serverId === null);
+    const rowsNext = [...newRows, ...merged];
+    const present = new Set(rowsNext.map((r) => r.localId));
+    setRows(rowsNext);
+    setEditingIds(new Set([...cached.editingIds].filter((id) => present.has(id))));
+    setSeeded(true);
+  }, [seeded, membership?.gymId, plans.data, coverage.data, coverage.isLoading]);
+
+  useEffect(() => {
+    if (!seeded || !membership?.gymId) return;
+    const kept = rows.filter((r) => editingIds.has(r.localId));
+    if (kept.length === 0) unsavedByGym.delete(membership.gymId);
+    else unsavedByGym.set(membership.gymId, { rows: kept, editingIds: new Set(editingIds) });
+  }, [seeded, membership?.gymId, rows, editingIds]);
 
   const archive = useMutation({
     mutationFn: async (planId: string) => {
