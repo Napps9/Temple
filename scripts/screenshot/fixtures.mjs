@@ -135,9 +135,9 @@ export const TABLES = {
   ],
 
   membership_plans: [
-    { id: 'p1', gym_id: GYM_ID, name: 'Unlimited', price_cents: 8900, currency: 'GBP', interval: 'month', archived_at: null, active: true },
-    { id: 'p2', gym_id: GYM_ID, name: '3× a week', price_cents: 6500, currency: 'GBP', interval: 'month', archived_at: null, active: true },
-    { id: 'p3', gym_id: GYM_ID, name: 'Off-peak', price_cents: 4500, currency: 'GBP', interval: 'month', archived_at: null, active: true },
+    { plan_id: 'p1', gym_id: GYM_ID, name: 'Unlimited', kind: 'unlimited', credit_count: null, monthly_price_cents: 8900, notice_period_days: 30, includes_individual_programming: false, archived_at: null },
+    { plan_id: 'p2', gym_id: GYM_ID, name: '3× a week', kind: 'credit_period', credit_count: 12, monthly_price_cents: 6500, notice_period_days: 30, includes_individual_programming: false, archived_at: null },
+    { plan_id: 'p3', gym_id: GYM_ID, name: 'Off-peak', kind: 'unlimited', credit_count: null, monthly_price_cents: 4500, notice_period_days: null, includes_individual_programming: false, archived_at: null },
   ],
 
   store_products: [
