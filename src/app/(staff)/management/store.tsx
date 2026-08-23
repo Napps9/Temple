@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Redirect } from 'expo-router';
@@ -279,6 +279,25 @@ function ProductEditor({
     queryClient.invalidateQueries({ queryKey: ['store-products', gymId] });
   };
 
+  // Sizes/options are rows on their own table, saved per action (add,
+  // restock, remove) rather than with the product draft. Only a saved
+  // physical one-off can carry them — a new product has no id yet.
+  const variantsQ = useQuery({
+    queryKey: ['store-variants', d.id],
+    enabled: !!d.id && d.kind === 'physical' && !d.recurring,
+    queryFn: async (): Promise<AdminVariant[]> => {
+      const { data, error } = await supabase
+        .from('store_product_variants')
+        .select('id, name, sort_order, stock_quantity')
+        .eq('product_id', d.id!)
+        .order('sort_order')
+        .order('created_at');
+      if (error) throw error;
+      return (data ?? []) as AdminVariant[];
+    },
+  });
+  const variantRows = variantsQ.data ?? [];
+
   const pickImage = useMutation({
     mutationFn: async () => {
       if (!gymId) throw new Error('No gym');
@@ -531,7 +550,7 @@ function ProductEditor({
           placeholder="20"
         />
 
-        {!d.recurring ? (
+        {!d.recurring && variantRows.length === 0 ? (
           <>
             <View className="flex-row items-center justify-between">
               <View className="flex-1 pr-3">
@@ -561,6 +580,21 @@ function ProductEditor({
               />
             ) : null}
           </>
+        ) : null}
+
+        {d.kind === 'physical' && !d.recurring ? (
+          d.id ? (
+            <VariantsEditor
+              productId={d.id}
+              gymId={gymId!}
+              rows={variantRows}
+              onError={setError}
+            />
+          ) : (
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+              Sizes and options can be added once the product is saved.
+            </Text>
+          )
         ) : null}
 
         <View className="gap-2">
@@ -643,6 +677,202 @@ function ProductEditor({
       ) : null}
     </View>
   );
+}
+
+type AdminVariant = {
+  id: string;
+  name: string;
+  sort_order: number;
+  stock_quantity: number | null;
+};
+
+function VariantsEditor({
+  productId,
+  gymId,
+  rows,
+  onError,
+}: {
+  productId: string;
+  gymId: string;
+  rows: AdminVariant[];
+  onError: (msg: string | null) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState('');
+  const [stock, setStock] = useState('');
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['store-variants', productId] });
+    queryClient.invalidateQueries({ queryKey: ['store-products', gymId] });
+  };
+
+  const add = useMutation({
+    mutationFn: async () => {
+      const trimmed = name.trim();
+      if (!trimmed) throw new Error('Give the option a name');
+      const stockN = parseStockInput(stock);
+      const maxSort = rows.reduce((m, r) => Math.max(m, r.sort_order), 0);
+      const { error } = await supabase.from('store_product_variants').insert({
+        product_id: productId,
+        gym_id: gymId,
+        name: trimmed,
+        sort_order: maxSort + 1,
+        stock_quantity: stockN,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setName('');
+      setStock('');
+      onError(null);
+      invalidate();
+    },
+    onError: (e) => onError(errorMessage(e, 'Could not add the option')),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('store_product_variants')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      onError(null);
+      invalidate();
+    },
+    onError: (e) => onError(errorMessage(e, 'Could not remove the option')),
+  });
+
+  return (
+    <View className="gap-2.5">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
+        Sizes & options
+      </Text>
+
+      {rows.map((v) => (
+        <VariantRow
+          key={v.id}
+          variant={v}
+          onRemove={() => remove.mutate(v.id)}
+          onError={onError}
+          invalidate={invalidate}
+        />
+      ))}
+
+      <View className="flex-row items-center gap-2">
+        <View className="flex-1">
+          <Input
+            value={name}
+            onChangeText={setName}
+            placeholder="S, M, L, EU 42…"
+            accessibilityLabel="New option name"
+          />
+        </View>
+        <View className="w-20">
+          <Input
+            value={stock}
+            onChangeText={setStock}
+            keyboardType="number-pad"
+            placeholder="Stock"
+            accessibilityLabel="New option stock"
+          />
+        </View>
+        <ChipButton
+          tone="neutral"
+          label="Add"
+          icon="add"
+          onPress={() => add.mutate()}
+          disabled={add.isPending}
+        />
+      </View>
+
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+        Each option keeps its own stock — blank means unlimited. Members must
+        pick one, and the product reads sold out once every option is gone.
+      </Text>
+    </View>
+  );
+}
+
+function VariantRow({
+  variant,
+  onRemove,
+  onError,
+  invalidate,
+}: {
+  variant: AdminVariant;
+  onRemove: () => void;
+  onError: (msg: string | null) => void;
+  invalidate: () => void;
+}) {
+  const [stock, setStock] = useState(
+    variant.stock_quantity != null ? String(variant.stock_quantity) : '',
+  );
+  const saved =
+    variant.stock_quantity != null ? String(variant.stock_quantity) : '';
+  const dirty = stock.trim() !== saved;
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const stockN = parseStockInput(stock);
+      const { error } = await supabase
+        .from('store_product_variants')
+        .update({ stock_quantity: stockN })
+        .eq('id', variant.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      onError(null);
+      invalidate();
+    },
+    onError: (e) => onError(errorMessage(e, 'Could not update stock')),
+  });
+
+  return (
+    <View className="flex-row items-center gap-2">
+      <Text className="flex-1 text-ink dark:text-ink-dk font-medium">
+        {variant.name}
+      </Text>
+      <View className="w-20">
+        <Input
+          value={stock}
+          onChangeText={setStock}
+          keyboardType="number-pad"
+          placeholder="∞"
+          accessibilityLabel={`Stock for ${variant.name}`}
+        />
+      </View>
+      {dirty ? (
+        <ChipButton
+          tone="primary"
+          label="Save"
+          icon="checkmark"
+          onPress={() => save.mutate()}
+          disabled={save.isPending}
+        />
+      ) : null}
+      <Pressable
+        onPress={onRemove}
+        hitSlop={8}
+        accessibilityLabel={`Remove ${variant.name}`}
+        className="active:opacity-60">
+        <Ionicons name="trash-outline" size={16} color="#DC2626" />
+      </Pressable>
+    </View>
+  );
+}
+
+// Blank means untracked/unlimited; anything else must be a whole
+// non-negative count.
+function parseStockInput(v: string): number | null {
+  if (v.trim() === '') return null;
+  const n = Number.parseInt(v, 10);
+  if (!Number.isFinite(n) || n < 0) {
+    throw new Error('Stock must be a non-negative whole number');
+  }
+  return n;
 }
 
 // ── Orders ──────────────────────────────────────────────────────────────

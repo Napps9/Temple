@@ -22,6 +22,7 @@ import {
   useStartStoreCheckout,
   useStoreProducts,
   type StoreProduct,
+  type StoreVariant,
 } from '@/lib/store';
 import {
   addToBag,
@@ -223,13 +224,19 @@ export default function StoreScreen() {
         subscribed={openProduct ? subscribedIds.has(openProduct.id) : false}
         pending={checkout.isPending}
         onClose={() => setOpenId(null)}
-        onBuyNow={(qty) => {
+        onBuyNow={(qty, variantId) => {
           if (!openProduct) return;
-          checkout.mutate([{ product_id: openProduct.id, quantity: qty }]);
+          checkout.mutate([
+            {
+              product_id: openProduct.id,
+              variant_id: variantId ?? undefined,
+              quantity: qty,
+            },
+          ]);
         }}
-        onAddToBag={(qty) => {
+        onAddToBag={(qty, variantId) => {
           if (!openProduct) return;
-          addToBag(openProduct.id, qty);
+          addToBag(openProduct.id, variantId, qty);
           setOpenId(null);
         }}
       />
@@ -310,7 +317,15 @@ function GridCard({
   );
 }
 
-function maxQuantityFor(p: StoreProduct): number {
+function maxQuantityFor(p: StoreProduct, variant?: StoreVariant | null): number {
+  // A chosen variant's own shelf wins; the product-level count is
+  // irrelevant to it (0256).
+  if (variant) {
+    if (variant.sold_out) return 0;
+    return variant.stock_quantity === null
+      ? 99
+      : Math.min(variant.stock_quantity, 99);
+  }
   if (p.sold_out) return 0;
   if (p.track_inventory) return Math.min(p.stock_quantity ?? 1, 99);
   // An unlimited download is a one-per-member buy; other untracked goods
@@ -363,13 +378,17 @@ function ProductSheet({
   subscribed: boolean;
   pending: boolean;
   onClose: () => void;
-  onBuyNow: (qty: number) => void;
-  onAddToBag: (qty: number) => void;
+  onBuyNow: (qty: number, variantId: string | null) => void;
+  onAddToBag: (qty: number, variantId: string | null) => void;
 }) {
   const [qty, setQty] = useState(1);
+  const [variantId, setVariantId] = useState<string | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
-  // Reset the quantity when a different product opens.
-  useEffect(() => setQty(1), [product?.id]);
+  // Reset the quantity and size when a different product opens.
+  useEffect(() => {
+    setQty(1);
+    setVariantId(null);
+  }, [product?.id]);
 
   if (!product) {
     return (
@@ -380,7 +399,11 @@ function ProductSheet({
   }
 
   const images = productImages(product);
-  const max = maxQuantityFor(product);
+  const variants = product.recurring ? [] : (product.variants ?? []);
+  const variant = variants.find((v) => v.id === variantId) ?? null;
+  // A product sold in sizes must be bought as one.
+  const needsVariant = variants.length > 0 && !variant;
+  const max = maxQuantityFor(product, variant);
   const clamped = Math.min(qty, Math.max(1, max));
   const kindLine = product.recurring
     ? product.kind === 'physical'
@@ -412,7 +435,7 @@ function ProductSheet({
                 variant="primary"
                 icon="repeat-outline"
                 loading={pending}
-                onPress={() => onBuyNow(1)}>
+                onPress={() => onBuyNow(1, null)}>
                 Subscribe
               </Button>
             )}
@@ -430,7 +453,8 @@ function ProductSheet({
                 <Button
                   variant="secondary"
                   icon="bag-add-outline"
-                  onPress={() => onAddToBag(clamped)}>
+                  disabled={needsVariant}
+                  onPress={() => onAddToBag(clamped, variant?.id ?? null)}>
                   Add to bag
                 </Button>
               </SheetAction>
@@ -440,7 +464,8 @@ function ProductSheet({
                 variant="primary"
                 icon="card-outline"
                 loading={pending}
-                onPress={() => onBuyNow(clamped)}>
+                disabled={needsVariant}
+                onPress={() => onBuyNow(clamped, variant?.id ?? null)}>
                 Buy now
               </Button>
             </SheetAction>
@@ -480,7 +505,52 @@ function ProductSheet({
           </Text>
         ) : null}
 
-        {!product.recurring && product.track_inventory && !product.sold_out ? (
+        {variants.length > 0 && !product.sold_out ? (
+          <View className="gap-1.5">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+              {variant ? 'Option' : 'Pick an option'}
+            </Text>
+            <View className="flex-row flex-wrap gap-1.5">
+              {variants.map((v) => {
+                const selected = v.id === variant?.id;
+                return (
+                  <Pressable
+                    key={v.id}
+                    disabled={v.sold_out}
+                    onPress={() => setVariantId(selected ? null : v.id)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected, disabled: v.sold_out }}
+                    accessibilityLabel={
+                      v.sold_out ? `${v.name}, sold out` : v.name
+                    }
+                    className={`rounded-full border px-3.5 py-1.5 ${
+                      selected
+                        ? 'bg-raised dark:bg-raised-dk border-ink/40 dark:border-ink-dk/40'
+                        : 'border-line dark:border-line-dk'
+                    } ${v.sold_out ? 'opacity-40' : 'active:opacity-70'}`}>
+                    <Text
+                      className={`text-sm ${
+                        selected
+                          ? 'text-ink dark:text-ink-dk font-semibold'
+                          : 'text-ink-2 dark:text-ink-2-dk'
+                      } ${v.sold_out ? 'line-through' : ''}`}>
+                      {v.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+
+        {variant && variant.stock_quantity !== null && !variant.sold_out ? (
+          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+            {variant.stock_quantity} left
+          </Text>
+        ) : variants.length === 0 &&
+          !product.recurring &&
+          product.track_inventory &&
+          !product.sold_out ? (
           <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
             {product.stock_quantity} left
           </Text>
@@ -513,13 +583,20 @@ function BagSheet({
 }) {
   const inBag = useBagCount();
   const lines = bagLines()
-    .map((l) => ({
-      line: l,
-      product: products.find((p) => p.id === l.product_id) ?? null,
-    }))
+    .map((l) => {
+      const product = products.find((p) => p.id === l.product_id) ?? null;
+      const variant =
+        product?.variants?.find((v) => v.id === l.variant_id) ?? null;
+      return { line: l, product, variant };
+    })
     .filter(
-      (x): x is { line: { product_id: string; quantity: number }; product: StoreProduct } =>
-        x.product !== null,
+      (
+        x,
+      ): x is {
+        line: { product_id: string; variant_id: string | null; quantity: number };
+        product: StoreProduct;
+        variant: StoreVariant | null;
+      } => x.product !== null,
     );
   const subtotal = lines.reduce(
     (sum, x) => sum + x.product.price_cents * x.line.quantity,
@@ -560,13 +637,15 @@ function BagSheet({
             in one payment.
           </Text>
         ) : (
-          lines.map(({ line, product }) => (
-            <View key={product.id} className="flex-row items-center gap-3">
+          lines.map(({ line, product, variant }) => (
+            <View
+              key={`${product.id}-${line.variant_id ?? ''}`}
+              className="flex-row items-center gap-3">
               <View className="flex-1">
                 <Text
                   numberOfLines={1}
                   className="text-ink dark:text-ink-dk font-medium">
-                  {product.name}
+                  {variant ? `${product.name} — ${variant.name}` : product.name}
                 </Text>
                 <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
                   {formatMoney(product.price_cents * line.quantity, currency)}
@@ -574,11 +653,13 @@ function BagSheet({
               </View>
               <QuantityStepper
                 value={line.quantity}
-                max={maxQuantityFor(product)}
-                onChange={(next) => setBagQuantity(product.id, next)}
+                max={maxQuantityFor(product, variant)}
+                onChange={(next) =>
+                  setBagQuantity(product.id, line.variant_id, next)
+                }
               />
               <Pressable
-                onPress={() => setBagQuantity(product.id, 0)}
+                onPress={() => setBagQuantity(product.id, line.variant_id, 0)}
                 hitSlop={8}
                 accessibilityLabel={`Remove ${product.name}`}
                 className="active:opacity-60">

@@ -48,6 +48,13 @@ export function useGymStoreConfig(gymId: string | undefined) {
   });
 }
 
+export type StoreVariant = {
+  id: string;
+  name: string;
+  stock_quantity: number | null;
+  sold_out: boolean;
+};
+
 export type StoreProduct = {
   id: string;
   name: string;
@@ -62,6 +69,8 @@ export type StoreProduct = {
   recurring: boolean;
   recurring_interval: string | null;
   category: string | null;
+  // null when the product has no variants (jsonb from the RPC).
+  variants: StoreVariant[] | null;
 };
 
 // The member catalogue, via the security-definer RPC (hides the asset
@@ -75,16 +84,22 @@ export function useStoreProducts(gymId: string | undefined) {
         p_gym_id: gymId!,
       });
       if (error) throw error;
-      return (data ?? []) as StoreProduct[];
+      return (data ?? []) as unknown as StoreProduct[];
     },
   });
 }
 
 // Opens a Stripe Checkout for a basket and sends the browser to it. Mirrors
-// the membership useStartCheckout. mutate([{ product_id, quantity }]).
+// the membership useStartCheckout. mutate([{ product_id, variant_id?, quantity }]).
 export function useStartStoreCheckout(gymId: string | undefined) {
   return useMutation({
-    mutationFn: async (items: { product_id: string; quantity: number }[]) => {
+    mutationFn: async (
+      items: {
+        product_id: string;
+        variant_id?: string | null;
+        quantity: number;
+      }[],
+    ) => {
       if (!gymId) throw new Error('No gym');
       const { data, error } = await supabase.functions.invoke('store-checkout', {
         body: { gym_id: gymId, items, origin: checkoutOrigin() },

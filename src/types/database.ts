@@ -4148,6 +4148,8 @@ export type Database = {
           order_id: string;
           gym_id: string;
           product_id: string | null;
+          variant_id: string | null;
+          variant_snapshot: string | null;
           name_snapshot: string;
           kind_snapshot: StoreProductKind;
           unit_price_cents: number;
@@ -4159,6 +4161,8 @@ export type Database = {
           order_id: string;
           gym_id: string;
           product_id?: string | null;
+          variant_id?: string | null;
+          variant_snapshot?: string | null;
           name_snapshot: string;
           kind_snapshot: StoreProductKind;
           unit_price_cents: number;
@@ -4170,6 +4174,32 @@ export type Database = {
           name_snapshot: string;
           quantity: number;
           line_total_cents: number;
+        }>;
+        Relationships: [];
+      };
+      store_product_variants: {
+        Row: {
+          id: string;
+          product_id: string;
+          gym_id: string;
+          name: string;
+          sort_order: number;
+          stock_quantity: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          product_id: string;
+          gym_id: string;
+          name: string;
+          sort_order?: number;
+          stock_quantity?: number | null;
+          created_at?: string;
+        };
+        Update: Partial<{
+          name: string;
+          sort_order: number;
+          stock_quantity: number | null;
         }>;
         Relationships: [];
       };
@@ -5679,6 +5709,8 @@ export type Database = {
           recurring: boolean;
           recurring_interval: string | null;
           category: string | null;
+          // jsonb: StoreVariantJson[] | null (null when the product has none)
+          variants: Json;
         }[];
       };
       my_programming_access: {

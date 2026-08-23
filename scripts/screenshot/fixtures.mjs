@@ -327,6 +327,12 @@ export const TABLES = {
     { id: 's2', gym_id: GYM_ID, name: 'Lifting belt', description: '10mm leather.', price_cents: 6500, currency: 'GBP', kind: 'physical', active: true, image_urls: [], recurring: false, track_inventory: true, stock: 6 },
   ],
 
+  store_product_variants: [
+    { id: 'v-s', product_id: 's1', gym_id: GYM_ID, name: 'S', sort_order: 1, stock_quantity: 8 },
+    { id: 'v-m', product_id: 's1', gym_id: GYM_ID, name: 'M', sort_order: 2, stock_quantity: 0 },
+    { id: 'v-l', product_id: 's1', gym_id: GYM_ID, name: 'L', sort_order: 3, stock_quantity: null },
+  ],
+
   email_campaigns: [
     { id: 'e1', gym_id: GYM_ID, title: 'August newsletter', status: 'sent', created_at: iso(-12), sent_at: iso(-11), recipient_count: 41 },
     { id: 'e2', gym_id: GYM_ID, title: 'Bank holiday timetable', status: 'draft', created_at: iso(-3), sent_at: null, recipient_count: 0 },
@@ -650,12 +656,12 @@ export const RPCS = {
     { gym_id: '99999999-9999-4999-8999-999999999999', gym_name: 'Ironworks CrossFit', role: 'member', joined_at: iso(-900), left_at: iso(-420) },
   ],
   list_store_products: [
-    { id: 'sp1', name: 'Forge tee', description: 'Heavyweight cotton, gym logo front and back.', kind: 'physical', price_cents: 2500, image_url: null, image_urls: [], track_inventory: true, stock_quantity: 24, sold_out: false, recurring: false, recurring_interval: null, category: 'Kit' },
-    { id: 'sp2', name: 'Lifting belt', description: '10mm leather, single prong.', kind: 'physical', price_cents: 6500, image_url: null, image_urls: [], track_inventory: true, stock_quantity: 6, sold_out: false, recurring: false, recurring_interval: null, category: 'Kit' },
-    { id: 'sp3', name: 'Gym bottle', description: 'One litre, keeps it cold.', kind: 'physical', price_cents: 1200, image_url: null, image_urls: [], track_inventory: false, stock_quantity: null, sold_out: false, recurring: false, recurring_interval: null, category: 'Kit' },
-    { id: 'sp4', name: '8-week engine block', description: 'The full aerobic base programme as a PDF, with weekly targets.', kind: 'digital', price_cents: 4900, image_url: null, image_urls: [], track_inventory: false, stock_quantity: null, sold_out: false, recurring: false, recurring_interval: null, category: 'Programmes' },
-    { id: 'sp5', name: 'Individual programming', description: 'A personal programme written for you, updated monthly.', kind: 'digital', price_cents: 9900, image_url: null, image_urls: [], track_inventory: false, stock_quantity: null, sold_out: false, recurring: true, recurring_interval: 'month', category: 'Programmes' },
-    { id: 'sp6', name: 'Guest day pass', description: 'Bring a friend for a day.', kind: 'digital', price_cents: 1500, image_url: null, image_urls: [], track_inventory: false, stock_quantity: null, sold_out: false, recurring: false, recurring_interval: null, category: null },
+    { id: 'sp1', name: 'Forge tee', description: 'Heavyweight cotton, gym logo front and back.', kind: 'physical', price_cents: 2500, image_url: null, image_urls: [], track_inventory: true, stock_quantity: 24, sold_out: false, recurring: false, recurring_interval: null, category: 'Kit', variants: [{ id: 'v-s', name: 'S', stock_quantity: 8, sold_out: false }, { id: 'v-m', name: 'M', stock_quantity: 0, sold_out: true }, { id: 'v-l', name: 'L', stock_quantity: null, sold_out: false }] },
+    { id: 'sp2', name: 'Lifting belt', description: '10mm leather, single prong.', kind: 'physical', price_cents: 6500, image_url: null, image_urls: [], track_inventory: true, stock_quantity: 6, sold_out: false, recurring: false, recurring_interval: null, category: 'Kit' , variants: null },
+    { id: 'sp3', name: 'Gym bottle', description: 'One litre, keeps it cold.', kind: 'physical', price_cents: 1200, image_url: null, image_urls: [], track_inventory: false, stock_quantity: null, sold_out: false, recurring: false, recurring_interval: null, category: 'Kit' , variants: null },
+    { id: 'sp4', name: '8-week engine block', description: 'The full aerobic base programme as a PDF, with weekly targets.', kind: 'digital', price_cents: 4900, image_url: null, image_urls: [], track_inventory: false, stock_quantity: null, sold_out: false, recurring: false, recurring_interval: null, category: 'Programmes' , variants: null },
+    { id: 'sp5', name: 'Individual programming', description: 'A personal programme written for you, updated monthly.', kind: 'digital', price_cents: 9900, image_url: null, image_urls: [], track_inventory: false, stock_quantity: null, sold_out: false, recurring: true, recurring_interval: 'month', category: 'Programmes' , variants: null },
+    { id: 'sp6', name: 'Guest day pass', description: 'Bring a friend for a day.', kind: 'digital', price_cents: 1500, image_url: null, image_urls: [], track_inventory: false, stock_quantity: null, sold_out: false, recurring: false, recurring_interval: null, category: null , variants: null },
   ],
   mark_cover_notifications_read: null,
   is_booking_eligible: true,
