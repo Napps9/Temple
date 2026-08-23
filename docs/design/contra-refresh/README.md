@@ -115,7 +115,9 @@ a subtly recut sparkle that is one line to switch to.
 
 - **The mark** — Portico. Straight lines, no enclosing shape, one ink; it
   still reads as a building at 15px and cannot be mistaken for a letter,
-  which matters beside a lowercase wordmark.
+  which matters beside a lowercase wordmark. (Since reversed by the
+  owner: the monochrome three-card mark is back — see
+  `docs/brand-assets.md`.)
 - **Lowercase `temple`** — yes, in Fraunces 700. No tagline.
 - **The sidebar** — yes, at 768 and up. It turned out to be chrome, not
   routing: the tab router underneath is untouched.

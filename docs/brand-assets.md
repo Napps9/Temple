@@ -13,20 +13,20 @@ the PWA icon. That is gone: a gym is identified by its name.
 
 ## The mark
 
-A **portico**: an architrave, three columns, a stylobate. Straight lines
-only, no enclosing shape, one ink.
+The **three offset cards**, in one ink: the front card holds the doorway
+column as a knockout, and the two cards behind it are hairline ghosts.
 
-It replaces three offset rounded-square cards — gold, steel blue, ink —
-each holding a column, with the offset doing the work of a drop shadow.
-That was a considered identity, but it was built on the two things the
-current design system removed: colour in the furniture, and depth from a
-shadow rather than from a hairline and a tone step.
+This is the original Temple silhouette in the form it took when the mark
+first lost its colour — the gold and steel-blue cards became strokes,
+the column became a hole — and it is back by the owner's call, replacing
+the portico that briefly stood in for it. The doorway is a knockout
+rather than a filled shape because the mark sits on surface and on
+ground, and a hole is the only version that is right on both.
 
-Portico was chosen over three other directions for one reason: it still
-reads as a building at 15px and cannot be mistaken for a letter. That
-matters more than usual here, because the mark sits beside a lowercase
-wordmark, and anything with a counter starts reading as the word's first
-character.
+Below ~20px the ghost cards stop being depth and start being noise —
+their stroke lands under half a pixel — so a favicon-sized mark is the
+front card alone. The component applies this cut automatically
+(`GHOSTS_ABOVE`), and the generated favicons follow it.
 
 ## The wordmark
 

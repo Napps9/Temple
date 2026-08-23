@@ -19,20 +19,35 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const INK = '#14161A';
 const PAPER = '#F4F5F6';
 
-// The portico: architrave, three columns, stylobate. Kept identical to
-// PORTICO in src/components/TempleMark.tsx.
-const PORTICO =
-  'M3 6h42v7H3zM8.5 17h6.4v16H8.5zM20.8 17h6.4v16h-6.4zM33.1 17h6.4v16h-6.4zM3 36h42v7H3z';
+// The three offset cards, kept identical to CARD in
+// src/components/TempleMark.tsx: the front card holds the column as an
+// even-odd knockout, the two cards behind are hairline ghosts. Below
+// ~20px the ghosts stop being depth and start being noise, so small
+// renders (favicons) are the front card alone — the same rule the
+// component applies via GHOSTS_ABOVE.
+const CARD =
+  'M5 0H67A5 5 0 0 1 72 5V67A5 5 0 0 1 67 72H5A5 5 0 0 1 0 67V5A5 5 0 0 1 5 0Z' +
+  'M27 31.5A9 6 0 0 1 45 31.5V63H27Z';
+
+function glyph(ink, ghosts) {
+  return (
+    (ghosts
+      ? `<rect x="20.8" y="20.8" width="70.4" height="70.4" rx="5" fill="none" stroke="${ink}" stroke-width="2" stroke-opacity="0.3"/>` +
+        `<rect x="10.8" y="10.8" width="70.4" height="70.4" rx="5" fill="none" stroke="${ink}" stroke-width="2" stroke-opacity="0.55"/>`
+      : '') + `<path d="${CARD}" fill="${ink}" fill-rule="evenodd"/>`
+  );
+}
 
 // `pad` widens the viewBox so the mark sits inside a tile with air around
-// it — app icons need the margin, a mark in a row does not. The glyph runs
-// from 3 to 45 inside a 48 box, so it already carries a little.
-function markSvg({ ink = INK, pad = 0, bg = null } = {}) {
-  const min = -pad;
-  const span = 48 + pad * 2;
+// it — app icons need the margin, a mark in a row does not. The glyph box
+// is the component's: 96 with the ghost cards, 76 without.
+function markSvg({ ink = INK, pad = 0, bg = null, ghosts = true } = {}) {
+  const box = ghosts ? 96 : 76;
+  const min = -2 - pad;
+  const span = box + pad * 2;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${min} ${min} ${span} ${span}" width="${span}" height="${span}">${
     bg ? `<rect x="${min}" y="${min}" width="${span}" height="${span}" fill="${bg}"/>` : ''
-  }<path d="${PORTICO}" fill="${ink}"/></svg>`;
+  }${glyph(ink, ghosts)}</svg>`;
 }
 
 // Fraunces, inlined so the lockup is self-contained and renders on a
@@ -45,12 +60,12 @@ const fontCss = `@font-face{font-family:'Fraunces';font-weight:700;src:url(data:
 
 function lockupSvg({ ink = INK } = {}) {
   const size = 26;
-  const markW = Math.round(size * 1.18);
-  const gap = Math.round(size * 0.3);
+  const markW = Math.round(size * 1.08);
+  const gap = Math.round(size * 0.34);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136 34" width="136" height="34">
 <style>${fontCss}
 .w{font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:${size}px;fill:${ink}}</style>
-<g transform="translate(0 2) scale(${(markW / 48).toFixed(4)})"><path d="${PORTICO}" fill="${ink}"/></g>
+<svg x="0" y="3" width="${markW}" height="${markW}" viewBox="-2 -2 96 96">${glyph(ink, true)}</svg>
 <text class="w" x="${markW + gap}" y="26">temple</text>
 </svg>`;
 }
@@ -61,8 +76,8 @@ const ASSETS = [
   // The app icon is the mark on paper — a transparent icon renders on
   // whatever the launcher feels like, which is not a decision to give away.
   ['assets/images/icon.png', markSvg({ pad: 9, bg: PAPER }), 1024],
-  ['assets/images/favicon.png', markSvg({ pad: 4, bg: PAPER }), 48],
-  ['assets/images/favicon-32.png', markSvg({ pad: 4, bg: PAPER }), 32],
+  ['assets/images/favicon.png', markSvg({ pad: 4, bg: PAPER, ghosts: false }), 48],
+  ['assets/images/favicon-32.png', markSvg({ pad: 4, bg: PAPER, ghosts: false }), 32],
   // Splash and the Android foreground sit on their own background colour,
   // so these are transparent by design.
   ['assets/images/splash-icon.png', markSvg({ pad: 2 }), 192],
@@ -119,7 +134,7 @@ const page = await browser.newPage();
 async function shoot(svg, w, h) {
   await page.setViewportSize({ width: w, height: h });
   await page.setContent(
-    `<style>html,body{margin:0;padding:0;background:transparent}svg{display:block;width:${w}px;height:${h}px}</style>${svg}`,
+    `<style>html,body{margin:0;padding:0;background:transparent}body>svg{display:block;width:${w}px;height:${h}px}</style>${svg}`,
   );
   await page.evaluate(() => document.fonts.ready);
   return page.screenshot({ omitBackground: true });
