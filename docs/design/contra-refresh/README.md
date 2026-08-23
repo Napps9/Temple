@@ -226,15 +226,25 @@ Still open:
     callers (the leaderboard toggles and the privacy card);
     `setup.tsx` keeps its conversational structure (its radii and
     colours now conform; a page-parts rewrite remains unjudged). The
-    member-side boards 07-12/21 landed their no-schema deltas — the
-    member-voiced leave dialog, the recommendation as a row chip,
-    honest day dots and a day heading on the agenda, week-grouped
-    bookings with the cancel-policy line, Track's group labels, the
-    DM thread's role subtitle and named composer, gym-named email
-    preferences, the waiver and injury retention lines, and Written
-    by attribution on programming — while the deltas that need schema
-    (one-feed inbox, notice read counts, the store grid and bag,
-    movement detail tabs, comps visibility) remain proposals. The
+    member-side boards 07-12/21 have landed in full: first the
+    no-schema deltas (the member-voiced leave dialog, the
+    recommendation as a row chip, honest day dots and a day heading,
+    week-grouped bookings with the cancel-policy line, Track's group
+    labels, the DM thread's role subtitle and named composer,
+    gym-named email preferences, the waiver and injury retention
+    lines, Written by attribution on programming), then the
+    schema-bearing set: the one-feed inbox with its decision cards,
+    the announcement page with staff-only reach counts (0253), store
+    aisles with the grid, sheet and bag (0254), the membership
+    three-stat row with comps and packs under "Also on your account",
+    Account's "Your gyms" and Article-15 "Download everything"
+    (0255), the PAR-Q stepper, the journal directory, and the
+    movement record's Best hero with tabs. Still proposals, by
+    explicit decision: store variants and sizes (their own schema
+    design), the notice "what changed for you" block (no
+    announcement-to-session linkage exists), the journal's
+    training-partner avatars (no privacy-safe data path), and a
+    Payment-method action (no billing portal integration). The
     icons question is still open, softened by the labels now beside
     every nav glyph.
 

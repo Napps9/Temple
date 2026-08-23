@@ -91,7 +91,9 @@ dead-end). It carries:
   booking row so the refund path can target it precisely. Members
   holding a single entitlement see the unchanged single-button
   confirm.
-- **Health/PAR-Q gate** — annual (365-day) screening flow, with
+- **Health/PAR-Q gate** — annual (365-day) screening flow — one
+  question per screen with "3 of 7" progress, a per-screen privacy line
+  and a review step before submit (`src/lib/parq-steps.ts`) — with
   allow-with-flag if the member ticks a flagged answer. Enforced both
   as a member entry redirect and as a **booking prerequisite** inside
   `_book_class_for`: coaches and owners (who bypass the entry gate)
@@ -122,11 +124,27 @@ dead-end). It carries:
 ### Plans, payments & onboarding
 - **Plan subscription self-view** — see active plans, credit balance,
   paid period end, plan notice period.
-- **Comp grants** — visible if granted by staff, with credits + window.
+- **Comp grants, member-visible** — "Also on your account" on
+  Membership lists active comp grants (credits left, window, who gave
+  it — readable under self-select RLS since 0009, finally surfaced) beside credit packs, which live there as pools rather than posing
+  as a second membership card. The plan card's facts render as a
+  three-stat hairline row (price / renews / classes).
 - **Member onboarding flow** — non-health questions answered at first
   join, surfaced on the member profile to staff.
 - **Account self-management** — change name + email (with re-confirm),
   password reset, avatar upload, leave-gym (cancels subs + comps).
+- **Your gyms** — every membership the account has held, left gyms
+  included with their names ("Left Jun 2025 · history kept"), via the
+  `my_gyms()` definer (0255 — a plain `gyms` select refuses a left
+  gym's name since 0237).
+- **Download everything** — `export_my_account_data()` (0255) hands the
+  member one JSON document: profile, contact details, gyms, bookings,
+  messages in both directions, purchases, plan history, PAR-Q answers
+  with their prompts, injuries, and the 0237 training export nested
+  inside. Synchronous, free of tier, Article 15. Web download; native
+  defers to the web app.
+- **Appearance** — the dark-mode toggle on the Account page with an
+  explanation line (still also in the avatar menu).
 - **Gym share / invite link** — share button + Web Share API for the
   member-facing join URL.
 
@@ -142,13 +160,18 @@ downloads in-app and via a 7-day signed link in the receipt email) — and
 rental, or a **physical subscription box** shipped every cycle.
 
 - **Member side** (`/store`, linked from Account when the store is on) —
-  branded product grid; each item shows a swipeable photo gallery (dots
-  when there's more than one) that opens a **full-screen viewer** on tap —
-  swipe between images, pinch or double-tap to zoom. Plus price, stock
-  ("3 left") and a **Sold out** state once a tracked item hits zero. Buy opens Stripe Checkout on
-  the gym's connected account (direct charge, no platform fee — the same
-  rails as memberships). `/purchases` lists past orders with their lines,
-  totals, shipping status and re-downloadable digital goods.
+  aisle chips (All plus the free-text categories the catalogue actually
+  contains — `store_products.category`, 0254) over a two-up photo grid.
+  Tapping a product opens a **sheet**: gallery (full-screen viewer on
+  tap), description, stock ("3 left"), a quantity stepper, and **Add to
+  bag** beside **Buy now**. The **bag** is session-only client state
+  (`lib/store-bag`) checked out in one payment — the `store-checkout`
+  edge function always took a line-item array. Subscriptions and
+  digital goods stay buy-now-only. Sold-out state on tracked items. Buy
+  opens Stripe Checkout on the gym's connected account (direct charge,
+  no platform fee — the same rails as memberships). `/purchases` lists
+  past orders with their lines, totals, shipping status and
+  re-downloadable digital goods.
 - **Subscriptions** — a product can be marked **recurring (monthly)**:
   digital (a file re-delivered each cycle), a no-deliverable service (a
   locker rental), or a **physical box** shipped every cycle. Members
@@ -264,8 +287,12 @@ rental, or a **physical subscription box** shipped every cycle.
   `sessionsThisMonth` in `src/lib/workout-streak.ts`, grid in
   `src/components/WorkoutHeatmap.tsx`, all unit-tested.
 
-- **Workout journal** — every recorded session with date, title,
-  programmed sections + recorded results, route into a detail view.
+- **Workout journal** — a scannable directory: one ruled row per
+  session (weekday-over-day date gutter, title, an honest one-line
+  result, the class type's dot when it came from a class) grouped under
+  month labels, with a category filter. Grouping and the one-liner live
+  in `src/lib/journal-directory.ts`, unit-tested. Per-set detail is one
+  tap in, on the workout page.
 - **Record workout modal** — pre-fill from today's programming for
   the class types the member is permitted to see, then a
   format-driven entry form per section (For time / AMRAP / EMOM /
@@ -284,9 +311,11 @@ rental, or a **physical subscription box** shipped every cycle.
 - **Movement tagging** — at log time, tag a section with the
   movements it contained + a rep-max scheme so it counts on the
   movement / leaderboard.
-- **Per-movement detail page** — rep-max best-of, the 1RM percentages
-  card, full history merging direct PRs with section-tagged results,
-  "session" badge.
+- **Per-movement detail page** — a Best hero for the primary scheme
+  (34px figure, PR chip, full-width trend line), the other schemes as
+  ruled rows, then **History / Percentages / Leaderboard as tabs**.
+  History merges direct PRs with section-tagged results ("session"
+  badge); athlete mode keeps everything minus the leaderboard.
 - **Per-group page** — best-of per movement in a group (Squats,
   Pushing, Pulling, Cleans, Snatch, Aerobic, Bodyweight).
 - **Movement Library + starred home** (`/track/movements`, "Movement
@@ -327,7 +356,20 @@ rental, or a **physical subscription box** shipped every cycle.
   gated (open / coach-only / staff-only).
 - **Class-session broadcasts** — coaches push a message to everyone
   booked into a class; lands in the member's inbox under Classes.
-- **Gym announcements** — gym-wide posts in the inbox.
+- **Gym announcements** — gym-wide posts; each opens its own page with
+  the full body and a **Got it** acknowledgement (the same
+  `announcement_reads` row as mark-all-read). Staff who hold
+  `can_post_announcements` also see **"Read by X of Y members"** there —
+  aggregate only, current members on both sides of the fraction,
+  enforced in `announcement_read_stats` (0253), never identities.
+- **One-feed inbox** — filter chips (New / All / From the gym / Direct,
+  plus capability-gated Alerts and Cover) over a single feed: pinned
+  announcements first, then broadcasts and closure/cancellation notices
+  by recency as ruled rows with unread dots; DM threads as rows in the
+  same shape; the failing payment leads the feed as a decision card
+  (Update card / Not now — dismissal holds for the session only), with
+  the injury check-in and log nudges as the same card shape. Pure feed
+  rules in `src/lib/inbox-feed.ts`, unit-tested.
 - **"What needs you" nav badge** — the top-bar inbox bell shows a count
   rolling up unread messages (`inbox_unread_summary`), injury check-ins
   due, classes attended-but-not-logged, open staff alerts, unread lead
