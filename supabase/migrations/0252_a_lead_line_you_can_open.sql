@@ -7,8 +7,10 @@
 -- thread the line was about. The feed now carries the lead's latest
 -- conversation id in the event detail, and the line links straight to it.
 --
--- Same RETURNS shape and arity as 0244, so CREATE OR REPLACE is safe;
--- only the lead branch's jsonb payload gains a key.
+-- Body taken from 0247 (the latest definition — NOT 0244, which a first
+-- cut of this migration copied, silently reverting 0247's profile ids
+-- and payer names until pgTAP caught it). Same RETURNS shape and arity,
+-- so CREATE OR REPLACE is safe; only the lead branch's jsonb gains a key.
 
 begin;
 
@@ -39,12 +41,12 @@ begin
   return query
   select * from (
 
-    -- Someone joined.
+    -- Someone joined. The profile id is the way through to who they are.
     select 'member:' || gm.id::text        as item_id,
            'member_joined'                 as kind,
            gm.created_at                   as occurred_at,
            coalesce(p.full_name, 'A new member') as subject,
-           '{}'::jsonb                     as detail
+           jsonb_build_object('profile_id', gm.profile_id) as detail
       from public.gym_memberships gm
       join public.profiles p on p.id = gm.profile_id
      where gm.gym_id = p_gym_id
@@ -89,7 +91,8 @@ begin
            jsonb_build_object(
              'plan_name', mp.name,
              'next_payment_attempt', d.next_payment_attempt,
-             'failure_count', d.payment_failure_count
+             'failure_count', d.payment_failure_count,
+             'profile_id', d.profile_id
            )
       from public.plan_subscription_dunning d
       join public.profiles p on p.id = d.profile_id
