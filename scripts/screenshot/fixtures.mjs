@@ -361,6 +361,78 @@ export const TABLES = {
     { id: 'dm4', gym_id: GYM_ID, sender_id: 'a3', recipient_id: USER_ID, body: 'There is a 15 minute primer built in, come as you are.', created_at: iso(-1, 9), read_at: null },
   ],
 
+  gym_announcements: [
+    { id: 'ann1', gym_id: GYM_ID, posted_by: 'a3', title: 'Closed bank holiday Monday', body: 'The gym is closed Monday 31 August. Saturday and Sunday run as normal — Tuesday is back to the full timetable.', pinned: true, created_at: iso(-4, 10) },
+    { id: 'ann2', gym_id: GYM_ID, posted_by: 'a3', title: 'New barbells have landed', body: 'Twelve new competition bars are on the racks. The old ones move to the garage gym rail.', pinned: false, created_at: iso(-1, 7) },
+    { id: 'ann3', gym_id: GYM_ID, posted_by: 'a3', title: 'Car park resurfacing', body: 'The council are resurfacing the car park Thursday morning. Street parking on Foundry Lane is free before 10am.', pinned: false, created_at: iso(-9, 9) },
+  ],
+  // ann3 read, ann1/ann2 unread — the feed shows a mix of dots.
+  announcement_reads: [
+    { announcement_id: 'ann3', profile_id: USER_ID, read_at: iso(-8) },
+  ],
+
+  class_session_broadcasts: [
+    {
+      id: 'bc1',
+      gym_id: GYM_ID,
+      class_session_id: 'cs1',
+      sender_id: 'a3',
+      body: 'Bring long socks — rope climbs are in the workout.',
+      created_at: iso(-1, 12),
+      class_sessions: {
+        id: 'cs1',
+        starts_at: iso(-1, 22),
+        duration_minutes: 60,
+        class_types: { name: 'Metcon', color: '#6366F1' },
+      },
+    },
+  ],
+  class_session_broadcast_reads: [],
+
+  class_change_notifications: [
+    { id: 'ccn1', gym_id: GYM_ID, kind: 'class_cancelled', body: "Thursday's 06:00 Metcon is cancelled — Priya is unwell and no cover was available. Your booking has been refunded.", created_at: iso(-2, 15), read_at: null },
+  ],
+
+  payment_notifications: [
+    { id: 'pn1', gym_id: GYM_ID, recipient_profile_id: USER_ID, kind: 'payment_failed', channel: 'in_app', body: 'Your card ending 4242 was declined for this month. Update your card and we will retry automatically.', created_at: iso(-1, 5), read_at: null },
+  ],
+  plan_subscription_dunning: [
+    { plan_subscription_id: 'sub-1', gym_id: GYM_ID, profile_id: USER_ID },
+  ],
+
+  cover_notifications: [
+    {
+      id: 'cn1',
+      gym_id: GYM_ID,
+      kind: 'cover_requested',
+      request_id: 'cr1',
+      offer_id: null,
+      channel: 'in_app',
+      created_at: iso(-1, 9),
+      read_at: null,
+      cover_requests: {
+        range_start: iso(2, 6),
+        range_end: iso(2, 20),
+        requested_start: null,
+        requested_end: null,
+        requester: { full_name: 'Priya Raman' },
+      },
+    },
+  ],
+
+  staff_alerts: [
+    {
+      id: 'sa1',
+      gym_id: GYM_ID,
+      kind: 'injury_new',
+      subject_profile_id: 'a1',
+      related_id: null,
+      created_at: iso(-1, 8),
+      acknowledged_at: null,
+      subject: { full_name: 'Amara Nwosu', avatar_url: null },
+    },
+  ],
+
   tasks: [
     { id: 't1', gym_id: GYM_ID, title: 'Order more chalk', status: 'open', due_date: '2026-08-27', notes: null, assignee: { full_name: 'Priya Raman' } },
     { id: 't2', gym_id: GYM_ID, title: 'Fix the rower display', status: 'open', due_date: null, notes: 'Seat 3, screen flickers.', assignee: null },
@@ -447,6 +519,15 @@ export const RPCS = {
   ],
   record_route_open: null,
   get_member_consent_state: [{ analytics: true, decided_at: iso(-90) }],
+  dm_inbox: [
+    { peer_profile_id: 'a3', peer_full_name: 'Priya Raman', peer_role: 'coach', last_message_id: 'dm4', last_message_body: 'There is a 15 minute primer built in, come as you are.', last_message_at: iso(-1, 9), last_message_from_me: false, unread_count: 2 },
+    { peer_profile_id: 'a1', peer_full_name: 'Amara Nwosu', peer_role: 'member', last_message_id: 'dm-a1', last_message_body: 'Same time Thursday? I will grab the good rower.', last_message_at: iso(-2, 18), last_message_from_me: true, unread_count: 0 },
+  ],
+  inbox_unread_summary: [
+    { dm_unread: 2, announcement_unread: 2, class_broadcast_unread: 1, class_change_unread: 1, payment_unread: 1 },
+  ],
+  mark_class_change_notifications_read: null,
+  mark_cover_notifications_read: null,
   is_booking_eligible: true,
   list_my_email_preferences: [
     { topic_id: 'tp1', label: 'News & events', description: 'What is happening at the gym this month.', subscribed: true, blanket_unsub: false },
