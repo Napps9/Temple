@@ -33,7 +33,6 @@ export type BackOfficeCategory =
   | 'members'
   | 'crm'
   | 'comms'
-  | 'website'
   | 'store'
   | 'team'
   | 'plans'
@@ -43,7 +42,6 @@ export const CATEGORY_ORDER: BackOfficeCategory[] = [
   'members',
   'crm',
   'comms',
-  'website',
   'store',
   'team',
   'plans',
@@ -54,7 +52,6 @@ export const CATEGORY_LABELS: Record<BackOfficeCategory, string> = {
   members: 'Members',
   crm: 'AI Front Desk',
   comms: 'Email campaigns',
-  website: 'Website',
   store: 'Store',
   team: 'Team',
   plans: 'Plans',
@@ -390,19 +387,6 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     capabilities: ['can_manage_comms'],
     saidInstead: 'email everyone about the new opening times',
     ends: 'splits',
-    status: 'back-office',
-  },
-
-  // --- Website -------------------------------------------------------
-  {
-    href: '/management/website',
-    title: 'Website',
-    blurb: 'A public site built from your own schedule, pricing and brand.',
-    keywords: ['domain', 'dns', 'seo', 'publish', 'pages', 'public site'],
-    category: 'website',
-    capabilities: ['can_manage_website'],
-    saidInstead: 'publish the website',
-    ends: 'keeps',
     status: 'back-office',
   },
 

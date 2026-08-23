@@ -29,7 +29,7 @@ export type RenderContext = {
   // Defaults to the placeholder the delivery worker replaces. The live
   // preview overrides this with '#'.
   unsubscribeUrl?: string;
-  // Optional, unlike site-render.ts's equivalent flag — every existing
+  // Optional — every existing
   // caller (the delivery worker, the report view, the mobile "Preview"
   // toggle) keeps rendering exactly as before when this is omitted, only
   // the in-app editor's canvas opts in. When true, editable text fields
@@ -55,7 +55,7 @@ function escapeAttr(input: string): string {
 // "<blockId>:<field>" — see canvas-sync.ts for the matching
 // parser/whitelist on the receiving end. A no-op when not editable, so
 // every non-editor call site is byte-identical by construction. Unlike
-// the website builder's fieldAttrs, there's no data-rich marker — email
+// there's no data-rich marker — email
 // blocks store plain text (EmailBlock.text: string), so the canvas
 // bridge script captures innerText, not innerHTML, and there is no
 // bold/italic/underline toolbar to gate.
@@ -188,9 +188,7 @@ function editableStyleBlock(accent: string): string {
 // purely to observe the DOM and forward it, not to decide what's
 // writable. Captures innerText, not innerHTML — EmailBlock.text is a
 // plain string and render.ts escapes it on the way back out, so there's
-// no rich-text round-trip to support here (contrast site-render.ts's
-// bridge script, which captures innerHTML for its bold/italic/underline
-// fields).
+// no rich-text round-trip to support here.
 const CANVAS_BRIDGE_SCRIPT = `
 <script>
 (function(){

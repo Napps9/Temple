@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { coerceDocument, documentWarnings, type SiteDocument } from '../../src/lib/site-blocks';
 import { LEFT_MEMBER_COUNT, buildDemoPlan, type DemoConfig } from './plan';
 
 const CONFIG: DemoConfig = {
@@ -174,13 +173,6 @@ describe('buildDemoPlan', () => {
     expect(plan.users.some((u) => u.id === converted.converted_profile_id)).toBe(true);
   });
 
-  it('site design round-trips coerceDocument unchanged and has no publish blockers', () => {
-    const design = plan.website.design as unknown as SiteDocument;
-    expect(coerceDocument(JSON.parse(JSON.stringify(design)))).toEqual(design);
-    expect(documentWarnings(design.pages[0])).toEqual([]);
-    expect(plan.website.published).toBe(true);
-  });
-
   it('sessions land inside the configured window with the recurrence horizon set', () => {
     expect(plan.sessions.length).toBeGreaterThan(80);
     for (const r of plan.recurrences) {
@@ -260,18 +252,6 @@ describe('buildDemoPlan — discipline: hyrox', () => {
     const hidden = hyroxPlan.storeProducts.filter((p) => p.active === false);
     expect(hidden).toHaveLength(1);
     expect(hidden[0].name).toMatch(/coming soon/i);
-  });
-
-  it('seeds the website as an unpublished draft with real, visible publish-blocking warnings', () => {
-    const design = hyroxPlan.website.design as unknown as SiteDocument;
-    expect(coerceDocument(JSON.parse(JSON.stringify(design)))).toEqual(design);
-    expect(hyroxPlan.website.published).toBe(false);
-    const warnings = documentWarnings(design.pages[0]);
-    expect(warnings.some((w) => w.includes('testimonials'))).toBe(true);
-    expect(warnings.some((w) => w.includes('address'))).toBe(true);
-    expect(warnings.some((w) => w.includes('description'))).toBe(true);
-    const gallery = design.pages[0].blocks.find((b) => b.type === 'gallery');
-    expect(gallery).toBeTruthy();
   });
 
   it('keeps the campaign in draft with Hyrox-flavoured copy', () => {

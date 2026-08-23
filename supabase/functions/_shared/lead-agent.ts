@@ -2,9 +2,7 @@
 // -> gym resolution, conversation persistence, gym data snapshot, the Claude
 // tool loop, and Twilio REST/signature helpers.
 //
-// Plans and schedule are read directly with the service client rather than
-// via the gym_public_* RPCs — those are gated on gym_websites.published,
-// and a gym can run the front desk without a published website.
+// Plans and schedule are read directly with the service client.
 
 import { escapeHtml, templeEmailHtml } from './email-layout.ts';
 

@@ -57,7 +57,7 @@ automatically") — offered ready-made from how gyms like yours run, changed
 by saying so, now or forever after; then read what Temple handles out of
 the box and the rules it follows ("I never talk about health, I never
 cancel anyone, prices are always yours — anything unusual, I ask first"),
-and say "sounds right". Go live: the number answering, the website up, the
+and say "sounds right". Go live: the number answering, the
 join link ready. Switching platforms is a sentence too — "send me your
 member list" runs the import machinery that already exists. There is no
 "hiring" and no configuration: owners set up rules and best practices,

@@ -100,7 +100,6 @@ export type Database = {
           store_enabled: boolean;
           store_shipping_fee_cents: number;
           discipline: 'crossfit' | 'hyrox';
-          website_builder_enabled: boolean;
           onboarding_dismissed_at: string | null;
         };
         Insert: {
@@ -189,75 +188,6 @@ export type Database = {
           cover_warning_hours: number;
           discipline: 'crossfit' | 'hyrox';
           onboarding_dismissed_at: string | null;
-        }>;
-        Relationships: [];
-      };
-      gym_websites: {
-        Row: {
-          id: string;
-          gym_id: string;
-          theme: string;
-          design: Json;
-          published: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          gym_id: string;
-          theme?: string;
-          design?: Json;
-          published?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: Partial<{
-          id: string;
-          gym_id: string;
-          theme: string;
-          design: Json;
-          published: boolean;
-          created_at: string;
-          updated_at: string;
-        }>;
-        Relationships: [];
-      };
-      gym_website_domains: {
-        Row: {
-          gym_id: string;
-          domain: string;
-          status: 'pending' | 'verified' | 'error';
-          records: Json;
-          error_message: string | null;
-          last_checked_at: string | null;
-          verified_at: string | null;
-          created_by: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          gym_id: string;
-          domain: string;
-          status?: 'pending' | 'verified' | 'error';
-          records?: Json;
-          error_message?: string | null;
-          last_checked_at?: string | null;
-          verified_at?: string | null;
-          created_by?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: Partial<{
-          gym_id: string;
-          domain: string;
-          status: 'pending' | 'verified' | 'error';
-          records: Json;
-          error_message: string | null;
-          last_checked_at: string | null;
-          verified_at: string | null;
-          created_by: string | null;
-          created_at: string;
-          updated_at: string;
         }>;
         Relationships: [];
       };
@@ -4946,70 +4876,6 @@ export type Database = {
           public_lead_capture_enabled: boolean;
         }[];
       };
-      gym_website_by_slug: {
-        Args: { p_slug: string };
-        Returns: {
-          gym_id: string;
-          gym_name: string;
-          gym_logo_url: string | null;
-          gym_primary_color: string;
-          gym_currency: string;
-          theme: string;
-          design: Json;
-        }[];
-      };
-      gym_public_schedule: {
-        Args: { p_slug: string };
-        Returns: {
-          session_id: string;
-          starts_at: string;
-          duration_minutes: number;
-          class_type_name: string | null;
-          class_type_color: string | null;
-          coach_name: string | null;
-        }[];
-      };
-      gym_public_plans: {
-        Args: { p_slug: string };
-        Returns: {
-          plan_id: string;
-          name: string;
-          kind: string;
-          credit_count: number | null;
-          monthly_price_cents: number | null;
-        }[];
-      };
-      gym_public_team: {
-        Args: { p_slug: string };
-        Returns: {
-          profile_id: string;
-          full_name: string | null;
-          avatar_url: string | null;
-        }[];
-      };
-      gym_public_ai_phone: {
-        Args: { p_slug: string };
-        Returns: {
-          phone_number: string;
-        }[];
-      };
-      save_gym_website: {
-        Args: {
-          p_gym_id: string;
-          p_design: Json;
-          p_theme: string;
-          p_expected_updated_at?: string | null;
-        };
-        Returns: string;
-      };
-      publish_gym_website: {
-        Args: { p_gym_id: string };
-        Returns: string;
-      };
-      unpublish_gym_website: {
-        Args: { p_gym_id: string };
-        Returns: string;
-      };
       demo_marketing_credentials: {
         Args: Record<string, never>;
         Returns: {
@@ -5021,14 +4887,6 @@ export type Database = {
           member_password: string;
           rotated_at: string;
         }[];
-      };
-      gym_slug_for_domain: {
-        Args: { p_host: string };
-        Returns: string | null;
-      };
-      gym_website_canonical_domain: {
-        Args: { p_slug: string };
-        Returns: string | null;
       };
       invite_code_gym: {
         Args: { p_code: string };

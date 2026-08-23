@@ -2,9 +2,9 @@
 // shared by the emitter (render.ts's fieldAttrs, which decides what gets
 // a data-field attribute) and the receiver (EmailEditor.tsx's
 // handleCanvasFieldChange, which decides what's allowed to write into
-// document state). Mirrors site-canvas-sync.ts's role for the website
-// builder, minus the array-item case — no email block has a
-// testimonials-style repeating list today.
+// document state). Text-bearing fields sync from the canvas; the rest
+// stay sidebar-only — no email block has a testimonials-style repeating
+// list today.
 
 import type { EmailBlockType } from './blocks';
 
@@ -21,9 +21,8 @@ export function parseFieldPath(raw: string): ParsedFieldPath | null {
 }
 
 // Only the plain-text fields — colour, alignment, href, image src and
-// the rest stay sidebar-only, same reasoning as the website builder's
-// whitelist (a link URL or a colour swatch isn't something you'd want
-// to type in place).
+// the rest stay sidebar-only (a link URL or a colour swatch isn't
+// something you'd want to type in place).
 export const EDITABLE_FIELDS: Record<EmailBlockType, string[]> = {
   heading: ['text'],
   text: ['text'],

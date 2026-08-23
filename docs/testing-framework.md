@@ -90,15 +90,6 @@ where noted.
 - [ ] Per-gym sending domain (if configured) is used correctly, not
       the shared fallback.
 
-## Website builder (if `website_builder_enabled` for the test gym)
-
-- [ ] Publish a site → it's reachable at `/site/<slug>` and (if
-      connected) the custom domain.
-- [ ] Edit a page, preview, publish — the live site updates; draft
-      changes don't leak before publishing.
-- [ ] Custom domain connection: DNS records handed back, SSL issues
-      once they resolve.
-
 ## Data import / migration
 
 - See the migration dry-run steps above — member CSV import, workout

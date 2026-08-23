@@ -109,7 +109,6 @@ export const TABLES = {
       public_signup_enabled: true,
       public_lead_capture_enabled: true,
       onboarding_dismissed_at: iso(-100),
-      website_builder_enabled: true,
       operating_defaults_reviewed_at: iso(-90),
       logo_url: null,
       logo_url_dark: null,
@@ -336,6 +335,10 @@ export const TABLES = {
   email_campaigns: [
     { id: 'e1', gym_id: GYM_ID, title: 'August newsletter', status: 'sent', created_at: iso(-12), sent_at: iso(-11), recipient_count: 41 },
     { id: 'e2', gym_id: GYM_ID, title: 'Bank holiday timetable', status: 'draft', created_at: iso(-3), sent_at: null, recipient_count: 0 },
+  ],
+
+  gym_agent_settings: [
+    { gym_id: GYM_ID, enabled: true, phone_number: '+44 20 7946 0958', voice_enabled: true, vapi_assistant_id: 'va-1', context: null, voice_id: 'v1', front_desk_entitled: true, provision_status: 'ready' },
   ],
 
   agent_authority: [

@@ -231,9 +231,9 @@ function moneyAnswer(
 // money.set_plan_price
 // ============================================================================
 //
-// The price on a plan is the one number in the gym that three systems have
-// an opinion about: the plans screen, the website, and the Stripe Price
-// object minted at the first checkout. Until 0215 the third one never
+// The price on a plan is the one number in the gym that two systems have
+// an opinion about: the plans screen and the Stripe Price
+// object minted at the first checkout. Until 0215 the second one never
 // heard about a change, so an owner could put Unlimited up to £60 and keep
 // selling it at £50 with no surface disagreeing. The trigger fixes that;
 // this card's job is to say the other half out loud — the people already
@@ -283,8 +283,6 @@ export const setPlanPrice: ActionSpec<PriceChange> = {
     'membership-plans-active',
     'membership-plan-names',
     'gym-plans',
-    'website-editor-plans',
-    'website-preview-plans',
   ],
   sanitise: (raw) => {
     const plan = argString(raw, 'plan', 80);

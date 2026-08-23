@@ -71,11 +71,6 @@ export const CASES: EvalCase[] = [
   { say: 'Message Casey to say her membership is sorted', expect: [{ action: 'members.message' }] },
   { say: 'Who has gone quiet lately?', expect: [{ action: 'members.quiet' }] },
 
-  // --- website -------------------------------------------------------------
-  { say: 'Publish the website', expect: [{ action: 'website.publish' }] },
-  { say: 'Take the site offline for now', expect: [{ action: 'website.unpublish' }] },
-  { say: 'Is our domain connected yet?', expect: [{ action: 'website.check_domain' }] },
-
   // --- leads ---------------------------------------------------------------
   {
     say: 'Add a lead: Jamie, 07700 900123, walked in this morning asking about memberships',

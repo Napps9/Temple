@@ -63,7 +63,6 @@ and apply, so a new verb is a file entry rather than a branch in a screen.
 | **Programming** (7) | block out, move/drop a block, clear a day, copy a week, set access, who is programmed |
 | **Comms** (6) | draft a newsletter, schedule, cancel, stop a send, describe a sequence, send report |
 | **Members** (6) | find, assign a plan, comp, tag, message, who has gone quiet |
-| **Website** (5) | publish, unpublish, set SEO, connect and check a domain |
 | **Leads** (4) | add, set status, assign, pipeline |
 | **Store** (4) | add a product, set price, refund an order, sales |
 | **Team** (4) | invite, set role, remove, who |
@@ -119,7 +118,6 @@ no discount is ever invented.
   subscriptions, orders and fulfilment.
 - **Comms** — campaigns with a block editor, audiences, topics, member
   preferences, automations, real delivery reporting.
-- **The website builder** — a canvas editor, themes, SEO, custom domains.
 - **The AI front desk** — a lead agent that answers calls and messages,
   with conversation review and call QC.
 - **Switching platforms** — CSV, workout-history and Stripe importers

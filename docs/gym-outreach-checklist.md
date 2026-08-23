@@ -225,7 +225,7 @@ Left for you (policy/config, not code):
       clean first, see the note above).
   - [x] **Good Life Crossfit** — slug `demo-good-life`, owner
         `owner@demo-good-life.temple.test` / `TempleDemo1!`. 43 accounts,
-        850 bookings, 352 tracked workouts, published website.
+        850 bookings, 352 tracked workouts.
   - [x] **Redline Hyrox** — slug `demo-redline-hyrox`, owner
         `owner@demo-redline-hyrox.temple.test` / `TempleDemo1!`. 43
         accounts, 713 bookings, 6 Hyrox races/144 splits, 4 store
@@ -262,10 +262,7 @@ Left for you (policy/config, not code):
         refund it).
 - [x] **Decide Temple's pricing** — **£299/month +VAT, all-inclusive**,
       matching what the marketing site's stat strip and pricing page
-      already commit to. The website builder add-on
-      (`website_builder_enabled`, flipped manually by you after an
-      invoice — no self-serve billing for it) is **included**, not
-      priced separately.
+      already commit to.
 - [x] **Marketing/landing site** — done, live at `jointemple.io` (apex,
       canonical; `www` 308-redirects to it, SSL valid). Repo
       `napps9/temple-website`, trunk (`main`) auto-deploys to Vercel.
@@ -326,9 +323,6 @@ back cleanly if the key is unset.
 - [x] `ANTHROPIC_API_KEY` — set in hosted. AI-assisted column mapping +
       plan/tag inference in the member importer (falls back to
       deterministic rules if ever unset).
-- [x] `PEXELS_API_KEY` — set in hosted. Stock-photo search + website
-      hero/gallery auto-population (falls back to upload-only / photo-less
-      if ever unset); `docs/pexels-photos-setup.md`
 
 ---
 

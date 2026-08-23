@@ -5,19 +5,16 @@
 // so a schema drift fails typecheck rather than at runtime.
 
 import { starterDocument, FALLBACK_BRAND_SEED } from '../../src/lib/email/blocks';
-import { SITE_TEMPLATES } from '../../src/lib/site-templates';
 import { CROSSFIT_WOD_TEMPLATES, HYROX_WOD_TEMPLATES, buildProgrammingRows } from './programming';
 import type { Database, GymRole } from '../../src/types/database';
 import {
   COACHES,
   DEMO_ADDRESS,
-  DEMO_HOURS_TEXT,
   DM_SCRIPTS,
   LEAD_NAMES,
   MAX_MEMBERS,
   OWNER,
   PENDING_NAMES,
-  TESTIMONIAL_QUOTES,
   demoUuid,
   memberNames,
   mulberry32,
@@ -79,8 +76,8 @@ export type DemoConfig = {
   now: Date;
   // Defaults to 'crossfit' — every existing call site (and the
   // deterministic fixtures in plan.test.ts) is unaffected. 'hyrox'
-  // reshapes class types, training history, races, store copy and the
-  // website into the Hyrox flavour; see the isHyrox branches below.
+  // reshapes class types, training history, races and store copy into
+  // the Hyrox flavour; see the isHyrox branches below.
   discipline?: 'crossfit' | 'hyrox';
   // Overrides DEMO_PASSWORD for every account in the plan. Undefined by
   // every existing call site (and plan.test.ts's fixtures), so behaviour
@@ -111,7 +108,6 @@ export type DemoPlan = {
   gymFlags: {
     store_enabled: boolean;
     store_shipping_fee_cents: number;
-    website_builder_enabled: boolean;
     onboarding_dismissed_at: string;
   };
   memberships: T<'gym_memberships'>[];
@@ -138,7 +134,6 @@ export type DemoPlan = {
   campaign: T<'email_campaigns'>;
   storeProducts: T<'store_products'>[];
   digitalAssetPath: string;
-  website: T<'gym_websites'>;
   gymHours: T<'gym_hours'>[];
   programming: T<'class_programming'>[];
   directMessages: T<'direct_messages'>[];
@@ -157,7 +152,7 @@ function daysFrom(now: Date, days: number): Date {
 
 // Deep-clone through JSON so jsonb payloads carry no undefineds and no
 // class instances — exactly what PostgREST will receive.
-function asJson<TVal>(value: TVal): T<'gym_websites'>['design'] {
+function asJson<TVal>(value: TVal): T<'email_campaigns'>['design'] {
   return JSON.parse(JSON.stringify(value));
 }
 
@@ -717,7 +712,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     audience: asJson({ kind: 'all_members' }),
   };
 
-  // --- store + website ----------------------------------------------------------------------------
+  // --- store ----------------------------------------------------------------------------
   const digitalAssetPath = `${gymId}/12-week-engine-programme.pdf`;
   const storeProducts: T<'store_products'>[] = isHyrox
     ? [
@@ -798,106 +793,6 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
           created_by: owner.id,
         },
       ];
-
-  // The strength/forged template + theme already covers "Strength,
-  // CrossFit, Hyrox" (see brand-themes.ts's tagline for 'forged'), so
-  // both disciplines reuse it — only the copy and publish state differ.
-  const siteDoc = SITE_TEMPLATES.strength.build(config.gymName);
-  // build() mints time-based page ids and block ids (same reason
-  // home's block ids get rewritten below) — pin every page's id and its
-  // one block's id so the same seed yields a byte-identical plan.
-  const homePage = { ...siteDoc.pages[0], id: 'sp_demo_home' };
-  // Each of these pages now carries an intro about block plus its
-  // live-data block, so ids are suffixed by index to stay unique (and
-  // deterministic for a byte-identical plan across runs).
-  const schedulePage = {
-    ...siteDoc.pages[1],
-    id: 'sp_demo_schedule',
-    blocks: siteDoc.pages[1].blocks.map((b, i) => ({ ...b, id: `sb_demo_schedule_${i + 1}` })),
-  };
-  const teamPage = {
-    ...siteDoc.pages[2],
-    id: 'sp_demo_team',
-    blocks: siteDoc.pages[2].blocks.map((b, i) => ({ ...b, id: `sb_demo_team_${i + 1}` })),
-  };
-  const pricingPage = {
-    ...siteDoc.pages[3],
-    id: 'sp_demo_pricing',
-    blocks: siteDoc.pages[3].blocks.map((b, i) => ({ ...b, id: `sb_demo_pricing_${i + 1}` })),
-  };
-  const patchedBlocks = homePage.blocks.map((raw, i) => {
-    const block = { ...raw, id: `sb_demo${i + 1}` };
-    if (block.type === 'hero' && isHyrox) {
-      return {
-        ...block,
-        subheadline:
-          'Race-day conditioning, coached compromised running and real Hyrox simulations — book a free session and feel what race pace costs.',
-      };
-    }
-    if (block.type === 'about' && isHyrox) {
-      return {
-        ...block,
-        heading: 'Built for race day',
-        body: 'We coach for one outcome: crossing the finish line faster than you thought possible. Every session blends strength, compromised running and the eight Hyrox stations, programmed by coaches who race themselves. Whether this is your first Hyrox or your tenth, we will build the engine and the technique to get you there.',
-      };
-    }
-    if (block.type === 'testimonials') {
-      // A Hyrox-discipline site is seeded mid-setup on purpose — no
-      // quotes yet — so the Publish flow's own "add real quotes"
-      // warning is something to actually see, not just read about.
-      if (isHyrox) return block;
-      return {
-        ...block,
-        quotes: TESTIMONIAL_QUOTES.map((q, i) => ({ id: `q_demo${i + 1}`, quote: q.quote, name: q.name })),
-      };
-    }
-    if (block.type === 'location') {
-      // Same deliberate gap as testimonials above — no address yet.
-      if (isHyrox) return block;
-      return { ...block, address: DEMO_ADDRESS, hours: DEMO_HOURS_TEXT };
-    }
-    return block;
-  });
-  // A gallery with one photo missing its description — triggers the
-  // "add a description" publish warning alongside the empty
-  // testimonials/location blocks, so a Hyrox-discipline demo shows the
-  // site builder mid-draft rather than only ever finished and live.
-  const blocksWithGallery = isHyrox
-    ? (() => {
-        const gallery = {
-          id: 'sb_demo_gallery',
-          type: 'gallery' as const,
-          heading: 'Inside the box',
-          images: [
-            {
-              id: 'g_demo1',
-              url: 'https://picsum.photos/seed/hyrox-gym-1/900/600',
-              alt: 'Members mid-sled-push during a Saturday Hyrox simulation',
-            },
-            { id: 'g_demo2', url: 'https://picsum.photos/seed/hyrox-gym-2/900/600', alt: '' },
-          ],
-        };
-        const locationIdx = patchedBlocks.findIndex((b) => b.type === 'location');
-        return [
-          ...patchedBlocks.slice(0, locationIdx),
-          gallery,
-          ...patchedBlocks.slice(locationIdx),
-        ];
-      })()
-    : patchedBlocks;
-  const website: T<'gym_websites'> = {
-    gym_id: gymId,
-    theme: SITE_TEMPLATES.strength.themeId,
-    design: asJson({
-      ...siteDoc,
-      pages: [{ ...homePage, blocks: blocksWithGallery }, schedulePage, teamPage, pricingPage],
-    }),
-    // A CrossFit demo ships live so the public site is something to
-    // see immediately; the Hyrox demo stays unpublished so the site
-    // builder's draft state — warnings, the disabled-until-ready
-    // Publish button — is part of what gets demoed.
-    published: !isHyrox,
-  };
 
   const gymHours: T<'gym_hours'>[] = GYM_HOURS.map(([day, opens, closes]) => ({
     gym_id: gymId,
@@ -990,7 +885,6 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     gymFlags: {
       store_enabled: true,
       store_shipping_fee_cents: 500,
-      website_builder_enabled: true,
       onboarding_dismissed_at: nowISO,
     },
     memberships,
@@ -1017,7 +911,6 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     campaign,
     storeProducts,
     digitalAssetPath,
-    website,
     gymHours,
     programming,
     directMessages,

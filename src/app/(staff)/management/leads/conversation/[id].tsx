@@ -455,7 +455,7 @@ export default function AgentConversationScreen() {
           // (its own visibility is keyed off that same selection) before
           // onPress ever fires. preventDefault on mousedown is the standard
           // fix (same technique already used for the site-builder toolbar
-          // in site-render.ts) and needs the raw DOM event Pressable
+          // elsewhere) and needs the raw DOM event Pressable
           // doesn't expose a typed prop for.
           <div
             onMouseDown={(e) => e.preventDefault()}

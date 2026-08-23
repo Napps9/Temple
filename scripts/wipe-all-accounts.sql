@@ -52,7 +52,6 @@ delete from storage.objects
    'email-assets',
    'gym-logos',
    'gym-waivers',
-   'gym-website-assets',
    'member-programming-files',
    'store-digital-assets',
    'store-product-images'

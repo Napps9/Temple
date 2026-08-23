@@ -22,7 +22,6 @@ export function useGymNavLinks(): GymNavLink[] {
   const canManagePlans = useCan('can_manage_plans') ?? false;
   const canManageComms = useCan('can_manage_comms') ?? false;
   const canWorkLeads = useCan('can_work_leads') ?? false;
-  const canManageWebsite = useCan('can_manage_website') ?? false;
   const isOwner = membership?.role === 'owner';
 
   return [
@@ -55,15 +54,6 @@ export function useGymNavLinks(): GymNavLink[] {
             href: '/management/leads',
             label: 'AI Front Desk',
             icon: <AIMark />,
-          },
-        ]
-      : []),
-    ...(canManageWebsite
-      ? [
-          {
-            href: '/management/website',
-            label: 'Website',
-            icon: 'globe-outline' as const,
           },
         ]
       : []),

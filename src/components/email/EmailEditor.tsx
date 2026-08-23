@@ -442,7 +442,7 @@ function SettingsInspector({
 // Editor
 // ---------------------------------------------------------------------------
 
-// Mirrors the website builder (SiteEditor): an accordion block list — each
+// An accordion block list — each
 // block is a labelled row that expands an inline inspector — plus an
 // "Add a block" palette and an "Email style" card, in a rail. On wide web
 // the rail sits beside a live read-only preview; on narrow it stacks and the
@@ -613,7 +613,7 @@ export function EmailEditor({
   );
 
   // The block list: labelled rows that expand an inline inspector, matching
-  // the website builder's accordion.
+  // the accordion pattern.
   const listCard = (
     <View className="bg-surface dark:bg-surface-dk rounded-ctl p-3 gap-2">
       <FieldLabel>
@@ -718,10 +718,10 @@ export function EmailEditor({
   );
 
   // Wide web pairs the editor rail with a live, click-to-edit preview —
-  // like the website builder's split view — so heading/text/button-label
+  // a split view — so heading/text/button-label
   // edits can happen straight in the canvas, not just the sidebar; narrow
   // stacks the rail (the caller offers a read-only Preview toggle).
-  // The column, not the window — see website.tsx for the same call.
+  // The column, not the window.
   if (Platform.OS === 'web' && staffContentWidth(width) >= 1280) {
     return (
       <View className="flex-1 flex-row">

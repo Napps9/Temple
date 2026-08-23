@@ -796,17 +796,6 @@ function LiveHero({
             </Pressable>
           </View>
         ) : null}
-        {number ? (
-          <Pressable
-            onPress={() => router.push('/management/website')}
-            className="flex-row items-center gap-1.5 rounded-full px-3 py-1.5"
-            style={{ backgroundColor: tint('0.15'), borderWidth: 1, borderColor: tint('0.25') }}>
-            <Ionicons name="globe-outline" size={13} color={ink} />
-            <Text className="text-xs font-medium" style={{ color: ink }}>
-              Add to your website
-            </Text>
-          </Pressable>
-        ) : null}
         <Pressable
           onPress={onDone}
           className="bg-white rounded-ctl px-6 py-3 self-stretch items-center">

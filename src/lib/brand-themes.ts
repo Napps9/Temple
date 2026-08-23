@@ -1,7 +1,7 @@
 // Shared starter-theme registry — a small set of named palette + type
 // presets a gym can apply for a look that isn't just their raw brand
 // colour on a blank canvas. Used today by the email campaign builder;
-// the site builder (planned, not yet built) is meant to import this
+// other branded surfaces are meant to import this
 // same registry rather than defining the same themes twice in two
 // different shapes, so a gym's site and emails can actually match.
 //
@@ -38,7 +38,7 @@ export type BrandTheme = {
     timeFormat: '12h' | '24h';
   };
   shape: {
-    // A generic enum, not a px value — email and a future website
+    // A generic enum, not a px value — email and any future surface
     // builder want different concrete radii for the same "feel", so
     // each consumer maps this to its own units.
     buttonRadius: 'square' | 'rounded' | 'pill';

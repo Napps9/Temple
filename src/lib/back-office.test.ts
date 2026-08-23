@@ -28,7 +28,6 @@ const PARENTED: Record<string, string> = {
   'members/[profile]': 'management/members',
   'members/imported/[id]': 'management/members/import',
   'members/import-stripe': 'management/members/import',
-  'website/domain': 'management/website',
   'leads/agent': 'management/leads',
   'leads/agent-setup': 'management/leads',
   'leads/settings': 'management/leads',
@@ -236,7 +235,7 @@ describe('finding it by typing', () => {
   });
 
   it('finds one by the category it lives under', () => {
-    expect(searchBackOffice('website', all).map((e) => e.title)).toContain('Website');
+    expect(searchBackOffice('store', all).map((e) => e.title)).toContain('Store');
   });
 
   // The point of indexing the sentence too: somebody who half-remembers
@@ -286,7 +285,6 @@ describe('finding it by typing', () => {
       'permissions',
       'holiday',
       'newsletter',
-      'seo',
       'credits',
       'timezone',
       // Every one of these lost its route to the Settings tab. A surface
@@ -332,8 +330,8 @@ describe('the burndown has a baseline', () => {
   });
 
   // `status` says where a surface sits; `ends` says where the sorting rule
-  // sends it. Without the second, the scoreboard cannot tell Website —
-  // which keeps its screen forever, because building a page is craft —
+  // sends it. Without the second, the scoreboard cannot tell Coach
+  // earnings — which keeps its screen, because checking pay is evidence —
   // from Tag rules, which is a form waiting to become a sentence. A
   // burndown that cannot reach zero is an appetite, not a plan.
   // `movedTo` is the difference between a scoreboard that can finish and
@@ -384,7 +382,7 @@ describe('the burndown has a baseline', () => {
   // Named rather than counted, so moving one is a decision somebody wrote
   // down. Every one of these is quoted from docs/roadmap.md's inventory —
   // Earnings keeps its screen because a coach checking their pay is
-  // evidence, and the website builder's canvas is craft.
+  // evidence.
   it('keeps the surfaces the sorting rule says keep their screen', () => {
     expect(
       BACK_OFFICE.filter((e) => e.ends === 'keeps')
@@ -401,7 +399,6 @@ describe('the burndown has a baseline', () => {
       'Individual programming',
       'Roster',
       'Set up your gym',
-      'Website',
       'Your account',
       // Not a screen and not craft, but a destination — the place
       // retiring settings land. It cannot itself be owed a sentence: it

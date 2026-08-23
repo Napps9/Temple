@@ -1,5 +1,5 @@
 // Shared primitives for the two domain-connection features (email
-// sending domains via Resend, website custom domains via Vercel).
+// sending domains via Resend).
 // Pure and dependency-free. The two edge functions keep their own Deno
 // copies of FQDN_RE (they can't import src/) — keep them in sync:
 // supabase/functions/sending-domain/index.ts,

@@ -153,11 +153,11 @@ the Back Office (pixel control when it's wanted); scheduled sends, A/B
 subjects, topics, suppression, sending domains — all of it is hands,
 unchanged. The front desk's taught voice becomes the one voice.
 
-### The website — craft keeps its canvas
+### The website — removed
 
-The builder's canvas editing **keeps its screen**. The admin around it —
-publish checklists, domain status, SEO housekeeping — becomes go-live
-steps and Timeline receipts ("your domain verified overnight").
+The builder was removed entirely (0259): no gym ever published a site
+or connected a domain, so the whole surface left the product rather
+than earning verbs.
 
 ### The team's own work
 
@@ -473,17 +473,9 @@ already authorised. Roughly in order of how often an owner touches them:
   a confirm label that changes when something is lost. "Put today's WOD on
   the leaderboard" is still deliberately unbuilt: it is a judgement about a
   session, not scaffolding around one.
-- **Website** — done. The hardening landed first (0220) and the verbs
-  followed: `website.publish`, `website.unpublish`,
-  `website.connect_domain`, `website.check_domain`, `website.set_seo`.
-  Publish runs the editor's own page warnings and refuses with the list
-  rather than reporting success while nothing changed; connecting a domain
-  ends at the screen that can render a DNS table; the SEO write goes
-  through `save_gym_website` with the editor's concurrency token and says
-  so when it loses the race. What went first is the reason they can be
-  honest: hiding a plan from your website hid it from the page and not
-  from the server, so a verb offering that would have sold a privacy the
-  server did not provide.
+- **Website** — retired. The five verbs shipped, then the whole
+  builder was removed (0259) before any gym published a site; the verbs
+  went with it.
 
 ### 3 — It remembers what you just said — done
 
@@ -695,9 +687,9 @@ Temple has no idea when, so telling them it noticed they have not been in
 is the worst message in the product.
 
 **Phase 5 has a finish line now.** `status` on a Back Office entry said
-where a surface sits; it could not tell Website — which keeps its screen
-forever, because building a page is craft — from Tag rules, which is a
-form waiting to become a sentence. So the manifest carries `ends` as
+where a surface sits; it could not tell Coach earnings — which keeps
+its screen, because checking pay is evidence — from Tag rules, which is
+a form waiting to become a sentence. So the manifest carries `ends` as
 well, taken from the sorting rule at the top of this document rather than
 from anybody's memory: **keeps** (craft, judgement, evidence),
 **moves** (exists so a human can operate machinery), **splits** (routine

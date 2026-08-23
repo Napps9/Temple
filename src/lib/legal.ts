@@ -29,8 +29,8 @@ export const TERMS_OF_SERVICE: LegalDoc = {
       body: [
         'Temple is a platform for running a fitness business: class ' +
           'scheduling and bookings, membership plans, member management, ' +
-          'programming and training tracking, communications, a storefront, ' +
-          'and a website builder. Available features depend on your plan and ' +
+          'programming and training tracking, communications, and a ' +
+          'storefront. Available features depend on your plan and ' +
           'any add-ons.',
       ],
     },
@@ -86,7 +86,7 @@ export const TERMS_OF_SERVICE: LegalDoc = {
       body: [
         'You will not use Temple unlawfully, attempt to breach its security ' +
           'or access other businesses’ data, or use the communications ' +
-          'and website tools to send spam or unlawful content. You are ' +
+          'tools to send spam or unlawful content. You are ' +
           'responsible for the content you and your staff publish.',
       ],
     },
@@ -143,8 +143,8 @@ export const PRIVACY_POLICY: LegalDoc = {
       body: [
         'We rely on Supabase (database, auth, storage), Stripe (payments), ' +
           'Resend (email), and Vercel (hosting). Optional features may use ' +
-          'Anthropic (AI assistance, privacy-safe summaries only) and Pexels ' +
-          '(stock photos). Each processes data only as needed to provide its ' +
+          'Anthropic (AI assistance, privacy-safe summaries only). Each ' +
+          'processes data only as needed to provide its ' +
           'part of the service.',
       ],
     },

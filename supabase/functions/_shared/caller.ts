@@ -149,15 +149,5 @@ export async function safeOrigin(
     return clean;
   }
 
-  const { data: site } = await service
-    .from('gym_website_domains')
-    .select('domain, status')
-    .eq('gym_id', gymId)
-    .maybeSingle();
-  if (site?.status === 'verified' &&
-      hostAllowed(host, site.domain as string | null)) {
-    return clean;
-  }
-
   return fallback;
 }

@@ -4,7 +4,7 @@ One command creates a believable, fully-populated gym with **real,
 signable-in accounts**, so every feature can be tested end to end —
 programming, booking, attendance history, PRs and leaderboards, Hyrox
 races, injuries and staff alerts, DMs, leads, a draft campaign, the
-store, and a website. One command removes it all again.
+and the store. One command removes it all again.
 
 ## What you get (defaults — `--discipline crossfit`)
 
@@ -24,9 +24,8 @@ store, and a website. One command removes it all again.
 - 4 members who have **left** (lapsed subscriptions), 5
   **pending_members** (import staging), 10 **leads** across every
   pipeline status, 3 **injuries** (2 unacknowledged staff alerts), 3
-  scripted **DM threads**, 3 **store products** (one digital with a
-  real downloadable asset), and a **published website** built from the
-  Strength template.
+  scripted **DM threads**, and 3 **store products** (one digital with
+  a real downloadable asset).
 - Everything is deterministic for a given `--seed` — two runs produce
   the same names, numbers, and history shapes.
 
@@ -53,11 +52,6 @@ several features **mid-draft** rather than only ever finished:
   from training sims — both leaderboard buckets have real entries.
 - **4 store products**, one of them `active: false` — a "coming soon"
   item hidden from the storefront, demoing that toggle.
-- The **website is left unpublished**, with testimonials and the
-  location address deliberately blank and a gallery photo missing its
-  description — the same three publish-blocking warnings an owner
-  mid-setup would see, so the site builder's draft state (and the
-  disabled-until-ready Publish button) is something to actually look
   at, not just read about in this file.
 - The email campaign stays a draft either way, with Hyrox-flavoured
   copy for this discipline.
@@ -109,7 +103,7 @@ npm run seed:demo -- --teardown --slug demo-ironworks
 ```
 
 - Deletes the gym row — every tenant table cascades from `gyms`, so
-  classes, bookings, workouts, leads, campaigns, store, and website
+  classes, bookings, workouts, leads, campaigns, and store
   all go with it. The digital store asset is removed from Storage.
 - Deletes the demo auth accounts, with two guards: only users found
   via the gym's own memberships, and of those only emails ending

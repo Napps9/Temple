@@ -381,7 +381,7 @@ export function ruleSheet(c: RuleChoices): SheetGroup[] {
         line({ t: 'Under-18s are ' }, { f: 'allow_minors' }),
         line({ t: 'Members can message ' }, { f: 'dm_scope' }),
         line({ t: 'Leaderboards are ' }, { f: 'leaderboards_on' }),
-        line({ t: 'People ' }, { f: 'public_signup' }, { t: ' from your website' }),
+        line({ t: 'People ' }, { f: 'public_signup' }, { t: ' from your join link' }),
         line({ t: 'The enquiry form is ' }, { f: 'public_lead_capture' }),
         line({ t: 'Members ' }, { f: 'members_can_self_checkout' }),
       ],

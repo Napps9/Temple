@@ -146,7 +146,6 @@ const CATEGORY_ICONS: Record<BackOfficeCategory, IconSlot> = {
   members: 'people-outline',
   crm: <AIMark />,
   comms: 'mail-outline',
-  website: 'globe-outline',
   store: 'bag-handle-outline',
   team: 'briefcase-outline',
   plans: 'pricetags-outline',
@@ -246,7 +245,6 @@ export default function ManagementHome() {
   const canManageStore = useCan('can_manage_store');
   const canAssignPlan = useCan('can_assign_plan');
   const canWorkLeads = useCan('can_work_leads');
-  const canManageWebsite = useCan('can_manage_website');
 
   const canManageParq = useCan('can_manage_parq');
 
@@ -271,7 +269,6 @@ export default function ManagementHome() {
     can_manage_store: canManageStore,
     can_assign_plan: canAssignPlan,
     can_work_leads: canWorkLeads,
-    can_manage_website: canManageWebsite,
     can_manage_parq: canManageParq,
   };
   const entries = visibleEntries((c) => capabilities[c], role);
@@ -279,10 +276,10 @@ export default function ManagementHome() {
   const searching = query.trim().length > 0;
   const results = searchBackOffice(query, entries);
 
-  // The strip is for categories with a panel behind them. Website and AI
-  // Front Desk are whole workspaces — tabs for them used to router.push,
-  // which swapped the navigation for a Back button mid-thought. They are
-  // doors below the tab body instead, and the strip never navigates.
+  // The strip is for categories with a panel behind them. AI Front Desk
+  // is a whole workspace — a tab for it used to router.push, which
+  // swapped the navigation for a Back button mid-thought. It is a door
+  // below the tab body instead, and the strip never navigates.
   const TABBED: BackOfficeCategory[] = [
     'members',
     'comms',

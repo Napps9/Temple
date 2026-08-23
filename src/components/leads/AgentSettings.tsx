@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Redirect, router } from 'expo-router';
+import { Redirect } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Linking, Platform, Pressable, ScrollView, Switch, View } from 'react-native';
 import { Text } from '@/components/Text';
@@ -726,28 +726,9 @@ export function AgentSettings() {
 
           <View className="h-px bg-raised dark:bg-raised-dk" />
 
-          <View className="flex-row items-center justify-between gap-3">
-            <View className="flex-1">
-              <Text className="text-ink dark:text-ink-dk font-medium text-sm">
-                On Temple's website builder
-              </Text>
-              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-                Add the "Call &amp; text" block from there — it always shows your current number.
-              </Text>
-            </View>
-            <ChipButton
-              label="Open builder"
-              icon="open-outline"
-              tone="primary"
-              onPress={() => router.push('/management/website')}
-            />
-          </View>
-
-          <View className="h-px bg-raised dark:bg-raised-dk" />
-
           <View className="gap-1.5">
             <Text className="text-ink dark:text-ink-dk font-medium text-sm">
-              Hosting your site elsewhere
+              On your website
             </Text>
             <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Copy this snippet into a custom-HTML block on Wix, Squarespace or wherever your site
@@ -756,7 +737,7 @@ export function AgentSettings() {
             <ChipButton
               label="Copy embed code"
               icon="code-slash-outline"
-              tone="neutral"
+              tone="primary"
               onPress={() =>
                 copyToClipboard(
                   buildCallWidgetSnippet({

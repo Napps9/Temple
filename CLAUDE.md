@@ -196,7 +196,7 @@ Gotchas seen in this codebase:
   `useGymNavLinks` like the rail). Detail
   pages entered from mid-level surfaces the nav can't reach (member
   profiles, imported members, a member's tags, the Stripe import, lead
-  conversations, agent setup, website/domain, member programming) keep
+  conversations, agent setup, member programming) keep
   their Back at every width.
 - **`<ChipButton>`** for inline actions (Copy, Share, Edit, etc.).
   Tones: `primary` / `neutral` / `amber` / `red` / `filled`.
@@ -221,9 +221,8 @@ Gotchas seen in this codebase:
   `gymId`, `publicSignupEnabled`. No colours and no logo: a gym is
   named, not painted.
 - **Content colour is not brand.** Class-type dots, tag colours and
-  email/site themes are authored per item and stay — that's
-  `ColorSwatchPicker`, `brand-themes.ts`, and the gym's public website,
-  which keeps whatever logo and tint its snapshot holds.
+  email themes are authored per item and stay — that's
+  `ColorSwatchPicker` and `brand-themes.ts`.
 
 ---
 

@@ -22,8 +22,8 @@ export const LG = 1024;
 
 // The rail's own width, and the sum a staff screen actually has to lay
 // out in. A component inside the column cannot ask the window how wide it
-// is and get a useful answer, and the two split views in the product —
-// the website builder and the email builder — were both asking.
+// is and get a useful answer, and the product's split view — the
+// email builder — was asking.
 export const RAIL_W = 246;
 
 export function staffContentWidth(windowWidth: number) {

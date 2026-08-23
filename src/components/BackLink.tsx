@@ -41,7 +41,7 @@ import { useThemeColors } from '@/lib/theme';
 // Manage hub are one tap away — so the affordance is redundant chrome
 // and the component renders nothing. Detail pages entered from
 // mid-level surfaces the nav can't reach (a member profile opened from
-// a roster, a lead conversation, website/domain) never pass it: for
+// a roster, a lead conversation) never pass it: for
 // them Back preserves a level the nav would lose. The
 // `?backTo=setup|checklist` override still renders regardless: the
 // setup flow has no nav entry to lean on.

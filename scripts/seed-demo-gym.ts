@@ -132,7 +132,6 @@ function printCounts(plan: DemoPlan): void {
     ['pending_members', plan.pendingMembers.length],
     ['email_campaigns', 1],
     ['store_products', plan.storeProducts.length],
-    ['gym_websites', 1],
     ['gym_hours', plan.gymHours.length],
     ['class_programming', plan.programming.length],
     ['direct_messages', plan.directMessages.length],
@@ -191,7 +190,7 @@ async function seed(sb: Client, plan: DemoPlan): Promise<void> {
 
   console.log('Creating gym + tenant data…');
   await insertAll(sb, 'gyms', [p.gym]);
-  // store/website flags are ops-only columns that the hand-trimmed
+  // store flags are ops-only columns that the hand-trimmed
   // Update type deliberately omits — cast for this one write.
   const { error: flagErr } = await sb
     .from('gyms')
@@ -230,7 +229,6 @@ async function seed(sb: Client, plan: DemoPlan): Promise<void> {
     });
   if (pdfErr) fail(`digital asset upload failed: ${pdfErr.message}`);
   await insertAll(sb, 'store_products', p.storeProducts);
-  await insertAll(sb, 'gym_websites', [p.website]);
   await insertAll(sb, 'gym_hours', p.gymHours);
   await insertAll(sb, 'class_programming', p.programming);
   await insertAll(sb, 'direct_messages', p.directMessages);

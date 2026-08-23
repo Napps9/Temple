@@ -122,8 +122,7 @@ log, and the retention purge is scheduled in migration `0095`.)*
       (login → the 3–4 screens that sell it).
 
 ### 4b. Go-to-market (Milestone B, business decisions)
-- [ ] **[You]** Decide Temple's **pricing** (monthly per gym; website
-      builder add-on price + how you invoice it, since it's flipped by hand).
+- [ ] **[You]** Decide Temple's **pricing** (monthly per gym).
 - [ ] **[You]** Confirm the `jointemple.io` marketing site is live and sells.
 - [ ] **[You]** Dry-run a real Mindbody/PushPress/Glofox/Wodify CSV through
       `/management/members/import` so a real export holds no surprises.
@@ -141,7 +140,6 @@ seven pass, you're ready to pitch.
 ## Optional (any time, never blocking)
 
 - [ ] **[You]** `ANTHROPIC_API_KEY` — sharper importer inference.
-- [ ] **[You]** `PEXELS_API_KEY` — website stock photos.
 
 ---
 

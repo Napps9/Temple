@@ -13,7 +13,7 @@ type CanvasMessage =
 // react-native-web renders through react-dom, so a raw <iframe> is fine
 // here. The native sibling (HtmlPreview.tsx) shows a fallback.
 //
-// Two modes, mirroring the website builder's SiteHtmlPreview.web.tsx:
+// Two modes:
 // - Read-only (default, `editable` unset): `sandbox="allow-same-origin"`,
 //   no scripts, `srcDoc` reloads the iframe on every `html` change.
 // - Editable: `sandbox="allow-same-origin allow-scripts"` — required

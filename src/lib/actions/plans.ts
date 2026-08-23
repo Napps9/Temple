@@ -9,9 +9,9 @@
 //
 // Archiving is deliberately not "deleting a plan that has members". The
 // people on it keep their subscription, their price and their access;
-// what changes is that it stops being offered — the join page, the
-// website's plan block and the staff assign-plan picker all filter
-// `archived_at is null`. Saying that on the card is the whole job,
+// what changes is that it stops being offered — the join page and the
+// staff assign-plan picker both filter `archived_at is null`. Saying
+// that on the card is the whole job,
 // because "archive" reads like "cancel these people" to anyone who has
 // not read the schema.
 //
@@ -110,8 +110,6 @@ export const retirePlan: ActionSpec<PlanTarget> = {
     'membership-plans-active',
     'membership-plan-names',
     'gym-plans',
-    'website-editor-plans',
-    'website-preview-plans',
   ],
   sanitise: (raw) => {
     const plan = argString(raw, 'plan', 80);
@@ -146,7 +144,7 @@ export const retirePlan: ActionSpec<PlanTarget> = {
         on === 0
           ? 'Nobody is on it.'
           : `The ${on} ${on === 1 ? 'member' : 'members'} on it keep it — their membership, their price and their access are untouched.`,
-        'It comes off your join page, your website and the plan picker, so nobody new can pick it.',
+        'It comes off your join page and the plan picker, so nobody new can pick it.',
         'Reversible: say "bring back ' + plan.name + '" whenever you want it back.',
       ],
       yes: 'Yes, stop selling it',
@@ -184,8 +182,6 @@ export const restorePlan: ActionSpec<PlanTarget> = {
     'membership-plans-active',
     'membership-plan-names',
     'gym-plans',
-    'website-editor-plans',
-    'website-preview-plans',
   ],
   sanitise: (raw) => {
     const plan = argString(raw, 'plan', 80);
@@ -220,7 +216,7 @@ export const restorePlan: ActionSpec<PlanTarget> = {
         plan.monthly_price_cents === null
           ? 'It goes back with no price set, exactly as you left it.'
           : `It goes back at ${formatPrice(plan.monthly_price_cents, ctx.currency)}, exactly as you left it.`,
-        'It reappears on your join page, your website and the plan picker.',
+        'It reappears on your join page and the plan picker.',
       ],
       yes: 'Yes, put it back',
     };

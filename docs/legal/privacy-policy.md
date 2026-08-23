@@ -52,8 +52,6 @@ only as needed to provide their piece:
 - **Anthropic** — AI assistance for optional features (e.g. import column
   mapping); receives only a privacy-safe aggregate summary, **never** raw
   member rows, and only if enabled.
-- **Pexels** — stock-photo search for the website builder; receives only a
-  staff search query, **no member data** (optional).
 
 ## 4. International transfers
 

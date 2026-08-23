@@ -10,7 +10,7 @@
 //   action 'disconnect'  — best-effort OAuth deauthorize on Stripe's side,
 //                          then ALWAYS clear the local row so a gym can never
 //                          get stuck "connected" to a dead account (mirrors
-//                          sending-domain / custom-domain).
+//                          sending-domain).
 //
 // Owner-only (user_is_owner_of), same gate as stripe-connect-start.
 //
