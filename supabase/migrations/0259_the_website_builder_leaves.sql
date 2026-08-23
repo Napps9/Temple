@@ -6,7 +6,8 @@
 -- published a site or connected a domain, so nothing needs a migration
 -- path and the data can go with the code. Everything the feature owned
 -- is dropped here — the two tables, the eleven functions, the gate
--- column, the capability, and the asset bucket. The same push deletes
+-- column, the capability, and the asset bucket's policies (the bucket
+-- row itself is a dashboard step; see the end). The same push deletes
 -- the client editor, the /site renderer, the domain middleware, and the
 -- custom-domain / stock-photos edge functions; _shared/caller.ts stops
 -- consulting gym_website_domains for email-link origins in that push
@@ -106,9 +107,10 @@ delete from public.gym_role_capabilities
 delete from public.gym_member_capabilities
   where capability = 'can_manage_website';
 
--- The asset bucket itself (SQL-level storage removal precedent: 0137);
--- its policies went above, ahead of the column drop.
-delete from storage.objects where bucket_id = 'gym-website-assets';
-delete from storage.buckets where id = 'gym-website-assets';
+-- The gym-website-assets bucket row and its objects stay: Supabase
+-- refuses direct DML on the storage tables from a migration ("Use the
+-- Storage API instead", 42501) — creating a bucket row is allowed,
+-- deleting one is not. With its three policies dropped above the bucket
+-- is inert; emptying and deleting it is a one-time dashboard step.
 
 commit;
