@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Switch, View } from 'react-native';
 import { PageHead } from './PageHead';
 import { Text } from './Text';
 
@@ -16,7 +16,9 @@ import { GymShareCard } from './GymShareCard';
 import { Input } from './Input';
 import { LeaderboardPrivacyCard } from './LeaderboardPrivacyCard';
 import { LeaveGymDialog } from './LeaveGymDialog';
+import { ListRow, RuledList } from './ListRow';
 import { Screen } from './Screen';
+import { SectionLabel } from './SectionLabel';
 import {
   useGymMembership,
   useMyProfile,
@@ -26,8 +28,15 @@ import {
 } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
-import { useThemeColors } from '@/lib/theme';
+import { useThemeColors, useThemePreference } from '@/lib/theme';
 import { useSavedFlag } from '@/lib/useSavedFlag';
+
+function fmtMonthYear(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: 'short',
+    year: 'numeric',
+  });
+}
 
 export function AccountScreen() {
   const colors = useThemeColors();
@@ -37,6 +46,45 @@ export function AccountScreen() {
   const { data: profile } = useMyProfile();
   const signOut = useSignOut();
   const queryClient = useQueryClient();
+  const themePref = useThemePreference();
+
+  // Every membership this account has held, left gyms included — the
+  // plain gyms embed refuses a left gym's name, so this is the definer
+  // RPC from 0255.
+  const myGyms = useQuery({
+    queryKey: ['my-gyms', session?.user.id],
+    enabled: !!session?.user.id,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('my_gyms');
+      if (error) throw error;
+      return (data ?? []) as {
+        gym_id: string;
+        gym_name: string;
+        role: string;
+        joined_at: string;
+        left_at: string | null;
+      }[];
+    },
+  });
+
+  const exportData = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('export_my_account_data');
+      if (error) throw error;
+      if (Platform.OS !== 'web' || typeof document === 'undefined') {
+        throw new Error('Download from the web app for now.');
+      }
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `temple-account-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+  });
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -293,6 +341,87 @@ export function AccountScreen() {
             </Link>
           </View>
         ) : null}
+
+        {(myGyms.data?.length ?? 0) > 0 ? (
+          <View className="gap-2">
+            <SectionLabel>Your gyms</SectionLabel>
+            <RuledList>
+              {myGyms.data!.map((g, i) => (
+                <ListRow
+                  key={g.gym_id}
+                  ruled
+                  first={i === 0}
+                  title={g.gym_name}
+                  subtitle={
+                    g.left_at
+                      ? `Left ${fmtMonthYear(g.left_at)} \u00B7 history kept`
+                      : `Joined ${fmtMonthYear(g.joined_at)}`
+                  }
+                  chip={
+                    <View
+                      className={`rounded-full px-2 py-0.5 ${
+                        g.left_at
+                          ? 'bg-raised dark:bg-raised-dk'
+                          : 'bg-emerald-500/10'
+                      }`}>
+                      <Text
+                        className={`text-[10px] font-semibold ${
+                          g.left_at
+                            ? 'text-ink-2 dark:text-ink-2-dk'
+                            : 'text-emerald-700 dark:text-emerald-300'
+                        }`}>
+                        {g.left_at ? 'Past' : 'Current'}
+                      </Text>
+                    </View>
+                  }
+                />
+              ))}
+            </RuledList>
+          </View>
+        ) : null}
+
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
+          <Text className="text-ink dark:text-ink-dk font-semibold">
+            Your data
+          </Text>
+          <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
+            Download everything Temple holds about your account — your
+            training history, bookings, messages, purchases and health
+            screening, as one file. Free, always.
+          </Text>
+          <ChipButton
+            tone="neutral"
+            className="self-start"
+            label={exportData.isPending ? 'Preparing\u2026' : 'Download everything'}
+            icon="download-outline"
+            onPress={() => exportData.mutate()}
+            disabled={exportData.isPending}
+          />
+          {exportData.error ? (
+            <Text className="text-red-500 dark:text-red-400 text-xs">
+              {errorMessage(exportData.error, 'Could not prepare the export')}
+            </Text>
+          ) : null}
+        </View>
+
+        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">
+          <View className="flex-row items-center justify-between gap-3">
+            <View className="flex-1">
+              <Text className="text-ink dark:text-ink-dk font-semibold">
+                Appearance
+              </Text>
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
+                Dark mode swaps the whole app, and your choice sticks on
+                this device.
+              </Text>
+            </View>
+            <Switch
+              accessibilityLabel="Dark mode"
+              value={themePref.scheme === 'dark'}
+              onValueChange={(v) => themePref.set(v ? 'dark' : 'light')}
+            />
+          </View>
+        </View>
 
         </View>
         <View className="gap-6 xl:flex-1">

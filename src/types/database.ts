@@ -4463,6 +4463,20 @@ export type Database = {
         Args: { p_announcement_id: string };
         Returns: { read_count: number; member_count: number }[];
       };
+      my_gyms: {
+        Args: Record<string, never>;
+        Returns: {
+          gym_id: string;
+          gym_name: string;
+          role: GymRole;
+          joined_at: string;
+          left_at: string | null;
+        }[];
+      };
+      export_my_account_data: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
       record_consent: {
         Args: {
           p_gym_id: string;

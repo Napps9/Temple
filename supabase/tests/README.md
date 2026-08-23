@@ -50,6 +50,8 @@ pg_prove --ext .sql supabase/tests/
 | `claim_cover_no_double_book.sql` | A coach already scheduled at an overlapping time cannot claim the offer. |
 | `v_member_cohort_parity.sql` | Per-row flags on `v_member_cohort` match the TS classifier in `src/lib/insights.ts` for the shared fixture set. SQL half of SQL↔TS parity. |
 | `read_by_186_of_214.sql` | `announcement_read_stats` is aggregate-only, scoped to current members on both sides of the fraction, refused inside the function for anyone without `can_post_announcements`, and unexecutable by anon. |
+| `the_shop_gets_aisles.sql` | `store_products.category` reaches members through `list_store_products`, category-less products still list, the catalogue stays members-only, and writing the column stays behind `can_manage_store`. |
+| `your_gyms_and_your_data.sql` | `my_gyms` names LEFT gyms (which a plain `gyms` select refuses) and returns only the caller's rows; `export_my_account_data` carries bookings, both directions of the member's messages, PAR-Q answers with prompts and the nested training export — never a third party's thread. anon can execute neither. |
 
 ## Conventions
 

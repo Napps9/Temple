@@ -8,6 +8,7 @@ import { Text } from '@/components/Text';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
+import { IconTile, ListRow, RuledList } from '@/components/ListRow';
 import { EmptyState } from '@/components/EmptyState';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
@@ -57,6 +58,44 @@ function fmtDate(iso: string | null): string {
     month: 'short',
     year: 'numeric',
   });
+}
+
+type CompGrantRow = {
+  grant_id: string;
+  starts_at: string;
+  ends_at: string;
+  credits_total: number | null;
+  credits_remaining: number | null;
+  reason: string | null;
+  granted_by: { full_name: string | null } | null;
+};
+
+function fmtShortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+// The three facts a member actually checks, split by hairlines the way
+// the boards draw them: what it costs, when it renews, what it buys.
+function StatRow({ cells }: { cells: { value: string; label: string }[] }) {
+  return (
+    <View className="flex-row">
+      {cells.map((c, i) => (
+        <View
+          key={c.label}
+          className={`flex-1 items-center gap-0.5 py-1 ${
+            i > 0 ? 'border-l border-line dark:border-line-dk' : ''
+          }`}>
+          <Text className="text-ink dark:text-ink-dk font-semibold text-[15px]">
+            {c.value}
+          </Text>
+          <FieldLabel>{c.label}</FieldLabel>
+        </View>
+      ))}
+    </View>
+  );
 }
 
 const TONE_CLASS: Record<'active' | 'warn' | 'muted', string> = {
@@ -252,11 +291,30 @@ function CurrentSubCard({
 
       <View className="border-t border-line dark:border-line-dk" />
 
-      <View className="gap-1.5">
-        {priceLabel != null ? (
-          <DetailRow label="Price" value={priceLabel} />
-        ) : null}
+      <StatRow
+        cells={[
+          ...(priceCents != null
+            ? [
+                {
+                  value: formatMoney(priceCents, currency),
+                  label: kind === 'credit_pack' ? 'One-off' : 'Per month',
+                },
+              ]
+            : []),
+          ...(!cancelling && sub.paid_period_end
+            ? [{ value: fmtShortDate(sub.paid_period_end), label: 'Renews' }]
+            : []),
+          {
+            value:
+              kind === 'unlimited'
+                ? '\u221E'
+                : String(plan?.credit_count ?? sub.credit_balance ?? '—'),
+            label: 'Classes',
+          },
+        ]}
+      />
 
+      <View className="gap-1.5">
         {isCredit && sub.credit_balance != null ? (
           <DetailRow
             label="Credits left"
@@ -274,8 +332,6 @@ function CurrentSubCard({
             value={fmtDate(sub.paid_period_end)}
             tone="warn"
           />
-        ) : sub.paid_period_end ? (
-          <DetailRow label="Renews" value={fmtDate(sub.paid_period_end)} />
         ) : null}
 
         <DetailRow label="Started" value={fmtDate(sub.created_at)} />
@@ -595,6 +651,35 @@ export default function MembershipScreen() {
   const currentSubs = (subs.data ?? []).filter((s) =>
     CURRENT_SUB_STATUSES.has(s.status),
   );
+  // The recurring plan is the membership; credit packs are pools the
+  // member ALSO holds, so they live under "Also on your account" beside
+  // comp grants rather than posing as a second membership card.
+  const baseSubs = currentSubs.filter(
+    (s) => (s.membership_plans?.kind ?? 'unlimited') !== 'credit_pack',
+  );
+  const packSubs = currentSubs.filter(
+    (s) => (s.membership_plans?.kind ?? 'unlimited') === 'credit_pack',
+  );
+  // The member's own comp grants (self-select RLS has allowed this since
+  // 0009 — no surface ever asked). Active, unexpired, with who gave them.
+  const grants = useQuery({
+    queryKey: ['my-comp-grants', gymId, session?.user.id],
+    enabled: !!gymId && !!session?.user.id,
+    queryFn: async (): Promise<CompGrantRow[]> => {
+      const { data, error } = await supabase
+        .from('comp_grants')
+        .select(
+          'grant_id, starts_at, ends_at, credits_total, credits_remaining, reason, granted_by:profiles!granted_by(full_name)',
+        )
+        .eq('gym_id', gymId!)
+        .eq('profile_id', session!.user.id)
+        .is('revoked_at', null)
+        .gt('ends_at', new Date().toISOString());
+      if (error) throw error;
+      return (data ?? []) as unknown as CompGrantRow[];
+    },
+  });
+  const grantRows = grants.data ?? [];
   // Deliberately NOT filtered to current statuses. When Stripe gives up it
   // deletes the subscription and the webhook marks it cancelled, which is
   // exactly when the member most needs to see why — and nothing clears the
@@ -776,7 +861,7 @@ export default function MembershipScreen() {
             <SectionLabel>
               Your membership
             </SectionLabel>
-            {currentSubs.map((s) => (
+            {baseSubs.map((s) => (
               <CurrentSubCard
                 key={s.id}
                 sub={s}
@@ -829,6 +914,44 @@ export default function MembershipScreen() {
               subs.refetch();
             }}
           />
+        ) : null}
+
+        {grantRows.length > 0 || packSubs.length > 0 ? (
+          <View className="gap-2">
+            <SectionLabel>Also on your account</SectionLabel>
+            <RuledList>
+              {grantRows.map((g, i) => (
+                <ListRow
+                  key={g.grant_id}
+                  ruled
+                  first={i === 0}
+                  lead={<IconTile name="gift-outline" size={30} />}
+                  title={g.reason?.trim() || 'Comp grant'}
+                  subtitle={[
+                    g.credits_total != null
+                      ? `${g.credits_remaining ?? 0} of ${g.credits_total} classes left`
+                      : 'Unlimited classes',
+                    `until ${fmtShortDate(g.ends_at)}`,
+                    g.granted_by?.full_name
+                      ? `from ${g.granted_by.full_name}`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' \u00B7 ')}
+                />
+              ))}
+              {packSubs.map((s, i) => (
+                <ListRow
+                  key={s.id}
+                  ruled
+                  first={grantRows.length === 0 && i === 0}
+                  lead={<IconTile name="ticket-outline" size={30} />}
+                  title={s.membership_plans?.name ?? 'Class pack'}
+                  subtitle={`${s.credit_balance ?? 0} credits left`}
+                />
+              ))}
+            </RuledList>
+          </View>
         ) : null}
 
         {checkout.error ? (

@@ -435,6 +435,54 @@ export const TABLES = {
     },
   ],
 
+  plan_subscriptions: [
+    {
+      id: 'sub-1',
+      plan_id: 'p1',
+      status: 'active',
+      credit_balance: null,
+      paid_period_end: iso(11),
+      period_resets_at: null,
+      cancelled_at: null,
+      created_at: iso(-200),
+      price_cents: 8900,
+      imported_legacy: false,
+      plan_subscription_dunning: [],
+      membership_invoice_links: [],
+      membership_plans: { name: 'Unlimited', kind: 'unlimited', credit_count: null, monthly_price_cents: 8900, notice_period_days: 30 },
+    },
+    {
+      id: 'sub-2',
+      plan_id: 'p4',
+      status: 'active',
+      credit_balance: 7,
+      paid_period_end: null,
+      period_resets_at: null,
+      cancelled_at: null,
+      created_at: iso(-30),
+      price_cents: 4500,
+      imported_legacy: false,
+      plan_subscription_dunning: [],
+      membership_invoice_links: [],
+      membership_plans: { name: '10-class pack', kind: 'credit_pack', credit_count: 10, monthly_price_cents: 4500, notice_period_days: null },
+    },
+  ],
+
+  comp_grants: [
+    {
+      grant_id: 'cg1',
+      gym_id: GYM_ID,
+      profile_id: USER_ID,
+      starts_at: iso(-10),
+      ends_at: iso(18),
+      credits_total: 10,
+      credits_remaining: 3,
+      reason: 'Injury return',
+      revoked_at: null,
+      granted_by: { full_name: 'Priya Raman' },
+    },
+  ],
+
   tasks: [
     { id: 't1', gym_id: GYM_ID, title: 'Order more chalk', status: 'open', due_date: '2026-08-27', notes: null, assignee: { full_name: 'Priya Raman' } },
     { id: 't2', gym_id: GYM_ID, title: 'Fix the rower display', status: 'open', due_date: null, notes: 'Seat 3, screen flickers.', assignee: null },
@@ -530,6 +578,10 @@ export const RPCS = {
   ],
   mark_class_change_notifications_read: null,
   announcement_read_stats: [{ read_count: 186, member_count: 214 }],
+  my_gyms: [
+    { gym_id: GYM_ID, gym_name: 'Forge Athletic', role: MEMBER_VIEW ? 'member' : 'owner', joined_at: iso(-400), left_at: null },
+    { gym_id: '99999999-9999-4999-8999-999999999999', gym_name: 'Ironworks CrossFit', role: 'member', joined_at: iso(-900), left_at: iso(-420) },
+  ],
   list_store_products: [
     { id: 'sp1', name: 'Forge tee', description: 'Heavyweight cotton, gym logo front and back.', kind: 'physical', price_cents: 2500, image_url: null, image_urls: [], track_inventory: true, stock_quantity: 24, sold_out: false, recurring: false, recurring_interval: null, category: 'Kit' },
     { id: 'sp2', name: 'Lifting belt', description: '10mm leather, single prong.', kind: 'physical', price_cents: 6500, image_url: null, image_urls: [], track_inventory: true, stock_quantity: 6, sold_out: false, recurring: false, recurring_interval: null, category: 'Kit' },
