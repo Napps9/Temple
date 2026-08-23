@@ -40,22 +40,14 @@ begin
   end if;
 end $$;
 
--- Storage rows for every bucket the app writes to. This clears the
--- metadata Supabase serves from; the underlying objects are reaped by
--- Storage separately, so also empty the buckets from the dashboard if
--- you need the bytes gone (see note below).
-delete from storage.objects
- where bucket_id in (
-   'avatars',
-   'agent-call-recordings',
-   'agent-voice-samples',
-   'email-assets',
-   'gym-logos',
-   'gym-waivers',
-   'member-programming-files',
-   'store-digital-assets',
-   'store-product-images'
- );
+-- Storage is deliberately NOT touched here: Supabase's
+-- storage.protect_delete() trigger refuses direct DML on storage tables
+-- from SQL (dashboard editor included) — "Use the Storage API instead".
+-- Empty the buckets from the dashboard's Storage page: avatars,
+-- agent-call-recordings, agent-voice-samples, email-assets, gym-logos,
+-- gym-waivers, member-programming-files, store-digital-assets,
+-- store-product-images. Orphaned files are unreachable by any fresh
+-- account either way, so this can also wait.
 
 -- Last, because profiles.id references auth.users(id) on delete cascade
 -- and the public schema is already empty by this point. This also
