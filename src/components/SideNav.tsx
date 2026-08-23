@@ -6,7 +6,6 @@ import { NavAccountMenu } from './NavAccountMenu';
 import { renderIconSlot, type IconSlot } from './icon-slot';
 import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
-import { TempleWordmark } from './TempleMark';
 import type { NavSection } from './TopNav';
 import { useGymMembership } from '@/lib/auth';
 import { haptic } from '@/lib/haptic';
@@ -36,10 +35,6 @@ export function SideNav({ sections }: { sections: NavSection[] }) {
   return (
     <View className="w-[246px] flex-none bg-surface dark:bg-surface-dk border-r border-line dark:border-line-dk">
       <ScrollView contentContainerClassName="p-3 gap-3.5 flex-1">
-        <View className="px-1 pt-1">
-          <TempleWordmark size={17} />
-        </View>
-
         <Pressable
           onPress={() => {
             haptic.selection();

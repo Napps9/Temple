@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ManageNavSheet } from './ManageNavSheet';
-import { TempleMark } from './TempleMark';
 import { NavAccountMenu } from './NavAccountMenu';
 import { haptic } from '@/lib/haptic';
 import { useThemeColors } from '@/lib/theme';
@@ -30,11 +29,14 @@ export type NavSection = {
 };
 
 // Persistent top bar — replaced the old NavModal popup. Layout:
-//   [logo + gym name] … [section pills, centred] … [view-switch] [avatar]
-// Below md the pills move to their own row with the label under the
-// icon — a bare glyph row failed first-time users, who could not tell
-// the dumbbell from the calendar until a section was already active.
-// The day/week/month switcher lives with the calendar itself, not here.
+//   [gym name, md+] … [section pills, centred] … [view-switch] [avatar]
+// One row at every width. The Temple mark used to hold the top-left;
+// it went (the owner's call) so a phone gets its vertical space back —
+// the pills join the bar as icon-over-label instead of renting a second
+// row. Every pill carries its visible label at every width: a bare
+// glyph row failed first-time users, who could not tell the dumbbell
+// from the calendar until a section was already active. The
+// day/week/month switcher lives with the calendar itself, not here.
 export function TopNav({
   sections,
   variant,
@@ -95,7 +97,7 @@ export function TopNav({
   // md+, a stacked icon-over-label row of their own below it. Every pill
   // carries its visible label in both.
   const pillRow = (stacked: boolean) => (
-    <View className={stacked ? 'flex-row justify-center gap-1' : 'flex-row gap-1'}>
+    <View className={stacked ? 'flex-row justify-center gap-0.5' : 'flex-row gap-1'}>
       {sections.map((s) => {
         const active = pathname.startsWith(s.href);
         return (
@@ -108,7 +110,7 @@ export function TopNav({
             accessibilityLabel={s.label}
             className={`${
               stacked
-                ? 'flex-col items-center gap-0.5 px-3.5 py-1.5 rounded-ctl'
+                ? 'flex-col items-center gap-0.5 px-2 py-1.5 rounded-ctl'
                 : 'flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full'
             } active:opacity-70 ${
               active
@@ -139,22 +141,21 @@ export function TopNav({
       style={{ paddingTop: insets.top + 10 }}
       className="bg-ground dark:bg-ground-dk px-3 md:px-6 pb-3 gap-2">
       <View className="flex-row items-center gap-2 md:gap-3">
-        {/* Three equal zones (flex-1 left/right) keep the pills on the
-            bar's true centre regardless of how wide the side clusters
-            are. The pills sit inline on every size now that the right
-            cluster is a single avatar — on the phone the inactive pills
-            drop to icons so all three fit next to the logo. */}
-        <View className="flex-1 flex-row items-center">
+        {/* Three zones (flex-1 left/right) keep the pills on the bar's
+            true centre at md+. Below md the left zone disappears
+            entirely — an empty flex-1 spacer there forced the pills
+            onto the bar's centre and slid them under the right
+            cluster on staff, whose four pills don't fit centred. */}
+        <View className="hidden md:flex flex-1 flex-row items-center">
           <Pressable
             onPress={() => {
               haptic.selection();
               router.replace(homeHref as never);
             }}
             hitSlop={6}
-            className="flex-row items-center gap-3 hover:opacity-80 active:opacity-70">
-            <TempleMark size={30} />
+            className="hidden md:flex flex-row items-center hover:opacity-80 active:opacity-70">
             <Text
-              className="text-ink dark:text-ink-dk font-semibold text-base hidden lg:flex"
+              className="text-ink dark:text-ink-dk font-semibold text-base"
               numberOfLines={1}>
               {gymName}
             </Text>
@@ -162,8 +163,17 @@ export function TopNav({
         </View>
 
         <View className="items-center hidden md:flex">{pillRow(false)}</View>
+        {/* flexGrow + justify-center: centred while the pills fit,
+            a scroll strip on screens too narrow for all of them. */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="flex-1 md:hidden"
+          contentContainerClassName="flex-grow items-center justify-center">
+          {pillRow(true)}
+        </ScrollView>
 
-        <View className="flex-1 flex-row items-center justify-end gap-1.5 md:gap-2">
+        <View className="flex-none md:flex-1 flex-row items-center justify-end gap-1.5 md:gap-2">
         {showCrossLink ? (
           <Pressable
             onPress={() => {
@@ -172,7 +182,7 @@ export function TopNav({
             }}
             hitSlop={4}
             accessibilityLabel={crossLabel}
-            className={`h-9 px-3 rounded-full border flex-row items-center gap-1.5 hover:opacity-80 active:opacity-70 ${crossClasses}`}>
+            className={`h-9 w-9 md:w-auto md:px-3 rounded-full border flex-row items-center justify-center gap-1.5 hover:opacity-80 active:opacity-70 ${crossClasses}`}>
             <Ionicons name="swap-horizontal-outline" size={16} color={crossTint} />
             <Text className={`text-xs font-semibold hidden md:flex ${crossTextClass}`}>
               {crossLabel}
@@ -183,8 +193,6 @@ export function TopNav({
         <NavAccountMenu variant={variant} anchor="top-right" />
         </View>
       </View>
-
-      <View className="md:hidden">{pillRow(true)}</View>
 
       {variant === 'staff' ? (
         <ManageNavSheet visible={manageOpen} onClose={() => setManageOpen(false)} />
