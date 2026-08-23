@@ -105,13 +105,28 @@ export const TABLES = {
       timezone: 'Europe/London',
       default_class_capacity: 12,
       default_class_minutes: 60,
-      // 24h cutoff so tomorrow-morning bookings are already "late" —
-      // exercises the forfeit warning in the cancel confirm.
-      cancel_cutoff_minutes_before: 1440,
+      // 2h cutoff: same-day classes stay freely cancellable (the row's
+      // one-tap Book with Undo shows), while anything closer than two
+      // hours routes through the sheet's forfeit warning.
+      cancel_cutoff_minutes_before: 120,
     },
   ],
 
   class_sessions: [
+    {
+      id: 'cs2',
+      gym_id: GYM_ID,
+      name: null,
+      starts_at: iso(-1, 23),
+      duration_minutes: 60,
+      capacity: 12,
+      notes: null,
+      class_type_id: 'ct1',
+      recurrence_id: null,
+      coach_id: 'coach-1',
+      coach: { full_name: 'Priya Raman', avatar_url: null },
+      class_types: { name: 'Barbell Club', color: '#7C3AED', archived_at: null, cancel_cutoff_minutes_before: null, cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_days_before: null },
+    },
     {
       id: 'cs1',
       gym_id: GYM_ID,
@@ -125,6 +140,25 @@ export const TABLES = {
       coach_id: 'coach-1',
       coach: { full_name: 'Priya Raman', avatar_url: null },
       class_types: { name: 'Metcon', color: '#6366F1', archived_at: null, cancel_cutoff_minutes_before: null, cancel_cutoff_mode: null, cancel_cutoff_time: null, cancel_cutoff_days_before: null },
+    },
+  ],
+
+  class_programming: [
+    {
+      id: 'prog-1',
+      gym_id: GYM_ID,
+      class_type_id: 'ct2',
+      date: iso(-1).slice(0, 10),
+      class_types: { name: 'Metcon', color: '#6366F1' },
+      sections: [
+        {
+          section_category: 'wod',
+          section_format: 'amrap',
+          title: 'Engine builder',
+          body: '12 min AMRAP: 10 cal row, 8 burpees, 6 pull-ups',
+          leaderboard_enabled: true,
+        },
+      ],
     },
   ],
 
@@ -152,6 +186,8 @@ export const TABLES = {
   // the nested object has to be on the row already — the fake does not
   // resolve joins.
   gym_memberships: [
+    // The signed-in user's row stays FIRST: single-object reads take the
+    // first row, and the fake does not apply .eq filters.
     {
       gym_id: GYM_ID,
       profile_id: USER_ID,
@@ -160,6 +196,9 @@ export const TABLES = {
       created_at: iso(-400),
       gyms: { name: 'Forge Athletic' },
     },
+    { gym_id: GYM_ID, profile_id: 'a3', role: 'coach', left_at: null, created_at: iso(-300), profiles: { full_name: 'Priya Raman' }, gyms: { name: 'Forge Athletic' } },
+    { gym_id: GYM_ID, profile_id: 'a1', role: 'member', left_at: null, created_at: iso(-200), profiles: { full_name: 'Amara Nwosu' }, gyms: { name: 'Forge Athletic' } },
+    { gym_id: GYM_ID, profile_id: 'a2', role: 'member', left_at: null, created_at: iso(-150), profiles: { full_name: 'Dan Whitcombe' }, gyms: { name: 'Forge Athletic' } },
   ],
 
   // Empty means "no per-role overrides", and can-resolver falls back to
