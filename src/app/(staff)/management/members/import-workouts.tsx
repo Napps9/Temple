@@ -284,7 +284,7 @@ export default function ImportWorkoutsScreen() {
                     const f = e.dataTransfer?.files?.[0];
                     if (f) onFile(f);
                   }}
-                  className={`border-2 border-dashed rounded-xl p-8 items-center gap-2 cursor-pointer transition-colors ${
+                  className={`border-2 border-dashed rounded-ctl p-8 items-center gap-2 cursor-pointer transition-colors ${
                     dragOver
                       ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line-strong dark:border-line-dk hover:bg-raised dark:hover:bg-raised-dk/40'
@@ -328,7 +328,7 @@ export default function ImportWorkoutsScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               style={{ minHeight: 140, textAlignVertical: 'top' }}
-              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-sm font-mono"
+              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2 text-ink dark:text-ink-dk text-sm font-mono"
             />
             {error ? (
               <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
@@ -364,7 +364,7 @@ export default function ImportWorkoutsScreen() {
               {headers.map((h, i) => (
                 <View
                   key={`${h}-${i}`}
-                  className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-lg px-3 py-2">
+                  className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-ctl px-3 py-2">
                   <Text
                     className="flex-1 text-ink dark:text-ink-dk text-sm"
                     numberOfLines={1}>
@@ -435,7 +435,7 @@ export default function ImportWorkoutsScreen() {
             </Text>
 
             {built.sections.length > 0 ? (
-              <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-lg p-3">
+              <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-ctl p-3">
                 {built.sections.slice(0, 6).map((s, i) => (
                   <View key={`s${i}`} className="border-t border-line dark:border-line-dk pt-1.5 first:border-t-0 first:pt-0">
                     <Text className="text-ink dark:text-ink-dk text-sm">
@@ -458,7 +458,7 @@ export default function ImportWorkoutsScreen() {
             ) : null}
 
             {built.hyrox.length > 0 ? (
-              <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-lg p-3">
+              <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-ctl p-3">
                 {built.hyrox.slice(0, 6).map((h, i) => (
                   <View key={`h${i}`} className="border-t border-line dark:border-line-dk pt-1.5 first:border-t-0 first:pt-0">
                     <Text className="text-ink dark:text-ink-dk text-sm">
@@ -479,7 +479,7 @@ export default function ImportWorkoutsScreen() {
             ) : null}
 
             {built.weighted.length > 0 ? (
-              <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-lg p-3">
+              <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-ctl p-3">
                 {built.weighted.slice(0, 6).map((r, i) => (
                   <View key={`w${i}`} className="border-t border-line dark:border-line-dk pt-1.5 first:border-t-0 first:pt-0">
                     <Text className="text-ink dark:text-ink-dk text-sm">
@@ -500,7 +500,7 @@ export default function ImportWorkoutsScreen() {
             ) : null}
 
             {built.misses.length > 0 ? (
-              <View className="gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+              <View className="gap-2 bg-amber-500/10 border border-amber-500/30 rounded-ctl p-3">
                 <Text className="text-amber-700 dark:text-amber-300 text-sm font-medium">
                   Unknown movements (dropped)
                 </Text>
@@ -530,7 +530,7 @@ export default function ImportWorkoutsScreen() {
             ) : null}
 
             {aiResolutions.length > 0 ? (
-              <View className="gap-2 bg-surface dark:bg-surface-dk border border-primary/30 rounded-lg p-3">
+              <View className="gap-2 bg-surface dark:bg-surface-dk border border-primary/30 rounded-ctl p-3">
                 <Text className="text-ink dark:text-ink-dk text-sm font-medium">
                   AI matches — tick the ones to apply
                 </Text>
@@ -570,7 +570,7 @@ export default function ImportWorkoutsScreen() {
             ) : null}
 
             {built.deferred > 0 ? (
-              <View className="gap-1 bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg p-3">
+              <View className="gap-1 bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl p-3">
                 <Text className="text-ink dark:text-ink-dk text-sm font-medium">
                   {built.deferred} aggregate row{built.deferred === 1 ? '' : 's'}{' '}
                   skipped
@@ -603,7 +603,7 @@ export default function ImportWorkoutsScreen() {
 
         {phase === 'done' && result ? (
           <View
-            className={`border rounded-xl p-4 gap-2 ${
+            className={`border rounded-card p-4 gap-2 ${
               insertedCount > 0
                 ? 'bg-emerald-500/10 border-emerald-500/30'
                 : result.staged > 0
@@ -688,7 +688,7 @@ export default function ImportWorkoutsScreen() {
 
 function ScoredResultsNotice() {
   return (
-    <View className="gap-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+    <View className="gap-1.5 bg-amber-500/10 border border-amber-500/30 rounded-ctl p-3">
       <Text className="text-amber-700 dark:text-amber-300 text-sm font-medium">
         This looks like scored results
       </Text>

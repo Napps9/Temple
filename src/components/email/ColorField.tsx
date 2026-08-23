@@ -38,7 +38,7 @@ export function ColorField({
         <Pressable
           onPress={() => setOpen((v) => !v)}
           style={{ backgroundColor: valid ?? value }}
-          className="w-9 h-9 rounded-lg border border-line dark:border-line-dk active:opacity-70"
+          className="w-9 h-9 rounded-ctl border border-line dark:border-line-dk active:opacity-70"
         />
         <TextInput
           value={draft}
@@ -51,11 +51,11 @@ export function ColorField({
           autoCorrect={false}
           placeholder="#000000"
           placeholderTextColor={colors.ink3}
-          className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-sm"
+          className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2 text-ink dark:text-ink-dk text-sm"
         />
       </View>
       {open ? (
-        <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 mt-1">
+        <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 mt-1">
           <ColorSwatchPicker
             value={valid ?? value}
             onChange={(hex) => {

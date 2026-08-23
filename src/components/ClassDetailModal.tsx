@@ -575,7 +575,7 @@ export function ClassDetailModal({
                     </View>
                   </View>
                   {composing ? (
-                    <View className="bg-raised dark:bg-raised-dk rounded-xl p-3 gap-2">
+                    <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-2">
                       <TextInput
                         value={broadcastBody}
                         onChangeText={setBroadcastBody}
@@ -584,7 +584,7 @@ export function ClassDetailModal({
                         multiline
                         autoFocus
                         editable={!broadcast.isPending}
-                        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk min-h-[72px]"
+                        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2 text-ink dark:text-ink-dk min-h-[72px]"
                       />
                       {broadcastError ? (
                         <Text className="text-red-500 dark:text-red-400 text-xs">
@@ -728,7 +728,7 @@ export function ClassDetailModal({
               ) : null}
 
               {mode === 'book' && myBooking?.promoted_from_waitlist ? (
-                <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3">
+                <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-ctl p-3">
                   <Text className="text-amber-700 dark:text-amber-300 text-sm font-medium">
                     You were promoted from the waitlist for this class.
                   </Text>
@@ -943,7 +943,7 @@ function BookMembershipPrompt({
         plans.map((plan) => (
           <View
             key={plan.plan_id}
-            className="rounded-lg border border-line dark:border-line-dk p-3 gap-2">
+            className="rounded-ctl border border-line dark:border-line-dk p-3 gap-2">
             <View className="flex-row items-center justify-between gap-3">
               <View className="flex-1">
                 <Text className="text-ink dark:text-ink-dk font-semibold">
@@ -1078,7 +1078,7 @@ function BookActions({
                   onPress={() =>
                     setChosenEntitlement({ kind: e.kind, id: e.id })
                   }
-                  className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
+                  className={`flex-row items-center gap-2 rounded-ctl px-3 py-2 border ${
                     isSel
                       ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'

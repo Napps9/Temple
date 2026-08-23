@@ -104,7 +104,7 @@ export function MemberProgrammingAccessModal({
               setProductId(null);
               setPickerOpen(false);
             }}
-            className="rounded-lg px-3 py-3 active:bg-raised dark:active:bg-raised-dk">
+            className="rounded-ctl px-3 py-3 active:bg-raised dark:active:bg-raised-dk">
             <Text className="text-ink dark:text-ink-dk">No product</Text>
             <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
               Only a qualifying membership plan unlocks it.
@@ -117,7 +117,7 @@ export function MemberProgrammingAccessModal({
                 setProductId(p.id);
                 setPickerOpen(false);
               }}
-              className="rounded-lg px-3 py-3 active:bg-raised dark:active:bg-raised-dk">
+              className="rounded-ctl px-3 py-3 active:bg-raised dark:active:bg-raised-dk">
               <Text className="text-ink dark:text-ink-dk">{p.name}</Text>
               <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {productPriceLabel(p, currency)}
@@ -167,7 +167,7 @@ export function MemberProgrammingAccessModal({
                 <Pressable
                   key={m}
                   onPress={() => setMode(m)}
-                  className={`flex-1 rounded-xl border px-4 py-3 items-center ${
+                  className={`flex-1 rounded-ctl border px-4 py-3 items-center ${
                     active
                       ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
@@ -192,7 +192,7 @@ export function MemberProgrammingAccessModal({
               </Text>
               <Pressable
                 onPress={() => setPickerOpen(true)}
-                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-4 py-3 flex-row items-center gap-2 active:opacity-70">
+                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-4 py-3 flex-row items-center gap-2 active:opacity-70">
                 <Text
                   className={
                     selectedProduct

@@ -253,7 +253,7 @@ function DocumentsModal({
               files.data.map((f) => (
                 <View
                   key={f.id}
-                  className="bg-raised dark:bg-raised-dk rounded-lg px-3 py-2 flex-row items-center gap-2">
+                  className="bg-raised dark:bg-raised-dk rounded-ctl px-3 py-2 flex-row items-center gap-2">
                   <Ionicons
                     name="document-text-outline"
                     size={18}
@@ -273,7 +273,7 @@ function DocumentsModal({
                     onPress={() => remove.mutate(f)}
                     hitSlop={6}
                     accessibilityLabel={`Remove ${f.title}`}
-                    className="w-8 h-8 rounded-lg items-center justify-center active:bg-raised dark:active:bg-raised-dk">
+                    className="w-8 h-8 rounded-ctl items-center justify-center active:bg-raised dark:active:bg-raised-dk">
                     <Ionicons name="trash-outline" size={16} color={colors.ink3} />
                   </Pressable>
                 </View>

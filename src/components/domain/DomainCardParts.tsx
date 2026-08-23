@@ -43,7 +43,7 @@ export function StatusBadge({ meta }: { meta: { label: string; tone: StatusTone 
 export function StatusExplainer({ tone, text }: { tone: StatusTone; text: string }) {
   const t = TONE[tone];
   return (
-    <View className={`rounded-lg p-3 ${t.bg}`}>
+    <View className={`rounded-ctl p-3 ${t.bg}`}>
       <Text className={`text-xs leading-5 ${t.text}`}>{text}</Text>
     </View>
   );
@@ -85,7 +85,7 @@ export function CopyableValue({ label, value }: { label: string; value: string }
 export function RecordCard({ record }: { record: DnsRecordDisplay }) {
   const heading = record.record || record.type || 'DNS record';
   return (
-    <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-2">
+    <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-2">
       <View className="flex-row items-center gap-2">
         <Text className="text-ink dark:text-ink-dk text-xs font-semibold">
           {heading}

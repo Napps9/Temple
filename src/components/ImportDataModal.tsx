@@ -79,7 +79,7 @@ export function ImportDataModal({
               onPress={() => setTab(t)}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
-              className={`flex-1 px-3 py-2 rounded-lg border items-center ${
+              className={`flex-1 px-3 py-2 rounded-ctl border items-center ${
                 active
                   ? 'bg-raised dark:bg-raised-dk border-transparent'
                   : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'

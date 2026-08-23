@@ -212,7 +212,7 @@ export default function OnboardingScreen() {
       <ScrollView contentContainerClassName="gap-6 py-8 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <View className="gap-3">
           <View className="flex-row items-start gap-3">
-            <View className="w-12 h-12 rounded-2xl bg-primary/15 items-center justify-center">
+            <View className="w-12 h-12 rounded-card bg-primary/15 items-center justify-center">
               <Ionicons name="rocket-outline" size={26} color={colors.primary} />
             </View>
             <View className="flex-1">
@@ -233,7 +233,7 @@ export default function OnboardingScreen() {
           </Text>
         </View>
 
-        <View className="bg-surface dark:bg-surface-dk rounded-2xl p-4 gap-3">
+        <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-3">
           <View className="flex-row items-center justify-between">
             <Text className="text-ink dark:text-ink-dk font-semibold">
               {requiredDone} of {requiredSteps.length} done
@@ -262,7 +262,7 @@ export default function OnboardingScreen() {
             <SectionLabel>
               Optional · do these later
             </SectionLabel>
-            <View className="bg-surface dark:bg-surface-dk rounded-2xl p-4 gap-2">
+            <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-2">
               {optionalSteps.map((step) => (
                 <StepRow key={step.key} step={step} accent={colors.primary} />
               ))}
@@ -313,7 +313,7 @@ function StepRow({
   return (
     <Pressable
       onPress={() => router.push(stepHref(step) as never)}
-      className={`flex-row items-center gap-3 rounded-xl px-3 py-3 active:opacity-70 ${
+      className={`flex-row items-center gap-3 rounded-ctl px-3 py-3 active:opacity-70 ${
         step.done ? 'bg-raised dark:bg-raised-dk/40' : 'bg-raised dark:bg-raised-dk'
       }`}>
       {/* Status disk: solid emerald + bold tick when fully done, a

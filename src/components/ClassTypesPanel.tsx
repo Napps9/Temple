@@ -698,13 +698,13 @@ export function ClassTypesPanel() {
                       hitSlop={4}
                       accessibilityRole="button"
                       accessibilityLabel="Remove"
-                      className="w-10 h-10 rounded-lg items-center justify-center active:bg-raised dark:active:bg-raised-dk">
+                      className="w-10 h-10 rounded-ctl items-center justify-center active:bg-raised dark:active:bg-raised-dk">
                       <Ionicons name="close" size={18} color={colors.ink3} />
                     </Pressable>
                   ) : null}
                 </View>
                 {openPickerIdx === idx ? (
-                  <View className="bg-raised dark:bg-raised-dk rounded-lg p-3">
+                  <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3">
                     <ColorSwatchPicker
                       value={r.color}
                       onChange={(c) => editRow(idx, { color: c })}
@@ -745,7 +745,7 @@ export function ClassTypesPanel() {
                 </Pressable>
 
                 {r.scheduleOpen ? (
-                  <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-4">
+                  <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-4">
                     {r.schedules.map((sched, sIdx) => (
                       <View
                         key={sIdx}
@@ -775,7 +775,7 @@ export function ClassTypesPanel() {
                     ))}
                     <Pressable
                       onPress={() => addSchedule(idx)}
-                      className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
+                      className="flex-row items-center gap-1 self-start px-3 py-2 rounded-ctl border border-dashed border-line-strong dark:border-line-strong-dk">
                       <Ionicons name="add" size={14} color={colors.ink2} />
                       <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                         Add another schedule
@@ -809,7 +809,7 @@ export function ClassTypesPanel() {
                 </Pressable>
 
                 {r.rulesOpen ? (
-                  <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-3">
+                  <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-3">
                     <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                       Leave blank to use the gym-wide setting (Manage →
                       Gym settings). Set a value here to override for this
@@ -859,7 +859,7 @@ export function ClassTypesPanel() {
                               onPress={() =>
                                 editRow(idx, { cancelCutoffMode: m })
                               }
-                              className={`flex-1 px-3 py-2 rounded-lg border ${
+                              className={`flex-1 px-3 py-2 rounded-ctl border ${
                                 on
                                   ? 'border-transparent bg-raised dark:bg-raised-dk'
                                   : 'border-line dark:border-line-dk'
@@ -904,7 +904,7 @@ export function ClassTypesPanel() {
                                 placeholderTextColor={colors.ink3}
                                 autoCapitalize="none"
                                 autoCorrect={false}
-                                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
+                                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk text-base"
                               />
                             </View>
                             <View className="w-28 gap-1.5">
@@ -919,7 +919,7 @@ export function ClassTypesPanel() {
                                 placeholder="1"
                                 placeholderTextColor={colors.ink3}
                                 keyboardType="number-pad"
-                                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
+                                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk text-base"
                               />
                             </View>
                           </View>
@@ -997,7 +997,7 @@ export function ClassTypesPanel() {
                   return (
                     <View
                       key={r.id!}
-                      className="bg-raised dark:bg-raised-dk rounded-xl p-3 gap-2">
+                      className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-2">
                       <View className="flex-row items-center gap-3">
                         <View
                           style={{ backgroundColor: r.color }}

@@ -397,7 +397,7 @@ export function ProgrammingModal({
                     ))}
                     <Pressable
                       onPress={addDraft}
-                      className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
+                      className="flex-row items-center gap-2 self-start px-3 py-2 rounded-ctl border border-dashed border-line-strong dark:border-line-strong-dk">
                       <Ionicons name="add" size={16} color={colors.ink2} />
                       <Text className="text-ink-2 dark:text-ink-2-dk">
                         Add section
@@ -438,11 +438,11 @@ function DraftCard({
 }) {
   const colors = useThemeColors();
   return (
-    <View className="bg-raised dark:bg-raised-dk rounded-xl p-4 gap-3">
+    <View className="bg-raised dark:bg-raised-dk rounded-ctl p-4 gap-3">
       <Pressable
         onPress={onRemove}
         hitSlop={4}
-        className="self-end w-8 h-8 rounded-lg items-center justify-center active:bg-raised dark:active:bg-raised-dk"
+        className="self-end w-8 h-8 rounded-ctl items-center justify-center active:bg-raised dark:active:bg-raised-dk"
           accessibilityLabel="Close">
         <Ionicons name="close" size={18} color={colors.ink3} />
       </Pressable>
@@ -534,7 +534,7 @@ function PickerButton({
       </Text>
       <Pressable
         onPress={onPress}
-        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-4 py-3 flex-row items-center gap-2 active:opacity-70">
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-4 py-3 flex-row items-center gap-2 active:opacity-70">
         <Text
           className={
             value

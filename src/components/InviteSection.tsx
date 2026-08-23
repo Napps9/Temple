@@ -103,7 +103,7 @@ export function InviteSection({
   });
 
   return (
-    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl p-5 gap-5">
+    <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-5 gap-5">
       <View className="gap-1">
         <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
           {title}
@@ -168,7 +168,7 @@ export function InviteSection({
           </Text>
         ) : null}
         {manualLink ? (
-          <View className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-lg p-3">
+          <View className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-ctl p-3">
             <Text
               className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm font-mono"
               numberOfLines={1}>

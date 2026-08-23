@@ -377,7 +377,7 @@ function BrandButton({
       onPress={onPress}
       disabled={loading}
       style={{ backgroundColor: color }}
-      className="rounded-lg px-5 py-3 items-center justify-center active:opacity-80 disabled:opacity-60">
+      className="rounded-ctl px-5 py-3 items-center justify-center active:opacity-80 disabled:opacity-60">
       <Text className="text-white font-semibold">
         {loading ? 'Working…' : children}
       </Text>

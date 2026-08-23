@@ -105,7 +105,7 @@ export function AgentBriefBuilder({
           <Pressable
             key={m}
             onPress={() => setPromptMode(m)}
-            className={`flex-1 px-3 py-2.5 rounded-lg border ${
+            className={`flex-1 px-3 py-2.5 rounded-ctl border ${
               promptMode === m
                 ? 'border-transparent bg-raised dark:bg-raised-dk'
                 : 'border-line dark:border-line-dk'
@@ -181,7 +181,7 @@ export function AgentBriefBuilder({
                   <Pressable
                     key={t.id}
                     onPress={() => setAnswers((a) => ({ ...a, tone: t.id }))}
-                    className={`flex-1 rounded-lg border px-2 py-2 ${
+                    className={`flex-1 rounded-ctl border px-2 py-2 ${
                       sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                     }`}>
                     <Text

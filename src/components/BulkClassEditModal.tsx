@@ -218,7 +218,7 @@ export function BulkClassEditModal({
                 onPress={() => setMode(value)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: mode === value }}
-                className={`flex-1 py-2 rounded-lg border items-center ${
+                className={`flex-1 py-2 rounded-ctl border items-center ${
                   mode === value
                     ? 'bg-raised dark:bg-raised-dk border-transparent'
                     : 'border-line-strong dark:border-line-strong-dk'
@@ -331,7 +331,7 @@ export function BulkClassEditModal({
                       <Pressable
                         key={r.id}
                         onPress={() => toggle(r.id)}
-                        className="flex-row items-center gap-3 p-2 rounded-lg">
+                        className="flex-row items-center gap-3 p-2 rounded-ctl">
                         <Check on={checked} />
                         <View className="flex-1">
                           <Text className="text-ink dark:text-ink-dk">

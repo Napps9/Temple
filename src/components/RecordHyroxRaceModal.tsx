@@ -308,7 +308,7 @@ export function RecordHyroxRaceModal({
               ))}
             </View>
 
-            <View className="bg-primary/5 rounded-xl p-3 gap-1">
+            <View className="bg-primary/5 rounded-ctl p-3 gap-1">
               <TotalRow label="Runs" seconds={totals.runTotalSeconds} />
               <TotalRow label="Stations" seconds={totals.stationTotalSeconds} />
               <TotalRow label="Roxzone" seconds={totals.roxzoneTotalSeconds} />
@@ -344,7 +344,7 @@ function LapCard({
   onChangeSplit: (index: number, text: string) => void;
 }) {
   return (
-    <View className="bg-raised dark:bg-raised-dk rounded-xl p-3 gap-2">
+    <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-2">
       <FieldLabel>
         Lap {lapNumber}
       </FieldLabel>

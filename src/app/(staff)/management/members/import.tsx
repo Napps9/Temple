@@ -634,7 +634,7 @@ export default function ImportMembersScreen() {
 
         {stripeConnected.data === true &&
         (phase === 'upload' || phase === 'map' || phase === 'review') ? (
-          <View className="bg-primary/5 border border-primary/20 rounded-xl p-4 gap-2">
+          <View className="bg-primary/5 border border-primary/20 rounded-card p-4 gap-2">
             <View className="flex-row items-center gap-2">
               <Ionicons
                 name="information-circle-outline"
@@ -707,7 +707,7 @@ export default function ImportMembersScreen() {
                     const f = e.dataTransfer?.files?.[0];
                     if (f) onFile(f);
                   }}
-                  className={`border-2 border-dashed rounded-xl p-8 items-center gap-2 cursor-pointer transition-colors ${
+                  className={`border-2 border-dashed rounded-ctl p-8 items-center gap-2 cursor-pointer transition-colors ${
                     dragOver
                       ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line-strong dark:border-line-dk hover:bg-raised dark:hover:bg-raised-dk/40'
@@ -752,7 +752,7 @@ export default function ImportMembersScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               style={{ minHeight: 140, textAlignVertical: 'top' }}
-              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-sm font-mono"
+              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2 text-ink dark:text-ink-dk text-sm font-mono"
             />
 
             {error ? (
@@ -805,7 +805,7 @@ export default function ImportMembersScreen() {
               {headers.map((h, i) => (
                 <View
                   key={`${h}-${i}`}
-                  className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-lg px-3 py-2">
+                  className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-ctl px-3 py-2">
                   <Text
                     className="flex-1 text-ink dark:text-ink-dk text-sm"
                     numberOfLines={1}>
@@ -876,7 +876,7 @@ export default function ImportMembersScreen() {
             </Text>
 
             {overlapCount > 0 ? (
-              <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-lg p-3 gap-2">
+              <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-ctl p-3 gap-2">
                 <Text className="text-amber-800 dark:text-amber-200 font-semibold text-sm">
                   {overlapCount} {overlapCount === 1 ? 'member' : 'members'} already
                   subscribe through your Stripe account
@@ -916,7 +916,7 @@ export default function ImportMembersScreen() {
                 onToggle={toggleFuzzyExclude}
               />
             ) : null}
-            <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-lg p-3">
+            <View className="gap-1.5 bg-raised dark:bg-raised-dk rounded-ctl p-3">
               {importRows.slice(0, 5).map((r, i) => (
                 <View key={i} className="border-t border-line dark:border-line-dk pt-1.5 first:border-t-0 first:pt-0">
                   <Text className="text-ink dark:text-ink-dk text-sm">
@@ -1289,7 +1289,7 @@ function PlanReviewCard({
             value={final.name}
             onChangeText={(v) => onChange({ name: v })}
             placeholderTextColor={colors.ink3}
-            className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-base"
+            className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2 text-ink dark:text-ink-dk text-base"
           />
         </View>
         <View className="gap-1.5">
@@ -1331,7 +1331,7 @@ function PlanReviewCard({
               }
               keyboardType="number-pad"
               placeholderTextColor={colors.ink3}
-              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-base"
+              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2 text-ink dark:text-ink-dk text-base"
             />
           </View>
         ) : null}
@@ -1345,7 +1345,7 @@ function PlanReviewCard({
             onChangeText={(v) => onChange({ monthly_price: v })}
             keyboardType="decimal-pad"
             placeholderTextColor={colors.ink3}
-            className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-base"
+            className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2 text-ink dark:text-ink-dk text-base"
           />
         </View>
       </View>
@@ -1442,7 +1442,7 @@ function FuzzyDuplicatesCallout({
 }) {
   const stripeCount = matches.filter((m) => m.reason === 'stripe').length;
   return (
-    <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-lg p-3 gap-2">
+    <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-ctl p-3 gap-2">
       <Text className="text-amber-800 dark:text-amber-200 font-semibold text-sm">
         {matches.length} possible{' '}
         {matches.length === 1 ? 'duplicate' : 'duplicates'} under a different
@@ -1463,7 +1463,7 @@ function FuzzyDuplicatesCallout({
             <Pressable
               key={m.rowEmail}
               onPress={() => onToggle(m.rowEmail)}
-              className="flex-row items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-800/60 bg-white/60 dark:bg-black/10 px-2.5 py-2">
+              className="flex-row items-start gap-2 rounded-ctl border border-amber-200 dark:border-amber-800/60 bg-white/60 dark:bg-black/10 px-2.5 py-2">
               <Ionicons
                 name={off ? 'checkbox' : 'square-outline'}
                 size={18}
@@ -1529,7 +1529,7 @@ function UnclaimedImportsBanner({
   });
 
   return (
-    <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-2">
+    <View className="bg-amber-500/10 border border-amber-500/30 rounded-card p-4 gap-2">
       <Text className="text-amber-800 dark:text-amber-300 text-sm font-medium">
         {stats.pending + stats.invited} member
         {stats.pending + stats.invited === 1 ? '' : 's'} from a previous
@@ -1724,7 +1724,7 @@ function HandoverPanel({
 
   return (
     <View className="gap-4">
-      <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 gap-1">
+      <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-card p-4 gap-1">
         <Text className="text-ink dark:text-ink-dk font-semibold">
           Imported {result.inserted + result.updated} members
         </Text>
@@ -1746,11 +1746,11 @@ function HandoverPanel({
         </View>
         {url ? (
           <View className="flex-row items-center gap-3">
-            <View className="bg-white p-2 rounded-lg border border-line">
+            <View className="bg-white p-2 rounded-ctl border border-line">
               <QRCode value={url} size={96} />
             </View>
             <View className="flex-1 gap-2">
-              <View className="bg-raised dark:bg-raised-dk rounded-lg px-3 py-2">
+              <View className="bg-raised dark:bg-raised-dk rounded-ctl px-3 py-2">
                 <Text
                   className="text-ink-2 dark:text-ink-2-dk text-sm font-mono"
                   numberOfLines={1}>

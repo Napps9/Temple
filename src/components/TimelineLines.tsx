@@ -153,7 +153,7 @@ export function SoftLine({
     </>
   );
   const rowClass = urgent
-    ? `flex-row items-start gap-3 px-3 py-2.5 rounded-xl border ${
+    ? `flex-row items-start gap-3 px-3 py-2.5 rounded-card border ${
         tone === 'red'
           ? 'bg-red-500/10 border-red-500/20'
           : 'bg-amber-500/10 border-amber-500/20'

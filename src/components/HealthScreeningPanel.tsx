@@ -154,7 +154,7 @@ export function WaiverPanel() {
       </Text>
 
       {active.data ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2 border border-emerald-500/30">
+        <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-2 border border-emerald-500/30">
           <View className="flex-row items-center gap-2">
             <Ionicons name="document-text-outline" size={18} color="#10B981" />
             <Text className="flex-1 text-ink dark:text-ink-dk font-medium" numberOfLines={1}>
@@ -193,7 +193,7 @@ export function WaiverPanel() {
         />
 
         {pending ? (
-          <View className="flex-row items-center gap-2 bg-emerald-500/10 rounded-lg px-3 py-2">
+          <View className="flex-row items-center gap-2 bg-emerald-500/10 rounded-ctl px-3 py-2">
             <Ionicons name="checkmark-circle" size={16} color="#10B981" />
             <Text
               className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm"
@@ -213,7 +213,7 @@ export function WaiverPanel() {
         <Pressable
           onPress={() => pick.mutate()}
           disabled={pick.isPending}
-          className="flex-row items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk active:opacity-70">
+          className="flex-row items-center justify-center gap-2 px-4 py-3 rounded-ctl border border-dashed border-line-strong dark:border-line-strong-dk active:opacity-70">
           <Ionicons name="cloud-upload-outline" size={18} color={colors.ink2} />
           <Text className="text-ink-2 dark:text-ink-2-dk font-medium">
             {pick.isPending
@@ -512,7 +512,7 @@ export function ParqPanel() {
 
       <Pressable
         onPress={add}
-        className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
+        className="flex-row items-center gap-2 self-start px-3 py-2 rounded-ctl border border-dashed border-line-strong dark:border-line-strong-dk">
         <Ionicons name="add" size={16} color={colors.ink2} />
         <Text className="text-ink-2 dark:text-ink-2-dk">Add question</Text>
       </Pressable>

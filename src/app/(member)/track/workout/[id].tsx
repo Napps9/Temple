@@ -116,7 +116,7 @@ export default function WorkoutDetail() {
             ) : null}
             {workout.data.sections.length === 0 &&
             workout.data.legacy_results.length === 0 ? (
-              <View className="bg-surface dark:bg-surface-dk rounded-xl p-4">
+              <View className="bg-surface dark:bg-surface-dk rounded-ctl p-4">
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   No results recorded.
                 </Text>

@@ -102,12 +102,12 @@ export default function AthleteAccount() {
           </Text>
           <View className="flex-row gap-2">
             <Link href="/accept-invite" asChild>
-              <Pressable className="flex-1 bg-primary active:bg-primary-dark rounded-xl px-4 py-3 items-center">
+              <Pressable className="flex-1 bg-primary active:bg-primary-dark rounded-ctl px-4 py-3 items-center">
                 <Text className="text-on-primary font-semibold">Join a gym</Text>
               </Pressable>
             </Link>
             <Link href="/create-gym" asChild>
-              <Pressable className="flex-1 rounded-xl px-4 py-3 items-center border border-line dark:border-line-dk active:opacity-70">
+              <Pressable className="flex-1 rounded-ctl px-4 py-3 items-center border border-line dark:border-line-dk active:opacity-70">
                 <Text className="text-ink dark:text-ink-dk font-semibold">
                   Start a gym
                 </Text>

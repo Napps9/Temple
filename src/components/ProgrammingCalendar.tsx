@@ -370,7 +370,7 @@ export function ProgrammingCalendar({
         ) : null}
 
         {activeBlock ? (
-          <View className="flex-row items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 mb-4 -mt-1">
+          <View className="flex-row items-center gap-2 rounded-ctl bg-primary/10 px-3 py-2 mb-4 -mt-1">
             <View
               className="w-2.5 h-2.5 rounded-full"
               style={{ backgroundColor: activeBlock.color }}
@@ -451,7 +451,7 @@ export function ProgrammingCalendar({
                 (personalDay?.sections.length ?? 0) > 0) ? (
                 <Pressable
                   onPress={() => setRecordingDate(date)}
-                  className="bg-primary active:bg-primary-dark rounded-xl p-3 flex-row items-center gap-3">
+                  className="bg-primary active:bg-primary-dark rounded-ctl p-3 flex-row items-center gap-3">
                   <View className="w-9 h-9 rounded-full bg-white/20 items-center justify-center">
                     <Ionicons name="add" size={20} color={colors.onPrimary} />
                   </View>

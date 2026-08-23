@@ -60,7 +60,7 @@ export function StrengthLeaderboard({
 
   if (rows.length === 0) {
     return (
-      <View className="bg-raised dark:bg-raised-dk rounded-lg p-3">
+      <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3">
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           No {scheme.label.toLowerCase()} results in the gym yet.
         </Text>
@@ -73,7 +73,7 @@ export function StrengthLeaderboard({
       {shown.map((r) => (
         <View
           key={r.profile_id}
-          className="flex-row items-center gap-3 bg-raised dark:bg-raised-dk rounded-lg p-3">
+          className="flex-row items-center gap-3 bg-raised dark:bg-raised-dk rounded-ctl p-3">
           <View className="w-9 items-center">
             <Text
               className={

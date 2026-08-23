@@ -113,7 +113,7 @@ export function AudienceBuilder({
             <Pressable
               key={opt.kind}
               onPress={() => selectKind(opt.kind)}
-              className={`flex-1 items-center gap-1 py-3 rounded-xl border ${
+              className={`flex-1 items-center gap-1 py-3 rounded-ctl border ${
                 selected
                   ? 'border-transparent bg-raised dark:bg-raised-dk'
                   : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
@@ -179,7 +179,7 @@ export function AudienceBuilder({
       />
 
       {value.kind === 'pending_members' ? (
-        <View className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+        <View className="bg-primary/5 border border-primary/20 rounded-card p-3">
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Set to the members you just imported. Pick a different audience
             above to send to someone else instead.
@@ -240,7 +240,7 @@ export function AudienceBuilder({
             onChangeText={setSegmentName}
             placeholder="Save this audience as…"
             placeholderTextColor={colors.ink3}
-            className="flex-1 bg-surface dark:bg-surface-dk rounded-xl px-3 py-2 text-sm text-ink dark:text-ink-dk border border-line dark:border-line-dk"
+            className="flex-1 bg-surface dark:bg-surface-dk rounded-ctl px-3 py-2 text-sm text-ink dark:text-ink-dk border border-line dark:border-line-dk"
           />
           <Pressable
             disabled={!segmentName.trim() || saveAudience.isPending}
@@ -250,7 +250,7 @@ export function AudienceBuilder({
                 { onSuccess: () => setSegmentName('') },
               );
             }}
-            className={`rounded-xl px-3 py-2 border ${
+            className={`rounded-ctl px-3 py-2 border ${
               segmentName.trim()
                 ? 'border-transparent bg-raised dark:bg-raised-dk'
                 : 'border-line dark:border-line-dk'

@@ -96,7 +96,7 @@ function PaymentFailedNotice({ sub }: { sub: MySubscription }) {
       {copy.action === 'pay' && invoiceUrl ? (
         <Pressable
           onPress={() => Linking.openURL(invoiceUrl)}
-          className="bg-red-600 rounded-lg px-3 py-2 items-center active:opacity-80">
+          className="bg-red-600 rounded-ctl px-3 py-2 items-center active:opacity-80">
           <Text className="text-white text-sm font-semibold">Pay now</Text>
         </Pressable>
       ) : copy.action === 'plans' ? null : (
@@ -293,7 +293,7 @@ function CurrentSubCard({
       ) : null}
 
       {needsBilling ? (
-        <View className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 gap-2">
+        <View className="bg-amber-500/10 border border-amber-500/30 rounded-ctl p-3 gap-2">
           <Text className="text-amber-800 dark:text-amber-300 text-sm font-medium">
             Carried over from your old gym — not yet billed through Temple
           </Text>

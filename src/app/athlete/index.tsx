@@ -43,10 +43,10 @@ function AccentCard({
     <View className="relative">
       <View
         pointerEvents="none"
-        className="absolute rounded-2xl"
+        className="absolute rounded-card"
         style={{ backgroundColor: accent, top: 5, left: 5, right: -5, bottom: -5 }}
       />
-      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl p-4 gap-3">
+      <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
         {children}
       </View>
     </View>
@@ -318,12 +318,12 @@ export default function AthleteHome() {
           </View>
           <View className="flex-row gap-2">
             <Link href="/accept-invite" asChild>
-              <Pressable className="flex-1 bg-primary active:bg-primary-dark rounded-xl px-4 py-3 items-center">
+              <Pressable className="flex-1 bg-primary active:bg-primary-dark rounded-ctl px-4 py-3 items-center">
                 <Text className="text-on-primary font-semibold">Join a gym</Text>
               </Pressable>
             </Link>
             <Link href="/create-gym" asChild>
-              <Pressable className="flex-1 rounded-xl px-4 py-3 items-center border border-line dark:border-line-dk active:opacity-70">
+              <Pressable className="flex-1 rounded-ctl px-4 py-3 items-center border border-line dark:border-line-dk active:opacity-70">
                 <Text className="text-ink dark:text-ink-dk font-semibold">
                   Start a gym
                 </Text>

@@ -778,7 +778,7 @@ export default function AutomationEditor() {
                 <Pressable
                   key={t}
                   onPress={() => setTrigger(t)}
-                  className={`rounded-lg border p-3 gap-1 ${
+                  className={`rounded-ctl border p-3 gap-1 ${
                     sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                   }`}>
                   <Text className="text-ink dark:text-ink-dk font-medium">
@@ -968,7 +968,7 @@ export default function AutomationEditor() {
           {steps.map((s, i) => (
             <View
               key={s.id}
-              className="rounded-lg border border-line dark:border-line-dk p-3 gap-3">
+              className="rounded-ctl border border-line dark:border-line-dk p-3 gap-3">
               <View className="flex-row items-center justify-between gap-2">
                 <Text className="text-ink dark:text-ink-dk font-medium">
                   Follow-up {i + 1}

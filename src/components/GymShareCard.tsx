@@ -32,7 +32,7 @@ export function GymShareCard() {
       <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         Share this link to bring someone new into {brand.gymName}.
       </Text>
-      <View className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-lg p-3">
+      <View className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-ctl p-3">
         <Text
           className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm font-mono"
           numberOfLines={1}>

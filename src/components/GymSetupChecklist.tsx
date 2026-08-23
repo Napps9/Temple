@@ -211,7 +211,7 @@ export function GymSetupChecklist({
   if (status.every((s) => s.done)) return null;
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 border border-primary/30">
+    <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-3 border border-primary/30">
       <Pressable
         onPress={() => setOpen(!open)}
         className="flex-row items-center gap-3 active:opacity-70">
@@ -254,7 +254,7 @@ export function GymSetupChecklist({
                 ? onOpenSection(step.section)
                 : router.push(`${step.href}?backTo=checklist` as never)
             }
-            className={`flex-row items-center gap-3 rounded-lg px-3 py-2.5 active:opacity-70 ${
+            className={`flex-row items-center gap-3 rounded-ctl px-3 py-2.5 active:opacity-70 ${
               step.done
                 ? 'bg-raised dark:bg-raised-dk/40'
                 : 'bg-raised dark:bg-raised-dk'

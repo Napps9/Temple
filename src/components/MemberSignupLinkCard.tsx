@@ -89,11 +89,11 @@ export function MemberSignupLinkCard() {
             onPress={() => setQrOpen(true)}
             accessibilityRole="button"
             accessibilityLabel="Show large QR"
-            className="bg-white p-2 rounded-lg border border-line active:opacity-70">
+            className="bg-white p-2 rounded-ctl border border-line active:opacity-70">
             <QRCode value={url} size={88} />
           </Pressable>
           <View className="flex-1 gap-2">
-            <View className="bg-raised dark:bg-raised-dk rounded-lg px-3 py-2">
+            <View className="bg-raised dark:bg-raised-dk rounded-ctl px-3 py-2">
               <Text
                 className="text-ink-2 dark:text-ink-2-dk text-sm font-mono"
                 numberOfLines={1}>
@@ -121,7 +121,7 @@ export function MemberSignupLinkCard() {
           </View>
         </View>
       ) : (
-        <View className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-lg p-3">
+        <View className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk rounded-ctl p-3">
           <Text
             className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm font-mono"
             numberOfLines={1}>

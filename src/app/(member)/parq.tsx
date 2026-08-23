@@ -195,7 +195,7 @@ export default function ParqForm() {
                   numberOfLines={3}
                   style={{ minHeight: 60, textAlignVertical: 'top' }}
                   autoCapitalize="sentences"
-                  className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2 text-ink dark:text-ink-dk text-sm"
+                  className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2 text-ink dark:text-ink-dk text-sm"
                 />
               ) : null}
             </View>
@@ -226,7 +226,7 @@ function YesNoOption({
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-1 px-4 py-3 rounded-lg border items-center active:opacity-70 ${
+      className={`flex-1 px-4 py-3 rounded-ctl border items-center active:opacity-70 ${
         selected
           ? 'border-transparent bg-raised dark:bg-raised-dk'
           : 'border-line dark:border-line-dk'

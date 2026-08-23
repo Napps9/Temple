@@ -105,7 +105,7 @@ export function CoverRequestCard({ offer, canClaim, qualified = true }: Props) {
       ) : null}
 
       {canClaim && !isSelf && !qualified ? (
-        <View className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2">
+        <View className="rounded-ctl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2">
           <Text className="text-amber-700 dark:text-amber-300 text-xs">
             You're not qualified to cover {typeName}.
           </Text>

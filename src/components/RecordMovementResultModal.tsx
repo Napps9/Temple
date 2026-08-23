@@ -296,7 +296,7 @@ export function RecordMovementResultModal({
               ))}
               <Pressable
                 onPress={addDraft}
-                className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
+                className="flex-row items-center gap-2 self-start px-3 py-2 rounded-ctl border border-dashed border-line-strong dark:border-line-strong-dk">
                 <Ionicons name="add" size={16} color={colors.ink2} />
                 <Text className="text-ink-2 dark:text-ink-2-dk">
                   Add result
@@ -346,11 +346,11 @@ function DraftCard({
   const colors = useThemeColors();
   const opt = draft.option;
   return (
-    <View className="bg-raised dark:bg-raised-dk rounded-xl p-3 gap-3">
+    <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-3">
       <View className="flex-row items-center gap-2">
         <Pressable
           onPress={onPickOption}
-          className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
+          className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
           <View className="flex-1">
             {opt ? (
               <>
@@ -373,7 +373,7 @@ function DraftCard({
           <Pressable
             onPress={onRemove}
             hitSlop={4}
-            className="w-9 h-9 rounded-lg items-center justify-center active:bg-sunken dark:active:bg-sunken-dk"
+            className="w-9 h-9 rounded-ctl items-center justify-center active:bg-sunken dark:active:bg-sunken-dk"
           accessibilityLabel="Close">
             <Ionicons name="close" size={18} color={colors.ink3} />
           </Pressable>
@@ -467,7 +467,7 @@ function SchemePickerStep({
                   }
                   accessibilityRole="button"
                   accessibilityState={{ expanded: expandedGroup === g.key }}
-                  className="bg-raised dark:bg-raised-dk rounded-lg px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
+                  className="bg-raised dark:bg-raised-dk rounded-ctl px-3 py-2.5 flex-row items-center gap-2 active:opacity-70">
                   <Text className="flex-1 text-ink dark:text-ink-dk font-medium">
                     {g.name}
                   </Text>
@@ -489,7 +489,7 @@ function SchemePickerStep({
                           }
                           accessibilityRole="button"
                           accessibilityState={{ expanded: expandedMovement === m.key }}
-                          className="rounded-lg px-3 py-2 flex-row items-center gap-2 active:opacity-70">
+                          className="rounded-ctl px-3 py-2 flex-row items-center gap-2 active:opacity-70">
                           <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">
                             {m.name}
                           </Text>
@@ -509,7 +509,7 @@ function SchemePickerStep({
                               <Pressable
                                 key={`${opt.movementKey}-${opt.schemeKey}`}
                                 onPress={() => onPick(opt)}
-                                className="rounded-lg px-3 py-2 active:bg-raised dark:active:bg-raised-dk">
+                                className="rounded-ctl px-3 py-2 active:bg-raised dark:active:bg-raised-dk">
                                 <Text className="text-ink dark:text-ink-dk text-sm">
                                   {opt.schemeLabel}
                                 </Text>

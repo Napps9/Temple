@@ -202,7 +202,7 @@ export default function CoachEarningsPage() {
                 <Pressable
                   key={p.key}
                   onPress={() => setPolicy.mutate(p.key)}
-                  className={`rounded-lg border p-3 flex-row gap-3 items-start active:opacity-70 ${
+                  className={`rounded-ctl border p-3 flex-row gap-3 items-start active:opacity-70 ${
                     selected
                       ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
@@ -473,7 +473,7 @@ function ClassTypeRateEditor({
   const earned = earningsRow?.earnings_cents ?? 0;
 
   return (
-    <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-2">
+    <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-2">
       <View className="flex-row items-center gap-2">
         <View
           style={{ backgroundColor: classType.color }}

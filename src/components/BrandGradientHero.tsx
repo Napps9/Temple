@@ -19,7 +19,7 @@ export function BrandGradientHero({
   style?: ViewStyle;
 }) {
   return (
-    <View className="rounded-2xl overflow-hidden" style={style}>
+    <View className="rounded-card overflow-hidden" style={style}>
       <LinearGradient
         colors={[color, darkenHex(color, 0.4)]}
         start={{ x: 0, y: 0 }}

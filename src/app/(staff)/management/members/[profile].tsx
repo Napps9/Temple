@@ -371,7 +371,7 @@ export default function MemberDetailScreen() {
         ) : null}
 
         {isRemoved ? (
-          <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 gap-2">
+          <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-ctl p-3 gap-2">
             <Text className="text-amber-700 dark:text-amber-300 text-sm font-medium">
               This member has been removed from the gym.
             </Text>
@@ -393,7 +393,7 @@ export default function MemberDetailScreen() {
         ) : null}
 
         {unreachable ? (
-          <View className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 gap-1">
+          <View className="bg-red-500/10 border border-red-500/30 rounded-ctl p-3 gap-1">
             <Text className="text-red-700 dark:text-red-400 text-sm font-semibold">
               {unreachable === 'complaint'
                 ? 'Marked your email as spam'
@@ -457,7 +457,7 @@ export default function MemberDetailScreen() {
               return (
               <View
                 key={s.id}
-                className="bg-surface dark:bg-surface-dk rounded-lg p-3 gap-1">
+                className="bg-surface dark:bg-surface-dk rounded-ctl p-3 gap-1">
                 <View className="flex-row items-center gap-2">
                   <Text className="text-ink dark:text-ink-dk font-medium">
                     {s.membership_plans?.name ?? 'Plan'}
@@ -526,7 +526,7 @@ export default function MemberDetailScreen() {
 
         {canProgram && !isRemoved ? (
           <Section title="Programming">
-            <View className="bg-surface dark:bg-surface-dk rounded-lg p-3 gap-2">
+            <View className="bg-surface dark:bg-surface-dk rounded-ctl p-3 gap-2">
               <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 Write a personal programme on this member's calendar, upload
                 programme PDFs, and set whether access is free or paid.
@@ -551,7 +551,7 @@ export default function MemberDetailScreen() {
         gymMembership.data.role !== 'member' &&
         (membership?.role === 'owner' || membership?.role === 'admin') ? (
           <Section title="Booking">
-            <View className="bg-surface dark:bg-surface-dk rounded-lg p-3 flex-row items-center gap-3">
+            <View className="bg-surface dark:bg-surface-dk rounded-ctl p-3 flex-row items-center gap-3">
               <View className="flex-1">
                 <Text className="text-ink dark:text-ink-dk font-medium">
                   Require a membership to book
@@ -581,7 +581,7 @@ export default function MemberDetailScreen() {
             comps.data.map((c) => (
               <View
                 key={c.grant_id}
-                className="bg-surface dark:bg-surface-dk rounded-lg p-3 gap-1">
+                className="bg-surface dark:bg-surface-dk rounded-ctl p-3 gap-1">
                 <Text className="text-ink dark:text-ink-dk font-medium">
                   {c.reason ?? 'Comp grant'}
                   {c.revoked_at ? ' (revoked)' : ''}
@@ -609,7 +609,7 @@ export default function MemberDetailScreen() {
             onboarding.data.map((r) => (
               <View
                 key={r.id}
-                className="bg-surface dark:bg-surface-dk rounded-lg p-3 gap-1">
+                className="bg-surface dark:bg-surface-dk rounded-ctl p-3 gap-1">
                 <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   {r.question_text}
                 </Text>
@@ -735,7 +735,7 @@ function PaymentTroubleCard({
 
   return (
     <Section title="Payment trouble">
-      <View className="bg-surface dark:bg-surface-dk rounded-lg p-3 gap-2">
+      <View className="bg-surface dark:bg-surface-dk rounded-ctl p-3 gap-2">
         <Text className="text-ink dark:text-ink-dk text-sm font-medium">
           Failing since {formatDate(d.past_due_since)}
           {d.payment_failure_count > 1
@@ -887,7 +887,7 @@ function InjuriesSection({
           return (
             <View
               key={r.id}
-              className="bg-surface dark:bg-surface-dk rounded-lg p-3 gap-2">
+              className="bg-surface dark:bg-surface-dk rounded-ctl p-3 gap-2">
               <View className="flex-row items-center gap-2">
                 <View
                   style={{ backgroundColor: painColour(r.pain_level) }}
@@ -1039,7 +1039,7 @@ function ParqHistorySection({
           {(answers.data ?? []).map((a) => (
             <View
               key={a.question_id}
-              className={`rounded-lg p-3 gap-1 ${
+              className={`rounded-ctl p-3 gap-1 ${
                 a.answered_yes && a.parq_questions?.flag_on_yes
                   ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
                   : 'bg-surface dark:bg-surface-dk'

@@ -123,7 +123,7 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
         </View>
       ) : domain.status === 'verified' ? (
         <View className="gap-3">
-          <View className="flex-row items-center gap-2 bg-green-500/10 rounded-lg p-3">
+          <View className="flex-row items-center gap-2 bg-green-500/10 rounded-ctl p-3">
             <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
             <View className="flex-1">
               <Text className="text-ink dark:text-ink-dk text-sm font-medium">
@@ -170,7 +170,7 @@ export function CustomDomainCard({ gymId }: { gymId: string | null | undefined }
           ) : null}
 
           {verifyNote ? (
-            <View className={`rounded-lg p-3 ${TONE[verifyNote.tone].bg}`}>
+            <View className={`rounded-ctl p-3 ${TONE[verifyNote.tone].bg}`}>
               <Text className={`text-xs ${TONE[verifyNote.tone].text}`}>{verifyNote.text}</Text>
             </View>
           ) : null}

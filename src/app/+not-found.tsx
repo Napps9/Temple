@@ -25,12 +25,12 @@ export default function NotFound() {
         </View>
         <View className="w-full max-w-xs gap-3">
           <Link href="/" asChild>
-            <Pressable className="bg-primary rounded-lg p-3 items-center active:opacity-80">
+            <Pressable className="bg-primary rounded-ctl p-3 items-center active:opacity-80">
               <Text className="text-on-primary font-semibold">Go to home</Text>
             </Pressable>
           </Link>
           <Link href="/sign-in" asChild>
-            <Pressable className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-xl p-3 items-center active:opacity-80">
+            <Pressable className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 items-center active:opacity-80">
               <Text className="text-ink dark:text-ink-dk font-semibold">
                 Sign in
               </Text>

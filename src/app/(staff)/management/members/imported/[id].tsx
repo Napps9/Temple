@@ -291,7 +291,7 @@ export default function ImportedMemberDetailScreen() {
             </View>
 
             {row.status === 'linked' ? (
-              <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
+              <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-card p-3">
                 <Text className="text-emerald-700 dark:text-emerald-300 text-sm">
                   This person has already signed up — their live profile now
                   owns their details.

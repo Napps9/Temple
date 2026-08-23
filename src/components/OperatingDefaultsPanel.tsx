@@ -635,7 +635,7 @@ function Field({
         placeholderTextColor={colors.ink3}
         autoCapitalize="none"
         autoCorrect={false}
-        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk text-base"
       />
     </View>
   );
@@ -666,7 +666,7 @@ function NumField({
         value={String(value)}
         onChangeText={onChange}
         keyboardType="number-pad"
-        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk text-base"
       />
     </View>
   );
@@ -695,7 +695,7 @@ function Choice<T extends string>({
           <Pressable
             key={o.key}
             onPress={() => onChange(o.key)}
-            className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
+            className={`flex-row items-center gap-2 rounded-ctl px-3 py-2 border ${
               selected
                 ? 'border-transparent bg-raised dark:bg-raised-dk'
                 : 'border-line dark:border-line-dk'

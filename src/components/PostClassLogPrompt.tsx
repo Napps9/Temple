@@ -99,7 +99,7 @@ export function PostClassLogPrompt() {
   const when = relativeDay(new Date(classStart));
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 border border-primary/30">
+    <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-3 border border-primary/30">
       <View className="flex-row items-center gap-3">
         <View
           style={{ backgroundColor: accent + '26' }}
@@ -125,7 +125,7 @@ export function PostClassLogPrompt() {
       </View>
       <Pressable
         onPress={() => setRecording(true)}
-        className="bg-primary rounded-lg py-3 items-center justify-center active:bg-primary-dark">
+        className="bg-primary rounded-ctl py-3 items-center justify-center active:bg-primary-dark">
         <Text className="text-on-primary font-semibold">Log your workout</Text>
       </Pressable>
       {/* Same flow the Programming page's "Record results" prompt opens —

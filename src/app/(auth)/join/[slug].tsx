@@ -248,7 +248,7 @@ export default function JoinGymScreen() {
                   onPress={() => justJoin.mutate()}
                   disabled={justJoin.isPending}
                   style={{ backgroundColor: primary }}
-                  className="rounded-lg px-5 py-3 items-center justify-center active:opacity-80">
+                  className="rounded-ctl px-5 py-3 items-center justify-center active:opacity-80">
                   <Text className="text-white font-semibold">
                     {justJoin.isPending ? 'Joining…' : `Join ${info.name}`}
                   </Text>
@@ -282,7 +282,7 @@ export default function JoinGymScreen() {
                 <Pressable
                   onPress={resend}
                   disabled={resendLoading}
-                  className="rounded-lg px-5 py-3 items-center justify-center bg-surface dark:bg-surface-dk border border-line dark:border-line-dk active:opacity-80">
+                  className="rounded-ctl px-5 py-3 items-center justify-center bg-surface dark:bg-surface-dk border border-line dark:border-line-dk active:opacity-80">
                   <Text className="text-ink dark:text-ink-dk font-semibold">
                     {resendLoading ? 'Sending…' : 'Resend confirmation email'}
                   </Text>
@@ -304,7 +304,7 @@ export default function JoinGymScreen() {
             ) : (
               <View className="gap-4">
                 {linkExpired || alreadyRegistered ? (
-                  <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-2">
+                  <View className="bg-amber-500/10 border border-amber-500/30 rounded-card p-4 gap-2">
                     <Text className="text-amber-800 dark:text-amber-300 text-sm">
                       {linkExpired
                         ? 'That sign-in link has expired or was already used.'
@@ -358,7 +358,7 @@ export default function JoinGymScreen() {
                   onPress={() => signupAndJoin.mutate()}
                   disabled={signupAndJoin.isPending}
                   style={{ backgroundColor: primary }}
-                  className="rounded-lg px-5 py-3 items-center justify-center active:opacity-80">
+                  className="rounded-ctl px-5 py-3 items-center justify-center active:opacity-80">
                   <Text className="text-white font-semibold">
                     {signupAndJoin.isPending
                       ? 'Joining…'

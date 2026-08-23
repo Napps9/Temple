@@ -717,7 +717,7 @@ export default function SetupScreen() {
         <View className="px-4 pt-2 pb-2 gap-2 md:max-w-2xl md:mx-auto md:w-full">
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center gap-2.5">
-              <View className="w-8 h-8 rounded-xl bg-primary/15 items-center justify-center">
+              <View className="w-8 h-8 rounded-ctl bg-primary/15 items-center justify-center">
                 <Ionicons name="rocket-outline" size={17} color={colors.primary} />
               </View>
               <View>
@@ -1103,7 +1103,7 @@ function MessageRow({
   }
 
   const card = (children: React.ReactNode, confirmLabel: string, onConfirm: () => void) => (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk p-4 gap-3">
       {children}
       {msg.open ? (
         <View className="flex-row gap-2.5">
@@ -1186,7 +1186,7 @@ function MessageRow({
     );
   }
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk p-4 gap-3">
       <RuleSheet choices={msg.choices} editable={msg.open} onEdit={onEditRule} />
       {msg.open ? (
         <Button onPress={() => onConfirmRules(msg.choices)} loading={busy}>
@@ -1286,7 +1286,7 @@ function GoLive({
     (r) => !doneKeys.has(r.key) && !handled.has(r.step),
   );
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk p-4 gap-3">
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
         {left.length === 0
           ? 'Everything’s set. Members can find you, book, sign and pay.'
@@ -1573,7 +1573,7 @@ function MembersImportCard({
 
   if (!file) {
     return (
-      <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
+      <View className="ml-9 bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk p-4 gap-3">
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
           Export a CSV from wherever you are now — Mindbody, PushPress, Glofox,
           Wodify, a spreadsheet. I’ll match the columns and show you everything
@@ -1599,7 +1599,7 @@ function MembersImportCard({
           multiline
           placeholder="…or paste it here: Email,First Name,Last Name,Plan"
           placeholderTextColor={colors.ink3}
-          className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 h-20 text-ink dark:text-ink-dk text-[13px]"
+          className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 h-20 text-ink dark:text-ink-dk text-[13px]"
         />
         {/* The only step that deliberately keeps a screen. A CSV only
             stages rows — nobody is charged and nothing is adopted — but
@@ -1624,7 +1624,7 @@ function MembersImportCard({
   }
 
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk p-4 gap-3">
       <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold">
         {file.rows.length} {file.rows.length === 1 ? 'row' : 'rows'}
         {file.name ? ` in ${file.name}` : ''}
@@ -1862,7 +1862,7 @@ function WorkoutsImportCard({
 
   if (!file) {
     return (
-      <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
+      <View className="ml-9 bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk p-4 gap-3">
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
           One row per result — weighted lifts, WODs scored for time or AMRAP,
           Hyrox splits. Members open the app to their own PRs and leaderboards
@@ -1881,7 +1881,7 @@ function WorkoutsImportCard({
           multiline
           placeholder="…or paste it here: email,date,movement,weight,reps,unit"
           placeholderTextColor={colors.ink3}
-          className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 h-20 text-ink dark:text-ink-dk text-[13px]"
+          className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 h-20 text-ink dark:text-ink-dk text-[13px]"
         />
         <StepSkip label="Nothing to bring across" onPress={onSkip} />
       </View>
@@ -1909,7 +1909,7 @@ function WorkoutsImportCard({
   ].filter(Boolean);
 
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk p-4 gap-3">
       <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold">
         {file.rows.length} {file.rows.length === 1 ? 'row' : 'rows'}
         {file.name ? ` in ${file.name}` : ''}
@@ -2062,7 +2062,7 @@ function ClassBuilderCard({
   }
 
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-4">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk p-4 gap-4">
       {entries.length > 0 ? (
         <View className="gap-2">
           {entries.map((e, i) => (
@@ -2101,7 +2101,7 @@ function ClassBuilderCard({
               onChangeText={setName}
               placeholder="CrossFit"
               placeholderTextColor={colors.ink3}
-              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
+              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk"
             />
           </View>
           {CLASS_TYPE_PALETTE.map((c) => (
@@ -2182,7 +2182,7 @@ function StripeCard({ onSkip }: { onSkip: () => void }) {
   });
 
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk p-4 gap-3">
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
         Your own Stripe account takes the money and pays out to your bank.
         Card processing is Stripe's usual rate; Temple adds nothing on top and
@@ -2296,7 +2296,7 @@ function PlanBuilderCard({
   }
 
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-4">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk p-4 gap-4">
       {entries.length > 0 ? (
         <View className="gap-2">
           {entries.map((e, i) => (
@@ -2329,7 +2329,7 @@ function PlanBuilderCard({
           onChangeText={(name) => setDraft((d) => ({ ...d, name }))}
           placeholder="Unlimited"
           placeholderTextColor={colors.ink3}
-          className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
+          className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk"
         />
       </View>
 
@@ -2369,7 +2369,7 @@ function PlanBuilderCard({
             placeholder="89"
             keyboardType="decimal-pad"
             placeholderTextColor={colors.ink3}
-            className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
+            className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk"
           />
         </View>
         {creditKind ? (
@@ -2382,7 +2382,7 @@ function PlanBuilderCard({
               onChangeText={(credits) => setDraft((d) => ({ ...d, credits }))}
               keyboardType="number-pad"
               placeholderTextColor={colors.ink3}
-              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
+              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk"
             />
           </View>
         ) : null}
@@ -2396,7 +2396,7 @@ function PlanBuilderCard({
               onChangeText={(notice) => setDraft((d) => ({ ...d, notice }))}
               keyboardType="number-pad"
               placeholderTextColor={colors.ink3}
-              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk"
+              className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk"
             />
           </View>
         ) : null}
@@ -2544,7 +2544,7 @@ function WaiverCard({
   });
 
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk p-4 gap-3">
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm leading-5">
         A PDF is all it takes — members sign it with their finger in the app,
         and it’s kept as a liability record. Or ask the standard health
@@ -2584,7 +2584,7 @@ function WaiverCard({
 // manual-link fallback when email isn't configured.
 function TeamCard({ onDone }: { onDone: (receipt: string) => void }) {
   return (
-    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk p-4 gap-3">
+    <View className="ml-9 bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk p-4 gap-3">
       <InviteSection
         title="Invite a coach"
         subtitle="They'll get a link to join with the right access."

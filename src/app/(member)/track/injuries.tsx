@@ -75,7 +75,7 @@ export default function InjuriesScreen() {
         />
 
         {due.length > 0 ? (
-          <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl p-4 gap-1">
+          <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-card p-4 gap-1">
             <Text className="text-amber-700 dark:text-amber-300 font-semibold">
               Weekly check-in due
             </Text>
@@ -193,7 +193,7 @@ function LogInjuryForm({
   });
 
   return (
-    <View className="gap-3 bg-raised dark:bg-raised-dk rounded-xl p-3">
+    <View className="gap-3 bg-raised dark:bg-raised-dk rounded-ctl p-3">
       <Text className="text-ink dark:text-ink-dk font-semibold">
         New injury — {regionLabel(region)}
       </Text>
@@ -348,7 +348,7 @@ function CheckInForm({
   });
 
   return (
-    <View className="gap-3 bg-raised dark:bg-raised-dk rounded-xl p-3">
+    <View className="gap-3 bg-raised dark:bg-raised-dk rounded-ctl p-3">
       <PainPicker label="Pain today" value={pain} onChange={setPain} />
 
       <View className="gap-1.5">
@@ -598,7 +598,7 @@ function MovementMultiPick({
         </View>
       ) : null}
       {open ? (
-        <View className="gap-2 bg-surface dark:bg-surface-dk rounded-lg p-2">
+        <View className="gap-2 bg-surface dark:bg-surface-dk rounded-ctl p-2">
           <TextInput
             value={filter}
             onChangeText={setFilter}

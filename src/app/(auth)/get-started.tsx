@@ -399,7 +399,7 @@ function CardCta({
       <Link href={path.href as never} asChild>
         <Pressable
           style={{ backgroundColor: path.ctaBg }}
-          className="rounded-xl p-4 items-center active:opacity-80">
+          className="rounded-ctl p-4 items-center active:opacity-80">
           {label}
         </Pressable>
       </Link>
@@ -408,7 +408,7 @@ function CardCta({
   return (
     <View
       style={{ backgroundColor: path.ctaBg }}
-      className="rounded-xl p-4 items-center">
+      className="rounded-ctl p-4 items-center">
       {label}
     </View>
   );

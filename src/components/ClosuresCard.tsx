@@ -110,7 +110,7 @@ export function ClosuresCard() {
           {closures.map((c) => (
             <View
               key={c.id}
-              className="flex-row items-center gap-3 border border-line dark:border-line-dk rounded-lg px-3 py-2">
+              className="flex-row items-center gap-3 border border-line dark:border-line-dk rounded-ctl px-3 py-2">
               <View className="flex-1">
                 <Text className="text-ink dark:text-ink-dk text-sm">
                   {c.starts_on === c.ends_on

@@ -310,7 +310,7 @@ function WarningsChip({
         <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={12} color="#B45309" />
       </Pressable>
       {expanded ? (
-        <View className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-3 gap-1.5">
+        <View className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-ctl p-3 gap-1.5">
           {warnings.map((w, i) => (
             <Pressable
               key={`${w.pageId}:${i}`}
@@ -656,9 +656,9 @@ export default function WebsiteManageScreen() {
                   key={t.id}
                   onPress={() => void createSite(t.id)}
                   disabled={creatingId != null}
-                  className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-xl p-4 active:opacity-70 hover:border-primary">
+                  className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 active:opacity-70 hover:border-primary">
                   <View
-                    className="w-16 h-12 rounded-lg overflow-hidden flex-row"
+                    className="w-16 h-12 rounded-ctl overflow-hidden flex-row"
                     style={{ borderWidth: 1, borderColor: '#00000014' }}>
                     <View className="flex-1" style={{ backgroundColor: composed.palette.background }} />
                     <View className="w-4" style={{ backgroundColor: composed.palette.accent }} />
@@ -930,7 +930,7 @@ export default function WebsiteManageScreen() {
         />
       ) : null}
       {introsToAdd.length > 0 ? (
-        <View className="bg-primary/5 border border-primary/20 rounded-lg p-3 gap-2">
+        <View className="bg-primary/5 border border-primary/20 rounded-ctl p-3 gap-2">
           <Text className="text-ink dark:text-ink-dk text-xs font-semibold">
             Give your other pages a stronger opening
           </Text>

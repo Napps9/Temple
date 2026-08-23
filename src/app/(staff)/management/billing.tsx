@@ -274,7 +274,7 @@ export default function BillingScreen() {
             keyboardType="decimal-pad"
             placeholder="5000"
           />
-          <View className="bg-primary/5 rounded-xl p-3">
+          <View className="bg-primary/5 rounded-ctl p-3">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               At that volume, a platform charging an extra 1–3% on top of
               processing would cost you roughly{' '}
@@ -292,14 +292,14 @@ export default function BillingScreen() {
         </View>
 
         {params.stripe === 'connected' && connected ? (
-          <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+          <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-card p-4">
             <Text className="text-emerald-700 dark:text-emerald-300 text-sm">
               Stripe connected — you're ready to take payments.
             </Text>
           </View>
         ) : null}
         {params.stripe === 'error' ? (
-          <View className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+          <View className="bg-red-500/10 border border-red-500/30 rounded-card p-4">
             <Text className="text-red-600 dark:text-red-400 text-sm">
               That didn't complete — the connection was cancelled or timed
               out. Try again below.

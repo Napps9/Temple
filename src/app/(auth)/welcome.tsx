@@ -113,7 +113,7 @@ export default function WelcomeScreen() {
           <View className="items-center gap-4">
             <View
               style={{ backgroundColor: BLUE + '1A', borderColor: BLUE + '40' }}
-              className="w-16 h-16 rounded-2xl border items-center justify-center">
+              className="w-16 h-16 rounded-card border items-center justify-center">
               <Ionicons name={icon} size={28} color={BLUE} />
             </View>
             <View className="gap-2">

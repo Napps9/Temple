@@ -138,7 +138,7 @@ export function NavAccountMenu({
         />
         <View
           style={{ position: 'absolute', ...panel }}
-          className="bg-surface dark:bg-surface-dk rounded-2xl border border-line dark:border-line-dk shadow-float p-2">
+          className="bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk shadow-float p-2">
           <ScrollView showsVerticalScrollIndicator={false}>
             <View className="px-3 py-2 flex-row items-center gap-3">
               <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={34} />
@@ -214,7 +214,7 @@ function MenuRow({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      className="flex-row items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk">
+      className="flex-row items-center gap-3 px-3 py-2.5 rounded-ctl hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk">
       <Ionicons name={icon} size={20} color={iconColor} />
       <Text className="flex-1 text-ink dark:text-ink-dk text-[15px] font-medium">
         {label}

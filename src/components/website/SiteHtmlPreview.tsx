@@ -24,7 +24,7 @@ export function SiteHtmlPreview({
   return (
     <View
       style={{ height }}
-      className="items-center justify-center rounded-xl border border-line dark:border-line-dk bg-surface dark:bg-surface-dk px-6">
+      className="items-center justify-center rounded-ctl border border-line dark:border-line-dk bg-surface dark:bg-surface-dk px-6">
       <Ionicons name="desktop-outline" size={28} color={colors.ink3} />
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm mt-2 text-center">
         Open Temple on the web to preview the rendered site.

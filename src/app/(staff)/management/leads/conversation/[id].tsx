@@ -414,7 +414,7 @@ export default function AgentConversationScreen() {
           // nativeID -> DOM id, so the web-only selection listener
           // can tell which turn a highlighted phrase is in.
           nativeID={isAgent ? `${MESSAGE_ID_PREFIX}${m.id}` : undefined}
-          className={`max-w-[88%] rounded-xl px-3 py-2 ${
+          className={`max-w-[88%] rounded-ctl px-3 py-2 ${
             fromLead ? 'self-start bg-raised dark:bg-raised-dk' : 'self-end bg-primary/10'
           } ${active ? 'border border-primary' : 'border border-transparent'}`}>
           <Text className="text-ink dark:text-ink-dk">{m.body}</Text>
@@ -599,7 +599,7 @@ export default function AgentConversationScreen() {
                 <View className="gap-2">
                   {smsRows.map((m) => (
                     <View key={m.id} className="items-end">
-                      <View className="max-w-[88%] rounded-xl px-3 py-2 bg-primary/10">
+                      <View className="max-w-[88%] rounded-ctl px-3 py-2 bg-primary/10">
                         <Text className="text-ink dark:text-ink-dk">{m.body}</Text>
                         <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] mt-1">
                           Staff · {fmtSmsTime(m.created_at)}
@@ -743,7 +743,7 @@ function CoachModal({
             <FieldLabel>
               The AI said
             </FieldLabel>
-            <View className="bg-primary/10 rounded-lg p-3">
+            <View className="bg-primary/10 rounded-ctl p-3">
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 {message?.body}
               </Text>
@@ -801,7 +801,7 @@ function CoachModal({
                 <Pressable
                   key={s}
                   onPress={() => setScope(s)}
-                  className={`flex-1 px-3 py-2 rounded-lg border ${
+                  className={`flex-1 px-3 py-2 rounded-ctl border ${
                     scope === s
                       ? 'border-transparent bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
@@ -881,7 +881,7 @@ function InlineCoachForm({
 
   return (
     <View className="w-full max-w-[86%] bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3 gap-2.5 border border-primary/20">
-      <View className="bg-primary/5 rounded-lg px-3 py-2 border-l-2 border-primary">
+      <View className="bg-primary/5 rounded-ctl px-3 py-2 border-l-2 border-primary">
         <Text className="text-ink-2 dark:text-ink-2-dk text-xs italic">"{excerpt}"</Text>
       </View>
 
@@ -924,7 +924,7 @@ function InlineCoachForm({
             <Pressable
               key={s}
               onPress={() => setScope(s)}
-              className={`flex-1 px-2.5 py-1.5 rounded-lg border ${
+              className={`flex-1 px-2.5 py-1.5 rounded-ctl border ${
                 scope === s ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
               }`}>
               <Text

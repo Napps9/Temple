@@ -104,7 +104,7 @@ export function MemberGetStartedChecklist() {
             <Pressable
               key={step.key}
               onPress={() => runStep(step.key)}
-              className="flex-row items-center gap-3 rounded-lg px-3 py-2.5 bg-surface dark:bg-surface-dk active:opacity-70">
+              className="flex-row items-center gap-3 rounded-ctl px-3 py-2.5 bg-surface dark:bg-surface-dk active:opacity-70">
               <StatusDisk
                 size={28}
                 done={step.done}

@@ -81,7 +81,7 @@ export function PageManagerModal({
               {document.pages.map((p, i) => (
                 <View
                   key={p.id}
-                  className="gap-2 border border-line dark:border-line-dk rounded-xl p-3">
+                  className="gap-2 border border-line dark:border-line-dk rounded-card p-3">
                   <View className="flex-row items-end gap-2">
                     <View className="flex-1">
                       <Input

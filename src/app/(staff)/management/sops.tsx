@@ -197,7 +197,7 @@ export default function SopsScreen() {
               numberOfLines={12}
               placeholder="Markdown supported in a future update — plain text for now."
               placeholderTextColor={colors.ink3}
-              className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-4 py-3 text-ink dark:text-ink-dk text-base min-h-[200px]"
+              className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-4 py-3 text-ink dark:text-ink-dk text-base min-h-[200px]"
               style={{ textAlignVertical: 'top' }}
             />
           </View>

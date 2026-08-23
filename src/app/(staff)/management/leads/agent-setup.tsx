@@ -346,7 +346,7 @@ export default function AgentSetupWizard() {
                 ))}
               </View>
             </View>
-            <View className="rounded-lg bg-raised dark:bg-raised-dk p-3">
+            <View className="rounded-ctl bg-raised dark:bg-raised-dk p-3">
               <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                 {number
                   ? `Your agent number: ${number}`
@@ -512,9 +512,9 @@ export default function AgentSetupWizard() {
                 Web-only: the native TalkToAssistant is a hard no-op, so the
                 pitch card would be a dead button there. */}
             {voiceReady && Platform.OS === 'web' && !talkOpen ? (
-              <View className="rounded-xl border-[1.5px] border-primary bg-surface dark:bg-surface-dk p-4 gap-2.5">
+              <View className="rounded-card border-[1.5px] border-primary bg-surface dark:bg-surface-dk p-4 gap-2.5">
                 <View className="flex-row items-center gap-3">
-                  <View className="w-9 h-9 rounded-lg bg-primary/10 items-center justify-center">
+                  <View className="w-9 h-9 rounded-ctl bg-primary/10 items-center justify-center">
                     <Ionicons name="mic" size={16} color={colors.primary} />
                   </View>
                   <Text className="text-ink dark:text-ink-dk font-semibold text-base">
@@ -543,7 +543,7 @@ export default function AgentSetupWizard() {
                   </Text>
                 </Pressable>
                 {showTextTest ? (
-                  <View className="rounded-lg border border-primary/30 bg-primary/5 p-3 gap-1">
+                  <View className="rounded-ctl border border-primary/30 bg-primary/5 p-3 gap-1">
                     <Text className="text-ink dark:text-ink-dk font-medium">
                       Take it for a spin
                     </Text>
@@ -601,7 +601,7 @@ export default function AgentSetupWizard() {
             ) : frontDeskEntitled && provision.isPending ? (
               <ProvisioningChecklist step={provisionStep} resuming={provisionFailed} />
             ) : frontDeskEntitled ? (
-              <View className="rounded-lg border border-primary/30 bg-primary/5 p-3 gap-2">
+              <View className="rounded-ctl border border-primary/30 bg-primary/5 p-3 gap-2">
                 <Text className="text-ink dark:text-ink-dk font-medium">
                   {provisionFailed ? 'Something went wrong' : 'Ready to go live'}
                 </Text>
@@ -620,7 +620,7 @@ export default function AgentSetupWizard() {
                 ) : null}
               </View>
             ) : (
-              <View className="rounded-lg border border-line dark:border-line-dk p-3 gap-1">
+              <View className="rounded-ctl border border-line dark:border-line-dk p-3 gap-1">
                 <Text className="text-ink dark:text-ink-dk font-medium">
                   Not on your plan yet
                 </Text>
@@ -666,7 +666,7 @@ function VoiceRow({
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-row items-center justify-between rounded-lg border p-3 ${
+      className={`flex-row items-center justify-between rounded-ctl border p-3 ${
         selected ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
       }`}>
       <View className="flex-1">
@@ -690,7 +690,7 @@ function VoiceRow({
 
 function SummaryRow({ k, v }: { k: string; v: string }) {
   return (
-    <View className="flex-row items-center justify-between rounded-lg bg-raised dark:bg-raised-dk px-3 py-2.5">
+    <View className="flex-row items-center justify-between rounded-ctl bg-raised dark:bg-raised-dk px-3 py-2.5">
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm">{k}</Text>
       <Text className="text-ink dark:text-ink-dk text-sm font-medium">{v}</Text>
     </View>
@@ -701,7 +701,7 @@ const PROVISION_STEPS = ['Bought your number', 'Setting up your assistant', 'Con
 
 function ProvisioningChecklist({ step, resuming }: { step: number; resuming: boolean }) {
   return (
-    <View className="rounded-lg border border-primary/30 bg-primary/5 p-3 gap-3">
+    <View className="rounded-ctl border border-primary/30 bg-primary/5 p-3 gap-3">
       <Text className="text-ink dark:text-ink-dk font-medium">
         {resuming ? 'Picking up where we left off' : 'Setting up your number'}
       </Text>
@@ -784,7 +784,7 @@ function LiveHero({
         </View>
         {number ? (
           <View
-            className="flex-row items-center justify-between gap-3 rounded-lg px-4 py-3 self-stretch"
+            className="flex-row items-center justify-between gap-3 rounded-ctl px-4 py-3 self-stretch"
             style={{ backgroundColor: tint('0.15') }}>
             <Text className="text-lg font-semibold" style={{ color: ink }}>
               {number}
@@ -809,7 +809,7 @@ function LiveHero({
         ) : null}
         <Pressable
           onPress={onDone}
-          className="bg-white rounded-lg px-6 py-3 self-stretch items-center">
+          className="bg-white rounded-ctl px-6 py-3 self-stretch items-center">
           <Text className="font-semibold" style={{ color: primaryColor }}>
             Done
           </Text>

@@ -165,7 +165,7 @@ export default function CommsSettingsScreen() {
         </View>
 
         {sendingDomain.data?.status === 'verified' ? (
-          <View className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 gap-1">
+          <View className="bg-green-500/10 border border-green-500/30 rounded-card p-4 gap-1">
             <Text className="text-green-700 dark:text-green-400 font-semibold text-sm">
               Delivery is live
             </Text>
@@ -175,7 +175,7 @@ export default function CommsSettingsScreen() {
             </Text>
           </View>
         ) : (
-          <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 gap-1">
+          <View className="bg-amber-500/10 border border-amber-500/30 rounded-card p-4 gap-1">
             <Text className="text-amber-700 dark:text-amber-400 font-semibold text-sm">
               Delivery
             </Text>

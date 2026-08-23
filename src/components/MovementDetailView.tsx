@@ -441,7 +441,7 @@ function MovementPercentagesCard({
             <View className="flex-row flex-wrap -m-1">
               {PERCENT_STEPS.map((pct) => (
                 <View key={pct} className="w-1/2 md:w-1/3 p-1">
-                  <View className="flex-row items-baseline justify-between rounded-lg bg-raised dark:bg-raised-dk px-3 py-2">
+                  <View className="flex-row items-baseline justify-between rounded-ctl bg-raised dark:bg-raised-dk px-3 py-2">
                     <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold">
                       {pct}%
                     </Text>

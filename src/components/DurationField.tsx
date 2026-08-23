@@ -210,7 +210,7 @@ export function DurationField({
           keyboardType="number-pad"
           placeholder={placeholder}
           placeholderTextColor={colors.ink3}
-          className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-base"
+          className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk text-base"
         />
         <UnitDropdown units={units} unit={unit} onChange={changeUnit} />
       </View>
@@ -246,7 +246,7 @@ function UnitDropdown({
       <Pressable
         ref={triggerRef}
         onPress={openMenu}
-        className="w-24 flex-row items-center justify-between gap-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 active:opacity-70">
+        className="w-24 flex-row items-center justify-between gap-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 active:opacity-70">
         <Text className="text-ink dark:text-ink-dk text-base">
           {UNIT_LABEL[unit]}
         </Text>
@@ -265,7 +265,7 @@ function UnitDropdown({
         {pos ? (
           <View
             style={{ position: 'absolute', top: pos.top, left: pos.left, width: pos.width }}
-            className="bg-surface dark:bg-surface-dk rounded-lg border border-line dark:border-line-dk shadow-float p-1">
+            className="bg-surface dark:bg-surface-dk rounded-ctl border border-line dark:border-line-dk shadow-float p-1">
             {units.map((u) => {
               const on = u === unit;
               return (

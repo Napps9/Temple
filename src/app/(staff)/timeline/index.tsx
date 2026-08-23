@@ -1458,7 +1458,7 @@ function frameHeight(sections: number): number {
 // it; a sequence is several, each stamped with when it goes.
 function EmailDraftPreview({ draft }: { draft: EmailDraftCard }) {
   return (
-    <View className="rounded-xl overflow-hidden border border-line dark:border-line-dk">
+    <View className="rounded-ctl overflow-hidden border border-line dark:border-line-dk">
       <View
         className="px-4 py-3 flex-row items-center gap-2.5"
         style={{ backgroundColor: draft.primaryColor }}>
@@ -1652,7 +1652,7 @@ function ProgrammingChangePreview({ card }: { card: ProgrammingChangeCard }) {
       {card.rows.map((row, i) => (
         <View
           key={`${row.date}:${row.classType}:${i}`}
-          className="border border-line dark:border-line-dk rounded-lg p-3 gap-1.5">
+          className="border border-line dark:border-line-dk rounded-ctl p-3 gap-1.5">
           <View className="flex-row items-baseline gap-2">
             <Text className="text-ink dark:text-ink-dk text-[13px] font-semibold">
               {row.day}
@@ -1867,7 +1867,7 @@ function AgentActionCard({
       </Text>
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm">{reasoning}</Text>
       {open ? (
-        <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-1.5">
+        <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-1.5">
           {evidence.map((s, i) => (
             <Text key={i} className="text-ink-2 dark:text-ink-2-dk text-sm">
               {s}
@@ -2017,7 +2017,7 @@ function PaymentFailingCard({
 
   return (
     <View
-      className={`rounded-xl border px-3 py-2.5 gap-2 ${
+      className={`rounded-ctl border px-3 py-2.5 gap-2 ${
         line.tone === 'red'
           ? 'bg-red-500/10 border-red-500/20'
           : 'bg-amber-500/10 border-amber-500/20'
@@ -2263,7 +2263,7 @@ function RequestCard({
         </Text>
       ) : null}
       {open && note ? (
-        <View className="bg-raised dark:bg-raised-dk rounded-lg p-3">
+        <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3">
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm italic">
             &ldquo;{note}&rdquo;
           </Text>
@@ -2406,7 +2406,7 @@ function SetupCard({
   return (
     <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
       <View className="flex-row items-center gap-2.5">
-        <View className="w-8 h-8 rounded-xl bg-primary/15 items-center justify-center">
+        <View className="w-8 h-8 rounded-ctl bg-primary/15 items-center justify-center">
           <Ionicons name="rocket-outline" size={17} color={colors.primary} />
         </View>
         <View className="flex-1">

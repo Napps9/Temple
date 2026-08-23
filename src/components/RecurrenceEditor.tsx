@@ -90,7 +90,7 @@ export function RecurrenceEditor({
               <Pressable
                 key={i}
                 onPress={() => toggleDay(i)}
-                className={`flex-1 aspect-square rounded-lg items-center justify-center ${
+                className={`flex-1 aspect-square rounded-ctl items-center justify-center ${
                   sel ? 'bg-primary' : 'bg-raised dark:bg-raised-dk'
                 }`}>
                 <Text
@@ -127,7 +127,7 @@ export function RecurrenceEditor({
                 disabled={value.times.length === 1}
                 accessibilityRole="button"
                 accessibilityLabel="Remove"
-                className={`w-11 h-11 rounded-lg items-center justify-center ${
+                className={`w-11 h-11 rounded-ctl items-center justify-center ${
                   value.times.length === 1
                     ? 'opacity-40 bg-raised dark:bg-raised-dk'
                     : 'bg-raised dark:bg-raised-dk'
@@ -138,7 +138,7 @@ export function RecurrenceEditor({
           ))}
           <Pressable
             onPress={addTime}
-            className="flex-row items-center gap-1 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
+            className="flex-row items-center gap-1 self-start px-3 py-2 rounded-ctl border border-dashed border-line-strong dark:border-line-strong-dk">
             <Ionicons name="add" size={14} color={colors.ink2} />
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               Add time

@@ -77,7 +77,7 @@ function IconBtn({
       onPress={onPress}
       disabled={disabled}
       hitSlop={6}
-      className={`w-8 h-8 rounded-lg items-center justify-center bg-white dark:bg-raised-dk border border-line dark:border-line-dk active:opacity-60 ${
+      className={`w-8 h-8 rounded-ctl items-center justify-center bg-white dark:bg-raised-dk border border-line dark:border-line-dk active:opacity-60 ${
         disabled ? 'opacity-30' : ''
       }`}>
       <Ionicons
@@ -100,7 +100,7 @@ function Segmented<T extends string | number>({
 }) {
   const colors = useThemeColors();
   return (
-    <View className="flex-row bg-raised dark:bg-raised-dk rounded-lg p-1 gap-1">
+    <View className="flex-row bg-raised dark:bg-raised-dk rounded-ctl p-1 gap-1">
       {options.map((opt) => {
         const selected = opt.value === value;
         return (
@@ -181,7 +181,7 @@ function TextField({
         multiline={multiline}
         autoCapitalize={autoCapitalize}
         autoCorrect={!multiline ? false : undefined}
-        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-sm"
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk text-sm"
         style={multiline ? { minHeight: 88, textAlignVertical: 'top' } : undefined}
       />
     </View>
@@ -297,7 +297,7 @@ function BlockInspector({
           <Pressable
             onPress={onUploadImage}
             disabled={uploading}
-            className="flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
+            className="flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-ctl py-2.5 active:opacity-70">
             <Ionicons name="cloud-upload-outline" size={16} color={colors.primary} />
             <Text className="text-primary font-semibold text-sm">
               {uploading ? 'Uploading…' : b.src ? 'Replace image' : 'Upload image'}
@@ -390,11 +390,11 @@ function SettingsInspector({
               <Pressable
                 key={theme.id}
                 onPress={() => onChange(applyTheme(document, composed))}
-                className={`w-20 gap-1 items-center rounded-xl p-2 border-2 ${
+                className={`w-20 gap-1 items-center rounded-ctl p-2 border-2 ${
                   selected ? 'border-primary' : 'border-transparent'
                 }`}>
                 <View
-                  className="flex-row w-full h-8 rounded-lg overflow-hidden"
+                  className="flex-row w-full h-8 rounded-ctl overflow-hidden"
                   style={{ borderWidth: 1, borderColor: '#00000014' }}>
                   <View className="flex-1" style={{ backgroundColor: composed.palette.background }} />
                   <View className="flex-1" style={{ backgroundColor: composed.palette.accent }} />
@@ -595,7 +595,7 @@ export function EmailEditor({
     <Pressable
       key={type}
       onPress={() => addBlock(type)}
-      className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-raised dark:bg-raised-dk hover:bg-sunken dark:hover:bg-sunken-dk active:opacity-70">
+      className="flex-row items-center gap-1.5 px-3 py-2 rounded-ctl bg-raised dark:bg-raised-dk hover:bg-sunken dark:hover:bg-sunken-dk active:opacity-70">
       <Ionicons name={BLOCK_ICONS[type] as IconName} size={15} color={colors.ink2} />
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {BLOCK_LABELS[type]}
@@ -604,7 +604,7 @@ export function EmailEditor({
   ));
 
   const paletteCard = (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2">
+    <View className="bg-surface dark:bg-surface-dk rounded-ctl p-3 gap-2">
       <FieldLabel>
         Add a block
       </FieldLabel>
@@ -615,7 +615,7 @@ export function EmailEditor({
   // The block list: labelled rows that expand an inline inspector, matching
   // the website builder's accordion.
   const listCard = (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2">
+    <View className="bg-surface dark:bg-surface-dk rounded-ctl p-3 gap-2">
       <FieldLabel>
         Content{document.blocks.length ? ` (${document.blocks.length})` : ''}
       </FieldLabel>
@@ -634,7 +634,7 @@ export function EmailEditor({
               <View key={block.id}>
                 <Pressable
                   onPress={() => setSelectedId(isSelected ? null : block.id)}
-                  className={`flex-row items-center gap-2 rounded-lg px-3 py-2.5 ${
+                  className={`flex-row items-center gap-2 rounded-ctl px-3 py-2.5 ${
                     isSelected
                       ? 'bg-primary/10 border border-primary'
                       : 'bg-raised dark:bg-raised-dk border border-transparent'
@@ -701,7 +701,7 @@ export function EmailEditor({
   );
 
   const styleCard = (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3">
+    <View className="bg-surface dark:bg-surface-dk rounded-ctl p-4 gap-3">
       <FieldLabel>
         Email style
       </FieldLabel>

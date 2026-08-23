@@ -135,7 +135,7 @@ export default function NewClassBroadcast() {
                 <Pressable
                   key={s.id}
                   onPress={() => setSelected(s.id)}
-                  className={`bg-surface dark:bg-surface-dk rounded-xl p-3 flex-row items-center gap-3 active:opacity-70 ${
+                  className={`bg-surface dark:bg-surface-dk rounded-ctl p-3 flex-row items-center gap-3 active:opacity-70 ${
                     selectedNow ? 'border border-primary' : 'border border-transparent'
                   }`}>
                   <View

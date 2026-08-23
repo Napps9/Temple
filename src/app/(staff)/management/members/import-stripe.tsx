@@ -287,7 +287,7 @@ export default function ImportStripeScreen() {
         />
 
         {commit.data ? (
-          <View className="bg-surface dark:bg-surface-dk border border-emerald-300 dark:border-emerald-800 rounded-xl p-5 gap-3">
+          <View className="bg-surface dark:bg-surface-dk border border-emerald-300 dark:border-emerald-800 rounded-card p-5 gap-3">
             <View className="flex-row items-center gap-2">
               <Ionicons name="checkmark-circle" size={20} color="#10B981" />
               <Text className="text-ink dark:text-ink-dk font-semibold text-lg">
@@ -469,7 +469,7 @@ export default function ImportStripeScreen() {
                     <Pressable
                       key={`${m.email}-${m.subscription_id}`}
                       onPress={() => !planSkipped && toggleMember(m.email)}
-                      className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-lg p-3 ${
+                      className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk rounded-ctl p-3 ${
                         planSkipped ? 'opacity-40' : ''
                       }`}>
                       <Ionicons

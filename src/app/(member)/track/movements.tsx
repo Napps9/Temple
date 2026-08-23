@@ -253,7 +253,7 @@ function MovementRow({
   return (
     <Pressable
       onPress={() => router.push(`/track/movement/${movement.key}` as never)}
-      className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-xl px-4 py-3 hover:border-line-strong dark:hover:border-line-strong-dk active:opacity-70">
+      className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card px-4 py-3 hover:border-line-strong dark:hover:border-line-strong-dk active:opacity-70">
       <View
         style={{ backgroundColor: `${group.accent}26` }}
         className="w-9 h-9 rounded-full items-center justify-center">

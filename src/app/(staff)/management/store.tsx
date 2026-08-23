@@ -183,7 +183,7 @@ function ProductsTab() {
   return (
     <View className="gap-3">
       {!config.data?.store_enabled ? (
-        <View className="bg-amber-50 dark:bg-amber-950/40 rounded-xl p-3">
+        <View className="bg-amber-50 dark:bg-amber-950/40 rounded-ctl p-3">
           <Text className="text-amber-800 dark:text-amber-300 text-sm">
             The store is switched off, so members can't see it yet. Turn it on
             under Settings.
@@ -210,10 +210,10 @@ function ProductsTab() {
               productImages(p)[0] ? (
                 <Image
                   source={{ uri: productImages(p)[0] }}
-                  className="w-12 h-12 rounded-lg"
+                  className="w-12 h-12 rounded-ctl"
                 />
               ) : (
-                <View className="w-12 h-12 rounded-lg bg-raised dark:bg-raised-dk items-center justify-center">
+                <View className="w-12 h-12 rounded-ctl bg-raised dark:bg-raised-dk items-center justify-center">
                   <Ionicons
                     name={p.kind === 'digital' ? 'cloud-download-outline' : 'cube-outline'}
                     size={20}
@@ -489,7 +489,7 @@ function ProductEditor({
                       track_inventory: d.recurring ? false : k === 'physical',
                     })
                   }
-                  className={`flex-1 px-3 py-2 rounded-lg border items-center ${
+                  className={`flex-1 px-3 py-2 rounded-ctl border items-center ${
                     selected
                       ? 'bg-raised dark:bg-raised-dk border-transparent'
                       : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk'
@@ -824,7 +824,7 @@ function OrderCard({ order }: { order: StaffOrder }) {
       </Text>
 
       {order.has_physical && (order.shipping_name || addr.line1) ? (
-        <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 mt-1">
+        <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 mt-1">
           <FieldLabel className="mb-1">
             Ship to
           </FieldLabel>

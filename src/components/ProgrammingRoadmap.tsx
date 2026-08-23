@@ -105,7 +105,7 @@ export function ProgrammingRoadmap({
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
           <View className="gap-1.5">
-            <View className="h-8 rounded-lg bg-raised dark:bg-raised-dk overflow-hidden">
+            <View className="h-8 rounded-ctl bg-raised dark:bg-raised-dk overflow-hidden">
               {lanes.map((l) => (
                 <View
                   key={l.block.id}

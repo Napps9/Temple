@@ -104,7 +104,7 @@ function CallPanel({
   onRequestClose?: () => void;
 }) {
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-2xl p-4 gap-3 shadow-float">
+    <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-3 shadow-float">
       {call.phase === 'ready' ? (
         <ReadyBody call={call} colors={colors} onCancel={onRequestClose} />
       ) : call.phase === 'connecting' ? (
@@ -151,13 +151,13 @@ function ReadyBody({
         {onCancel ? (
           <Pressable
             onPress={onCancel}
-            className="flex-1 py-2.5 rounded-lg items-center border border-line dark:border-line-dk">
+            className="flex-1 py-2.5 rounded-ctl items-center border border-line dark:border-line-dk">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">Cancel</Text>
           </Pressable>
         ) : null}
         <Pressable
           onPress={call.start}
-          className="flex-1 py-2.5 rounded-lg items-center bg-primary">
+          className="flex-1 py-2.5 rounded-ctl items-center bg-primary">
           <Text className="font-semibold text-sm text-on-primary">
             Allow &amp; start
           </Text>
@@ -217,7 +217,7 @@ function LiveBody({
           {call.turns.map((t, i) => (
             <View
               key={i}
-              className={`max-w-[86%] rounded-xl px-3 py-2 ${
+              className={`max-w-[86%] rounded-ctl px-3 py-2 ${
                 t.role === 'user'
                   ? 'self-end bg-primary/10'
                   : 'self-start bg-raised dark:bg-raised-dk'
@@ -264,7 +264,7 @@ function EndedBody({ call, onClose }: { call: CallState; onClose?: () => void })
             call.turns.map((t, i) => (
               <View
                 key={i}
-                className={`max-w-[86%] rounded-xl px-3 py-2 ${
+                className={`max-w-[86%] rounded-ctl px-3 py-2 ${
                   t.role === 'user'
                     ? 'self-end bg-primary/10'
                     : 'self-start bg-raised dark:bg-raised-dk'
@@ -284,7 +284,7 @@ function EndedBody({ call, onClose }: { call: CallState; onClose?: () => void })
         <Pressable
           onPress={() => copyToClipboard(transcriptToText(call.turns))}
           disabled={call.turns.length === 0}
-          className={`flex-1 py-2.5 rounded-lg items-center border border-line dark:border-line-dk ${
+          className={`flex-1 py-2.5 rounded-ctl items-center border border-line dark:border-line-dk ${
             call.turns.length === 0 ? 'opacity-50' : ''
           }`}>
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
@@ -296,7 +296,7 @@ function EndedBody({ call, onClose }: { call: CallState; onClose?: () => void })
             call.reset();
             onClose?.();
           }}
-          className="flex-1 py-2.5 rounded-lg items-center bg-primary">
+          className="flex-1 py-2.5 rounded-ctl items-center bg-primary">
           <Text className="font-semibold text-sm text-on-primary">
             Close
           </Text>

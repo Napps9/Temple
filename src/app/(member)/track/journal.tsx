@@ -198,7 +198,7 @@ function WorkoutCard({ workout }: { workout: WorkoutRow }) {
 function SectionDisplay({ section }: { section: SectionRow }) {
   const headline = renderHeadline(section);
   return (
-    <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-2">
+    <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-2">
       <View className="flex-row items-center gap-2">
         <Text className="flex-1 text-ink dark:text-ink-dk font-semibold text-sm" numberOfLines={1}>
           {section.title?.trim() || formatLabel(section.section_format)}

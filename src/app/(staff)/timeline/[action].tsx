@@ -342,7 +342,7 @@ function StoryBody({
                 <Text className="text-ink dark:text-ink-dk text-[14.5px] font-semibold leading-[20px]">
                   {m.subject}
                 </Text>
-                <View className="bg-raised dark:bg-raised-dk rounded-lg p-3">
+                <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3">
                   <Text className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[21px]">
                     {m.body}
                   </Text>

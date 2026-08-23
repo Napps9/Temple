@@ -128,7 +128,7 @@ export default function DirectThread() {
                   return (
                     <View
                       key={m.id}
-                      className={`max-w-[80%] rounded-2xl px-3 py-2 ${
+                      className={`max-w-[80%] rounded-card px-3 py-2 ${
                         fromMe
                           ? 'self-end bg-primary'
                           : 'self-start bg-surface dark:bg-surface-dk border border-line dark:border-line-dk'
@@ -167,7 +167,7 @@ export default function DirectThread() {
             placeholder="Type a message"
             placeholderTextColor={colors.ink3}
             multiline
-            className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl px-4 py-3 text-ink dark:text-ink-dk text-base"
+            className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card px-4 py-3 text-ink dark:text-ink-dk text-base"
             style={{ minHeight: 44, maxHeight: 120 }}
           />
           <Pressable

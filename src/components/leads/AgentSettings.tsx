@@ -413,7 +413,7 @@ export function AgentSettings() {
           hero container with a tab switch instead of two separate "talk to
           it" cards on the page. Step bar + icon avatar only apply to the
           Teach tab's call → review → live arc. */}
-      <View className="bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-2xl p-5 gap-4">
+      <View className="bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-card p-5 gap-4">
         <View className="flex-row items-center gap-3">
           {isCalling ? (
             <RingingIcon color={colors.primary} />
@@ -439,7 +439,7 @@ export function AgentSettings() {
               <Pressable
                 key={t}
                 onPress={() => setHeroTab(t)}
-                className={`flex-1 px-3 py-2 rounded-lg border ${
+                className={`flex-1 px-3 py-2 rounded-ctl border ${
                   sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                 }`}>
                 <Text
@@ -464,7 +464,7 @@ export function AgentSettings() {
             {canTestPhone ? (
               <Pressable
                 onPress={() => Linking.openURL(`tel:${agentNumber}`)}
-                className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-xl p-3">
+                className="flex-row items-center gap-3 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-3">
                 <View className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center">
                   <Ionicons name="call-outline" size={18} color={colors.primary} />
                 </View>
@@ -578,7 +578,7 @@ export function AgentSettings() {
             ) : Platform.OS === 'web' ? (
               <View className="gap-3">
                 {applyInterview.isSuccess ? (
-                  <View className="flex-row items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2">
+                  <View className="flex-row items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-ctl px-3 py-2">
                     <Ionicons name="checkmark-circle" size={16} color="#10B981" />
                     <Text className="text-emerald-700 dark:text-emerald-400 text-xs font-medium">
                       Applied — the agent is live with your update.
@@ -692,7 +692,7 @@ export function AgentSettings() {
           <FieldLabel>
             Share your number
           </FieldLabel>
-          <View className="flex-row items-center justify-between bg-raised dark:bg-raised-dk rounded-lg px-3 py-2.5">
+          <View className="flex-row items-center justify-between bg-raised dark:bg-raised-dk rounded-ctl px-3 py-2.5">
             <Text className="text-ink dark:text-ink-dk font-medium">{agentNumber}</Text>
             <ChipButton
               label="Copy"
@@ -786,7 +786,7 @@ export function AgentSettings() {
               <Pressable
                 key={v.id}
                 onPress={() => setSelectedVoice(v.id)}
-                className={`flex-row items-center justify-between rounded-lg border p-3 ${
+                className={`flex-row items-center justify-between rounded-ctl border p-3 ${
                   sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                 }`}>
                 <View className="flex-1">
@@ -899,7 +899,7 @@ export function AgentSettings() {
           </Text>
         ) : (
           (rules.data ?? []).map((r) => (
-            <View key={r.id} className="rounded-lg border border-line dark:border-line-dk p-3 gap-2">
+            <View key={r.id} className="rounded-ctl border border-line dark:border-line-dk p-3 gap-2">
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm">{r.correction}</Text>
               <View className="flex-row items-center justify-between">
                 <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-wide">

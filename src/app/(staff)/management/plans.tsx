@@ -658,7 +658,7 @@ export function PlansPanel() {
   return (
     <View className="gap-4">
         {stripeGate === 'unconnected' || stripeGate === 'attention' ? (
-          <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl p-4 gap-3">
+          <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-card p-4 gap-3">
             <View className="flex-row items-center gap-2">
               <Ionicons name="card-outline" size={18} color="#D97706" />
               <Text className="flex-1 text-amber-800 dark:text-amber-200 font-semibold">
@@ -1128,7 +1128,7 @@ export function PlansPanel() {
                   return (
                     <View
                       key={r.localId}
-                      className="bg-raised dark:bg-raised-dk rounded-xl p-3 gap-2">
+                      className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-2">
                       <Text className="text-ink-2 dark:text-ink-2-dk">{r.name}</Text>
                       {canArchive ? (
                         <View className="flex-row gap-2 justify-end flex-wrap">

@@ -347,7 +347,7 @@ export default function LeadSettingsScreen() {
               <Pressable
                 key={s}
                 onPress={() => setStrategy(s)}
-                className={`rounded-lg border p-3 gap-1 ${
+                className={`rounded-ctl border p-3 gap-1 ${
                   sel ? 'border-transparent bg-raised dark:bg-raised-dk' : 'border-line dark:border-line-dk'
                 }`}>
                 <Text className="text-ink dark:text-ink-dk font-medium">
@@ -475,19 +475,19 @@ export default function LeadSettingsScreen() {
             Usage &amp; limits
           </FieldLabel>
           <View className="flex-row gap-3">
-            <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+            <View className="flex-1 items-center gap-0.5 rounded-ctl bg-raised dark:bg-raised-dk py-3">
               <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                 {usage.data?.sentToday ?? '—'}
               </Text>
               <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Texts sent (24h)</Text>
             </View>
-            <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+            <View className="flex-1 items-center gap-0.5 rounded-ctl bg-raised dark:bg-raised-dk py-3">
               <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                 {usage.data?.conversations7d ?? '—'}
               </Text>
               <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Threads (7d)</Text>
             </View>
-            <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+            <View className="flex-1 items-center gap-0.5 rounded-ctl bg-raised dark:bg-raised-dk py-3">
               <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                 {usage.data?.calls7d ?? '—'}
               </Text>
@@ -495,19 +495,19 @@ export default function LeadSettingsScreen() {
             </View>
           </View>
           <View className="flex-row gap-3">
-            <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+            <View className="flex-1 items-center gap-0.5 rounded-ctl bg-raised dark:bg-raised-dk py-3">
               <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                 {outcomes.data?.leads_30d ?? '—'}
               </Text>
               <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Leads (30d)</Text>
             </View>
-            <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+            <View className="flex-1 items-center gap-0.5 rounded-ctl bg-raised dark:bg-raised-dk py-3">
               <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                 {outcomes.data?.converted_30d ?? '—'}
               </Text>
               <Text className="text-ink-2 dark:text-ink-2-dk text-xs">Joined (30d)</Text>
             </View>
-            <View className="flex-1 items-center gap-0.5 rounded-lg bg-raised dark:bg-raised-dk py-3">
+            <View className="flex-1 items-center gap-0.5 rounded-ctl bg-raised dark:bg-raised-dk py-3">
               <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
                 {outcomes.data
                   ? new Intl.NumberFormat('en-GB', {
@@ -684,7 +684,7 @@ function SourcesEditorModal({
                   (sources.data ?? []).map((s) => (
                     <View
                       key={s.id}
-                      className="flex-row items-center gap-3 bg-raised dark:bg-raised-dk rounded-lg px-3 py-2">
+                      className="flex-row items-center gap-3 bg-raised dark:bg-raised-dk rounded-ctl px-3 py-2">
                       <View
                         style={{ backgroundColor: s.color }}
                         className="w-4 h-4 rounded-full"

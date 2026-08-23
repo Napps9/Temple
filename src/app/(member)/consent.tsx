@@ -153,7 +153,7 @@ export default function ConsentForm() {
         </View>
 
         {minorBlocked ? (
-          <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-xl p-4 gap-1">
+          <View className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-card p-4 gap-1">
             <Text className="text-amber-800 dark:text-amber-200 font-semibold">
               This gym doesn't accept members under 18
             </Text>

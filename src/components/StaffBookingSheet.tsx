@@ -277,7 +277,7 @@ export function StaffBookingSheet({
                           setChosen(e);
                           setNoCharge(false);
                         }}
-                        className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
+                        className={`flex-row items-center gap-2 rounded-ctl px-3 py-2 border ${
                           sel
                             ? 'border-transparent bg-raised dark:bg-raised-dk'
                             : 'border-line dark:border-line-dk'
@@ -307,7 +307,7 @@ export function StaffBookingSheet({
                       setNoCharge(true);
                       setChosen(null);
                     }}
-                    className={`flex-row items-center gap-2 rounded-lg px-3 py-2 border ${
+                    className={`flex-row items-center gap-2 rounded-ctl px-3 py-2 border ${
                       noCharge
                         ? 'border-transparent bg-raised dark:bg-raised-dk'
                         : 'border-line dark:border-line-dk'

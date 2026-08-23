@@ -499,7 +499,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
         {/* Design entry — opens the full-screen builder */}
         <Pressable
           onPress={() => setMode('design')}
-          className="bg-surface dark:bg-surface-dk rounded-xl p-4 flex-row items-center gap-3 border border-primary/30 hover:border-primary/60 active:opacity-80">
+          className="bg-surface dark:bg-surface-dk rounded-card p-4 flex-row items-center gap-3 border border-primary/30 hover:border-primary/60 active:opacity-80">
           <View className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center">
             <Ionicons name="brush-outline" size={22} color={FALLBACK_BRAND_SEED.primaryColor} />
           </View>
@@ -540,7 +540,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
 
         {/* Warnings */}
         {warnings.length > 0 ? (
-          <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 gap-1">
+          <View className="bg-amber-500/10 border border-amber-500/30 rounded-card p-3 gap-1">
             {warnings.map((w) => (
               <Text key={w} className="text-amber-700 dark:text-amber-400 text-xs">
                 • {w}
@@ -555,7 +555,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
 
         {/* Send / confirm */}
         {confirming ? (
-          <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-3 border border-primary/30">
+          <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-3 border border-primary/30">
             <Text className="text-ink dark:text-ink-dk font-semibold">
               Send to {count} {count === 1 ? 'member' : 'members'}?
             </Text>
@@ -584,7 +584,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
             {/* Schedule. scheduled_for and the amber Scheduled badge have
                 existed since 0044 with nothing ever writing the column. */}
             {campaign.status === 'scheduled' && campaign.scheduled_for ? (
-              <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 gap-2">
+              <View className="bg-amber-500/10 border border-amber-500/30 rounded-card p-3 gap-2">
                 <Text className="text-amber-800 dark:text-amber-300 text-sm">
                   Scheduled to send{' '}
                   {sendAtLabel(new Date(campaign.scheduled_for).getTime(), tz)}
@@ -615,7 +615,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
                 />
               </View>
             ) : (
-              <View className="bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2 border border-line dark:border-line-dk">
+              <View className="bg-surface dark:bg-surface-dk rounded-card p-3 gap-2 border border-line dark:border-line-dk">
                 <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
                   Or send it later. Times are the gym's own ({tz}), wherever
                   you happen to be; delivery starts within about fifteen
@@ -676,7 +676,7 @@ function HistoryButton({
       hitSlop={6}
       accessibilityRole="button"
       accessibilityLabel={label}
-      className={`w-8 h-8 rounded-lg items-center justify-center active:opacity-70 ${
+      className={`w-8 h-8 rounded-ctl items-center justify-center active:opacity-70 ${
         disabled ? 'opacity-30' : 'hover:bg-raised dark:hover:bg-raised-dk'
       }`}>
       <Ionicons name={icon} size={18} color={colors.ink2} />
@@ -700,7 +700,7 @@ function SaveButton({
       onPress={onPress}
       disabled={state === 'saving'}
       hitSlop={6}
-      className={`flex-row items-center gap-1.5 rounded-lg px-3 py-1.5 active:opacity-80 hover:opacity-90 ${
+      className={`flex-row items-center gap-1.5 rounded-ctl px-3 py-1.5 active:opacity-80 hover:opacity-90 ${
         saved
           ? 'bg-green-500/10'
           : 'bg-primary disabled:opacity-70'
@@ -889,7 +889,7 @@ function ReportView({ campaign }: { campaign: Campaign }) {
       />
 
       {campaign.status === 'sending' ? (
-        <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex-row items-center gap-3">
+        <View className="bg-amber-500/10 border border-amber-500/30 rounded-card p-4 flex-row items-center gap-3">
           <ActivityIndicator />
           <View className="flex-1">
             <Text className="text-amber-700 dark:text-amber-400 font-semibold text-sm">
@@ -908,7 +908,7 @@ function ReportView({ campaign }: { campaign: Campaign }) {
       ) : null}
 
       {fullySimulated ? (
-        <View className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 gap-1">
+        <View className="bg-blue-500/10 border border-blue-500/30 rounded-card p-4 gap-1">
           <Text className="text-blue-700 dark:text-blue-400 font-semibold text-sm">
             Simulated send
           </Text>
@@ -967,7 +967,7 @@ function ReportView({ campaign }: { campaign: Campaign }) {
       ) : null}
 
       {unmeasured ? (
-        <View className="bg-ink-3/10 border border-ink-3/30 rounded-xl p-4 gap-1">
+        <View className="bg-ink-3/10 border border-ink-3/30 rounded-card p-4 gap-1">
           <Text className="text-ink-2 dark:text-ink-2-dk font-semibold text-sm">
             Not measured
           </Text>
@@ -1078,7 +1078,7 @@ function TopicPicker({
   const rows = topics.data ?? [];
 
   return (
-    <View className="bg-surface dark:bg-surface-dk rounded-xl p-4 gap-2">
+    <View className="bg-surface dark:bg-surface-dk rounded-ctl p-4 gap-2">
       <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
         Members who unsubscribed from this topic won't receive this send.
         Leave on "No topic" to suppress only members who hit the master "stop

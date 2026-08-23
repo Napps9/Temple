@@ -313,7 +313,7 @@ function ProductCard({
         ) : (
           <View className="flex-row items-center gap-3 mt-1">
             {max > 1 ? (
-              <View className="flex-row items-center rounded-lg border border-line dark:border-line-dk">
+              <View className="flex-row items-center rounded-ctl border border-line dark:border-line-dk">
                 <Pressable
                   onPress={() => setQty((q) => Math.max(1, q - 1))}
                   hitSlop={6}

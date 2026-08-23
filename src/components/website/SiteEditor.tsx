@@ -91,7 +91,7 @@ function TextField({
         placeholder={placeholder}
         placeholderTextColor={colors.ink3}
         multiline={multiline}
-        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-sm"
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk text-sm"
         style={multiline ? { minHeight: 88, textAlignVertical: 'top' } : undefined}
       />
       {note ? <Text className="text-ink-3 dark:text-ink-3-dk text-xs italic">{note}</Text> : null}
@@ -109,7 +109,7 @@ function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <View className="flex-row bg-raised dark:bg-raised-dk rounded-lg p-1 gap-1">
+    <View className="flex-row bg-raised dark:bg-raised-dk rounded-ctl p-1 gap-1">
       {options.map((opt) => {
         const selected = opt.value === value;
         return (
@@ -151,7 +151,7 @@ function IconBtn({
       onPress={onPress}
       disabled={disabled}
       hitSlop={6}
-      className={`w-8 h-8 rounded-lg items-center justify-center bg-white dark:bg-raised-dk border border-line dark:border-line-dk active:opacity-60 ${
+      className={`w-8 h-8 rounded-ctl items-center justify-center bg-white dark:bg-raised-dk border border-line dark:border-line-dk active:opacity-60 ${
         disabled ? 'opacity-30' : ''
       }`}>
       <Ionicons name={icon} size={15} color={danger ? '#EF4444' : colors.ink2} />
@@ -332,7 +332,7 @@ function StockPhotoPickerModal({
                       style={{ width: '31%' }}
                       className="gap-1 active:opacity-70">
                       <View
-                        className="rounded-lg overflow-hidden"
+                        className="rounded-ctl overflow-hidden"
                         style={{ backgroundColor: p.avg_color, height: 64 }}>
                         <Image
                           source={{ uri: p.thumb }}
@@ -363,7 +363,7 @@ function StockPhotoPickerModal({
                   <Pressable
                     onPress={() => runSearch(submittedQuery.current, page + 1)}
                     disabled={search.isPending || savingId != null}
-                    className="flex-row items-center justify-center gap-2 bg-raised dark:bg-raised-dk rounded-lg py-2.5 active:opacity-70">
+                    className="flex-row items-center justify-center gap-2 bg-raised dark:bg-raised-dk rounded-ctl py-2.5 active:opacity-70">
                     <Text className="text-ink-2 dark:text-ink-2-dk font-medium text-sm">
                       {search.isPending ? 'Loading…' : 'Load more'}
                     </Text>
@@ -406,7 +406,7 @@ function ImagePickerField({
     <View className="gap-1.5">
       <FieldLabel>{label}</FieldLabel>
       {value ? (
-        <Image source={{ uri: value }} style={{ width: '100%', height: 120 }} className="rounded-lg" resizeMode="cover" />
+        <Image source={{ uri: value }} style={{ width: '100%', height: 120 }} className="rounded-ctl" resizeMode="cover" />
       ) : null}
       <View className="flex-row gap-2">
         <Pressable
@@ -415,7 +415,7 @@ function ImagePickerField({
             if (url) onChange(url);
           }}
           disabled={uploading}
-          className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
+          className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-ctl py-2.5 active:opacity-70">
           <Ionicons name="cloud-upload-outline" size={16} color={colors.primary} />
           <Text className="text-primary font-semibold text-sm">
             {uploading ? 'Uploading…' : value ? 'Replace image' : 'Upload image'}
@@ -423,7 +423,7 @@ function ImagePickerField({
         </Pressable>
         <Pressable
           onPress={() => setStockOpen(true)}
-          className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
+          className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-ctl py-2.5 active:opacity-70">
           <Ionicons name="images-outline" size={16} color={colors.primary} />
           <Text className="text-primary font-semibold text-sm">Stock photos</Text>
         </Pressable>
@@ -732,7 +732,7 @@ function TestimonialsInspector({
       <TextField label="Heading" value={block.heading} onChangeText={(t) => onPatch({ heading: t })} />
       <View className="gap-3">
         {block.quotes.map((q, i) => (
-          <View key={q.id} className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-2">
+          <View key={q.id} className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-2">
             <View className="flex-row items-center justify-between">
               <FieldLabel>{`Quote ${i + 1}`}</FieldLabel>
               <Pressable
@@ -777,7 +777,7 @@ function TestimonialsInspector({
             ],
           })
         }
-        className="flex-row items-center justify-center gap-2 bg-raised dark:bg-raised-dk rounded-lg py-2.5 active:opacity-70">
+        className="flex-row items-center justify-center gap-2 bg-raised dark:bg-raised-dk rounded-ctl py-2.5 active:opacity-70">
         <Ionicons name="add" size={16} color={colors.ink2} />
         <Text className="text-ink-2 dark:text-ink-2-dk font-medium text-sm">Add a quote</Text>
       </Pressable>
@@ -805,7 +805,7 @@ function GalleryInspector({
       <View className="gap-2">
         {block.images.map((img) => (
           <View key={img.id} className="flex-row items-center gap-2">
-            <Image source={{ uri: img.url }} style={{ width: 56, height: 56 }} className="rounded-lg" />
+            <Image source={{ uri: img.url }} style={{ width: 56, height: 56 }} className="rounded-ctl" />
             <View className="flex-1">
               <TextField
                 label="Description"
@@ -841,13 +841,13 @@ function GalleryInspector({
             }
           }}
           disabled={uploading}
-          className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
+          className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-ctl py-2.5 active:opacity-70">
           <Ionicons name="cloud-upload-outline" size={16} color={colors.primary} />
           <Text className="text-primary font-semibold text-sm">{uploading ? 'Uploading…' : 'Add a photo'}</Text>
         </Pressable>
         <Pressable
           onPress={() => setStockOpen(true)}
-          className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-lg py-2.5 active:opacity-70">
+          className="flex-1 flex-row items-center justify-center gap-2 bg-primary/10 border border-primary/30 rounded-ctl py-2.5 active:opacity-70">
           <Ionicons name="images-outline" size={16} color={colors.primary} />
           <Text className="text-primary font-semibold text-sm">Stock photos</Text>
         </Pressable>
@@ -1039,11 +1039,11 @@ function ThemePicker({
             <Pressable
               key={theme.id}
               onPress={() => onChange(updateSettings(document, { themeId: theme.id }))}
-              className={`w-20 gap-1 items-center rounded-xl p-2 border-2 ${
+              className={`w-20 gap-1 items-center rounded-ctl p-2 border-2 ${
                 selected ? 'border-primary' : 'border-transparent'
               }`}>
               <View
-                className="flex-row w-full h-8 rounded-lg overflow-hidden"
+                className="flex-row w-full h-8 rounded-ctl overflow-hidden"
                 style={{ borderWidth: 1, borderColor: '#00000014' }}>
                 <View className="flex-1" style={{ backgroundColor: composed.palette.background }} />
                 <View className="flex-1" style={{ backgroundColor: composed.palette.accent }} />
@@ -1286,7 +1286,7 @@ export function SiteEditor({
     <Pressable
       key={type}
       onPress={() => addBlock(type)}
-      className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-raised dark:bg-raised-dk hover:bg-sunken dark:hover:bg-sunken-dk active:opacity-70">
+      className="flex-row items-center gap-1.5 px-3 py-2 rounded-ctl bg-raised dark:bg-raised-dk hover:bg-sunken dark:hover:bg-sunken-dk active:opacity-70">
       <Ionicons name={SITE_BLOCK_ICONS[type] as IconName} size={15} color={colors.ink2} />
       <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
         {SITE_BLOCK_LABELS[type]}
@@ -1335,12 +1335,12 @@ export function SiteEditor({
       {compact ? (
         <Pressable
           onPress={() => setAddBlockModalOpen(true)}
-          className="flex-row items-center justify-center gap-2 bg-surface dark:bg-surface-dk rounded-xl p-3 active:opacity-70">
+          className="flex-row items-center justify-center gap-2 bg-surface dark:bg-surface-dk rounded-ctl p-3 active:opacity-70">
           <Ionicons name="add" size={16} color={colors.ink2} />
           <Text className="text-ink-2 dark:text-ink-2-dk font-medium text-sm">Add block</Text>
         </Pressable>
       ) : (
-        <View className="lg:w-48 lg:shrink-0 bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2">
+        <View className="lg:w-48 lg:shrink-0 bg-surface dark:bg-surface-dk rounded-ctl p-3 gap-2">
           <FieldLabel>
             Add a block
           </FieldLabel>
@@ -1348,7 +1348,7 @@ export function SiteEditor({
         </View>
       )}
 
-      <View className="flex-1 bg-surface dark:bg-surface-dk rounded-xl p-3 gap-2">
+      <View className="flex-1 bg-surface dark:bg-surface-dk rounded-ctl p-3 gap-2">
         <FieldLabel>
           Page ({document.blocks.length} block{document.blocks.length === 1 ? '' : 's'})
         </FieldLabel>
@@ -1366,7 +1366,7 @@ export function SiteEditor({
               <View key={block.id}>
                 <Pressable
                   onPress={() => onSelectBlock(isSelected ? null : block.id)}
-                  className={`flex-row items-center gap-2 rounded-lg px-3 py-2.5 ${
+                  className={`flex-row items-center gap-2 rounded-ctl px-3 py-2.5 ${
                     isSelected
                       ? 'bg-primary/10 border border-primary'
                       : 'bg-raised dark:bg-raised-dk border border-transparent'
@@ -1423,13 +1423,13 @@ export function SiteEditor({
       </View>
 
       {compact ? (
-        <View className="bg-surface dark:bg-surface-dk rounded-xl p-4">
+        <View className="bg-surface dark:bg-surface-dk rounded-ctl p-4">
           <CollapsibleSection title="Theme & ownership" icon="color-palette-outline">
             {themeAndOwnership}
           </CollapsibleSection>
         </View>
       ) : (
-        <View className="lg:w-64 lg:shrink-0 bg-surface dark:bg-surface-dk rounded-xl p-4 gap-4">
+        <View className="lg:w-64 lg:shrink-0 bg-surface dark:bg-surface-dk rounded-ctl p-4 gap-4">
           {themeAndOwnership}
         </View>
       )}

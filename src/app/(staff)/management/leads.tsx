@@ -364,7 +364,7 @@ export default function LeadsScreen() {
             <Pressable
               onPress={() => setCallOpen(true)}
               className="flex-row items-center gap-5 px-7 py-6 active:opacity-90">
-              <View className="w-[46px] h-[46px] rounded-2xl items-center justify-center bg-white/20">
+              <View className="w-[46px] h-[46px] rounded-card items-center justify-center bg-white/20">
                 <Ionicons name="mic" size={22} color="#FFFFFF" />
               </View>
               <View className="flex-1">
@@ -375,7 +375,7 @@ export default function LeadsScreen() {
                   No phone needed — talk to your AI right here in the browser.
                 </Text>
               </View>
-              <View className="bg-white rounded-lg px-4 py-2.5">
+              <View className="bg-white rounded-ctl px-4 py-2.5">
                 <Text className="font-semibold text-xs" style={{ color: colors.primary }}>
                   Start talking
                 </Text>
@@ -388,7 +388,7 @@ export default function LeadsScreen() {
           // button here would just do nothing when tapped on the phone app.
           <BrandGradientHero color={colors.primary}>
             <View className="flex-row items-center gap-5 px-7 py-6">
-              <View className="w-[46px] h-[46px] rounded-2xl items-center justify-center bg-white/20">
+              <View className="w-[46px] h-[46px] rounded-card items-center justify-center bg-white/20">
                 <Ionicons name="mic" size={22} color="#FFFFFF" />
               </View>
               <View className="flex-1">
@@ -497,7 +497,7 @@ export default function LeadsScreen() {
                     </Text>
                   </View>
                   {items.length === 0 ? (
-                    <View className="rounded-xl border border-dashed border-line dark:border-line-dk p-4">
+                    <View className="rounded-card border border-dashed border-line dark:border-line-dk p-4">
                       <Text className="text-ink-3 dark:text-ink-3-dk text-xs text-center">
                         Nothing here yet
                       </Text>
@@ -991,7 +991,7 @@ function LeadDetailModal({
             <View className="gap-4 pb-1">
 
               {lead.notes ? (
-                <View className="bg-raised dark:bg-raised-dk rounded-lg p-3">
+                <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3">
                   <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                     {lead.notes}
                   </Text>
@@ -999,7 +999,7 @@ function LeadDetailModal({
               ) : null}
 
               {lead.objection || lead.follow_up_at ? (
-                <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded-lg p-3 gap-2">
+                <View className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded-ctl p-3 gap-2">
                   {lead.objection ? (
                     <Text className="text-amber-800 dark:text-amber-200 text-sm">
                       Concern raised:{' '}
@@ -1090,7 +1090,7 @@ function LeadDetailModal({
                             key={c.profile_id}
                             onPress={() => reassign.mutate(c.profile_id)}
                             disabled={reassign.isPending}
-                            className="flex-row items-center gap-3 rounded-lg px-2 py-2 active:bg-raised dark:active:bg-raised-dk">
+                            className="flex-row items-center gap-3 rounded-ctl px-2 py-2 active:bg-raised dark:active:bg-raised-dk">
                             <Ionicons
                               name={sel ? 'checkmark-circle' : 'ellipse-outline'}
                               size={18}

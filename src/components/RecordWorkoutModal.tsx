@@ -805,7 +805,7 @@ export function RecordWorkoutModal({
             />
             {programmingByClassType.length > 0 ||
             (myProgramme?.sections.length ?? 0) > 0 ? (
-              <View className="gap-2 bg-primary/5 border border-primary/20 rounded-xl p-3">
+              <View className="gap-2 bg-primary/5 border border-primary/20 rounded-card p-3">
                 <FieldLabel>
                   Pre-fill from today's programming
                 </FieldLabel>
@@ -870,7 +870,7 @@ export function RecordWorkoutModal({
               ))}
               <Pressable
                 onPress={addDraft}
-                className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
+                className="flex-row items-center gap-2 self-start px-3 py-2 rounded-ctl border border-dashed border-line-strong dark:border-line-strong-dk">
                 <Ionicons name="add" size={16} color={colors.ink2} />
                 <Text className="text-ink-2 dark:text-ink-2-dk">
                   Add section
@@ -927,7 +927,7 @@ function SectionDraftCard({
 }) {
   const colors = useThemeColors();
   return (
-    <View className="bg-raised dark:bg-raised-dk rounded-xl p-4 gap-3">
+    <View className="bg-raised dark:bg-raised-dk rounded-ctl p-4 gap-3">
       <View className="flex-row items-center justify-between">
         <FieldLabel>
           Section
@@ -936,7 +936,7 @@ function SectionDraftCard({
           <Pressable
             onPress={onRemove}
             hitSlop={4}
-            className="w-8 h-8 rounded-lg items-center justify-center active:bg-raised dark:active:bg-raised-dk"
+            className="w-8 h-8 rounded-ctl items-center justify-center active:bg-raised dark:active:bg-raised-dk"
           accessibilityLabel="Close">
             <Ionicons name="close" size={18} color={colors.ink3} />
           </Pressable>
@@ -969,7 +969,7 @@ function SectionDraftCard({
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
             The work
           </Text>
-          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5">
+          <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
               {draft.body}
             </Text>
@@ -1227,7 +1227,7 @@ function EntriesTable({
     return (
       <Pressable
         onPress={() => setExpanded(true)}
-        className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
+        className="flex-row items-center gap-2 self-start px-3 py-2 rounded-ctl border border-dashed border-line-strong dark:border-line-strong-dk">
         <Ionicons name="add" size={14} color={colors.ink2} />
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           Add per-set details
@@ -1253,7 +1253,7 @@ function EntriesTable({
       {entries.map((e, j) => (
         <View
           key={j}
-          className="bg-surface dark:bg-surface-dk rounded-lg border border-line dark:border-line-dk p-3 gap-2">
+          className="bg-surface dark:bg-surface-dk rounded-ctl border border-line dark:border-line-dk p-3 gap-2">
           <View className="flex-row items-center justify-between">
             <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold uppercase tracking-wider">
               {entryLabelFor(format, j + 1)}
@@ -1276,7 +1276,7 @@ function EntriesTable({
       ))}
       <Pressable
         onPress={onAddEntry}
-        className="flex-row items-center gap-2 self-start px-3 py-2 rounded-lg border border-dashed border-line-strong dark:border-line-strong-dk">
+        className="flex-row items-center gap-2 self-start px-3 py-2 rounded-ctl border border-dashed border-line-strong dark:border-line-strong-dk">
         <Ionicons name="add" size={14} color={colors.ink2} />
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
           Add row
@@ -1355,7 +1355,7 @@ function QuickFillBar({
   }
 
   return (
-    <View className="bg-primary/5 border border-primary/20 rounded-lg p-3 gap-3">
+    <View className="bg-primary/5 border border-primary/20 rounded-ctl p-3 gap-3">
       <View className="flex-row items-center gap-2">
         <Ionicons name="flash-outline" size={14} color={colors.primary} />
         <Text className="flex-1 text-primary text-xs font-semibold uppercase tracking-wider">
@@ -1540,7 +1540,7 @@ function PickerButton({
       </Text>
       <Pressable
         onPress={onPress}
-        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-4 py-3 flex-row items-center gap-2 active:opacity-70">
+        className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-4 py-3 flex-row items-center gap-2 active:opacity-70">
         <Text
           className={
             value
@@ -1603,7 +1603,7 @@ function SchemeRow({
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-row items-center gap-2 rounded-lg px-3 py-2 active:opacity-70 ${
+      className={`flex-row items-center gap-2 rounded-ctl px-3 py-2 active:opacity-70 ${
         selected
           ? 'bg-primary/10 border border-primary/30'
           : 'bg-raised dark:bg-raised-dk border border-transparent'
@@ -1671,7 +1671,7 @@ function MovementTagPickerStep({
       <View className="flex-row items-center gap-2">
         <Pressable
           onPress={() => onPick({ movement_key: m.key, track_key: null })}
-          className="flex-1 rounded-lg px-3 py-2 hover:bg-raised dark:hover:bg-raised-dk/60 active:bg-raised dark:active:bg-raised-dk">
+          className="flex-1 rounded-ctl px-3 py-2 hover:bg-raised dark:hover:bg-raised-dk/60 active:bg-raised dark:active:bg-raised-dk">
           <Text className="text-ink dark:text-ink-dk text-sm">{m.name}</Text>
           <Text className="text-ink-3 dark:text-ink-3-dk text-[10px]">
             No rep scheme
@@ -1701,7 +1701,7 @@ function MovementTagPickerStep({
             <Pressable
               key={s.key}
               onPress={() => onPick({ movement_key: m.key, track_key: s.key })}
-              className="rounded-lg px-3 py-2 hover:bg-raised dark:hover:bg-raised-dk/60 active:bg-raised dark:active:bg-raised-dk">
+              className="rounded-ctl px-3 py-2 hover:bg-raised dark:hover:bg-raised-dk/60 active:bg-raised dark:active:bg-raised-dk">
               <Text className="text-ink dark:text-ink-dk text-xs">{s.label}</Text>
             </Pressable>
           ))}
@@ -1735,7 +1735,7 @@ function MovementTagPickerStep({
                     }
                     accessibilityRole="button"
                     accessibilityState={{ expanded: expandedGroup === g.key }}
-                    className="bg-raised dark:bg-raised-dk rounded-lg px-3 py-2.5 flex-row items-center gap-2 hover:bg-raised dark:hover:bg-raised-dk active:opacity-70">
+                    className="bg-raised dark:bg-raised-dk rounded-ctl px-3 py-2.5 flex-row items-center gap-2 hover:bg-raised dark:hover:bg-raised-dk active:opacity-70">
                     <Text className="flex-1 text-ink dark:text-ink-dk font-medium">
                       {g.name}
                     </Text>

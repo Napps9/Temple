@@ -134,13 +134,13 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
         <View className="flex-row gap-2">
           <Pressable
             onPress={handleCancel}
-            className="flex-1 py-2.5 rounded-lg items-center border border-line dark:border-line-dk">
+            className="flex-1 py-2.5 rounded-ctl items-center border border-line dark:border-line-dk">
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">Cancel</Text>
           </Pressable>
           <Pressable
             onPress={call.start}
             disabled={preparing}
-            className={`flex-1 py-2.5 rounded-lg items-center bg-primary ${preparing ? 'opacity-60' : ''}`}>
+            className={`flex-1 py-2.5 rounded-ctl items-center bg-primary ${preparing ? 'opacity-60' : ''}`}>
             {preparing ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
@@ -181,7 +181,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
             {call.turns.map((t, i) => (
               <View
                 key={i}
-                className={`max-w-[86%] rounded-xl px-3 py-2 ${
+                className={`max-w-[86%] rounded-ctl px-3 py-2 ${
                   t.role === 'user'
                     ? 'self-end bg-primary/10'
                     : 'self-start bg-white dark:bg-raised-dk'
@@ -193,7 +193,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
         </ScrollView>
         <Pressable
           onPress={call.end}
-          className="flex-row items-center justify-center gap-2 py-2.5 rounded-lg bg-red-500">
+          className="flex-row items-center justify-center gap-2 py-2.5 rounded-ctl bg-red-500">
           <Ionicons name="call" size={15} color="#FFFFFF" />
           <Text className="font-semibold text-sm text-white">End &amp; save</Text>
         </Pressable>
@@ -208,7 +208,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
         <Text className="text-red-500 dark:text-red-400 text-sm">{prepError}</Text>
         <Pressable
           onPress={() => submit.mutate()}
-          className="py-2.5 rounded-lg items-center bg-primary">
+          className="py-2.5 rounded-ctl items-center bg-primary">
           <Text className="font-semibold text-sm text-on-primary">Try saving again</Text>
         </Pressable>
       </View>
