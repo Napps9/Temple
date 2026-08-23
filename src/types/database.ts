@@ -4038,6 +4038,7 @@ export type Database = {
           recurring: boolean;
           recurring_interval: string | null;
           stripe_price_id: string | null;
+          category: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -4059,6 +4060,7 @@ export type Database = {
           recurring?: boolean;
           recurring_interval?: string | null;
           stripe_price_id?: string | null;
+          category?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -4078,6 +4080,7 @@ export type Database = {
           recurring: boolean;
           recurring_interval: string | null;
           stripe_price_id: string | null;
+          category: string | null;
           updated_at: string;
         }>;
         Relationships: [];
@@ -5661,6 +5664,7 @@ export type Database = {
           sold_out: boolean;
           recurring: boolean;
           recurring_interval: string | null;
+          category: string | null;
         }[];
       };
       my_programming_access: {

@@ -115,6 +115,8 @@ export const TABLES = {
       timezone: 'Europe/London',
       default_class_capacity: 12,
       default_class_minutes: 60,
+      store_enabled: true,
+      store_shipping_fee_cents: 450,
       // 2h cutoff: same-day classes stay freely cancellable (the row's
       // one-tap Book with Undo shows), while anything closer than two
       // hours routes through the sheet's forfeit warning.
@@ -528,6 +530,14 @@ export const RPCS = {
   ],
   mark_class_change_notifications_read: null,
   announcement_read_stats: [{ read_count: 186, member_count: 214 }],
+  list_store_products: [
+    { id: 'sp1', name: 'Forge tee', description: 'Heavyweight cotton, gym logo front and back.', kind: 'physical', price_cents: 2500, image_url: null, image_urls: [], track_inventory: true, stock_quantity: 24, sold_out: false, recurring: false, recurring_interval: null, category: 'Kit' },
+    { id: 'sp2', name: 'Lifting belt', description: '10mm leather, single prong.', kind: 'physical', price_cents: 6500, image_url: null, image_urls: [], track_inventory: true, stock_quantity: 6, sold_out: false, recurring: false, recurring_interval: null, category: 'Kit' },
+    { id: 'sp3', name: 'Gym bottle', description: 'One litre, keeps it cold.', kind: 'physical', price_cents: 1200, image_url: null, image_urls: [], track_inventory: false, stock_quantity: null, sold_out: false, recurring: false, recurring_interval: null, category: 'Kit' },
+    { id: 'sp4', name: '8-week engine block', description: 'The full aerobic base programme as a PDF, with weekly targets.', kind: 'digital', price_cents: 4900, image_url: null, image_urls: [], track_inventory: false, stock_quantity: null, sold_out: false, recurring: false, recurring_interval: null, category: 'Programmes' },
+    { id: 'sp5', name: 'Individual programming', description: 'A personal programme written for you, updated monthly.', kind: 'digital', price_cents: 9900, image_url: null, image_urls: [], track_inventory: false, stock_quantity: null, sold_out: false, recurring: true, recurring_interval: 'month', category: 'Programmes' },
+    { id: 'sp6', name: 'Guest day pass', description: 'Bring a friend for a day.', kind: 'digital', price_cents: 1500, image_url: null, image_urls: [], track_inventory: false, stock_quantity: null, sold_out: false, recurring: false, recurring_interval: null, category: null },
+  ],
   mark_cover_notifications_read: null,
   is_booking_eligible: true,
   list_my_email_preferences: [

@@ -61,6 +61,7 @@ export type StoreProduct = {
   sold_out: boolean;
   recurring: boolean;
   recurring_interval: string | null;
+  category: string | null;
 };
 
 // The member catalogue, via the security-definer RPC (hides the asset
@@ -254,6 +255,7 @@ export type AdminProduct = {
   archived_at: string | null;
   recurring: boolean;
   recurring_interval: string | null;
+  category: string | null;
 };
 
 export function useAdminStoreProducts(gymId: string | undefined) {
@@ -264,7 +266,7 @@ export function useAdminStoreProducts(gymId: string | undefined) {
       const { data, error } = await supabase
         .from('store_products')
         .select(
-          'id, name, description, kind, price_cents, image_url, image_urls, track_inventory, stock_quantity, digital_asset_path, active, archived_at, recurring, recurring_interval',
+          'id, name, description, kind, price_cents, image_url, image_urls, track_inventory, stock_quantity, digital_asset_path, active, archived_at, recurring, recurring_interval, category',
         )
         .eq('gym_id', gymId!)
         .is('archived_at', null)

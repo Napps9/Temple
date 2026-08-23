@@ -115,6 +115,7 @@ type Draft = {
   id?: string;
   name: string;
   description: string;
+  category: string;
   kind: 'physical' | 'digital';
   price: string;
   image_urls: string[];
@@ -130,6 +131,7 @@ function blankDraft(): Draft {
   return {
     name: '',
     description: '',
+    category: '',
     kind: 'physical',
     price: '',
     image_urls: [],
@@ -147,6 +149,7 @@ function draftFrom(p: AdminProduct): Draft {
     id: p.id,
     name: p.name,
     description: p.description ?? '',
+    category: p.category ?? '',
     kind: p.kind,
     price: formatPriceInput(p.price_cents),
     image_urls: productImages(p),
@@ -366,6 +369,7 @@ function ProductEditor({
       const fields = {
         name,
         description: d.description.trim() || null,
+        category: d.category.trim() || null,
         kind,
         price_cents: priceCents,
         image_urls: d.image_urls,
@@ -446,6 +450,12 @@ function ProductEditor({
           onChangeText={(v) => set({ description: v })}
           placeholder="What members are buying"
           multiline
+        />
+        <Input
+          label="Category"
+          value={d.category}
+          onChangeText={(v) => set({ category: v })}
+          placeholder="Kit, Programmes, Events…"
         />
 
         <View className="flex-row items-center justify-between">
