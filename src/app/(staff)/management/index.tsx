@@ -862,6 +862,18 @@ function TeamTab() {
             href="/management/team"
           />
         ) : null}
+        <ManagementCard
+          title="Tasks"
+          description="Shared to-dos with owners and due dates — order chalk, fix the rower."
+          href="/management/tasks"
+        />
+        {canSetCoachPay ? (
+          <ManagementCard
+            title="Coach pay"
+            description="Per-class rates and what each coach is owed this month."
+            href="/management/coach-earnings"
+          />
+        ) : null}
       </View>
     </View>
   );
@@ -1398,6 +1410,7 @@ function MembersTab() {
   const canExport = useCan('can_export_members') ?? false;
   const canManageTags = useCan('can_manage_tags') ?? false;
   const canManageStaff = useCan('can_manage_staff') ?? false;
+  const canInvite = useCan('can_invite') ?? false;
   const exportMembers = useExportMembersCsv();
 
   const [importOpen, setImportOpen] = useState(false);
@@ -1535,9 +1548,16 @@ function MembersTab() {
         <FinanceBlock gymId={membership.gymId} />
       ) : null}
 
-      {canManageStaff || canManageTags || canExport ? (
+      {canInvite || canManageStaff || canManageTags || canExport ? (
         <View className="gap-2">
           <View className="flex-row flex-wrap gap-2">
+            {canInvite ? (
+              <ActionCta
+                icon="person-add-outline"
+                label="Invite members"
+                onPress={() => router.push('/management/members' as never)}
+              />
+            ) : null}
             {canManageStaff ? (
               <ActionCta
                 icon="cloud-upload-outline"

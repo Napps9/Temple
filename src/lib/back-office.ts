@@ -406,6 +406,39 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     status: 'back-office',
   },
 
+  {
+    href: '/management/attendance',
+    title: 'Attendance report',
+    blurb: 'Attended, no-shows and unmarked, over any date range.',
+    keywords: ['check-in', 'no-show', 'register', 'report'],
+    category: 'members',
+    capabilities: ['can_view_attendance'],
+    ends: 'keeps',
+    status: 'primary',
+  },
+  {
+    href: '/management/member-programming',
+    title: 'Individual programming',
+    blurb: 'Assign and manage one-to-one programming for members.',
+    keywords: ['1-1', 'one to one', 'personal', 'coaching', 'assign'],
+    category: 'members',
+    capabilities: ['can_program_members'],
+    ends: 'keeps',
+    status: 'primary',
+  },
+  {
+    href: '/management/account',
+    title: 'Your account',
+    blurb: 'Your name, avatar, password and sign-out.',
+    keywords: ['profile', 'password', 'sign out', 'logout', 'avatar'],
+    category: 'settings',
+    // Every staff role holds this; the entry hides only while the
+    // capability set is still loading, like the rest of the manifest.
+    capabilities: ['can_access_staff_area'],
+    ends: 'keeps',
+    status: 'primary',
+  },
+
   // --- Store ---------------------------------------------------------
   {
     href: '/management/store',

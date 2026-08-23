@@ -391,12 +391,18 @@ describe('the burndown has a baseline', () => {
         .map((e) => e.title)
         .sort(),
     ).toEqual([
+      // The three that were findable only by prior knowledge — the
+      // Attendance stat tile, a Programming header chip, the avatar
+      // menu — and are now in the search index too.
+      'Attendance report',
       'Coach earnings',
       'Goals',
       'Health screening',
+      'Individual programming',
       'Roster',
       'Set up your gym',
       'Website',
+      'Your account',
       // Not a screen and not craft, but a destination — the place
       // retiring settings land. It cannot itself be owed a sentence: it
       // IS the sentence.

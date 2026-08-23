@@ -462,6 +462,12 @@ export function storyHref(e: TimelineEvent): string | null {
       const id = e.item_id.split(':')[1];
       return id ? `/timeline/payment/${id}` : null;
     }
+    case 'lead_captured': {
+      // conversation_id landed in the feed at 0252; older cached events
+      // without it stay plain text.
+      const id = str(e.detail, 'conversation_id');
+      return id ? `/management/leads/conversation/${id}` : null;
+    }
     default:
       return null;
   }

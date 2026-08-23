@@ -5,7 +5,7 @@
 -- agent_actions ledger seed: staff-read only, no client writes.
 
 begin;
-select plan(14);
+select plan(15);
 
 \ir _helpers.psql
 
@@ -21,6 +21,8 @@ declare
   v_mship  uuid;
   v_sub    uuid;
   v_req    uuid;
+  v_lead   uuid;
+  v_conv   uuid;
 begin
   perform _test_mk_membership(v_gym, v_owner, 'owner');
   perform set_config('test.gym',   v_gym::text,   true);
@@ -31,9 +33,15 @@ begin
   v_mship := _test_mk_membership(v_gym, v_member, 'member');
   perform _test_mk_membership(v_gym, v_joiner, 'member');
 
-  -- A lead (feeds lead_captured).
+  -- A lead with a conversation (feeds lead_captured; 0252 links the
+  -- line to the thread through detail->>'conversation_id').
   insert into public.leads (gym_id, full_name, status)
-  values (v_gym, 'Kelly Prospect', 'cold');
+  values (v_gym, 'Kelly Prospect', 'cold')
+  returning id into v_lead;
+  insert into public.agent_conversations (gym_id, phone, lead_id, channel)
+  values (v_gym, '+447700900001', v_lead, 'sms')
+  returning id into v_conv;
+  perform set_config('test.conv', v_conv::text, false);
 
   -- A cover request with one open offer (feeds cover_requested).
   insert into public.cover_requests (gym_id, requested_by, range_start, range_end)
@@ -101,6 +109,13 @@ select is(
     where kind = 'lead_captured'),
   1,
   'owner sees the lead — and only this gym''s'
+);
+
+select is(
+  (select detail->>'conversation_id' from timeline_feed(current_setting('test.gym')::uuid)
+    where kind = 'lead_captured' limit 1),
+  current_setting('test.conv'),
+  'the lead line carries its conversation id'
 );
 
 select is(

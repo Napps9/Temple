@@ -30,11 +30,11 @@ export type NavSection = {
 };
 
 // Persistent top bar — replaced the old NavModal popup. Layout:
-//   [logo + gym name] … [section pills, centred] … [view-switch] [avatar] [inbox] [theme]
-// Section pills live in a single rounded track (same idiom as the
-// calendar's segmented control) with the active section lit in the
-// gym's brand colour. Labels collapse to icons below md. The
-// day/week/month switcher lives with the calendar itself, not here.
+//   [logo + gym name] … [section pills, centred] … [view-switch] [avatar]
+// Below md the pills move to their own row with the label under the
+// icon — a bare glyph row failed first-time users, who could not tell
+// the dumbbell from the calendar until a section was already active.
+// The day/week/month switcher lives with the calendar itself, not here.
 export function TopNav({
   sections,
   variant,
@@ -78,46 +78,50 @@ export function TopNav({
   // spent on the one action a page exists for; a nav that is always on
   // screen is not that, and tinting it made every gym's chrome a
   // different colour before any of their content had loaded.
-  const pills = (
-    <View className="flex-row gap-1">
+  const onPressSection = (s: NavSection) => {
+    haptic.selection();
+    // The widths that show this bar have no rail, so the gym's
+    // destinations would otherwise all route through the hub.
+    // The Manage pill opens them as a sheet instead; the hub
+    // leads the sheet, where the pill used to land.
+    if (s.name === 'management') {
+      setManageOpen(true);
+      return;
+    }
+    router.replace((s.navigateTo ?? s.href) as never);
+  };
+
+  // Two renderings of the same sections: inline pills beside the logo at
+  // md+, a stacked icon-over-label row of their own below it. Every pill
+  // carries its visible label in both.
+  const pillRow = (stacked: boolean) => (
+    <View className={stacked ? 'flex-row justify-center gap-1' : 'flex-row gap-1'}>
       {sections.map((s) => {
         const active = pathname.startsWith(s.href);
         return (
           <Pressable
             key={s.name}
-            onPress={() => {
-              haptic.selection();
-              // The widths that show this bar have no rail, so the gym's
-              // destinations would otherwise all route through the hub.
-              // The Manage pill opens them as a sheet instead; the hub
-              // leads the sheet, where the pill used to land.
-              if (s.name === 'management') {
-                setManageOpen(true);
-                return;
-              }
-              router.replace((s.navigateTo ?? s.href) as never);
-            }}
+            onPress={() => onPressSection(s)}
             hitSlop={4}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
-            // The label Text is display:none on phones for inactive
-            // pills, so the accessible name must not depend on it.
             accessibilityLabel={s.label}
-            className={`flex-row items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full active:opacity-70 ${
+            className={`${
+              stacked
+                ? 'flex-col items-center gap-0.5 px-3.5 py-1.5 rounded-ctl'
+                : 'flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full'
+            } active:opacity-70 ${
               active
                 ? 'bg-raised dark:bg-raised-dk'
                 : 'hover:bg-raised/60 dark:hover:bg-raised-dk/60'
             }`}>
             <Ionicons
               name={s.icon}
-              size={17}
+              size={stacked ? 19 : 17}
               color={active ? colors.ink : colors.ink3}
             />
-            {/* Inline with the logo on the phone means space is tight, so
-                only the active pill keeps its label there; wide screens
-                show them all. */}
             <Text
-              className={`text-sm ${active ? 'flex' : 'hidden md:flex'} ${
+              className={`${stacked ? 'text-[11px]' : 'text-sm'} ${
                 active
                   ? 'text-ink dark:text-ink-dk font-semibold'
                   : 'text-ink-3 dark:text-ink-3-dk font-medium'
@@ -157,7 +161,7 @@ export function TopNav({
           </Pressable>
         </View>
 
-        <View className="items-center">{pills}</View>
+        <View className="items-center hidden md:flex">{pillRow(false)}</View>
 
         <View className="flex-1 flex-row items-center justify-end gap-1.5 md:gap-2">
         {showCrossLink ? (
@@ -179,6 +183,8 @@ export function TopNav({
         <NavAccountMenu variant={variant} anchor="top-right" />
         </View>
       </View>
+
+      <View className="md:hidden">{pillRow(true)}</View>
 
       {variant === 'staff' ? (
         <ManageNavSheet visible={manageOpen} onClose={() => setManageOpen(false)} />
