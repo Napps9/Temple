@@ -38,9 +38,22 @@ function iso(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+// The chosen view state, across unmounts — session-only, the
+// GymSetupChecklist / list-scroll-position idiom.
+let lastAttendanceRange: { start: string; end: string } | null = null;
+
 export default function AttendanceScreen() {
   const { data: membership } = useGymMembership();
-  const [range, setRange] = useState(defaultRange);
+  const [range, setRangeState] = useState(lastAttendanceRange ?? defaultRange);
+  const setRange = (
+    next: typeof range | ((r: typeof range) => typeof range),
+  ) => {
+    setRangeState((prev) => {
+      const resolved = typeof next === 'function' ? next(prev) : next;
+      lastAttendanceRange = resolved;
+      return resolved;
+    });
+  };
   const [error, setError] = useState<string | null>(null);
   const canViewAttendance = useCan('can_view_attendance');
   // The gym's clock, not the device's: a 6am class in Sydney is the

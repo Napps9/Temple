@@ -65,7 +65,7 @@ export function ActionButton({
     return (
       <Pressable
         disabled
-        className="flex-row items-center gap-1.5 px-3 py-2 rounded-lg bg-raised dark:bg-raised-dk">
+        className="flex-row items-center gap-1.5 px-3 py-2 rounded-ctl bg-raised dark:bg-raised-dk">
         <Ionicons name="lock-closed-outline" size={14} color={colors.ink3} />
         <Text className="text-ink-3 dark:text-ink-3-dk text-xs font-semibold">
           {disabledLabel ?? label}
@@ -84,7 +84,7 @@ export function ActionButton({
         onPress();
       }}
       hitSlop={4}
-      className={`flex-row items-center gap-1.5 px-3 py-2 rounded-lg ${s.container}`}>
+      className={`flex-row items-center gap-1.5 px-3 py-2 rounded-ctl ${s.container}`}>
       <Ionicons name={s.icon} size={14} color={s.iconColor} />
       <Text className={`text-xs font-semibold ${s.text}`}>{label}</Text>
     </Pressable>

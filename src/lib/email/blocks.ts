@@ -99,7 +99,7 @@ export type BrandSeed = {
 };
 
 export const FALLBACK_BRAND_SEED: BrandSeed = {
-  primaryColor: '#2563EB',
+  primaryColor: '#C2410C',
   secondaryColor: '#0F172A',
   textColor: '#0F172A',
 };

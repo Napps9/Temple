@@ -169,11 +169,19 @@ type OverrideRow = {
   enabled: boolean;
 };
 
+// The chosen view state, across unmounts — session-only, the
+// GymSetupChecklist / list-scroll-position idiom.
+let lastActiveRole: GymRole = 'admin';
+
 function RolePermissionsSection() {
   const session = useSession();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
-  const [activeRole, setActiveRole] = useState<GymRole>('admin');
+  const [activeRole, setActiveRoleState] = useState<GymRole>(lastActiveRole);
+  const setActiveRole = (r: GymRole) => {
+    lastActiveRole = r;
+    setActiveRoleState(r);
+  };
   const [error, setError] = useState<string | null>(null);
 
   const overrides = useQuery({

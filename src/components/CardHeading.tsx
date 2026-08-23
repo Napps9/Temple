@@ -38,7 +38,7 @@ function InfoButton({
 
 function InfoPanel({ what, why }: { what: string; why: string }) {
   return (
-    <View className="bg-raised dark:bg-raised-dk/60 rounded-lg p-3 gap-2">
+    <View className="bg-raised dark:bg-raised-dk/60 rounded-ctl p-3 gap-2">
       <View className="gap-0.5">
         <Text className="text-ink-3 dark:text-ink-3-dk text-[10px] font-semibold uppercase tracking-wider">
           What this shows

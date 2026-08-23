@@ -10,6 +10,7 @@ import { StoreHome } from './store';
 import { AIMark } from '@/components/AIMark';
 import type { IconSlot } from '@/components/icon-slot';
 import { PillNav } from '@/components/PillNav';
+import { SearchField } from '@/components/SearchField';
 import { PageHead } from '@/components/PageHead';
 import { ListRow } from '@/components/ListRow';
 import { Text, TextInput } from '@/components/Text';
@@ -364,28 +365,12 @@ export default function ManagementHome() {
             subtitle="Everything behind the gym — people, money, and how it runs."
           />
           {entries.length > 1 ? (
-            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line-strong dark:border-line-dk rounded-ctl px-3">
-              <Ionicons name="search" size={18} color={colors.ink2} />
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder="refunds, sending domain, coach pay…"
-                placeholderTextColor={colors.ink3}
-                accessibilityLabel="Find a setting"
-                autoCapitalize="none"
-                autoCorrect={false}
-                className="flex-1 py-3 text-ink dark:text-ink-dk"
-              />
-              {searching ? (
-                <Pressable
-                  onPress={() => setQuery('')}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear the search">
-                  <Ionicons name="close-circle" size={18} color={colors.ink2} />
-                </Pressable>
-              ) : null}
-            </View>
+            <SearchField
+              value={query}
+              onChangeText={setQuery}
+              placeholder="refunds, sending domain, coach pay…"
+              accessibilityLabel="Find a setting"
+            />
           ) : null}
           {/* The section nav is a pill row at every width. It used to
               become a second full-height sidebar at 1024, which is

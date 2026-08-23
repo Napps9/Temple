@@ -27,12 +27,20 @@ type Doc = {
   updated_at: string;
 };
 
+// The chosen view state, across unmounts — session-only, the
+// GymSetupChecklist / list-scroll-position idiom.
+let lastSopId: string | null = null;
+
 export default function SopsScreen() {
   const colors = useThemeColors();
   const session = useSession();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveIdState] = useState<string | null>(lastSopId);
+  const setActiveId = (id: string | null) => {
+    lastSopId = id;
+    setActiveIdState(id);
+  };
   const [editing, setEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState('');
   const [draftBody, setDraftBody] = useState('');

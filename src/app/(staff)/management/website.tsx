@@ -328,6 +328,10 @@ function WarningsChip({
   );
 }
 
+// The chosen view state, across unmounts — session-only, the
+// GymSetupChecklist / list-scroll-position idiom.
+let lastWebsitePage: string | null = null;
+
 export default function WebsiteManageScreen() {
   const colors = useThemeColors();
   const canManageWebsite = useCan('can_manage_website');
@@ -346,7 +350,11 @@ export default function WebsiteManageScreen() {
   // null until the owner explicitly picks a page — resolveActivePage
   // falls back to home (pages[0]) in that case, so this never needs an
   // effect to "initialise" it once the real document loads.
-  const [activePageId, setActivePageId] = useState<string | null>(null);
+  const [activePageId, setActivePageIdState] = useState<string | null>(lastWebsitePage);
+  const setActivePageId = (id: string | null) => {
+    lastWebsitePage = id;
+    setActivePageIdState(id);
+  };
   const [managingPages, setManagingPages] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [creatingId, setCreatingId] = useState<SiteTemplateId | null>(null);

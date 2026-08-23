@@ -833,7 +833,9 @@ describe('the draft, in the chat', () => {
     // whether the wording is any good is the whole question.
     expect(card.emails[0].sections[0].body).toBe('A small-group session.');
     expect(card.note).toBeNull();
-    expect(card.primaryColor).toBe('#2563EB');
+    // Temple orange, not the retired blue: gyms no longer recolour
+    // the product, so the email fallback matches the brand too.
+    expect(card.primaryColor).toBe('#C2410C');
     expect(card.gymName).toBe('Your gym');
     // Not a rendering of the draft — the draft. Same builder apply uses,
     // so what the owner reads is what the send worker posts. The subject

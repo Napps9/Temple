@@ -184,7 +184,11 @@ export function PlansPanel() {
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<EditablePlan[]>([]);
-  const [showArchived, setShowArchived] = useState(false);
+  const [showArchived, setShowArchivedState] = useState(lastShowArchived);
+  const setShowArchived = (v: boolean) => {
+    lastShowArchived = v;
+    setShowArchivedState(v);
+  };
   const [actionError, setActionError] = useState<string | null>(null);
   // Plans render collapsed (a member-style summary) until the staff member
   // opens one for editing. New plans open straight into the editor.
@@ -776,9 +780,14 @@ export function PlansPanel() {
                       ) : null}
                     </View>
                   </View>
+                  {/* Ink, not the accent: every plan card carries this
+                      chip, and a column of accent Edits reads as a loud
+                      list rather than an invitation. */}
                   <View className="flex-row items-center gap-1.5 self-start">
-                    <Ionicons name="create-outline" size={15} color={colors.primary} />
-                    <Text className="text-primary text-sm font-medium">Edit</Text>
+                    <Ionicons name="create-outline" size={15} color={colors.ink2} />
+                    <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
+                      Edit
+                    </Text>
                   </View>
                 </Pressable>
               );
@@ -1148,6 +1157,10 @@ export function PlansPanel() {
     </View>
   );
 }
+
+// The chosen view state, across unmounts — session-only, the
+// GymSetupChecklist / list-scroll-position idiom.
+let lastShowArchived = false;
 
 export default function PlansScreen() {
   useSetupAutoReturn('plan');

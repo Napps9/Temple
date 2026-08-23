@@ -34,15 +34,28 @@ type StaffMember = {
   profiles: { full_name: string | null } | null;
 };
 
+// The chosen view state, across unmounts — session-only, the
+// GymSetupChecklist / list-scroll-position idiom.
+let lastTaskFilter: 'open' | 'done' | null = null;
+let lastAssigneeFilter: string | 'all' | null = null;
+
 export default function TasksScreen() {
   const role = useRole();
   const session = useSession();
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<'open' | 'done'>('open');
-  const [assigneeFilter, setAssigneeFilter] = useState<string | 'all'>(
-    role === 'staff' ? (session?.user.id ?? 'all') : 'all',
+  const [filter, setFilterState] = useState<'open' | 'done'>(lastTaskFilter ?? 'open');
+  const setFilter = (f: 'open' | 'done') => {
+    lastTaskFilter = f;
+    setFilterState(f);
+  };
+  const [assigneeFilter, setAssigneeFilterState] = useState<string | 'all'>(
+    lastAssigneeFilter ?? (role === 'staff' ? (session?.user.id ?? 'all') : 'all'),
   );
+  const setAssigneeFilter = (a: string | 'all') => {
+    lastAssigneeFilter = a;
+    setAssigneeFilterState(a);
+  };
 
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');

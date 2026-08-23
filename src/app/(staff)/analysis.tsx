@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/Text';
 
@@ -568,13 +568,25 @@ async function fetchAiTags(
 // per-card rollup. A hook rather than a block component since the
 // reorganised page interleaves these with the injuries/trends data
 // the screen already owns.
+// The chosen view state, across unmounts — session-only, the
+// GymSetupChecklist / list-scroll-position idiom.
+let lastAnalysisRange: { preset: Preset; customStart: string; customEnd: string } | null =
+  null;
+
 function useProgrammingBalance(
   gymId: string | undefined,
   canSeeLogs: boolean,
 ) {
-  const [preset, setPreset] = useState<Preset>('month');
-  const [customStart, setCustomStart] = useState(() => isoDate(new Date()));
-  const [customEnd, setCustomEnd] = useState(() => isoDate(new Date()));
+  const [preset, setPreset] = useState<Preset>(lastAnalysisRange?.preset ?? 'month');
+  const [customStart, setCustomStart] = useState(
+    () => lastAnalysisRange?.customStart ?? isoDate(new Date()),
+  );
+  const [customEnd, setCustomEnd] = useState(
+    () => lastAnalysisRange?.customEnd ?? isoDate(new Date()),
+  );
+  useEffect(() => {
+    lastAnalysisRange = { preset, customStart, customEnd };
+  }, [preset, customStart, customEnd]);
   const range = useMemo(() => {
     if (preset === 'custom') return { start: customStart, end: customEnd };
     return presetRange(preset, new Date());

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 import { Text } from './Text';
 
+import { SearchField } from '@/components/SearchField';
 import { ActionButton } from '@/components/ActionButton';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
@@ -348,7 +349,7 @@ export function MembersList() {
 
   return (
     <View className="gap-4">
-      <Input label="Search" value={search} onChangeText={setSearch} placeholder="Name" />
+      <SearchField value={search} onChangeText={setSearch} placeholder="Search members by name" />
 
       <View className="flex-row gap-2 flex-wrap">
         <FilterChip label="All" active={filter === 'all'} onPress={() => setFilter('all')} />

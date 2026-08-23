@@ -433,6 +433,15 @@ function ClassTypeFilterRow({
   );
 }
 
+// Where you were, across unmounts: the day you navigated to and the
+// class-type filters you applied died with the component on every
+// class-open and tab-switch. Session-only, the GymSetupChecklist /
+// list-scroll-position idiom; the day memory is shared between the
+// staff Classes screen and the member Book screen on purpose.
+let lastCalendarDate: Date | null = null;
+let lastTypeFilter: Set<string> = new Set();
+let lastAgendaType: string | null = null;
+
 export function ClassesCalendar({
   mode,
   topSlot,
@@ -462,7 +471,13 @@ export function ClassesCalendar({
       ? 'week'
       : 'list'
     : rawView;
-  const [date, setDate] = useState(() => startOfDay(new Date()));
+  const [date, setDateState] = useState(
+    () => lastCalendarDate ?? startOfDay(new Date()),
+  );
+  const setDate = (d: Date) => {
+    lastCalendarDate = d;
+    setDateState(d);
+  };
   const [createAt, setCreateAt] = useState<CreateRequest | null>(null);
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
   // The phone header's date label opens a month grid to jump around;
@@ -470,7 +485,13 @@ export function ClassesCalendar({
   // selected date until they tap a day).
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(() => startOfMonth(new Date()));
-  const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set());
+  const [typeFilter, setTypeFilterState] = useState<Set<string>>(
+    () => new Set(lastTypeFilter),
+  );
+  const setTypeFilter = (next: Set<string>) => {
+    lastTypeFilter = new Set(next);
+    setTypeFilterState(next);
+  };
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkResult, setBulkResult] = useState<BulkEditResult | null>(null);
   const { data: membership } = useGymMembership();
@@ -1209,7 +1230,11 @@ function AgendaView({
   undoPending?: boolean;
 }) {
   const colors = useThemeColors();
-  const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const [typeFilter, setTypeFilterState] = useState<string | null>(lastAgendaType);
+  const setTypeFilter = (t: string | null) => {
+    lastAgendaType = t;
+    setTypeFilterState(t);
+  };
   const weekStart = startOfWeek(date, weekStartsOn);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const dayClasses = classesOnDay(sessions, date).sort(

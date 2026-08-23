@@ -175,7 +175,7 @@ function PresetOption({
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-row items-center justify-between px-3 py-3 rounded-lg ${
+      className={`flex-row items-center justify-between px-3 py-3 rounded-ctl ${
         active ? 'bg-raised dark:bg-raised-dk' : 'active:bg-raised dark:active:bg-raised-dk'
       }`}>
       <Text

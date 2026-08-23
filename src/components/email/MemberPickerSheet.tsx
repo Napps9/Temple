@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { SearchField } from '@/components/SearchField';
 import { Text, TextInput } from '@/components/Text';
 
 import { Button } from '@/components/Button';
@@ -102,12 +103,10 @@ export function MemberPickerSheet({
         </SheetAction>
       }>
       <View className="gap-2 pb-1">
-        <TextInput
+        <SearchField
           value={search}
           onChangeText={setSearch}
           placeholder="Search by name"
-          placeholderTextColor={colors.ink3}
-          className="bg-surface dark:bg-surface-dk rounded-ctl px-3 py-3 text-ink dark:text-ink-dk text-[15px] border border-line-strong dark:border-line-strong-dk"
         />
 
         {members.isLoading ? (

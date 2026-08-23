@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { SearchField } from '@/components/SearchField';
 import { Sheet } from './Sheet';
 import { ListRow, RuledList } from './ListRow';
 import { FieldLabel } from './SectionLabel';
@@ -211,14 +212,10 @@ export function StaffBookingSheet({
 
           {showSearch ? (
             <>
-              <TextInput
+              <SearchField
                 value={query}
                 onChangeText={setQuery}
                 placeholder="Search members"
-                placeholderTextColor={colors.ink3}
-                autoCapitalize="none"
-                autoCorrect={false}
-                className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk"
               />
               <ScrollView className="max-h-72">
                 {candidates.isLoading ? (

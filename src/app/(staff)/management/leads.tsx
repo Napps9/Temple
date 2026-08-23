@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, Link, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, View } from 'react-native';
+import { SearchField } from '@/components/SearchField';
 import { AIMark } from '@/components/AIMark';
 import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
@@ -1036,8 +1037,7 @@ function LeadDetailModal({
                     matching email auto-link inside the gym's conversion
                     window.)
                   </Text>
-                  <Input
-                    label=""
+                  <SearchField
                     value={memberQuery}
                     onChangeText={setMemberQuery}
                     placeholder="Search members"

@@ -6,6 +6,7 @@ import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
 import { PageHead } from '@/components/PageHead';
+import { SearchField } from '@/components/SearchField';
 import { Screen } from '@/components/Screen';
 import {
   allGroupsDisciplineFirst,
@@ -52,25 +53,14 @@ export default function MovementLibrary() {
           subtitle="Search every movement we track — across CrossFit and Hyrox — star your favourites, and open any one for your PRs and history."
         />
 
-        <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line-strong dark:border-line-dk rounded-xl px-3">
-          <Ionicons name="search" size={18} color={colors.ink2} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search movements"
-            placeholderTextColor={colors.ink2}
-            autoCorrect={false}
-            // The library's job is nearly always "find one movement", so
-            // the cursor starts in the search box — typing is tap zero.
-            autoFocus
-            className="flex-1 py-3 text-ink dark:text-ink-dk"
-          />
-          {searching ? (
-            <Pressable onPress={() => setQuery('')} hitSlop={8}>
-              <Ionicons name="close-circle" size={18} color={colors.ink2} />
-            </Pressable>
-          ) : null}
-        </View>
+        {/* The library's job is nearly always "find one movement", so
+            the cursor starts in the search box — typing is tap zero. */}
+        <SearchField
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search movements"
+          autoFocus
+        />
 
         {searching ? (
           hits.length === 0 ? (

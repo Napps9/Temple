@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { PageHead } from '@/components/PageHead';
+import { SearchField } from '@/components/SearchField';
 import { SectionLabel } from '@/components/SectionLabel';
 import { Text, TextInput } from '@/components/Text';
 
@@ -117,15 +118,7 @@ export default function NewDirectMessage() {
           subtitle="Pick a recipient."
         />
 
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search by name"
-          placeholderTextColor={colors.ink3}
-          autoCapitalize="none"
-          autoCorrect={false}
-          className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-4 py-3 text-ink dark:text-ink-dk text-base"
-        />
+        <SearchField value={query} onChangeText={setQuery} placeholder="Search by name" />
 
         {candidates.isLoading || dmScope.isLoading ? (
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>

@@ -116,7 +116,7 @@ export function ClassTypePicker({
       </ScrollView>
 
       {creating ? (
-        <View className="bg-raised dark:bg-raised-dk rounded-lg p-3 gap-3">
+        <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-3">
           <Input
             label="Type name"
             value={newName}

@@ -4,6 +4,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { SearchField } from '@/components/SearchField';
 import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
@@ -426,12 +427,10 @@ function IndividualsList() {
           <Text className="text-ink-2 dark:text-ink-2-dk font-semibold">
             Start a programme
           </Text>
-          <Input
-            label="Search members"
-            placeholder="Name"
+          <SearchField
             value={search}
             onChangeText={setSearch}
-            autoCapitalize="none"
+            placeholder="Search members by name"
           />
           {candidates.map((m) => (
             <ListRow

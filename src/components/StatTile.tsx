@@ -62,8 +62,9 @@ export function StatTile({
       {/* One line each, both of them. `tracking-widest` on an uppercase
           label inside a 100px tile broke "RECIPIENTS" across two lines
           mid-word, and a three-character value like "100%" dropped its
-          percent sign onto a second row. Shrinking to fit is right for a
-          label and wrong for a number, so only the label may scale. */}
+          percent sign onto a second row. The value scales too, floored
+          well above legibility: an ellipsis on a number ("£4,180…") hides
+          real digits, which is strictly worse than a smaller figure. */}
       <Text
         numberOfLines={1}
         adjustsFontSizeToFit
@@ -72,6 +73,8 @@ export function StatTile({
       </Text>
       <Text
         numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.6}
         className={`${valueToneClass[tone]} text-3xl font-semibold`}>
         {value}
       </Text>

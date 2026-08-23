@@ -209,7 +209,7 @@ function cardBase(g: Brand | null): Omit<EmailDraftCard, 'emails' | 'audience' |
   return {
     gymName: g?.name ?? 'Your gym',
     logoUrl: g?.logo_url ?? null,
-    primaryColor: g?.primary_color ?? '#2563EB',
+    primaryColor: g?.primary_color ?? '#C2410C',
   };
 }
 

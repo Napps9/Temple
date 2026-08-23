@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { SearchField } from '@/components/SearchField';
 import { EmptyState } from '@/components/EmptyState';
 import { FieldLabel } from '@/components/SectionLabel';
 import { useQuery } from '@tanstack/react-query';
@@ -287,19 +288,21 @@ function StockPhotoPickerModal({
       dialogWidth={680}>
       <View className="gap-3 pb-1">
           <View className="flex-row gap-2 items-center">
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search photos…"
-              placeholderTextColor={colors.ink3}
-              returnKeyType="search"
-              onSubmitEditing={() => runSearch(query, 1)}
-              className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-lg px-3 py-2.5 text-ink dark:text-ink-dk text-sm"
-            />
+            <View className="flex-1">
+              <SearchField
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Search photos…"
+                returnKeyType="search"
+                onSubmitEditing={() => runSearch(query, 1)}
+              />
+            </View>
             <Pressable
               onPress={() => runSearch(query, 1)}
               disabled={search.isPending}
-              className="w-10 h-10 rounded-lg items-center justify-center bg-primary/10 border border-primary/30 active:opacity-70">
+              accessibilityRole="button"
+              accessibilityLabel="Search photos"
+              className="w-10 h-10 rounded-ctl items-center justify-center bg-primary/10 border border-primary/30 active:opacity-70">
               <Ionicons name="search" size={16} color={colors.primary} />
             </Pressable>
           </View>

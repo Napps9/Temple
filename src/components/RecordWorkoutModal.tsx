@@ -6,6 +6,7 @@ import { Pressable, Switch, View } from 'react-native';
 import { Text, TextInput } from './Text';
 
 import { Button } from './Button';
+import { SearchField } from '@/components/SearchField';
 import { Sheet, SheetAction } from './Sheet';
 import { DatePicker } from './DatePicker';
 import { Input } from './Input';
@@ -1711,27 +1712,11 @@ function MovementTagPickerStep({
 
   return (
     <View className="gap-3 pb-1">
-          <View className="flex-row items-center gap-2 bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-lg px-3">
-            <Ionicons name="search" size={16} color={colors.ink3} />
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Search all movements"
-              accessibilityLabel="Search all movements"
-              placeholderTextColor={colors.ink3}
-              autoCorrect={false}
-              className="flex-1 py-2.5 text-ink dark:text-ink-dk text-sm"
-            />
-            {q ? (
-              <Pressable
-                onPress={() => setSearch('')}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Clear search">
-                <Ionicons name="close-circle" size={16} color={colors.ink3} />
-              </Pressable>
-            ) : null}
-          </View>
+          <SearchField
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search all movements"
+          />
           <View className="gap-2">
             {q ? (
               matches.length === 0 ? (

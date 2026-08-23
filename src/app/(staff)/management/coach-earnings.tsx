@@ -282,6 +282,10 @@ export default function CoachEarningsPage() {
   );
 }
 
+// The chosen view state, across unmounts — session-only, the
+// GymSetupChecklist / list-scroll-position idiom.
+const expandedCoaches = new Set<string>();
+
 function CoachCard({
   coach,
   gymId,
@@ -301,7 +305,15 @@ function CoachCard({
 }) {
   const colors = useThemeColors();
   const queryClient = useQueryClient();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpandedState] = useState(expandedCoaches.has(coach.profile_id));
+  const setExpanded = (next: boolean | ((v: boolean) => boolean)) => {
+    setExpandedState((prev) => {
+      const resolved = typeof next === 'function' ? next(prev) : next;
+      if (resolved) expandedCoaches.add(coach.profile_id);
+      else expandedCoaches.delete(coach.profile_id);
+      return resolved;
+    });
+  };
 
   const earnings = useQuery({
     queryKey: [
