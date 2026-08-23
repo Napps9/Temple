@@ -173,6 +173,8 @@ export default function DirectThread() {
           <Pressable
             onPress={() => send.mutate()}
             disabled={!draft.trim() || send.isPending}
+            accessibilityRole="button"
+            accessibilityLabel="Send message"
             className={`w-11 h-11 rounded-full items-center justify-center ${
               !draft.trim() || send.isPending
                 ? 'bg-sunken dark:bg-sunken-dk'

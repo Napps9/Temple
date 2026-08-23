@@ -912,6 +912,8 @@ export function ClassesCalendar({
                 {canCreate ? (
                   <Pressable
                     onPress={() => setCreateAt({ date })}
+                    accessibilityRole="button"
+                    accessibilityLabel="Add class"
                     className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 hover:opacity-90 active:bg-primary-dark shadow-float">
                     <Ionicons name="add" size={16} color={colors.onPrimary} />
                     <Text className="hidden md:flex text-on-primary text-sm font-semibold">

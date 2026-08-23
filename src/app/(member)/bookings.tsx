@@ -7,14 +7,19 @@ import { ChipButton } from '@/components/ChipButton';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { Screen } from '@/components/Screen';
 import { BackLink } from '@/components/BackLink';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { PageHead } from '@/components/PageHead';
 import { useSession } from '@/lib/auth';
 import {
   attendanceLabel,
+  invalidateBookingCaches,
+  isLateCancel,
   splitBookings,
   type BookingRow,
+  type CancelCutoffClassType,
 } from '@/lib/bookings';
 import { errorMessage } from '@/lib/errors';
+import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { labelOn } from '@/lib/contrast';
@@ -41,7 +46,9 @@ type ServerBooking = {
   class_sessions: {
     starts_at: string;
     duration_minutes: number;
-    class_types: { name: string; color: string } | null;
+    class_types:
+      | ({ name: string; color: string } & NonNullable<CancelCutoffClassType>)
+      | null;
   } | null;
 };
 
@@ -65,6 +72,8 @@ export default function BookingsScreen() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('upcoming');
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState<BookingRow | null>(null);
+  const { data: gymDefaults } = useGymOperatingDefaults();
   const [waitlistError, setWaitlistError] = useState<string | null>(null);
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
 
@@ -75,7 +84,7 @@ export default function BookingsScreen() {
       const { data, error } = await supabase
         .from('class_bookings')
         .select(
-          'id, class_session_id, attended_at, no_show, promoted_from_waitlist, class_sessions(starts_at, duration_minutes, class_types(name, color))',
+          'id, class_session_id, attended_at, no_show, promoted_from_waitlist, class_sessions(starts_at, duration_minutes, class_types(name, color, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before))',
         )
         .eq('profile_id', session!.user.id);
       if (error) throw error;
@@ -112,6 +121,7 @@ export default function BookingsScreen() {
       attended_at: b.attended_at,
       no_show: b.no_show,
       promoted_from_waitlist: b.promoted_from_waitlist,
+      cancelCutoffs: b.class_sessions!.class_types ?? null,
     }));
 
   const { upcoming, past } = splitBookings(rows);
@@ -126,7 +136,8 @@ export default function BookingsScreen() {
     },
     onSuccess: () => {
       setCancelError(null);
-      queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
+      setConfirmCancel(null);
+      invalidateBookingCaches(queryClient);
     },
     onError: (e) => setCancelError(errorMessage(e, 'Could not cancel booking')),
   });
@@ -200,7 +211,7 @@ export default function BookingsScreen() {
                   key={r.id}
                   row={r}
                   isPast={false}
-                  onCancel={() => cancel.mutate(r.id)}
+                  onCancel={() => setConfirmCancel(r)}
                   cancelling={cancel.isPending}
                 />
               ))
@@ -239,6 +250,29 @@ export default function BookingsScreen() {
         sessionId={openSessionId}
         mode="book"
         onClose={() => setOpenSessionId(null)}
+      />
+      <ConfirmDialog
+        visible={!!confirmCancel}
+        title="Cancel this booking?"
+        body={
+          confirmCancel &&
+          isLateCancel(
+            confirmCancel.starts_at,
+            confirmCancel.cancelCutoffs ?? null,
+            gymDefaults,
+          )
+            ? 'Late cancel — your credit will be forfeited.'
+            : 'Your spot goes back to the class.'
+        }
+        confirmLabel="Yes, cancel"
+        cancelLabel="Keep it"
+        pending={cancel.isPending}
+        error={cancelError}
+        onConfirm={() => confirmCancel && cancel.mutate(confirmCancel.id)}
+        onCancel={() => {
+          setConfirmCancel(null);
+          setCancelError(null);
+        }}
       />
     </Screen>
   );

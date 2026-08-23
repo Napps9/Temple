@@ -18,6 +18,7 @@ export type GymNavLink = {
 // the link.
 export function useGymNavLinks(): GymNavLink[] {
   const { data: membership } = useGymMembership();
+  const canManageTags = useCan('can_manage_tags') ?? false;
   const canManagePlans = useCan('can_manage_plans') ?? false;
   const canManageComms = useCan('can_manage_comms') ?? false;
   const canWorkLeads = useCan('can_work_leads') ?? false;
@@ -25,7 +26,17 @@ export function useGymNavLinks(): GymNavLink[] {
   const isOwner = membership?.role === 'owner';
 
   return [
-    { href: '/management/members', label: 'Members', icon: 'people-outline' },
+    // Same gate as the page's own redirect (members.tsx) — a coach shown
+    // this link was bounced straight back to /management.
+    ...(canManageTags
+      ? [
+          {
+            href: '/management/members',
+            label: 'Members',
+            icon: 'people-outline' as const,
+          },
+        ]
+      : []),
     ...(canManagePlans
       ? [{ href: '/management/plans', label: 'Plans', icon: 'card-outline' as const }]
       : []),

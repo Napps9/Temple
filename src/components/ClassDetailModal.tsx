@@ -16,7 +16,7 @@ import { CheckInButton } from '@/components/CheckInButton';
 import { ChipButton } from '@/components/ChipButton';
 import { StaffBookingSheet } from '@/components/StaffBookingSheet';
 import { useSession } from '@/lib/auth';
-import { invalidateBookingCaches } from '@/lib/bookings';
+import { invalidateBookingCaches, isLateCancel } from '@/lib/bookings';
 import {
   errorMessage,
   isMembershipRequiredError,
@@ -38,7 +38,6 @@ import { useDependents } from '@/lib/useDependents';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useThemeColors } from '@/lib/theme';
-import { dayBeforeCutoffEpoch } from '@/lib/zoned-time';
 
 type SessionDetail = {
   id: string;
@@ -429,30 +428,10 @@ export function ClassDetailModal({
       : null;
   const inPast = start ? start.getTime() < Date.now() : false;
   const isFull = detail ? bookings.length >= detail.capacity : false;
-  // Mirror the server-side precedence in 0074: class-type day_before
-  // wins, then class-type relative override, then gym relative default.
-  const lateCancel = (() => {
-    if (start === null || !detail) return false;
-    const ct = detail.class_types;
-    if (
-      ct?.cancel_cutoff_mode === 'day_before' &&
-      ct.cancel_cutoff_time
-    ) {
-      const cutoff = dayBeforeCutoffEpoch(
-        detail.starts_at,
-        gymDefaults?.timezone || 'UTC',
-        ct.cancel_cutoff_days_before ?? 1,
-        ct.cancel_cutoff_time,
-      );
-      return Date.now() >= cutoff;
-    }
-    const relativeMin =
-      ct?.cancel_cutoff_minutes_before ??
-      gymDefaults?.cancel_cutoff_minutes_before ??
-      0;
-    const cancelCutoffMs = relativeMin * 60 * 1000;
-    return cancelCutoffMs > 0 && start.getTime() - cancelCutoffMs <= Date.now();
-  })();
+  const lateCancel =
+    detail !== null &&
+    detail !== undefined &&
+    isLateCancel(detail.starts_at, detail.class_types ?? null, gymDefaults);
 
   const bookCutoffMs =
     (gymDefaults?.booking_cutoff_minutes_before ?? 0) * 60 * 1000;
@@ -641,6 +620,14 @@ export function ClassDetailModal({
                         />
                       </View>
                     </View>
+                  ) : null}
+                  {canCheckIn &&
+                  start &&
+                  bookings.length > 0 &&
+                  Date.now() < start.getTime() - 15 * 60 * 1000 ? (
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+                      Check-in opens 15 minutes before class.
+                    </Text>
                   ) : null}
                   <ScrollView className="max-h-48">
                     {bookings.length === 0 ? (

@@ -1,5 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 
+import { dayBeforeCutoffEpoch } from './zoned-time';
+
 export type BookingRow = {
   id: string;
   class_session_id: string;
@@ -10,7 +12,48 @@ export type BookingRow = {
   attended_at: string | null;
   no_show: boolean;
   promoted_from_waitlist: boolean;
+  cancelCutoffs?: CancelCutoffClassType;
 };
+
+export type CancelCutoffClassType = {
+  cancel_cutoff_minutes_before: number | null;
+  cancel_cutoff_mode: 'relative' | 'day_before' | null;
+  cancel_cutoff_time: string | null;
+  cancel_cutoff_days_before: number | null;
+} | null;
+
+// Mirror the server-side precedence in 0074: class-type day_before wins,
+// then class-type relative override, then gym relative default. Shared so
+// every cancel affordance shows the same forfeit warning — the bookings
+// page used to skip it entirely.
+export function isLateCancel(
+  startsAt: string,
+  classType: CancelCutoffClassType,
+  gymDefaults:
+    | {
+        timezone?: string | null;
+        cancel_cutoff_minutes_before?: number | null;
+      }
+    | null
+    | undefined,
+): boolean {
+  const start = new Date(startsAt);
+  if (classType?.cancel_cutoff_mode === 'day_before' && classType.cancel_cutoff_time) {
+    const cutoff = dayBeforeCutoffEpoch(
+      startsAt,
+      gymDefaults?.timezone || 'UTC',
+      classType.cancel_cutoff_days_before ?? 1,
+      classType.cancel_cutoff_time,
+    );
+    return Date.now() >= cutoff;
+  }
+  const relativeMin =
+    classType?.cancel_cutoff_minutes_before ??
+    gymDefaults?.cancel_cutoff_minutes_before ??
+    0;
+  const cancelCutoffMs = relativeMin * 60 * 1000;
+  return cancelCutoffMs > 0 && start.getTime() - cancelCutoffMs <= Date.now();
+}
 
 // Every cache a book / cancel touches. Kept in one place because these
 // lists used to be maintained per-call-site and drifted: the class-detail
