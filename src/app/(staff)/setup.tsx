@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Animated, Easing, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { AIMark } from '@/components/AIMark';
 import { Spinner } from '@/components/EmptyState';
 import { Text, TextInput } from '@/components/Text';
@@ -11,6 +11,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 
 import { Button } from '@/components/Button';
+import { Appear, TypingIndicator, useStagedReveal } from '@/components/ChatReveal';
 import { joinUrl } from '@/lib/brand';
 import {
   autoDetect as memberAutoDetect,
@@ -226,14 +227,10 @@ export default function SetupScreen() {
   const queryClient = useQueryClient();
 
   const [messages, setMessages] = useState<Msg[]>([]);
-  // The conversation arrives like one. Assistant turns sit hidden until a
-  // typing indicator has "written" them — one at a time, paced by length —
-  // while the owner's own messages always land instantly. Render-side on
-  // purpose: the flow logic below still appends whole exchanges at once,
-  // and only the reveal is theatrical, so nothing about what gets asked or
-  // saved can drift for the sake of the animation.
-  const [revealed, setRevealed] = useState(0);
-  const [typing, setTyping] = useState(false);
+  const { revealed, typing } = useStagedReveal(messages, {
+    instant: (m) => m.kind === 'mine',
+    textOf: (m) => ('text' in m && typeof m.text === 'string' ? m.text : null),
+  });
   const [step, setStep] = useState<Step | null>(null);
   const [input, setInput] = useState('');
   const [seeded, setSeeded] = useState(false);
@@ -402,28 +399,6 @@ export default function SetupScreen() {
     advance(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress.data, seeded, membership]);
-
-  useEffect(() => {
-    if (revealed >= messages.length) {
-      setTyping(false);
-      return;
-    }
-    const next = messages[revealed];
-    if (next.kind === 'mine') {
-      setRevealed((r) => r + 1);
-      return;
-    }
-    setTyping(true);
-    const pause =
-      'text' in next && typeof next.text === 'string'
-        ? Math.min(400 + next.text.length * 5, 1200)
-        : 350;
-    const timer = setTimeout(() => {
-      setTyping(false);
-      setRevealed((r) => r + 1);
-    }, pause);
-    return () => clearTimeout(timer);
-  }, [messages, revealed]);
 
   const parse = useMutation({
     mutationFn: async (args: {
@@ -1004,67 +979,6 @@ function StepSkip({
 
 function TempleAvatar() {
   return <AIMark size={24} />;
-}
-
-// A message doesn't pop into place, it arrives: a short fade and rise on
-// mount, applied to every revealed row so the whole thread reads as being
-// written rather than loaded.
-function Appear({ children }: { children: ReactNode }) {
-  const anim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.timing(anim, {
-      toValue: 1,
-      duration: 220,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
-  }, [anim]);
-  return (
-    <Animated.View
-      style={{
-        opacity: anim,
-        transform: [
-          { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) },
-        ],
-      }}>
-      {children}
-    </Animated.View>
-  );
-}
-
-function TypingIndicator() {
-  const colors = useThemeColors();
-  const a = useRef(new Animated.Value(0.25)).current;
-  const b = useRef(new Animated.Value(0.25)).current;
-  const c = useRef(new Animated.Value(0.25)).current;
-  useEffect(() => {
-    const loops = [a, b, c].map((v, i) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(i * 140),
-          Animated.timing(v, { toValue: 1, duration: 280, useNativeDriver: true }),
-          Animated.timing(v, { toValue: 0.25, duration: 280, useNativeDriver: true }),
-          Animated.delay((2 - i) * 140),
-        ]),
-      ),
-    );
-    loops.forEach((l) => l.start());
-    return () => loops.forEach((l) => l.stop());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return (
-    <View className="flex-row gap-2.5 pr-7">
-      <TempleAvatar />
-      <View className="self-start bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl rounded-bl-md px-3.5 py-3 flex-row items-center gap-1.5">
-        {[a, b, c].map((v, i) => (
-          <Animated.View
-            key={i}
-            style={{ opacity: v, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.ink3 }}
-          />
-        ))}
-      </View>
-    </View>
-  );
 }
 
 function MessageRow({
