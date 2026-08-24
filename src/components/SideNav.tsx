@@ -27,37 +27,52 @@ import { useGymNavLinks } from '@/lib/useGymNavLinks';
 // route are untouched; the destinations below are ordinary pushes, not new
 // routes.
 //
-// The rail collapses to an icon strip: on a calendar or a member table the
-// 246px is real working width, and every destination stays one click away
-// because the icons keep their spots. The choice sticks across sessions.
+// The rail collapses to an icon strip. The choice sticks across sessions,
+// and the state lives in the layout rather than here: when the rail
+// narrows, the layout pads the content by the width difference so every
+// page stays exactly where it was — collapsing tidies the chrome away
+// without reflowing the work.
+export const RAIL_WIDTH = 246;
+export const RAIL_COLLAPSED_WIDTH = 68;
 const COLLAPSED_KEY = 'staff_rail_collapsed';
 
-export function SideNav({ sections }: { sections: NavSection[] }) {
-  const pathname = usePathname();
-  const brand = useGymBrand();
-  const { data: membership } = useGymMembership();
-  const colors = useThemeColors();
+export function useRailCollapsed(): [boolean, () => void] {
   const [collapsed, setCollapsed] = useState(false);
-
   useEffect(() => {
     AsyncStorage.getItem(COLLAPSED_KEY)
       .then((v) => setCollapsed(v === '1'))
       .catch(() => {});
   }, []);
-
-  const toggleCollapsed = () => {
+  const toggle = () => {
     haptic.selection();
     setCollapsed((c) => {
       AsyncStorage.setItem(COLLAPSED_KEY, c ? '0' : '1').catch(() => {});
       return !c;
     });
   };
+  return [collapsed, toggle];
+}
+
+export function SideNav({
+  sections,
+  collapsed,
+  onToggleCollapsed,
+}: {
+  sections: NavSection[];
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+}) {
+  const pathname = usePathname();
+  const brand = useGymBrand();
+  const { data: membership } = useGymMembership();
+  const colors = useThemeColors();
 
   const gymLinks = useGymNavLinks();
 
   return (
     <View
-      className={`${collapsed ? 'w-[68px]' : 'w-[246px]'} flex-none bg-surface dark:bg-surface-dk border-r border-line dark:border-line-dk`}>
+      style={{ width: collapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH }}
+      className="flex-none bg-surface dark:bg-surface-dk border-r border-line dark:border-line-dk">
       <ScrollView contentContainerClassName="p-3 gap-3.5 flex-1">
         <View className={collapsed ? 'gap-1.5' : 'flex-row items-center gap-1.5'}>
           <Pressable
@@ -90,7 +105,7 @@ export function SideNav({ sections }: { sections: NavSection[] }) {
             )}
           </Pressable>
           <Pressable
-            onPress={toggleCollapsed}
+            onPress={onToggleCollapsed}
             accessibilityRole="button"
             accessibilityLabel={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             hitSlop={4}

@@ -1,6 +1,8 @@
 import { Redirect, Tabs } from 'expo-router';
-import { View } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 
+import { BottomDock, DOCK_CLEARANCE } from '@/components/BottomDock';
+import { MD } from '@/lib/breakpoint';
 import { TopNav, type NavSection } from '@/components/TopNav';
 import { useSession } from '@/lib/auth';
 import { useThemeColors } from '@/lib/theme';
@@ -25,7 +27,9 @@ const MEMBER_SECTIONS: NavSection[] = [
 export default function MemberLayout() {
   const session = useSession();
   const colors = useThemeColors();
+  const { width } = useWindowDimensions();
   if (session === null) return <Redirect href="/sign-in" />;
+  const docked = width < MD;
 
   return (
     <View className="flex-1 bg-ground dark:bg-ground-dk">
@@ -39,7 +43,11 @@ export default function MemberLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: 'none' },
-          sceneStyle: { backgroundColor: colors.screenBg },
+          sceneStyle: {
+            backgroundColor: colors.screenBg,
+            // Room for the floating dock on the widths that show it.
+            paddingBottom: docked ? DOCK_CLEARANCE : 0,
+          },
           animation: 'none',
         }}>
         <Tabs.Screen name="book" options={{ title: 'Book' }} />
@@ -56,6 +64,7 @@ export default function MemberLayout() {
         <Tabs.Screen name="waiver" options={{ title: 'Waiver' }} />
         <Tabs.Screen name="account" options={{ title: 'Account' }} />
       </Tabs>
+      <BottomDock sections={MEMBER_SECTIONS} variant="member" />
     </View>
   );
 }

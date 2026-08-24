@@ -2,9 +2,15 @@ import { Redirect, Tabs, usePathname } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 
-import { SideNav } from '@/components/SideNav';
+import { BottomDock, DOCK_CLEARANCE } from '@/components/BottomDock';
+import {
+  RAIL_COLLAPSED_WIDTH,
+  RAIL_WIDTH,
+  SideNav,
+  useRailCollapsed,
+} from '@/components/SideNav';
 import { TopNav, type NavSection } from '@/components/TopNav';
-import { LG } from '@/lib/breakpoint';
+import { LG, MD } from '@/lib/breakpoint';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { shouldRecord } from '@/lib/route-usage';
 import { supabase } from '@/lib/supabase';
@@ -77,6 +83,7 @@ export default function StaffLayout() {
   // 1024 rather than 768 because the rail is 246px the page never sees;
   // see lib/breakpoint.ts.
   const rail = width >= LG;
+  const [railCollapsed, toggleRailCollapsed] = useRailCollapsed();
 
   const tabs = (
     <>
@@ -90,7 +97,11 @@ export default function StaffLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: 'none' },
-          sceneStyle: { backgroundColor: colors.screenBg },
+          sceneStyle: {
+            backgroundColor: colors.screenBg,
+            // Room for the floating dock on the widths that show it.
+            paddingBottom: width < MD ? DOCK_CLEARANCE : 0,
+          },
           animation: 'none',
         }}>
         <Tabs.Screen name="analysis" options={{ title: 'Analysis' }} />
@@ -106,8 +117,19 @@ export default function StaffLayout() {
   if (rail) {
     return (
       <View className="flex-1 flex-row bg-ground dark:bg-ground-dk">
-        <SideNav sections={STAFF_SECTIONS} />
-        <View className="flex-1 min-w-0">{tabs}</View>
+        <SideNav
+          sections={STAFF_SECTIONS}
+          collapsed={railCollapsed}
+          onToggleCollapsed={toggleRailCollapsed}
+        />
+        {/* Collapsing must not move the work: pad the content by the width
+            the rail gave up, so every page keeps its exact position and the
+            collapse reads as chrome folding away, not a reflow. */}
+        <View
+          className="flex-1 min-w-0"
+          style={{ paddingLeft: railCollapsed ? RAIL_WIDTH - RAIL_COLLAPSED_WIDTH : 0 }}>
+          {tabs}
+        </View>
       </View>
     );
   }
@@ -116,6 +138,7 @@ export default function StaffLayout() {
     <View className="flex-1 bg-ground dark:bg-ground-dk">
       <TopNav sections={STAFF_SECTIONS} variant="staff" />
       {tabs}
+      <BottomDock sections={STAFF_SECTIONS} variant="staff" />
     </View>
   );
 }

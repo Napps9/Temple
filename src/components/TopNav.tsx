@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -93,11 +93,9 @@ export function TopNav({
     router.replace((s.navigateTo ?? s.href) as never);
   };
 
-  // Two renderings of the same sections: inline pills beside the logo at
-  // md+, a stacked icon-over-label row of their own below it. Every pill
-  // carries its visible label in both.
-  const pillRow = (stacked: boolean) => (
-    <View className={stacked ? 'flex-row justify-center gap-0.5' : 'flex-row gap-1'}>
+  // The md+ rendering of the sections; below md they live in BottomDock.
+  const pillRow = () => (
+    <View className="flex-row gap-1">
       {sections.map((s) => {
         const active = pathname.startsWith(s.href);
         return (
@@ -108,22 +106,14 @@ export function TopNav({
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
             accessibilityLabel={s.label}
-            className={`${
-              stacked
-                ? 'flex-col items-center gap-0.5 px-2 py-1.5 rounded-ctl'
-                : 'flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full'
-            } active:opacity-70 ${
+            className={`flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full active:opacity-70 ${
               active
                 ? 'bg-brand/10'
                 : 'hover:bg-raised/60 dark:hover:bg-raised-dk/60'
             }`}>
-            <Ionicons
-              name={s.icon}
-              size={stacked ? 19 : 17}
-              color={active ? BRAND : colors.ink3}
-            />
+            <Ionicons name={s.icon} size={17} color={active ? BRAND : colors.ink3} />
             <Text
-              className={`${stacked ? 'text-[11px]' : 'text-sm'} ${
+              className={`text-sm ${
                 active
                   ? 'text-ink dark:text-ink-dk font-semibold'
                   : 'text-ink-3 dark:text-ink-3-dk font-medium'
@@ -162,16 +152,10 @@ export function TopNav({
           </Pressable>
         </View>
 
-        <View className="items-center hidden md:flex">{pillRow(false)}</View>
-        {/* flexGrow + justify-center: centred while the pills fit,
-            a scroll strip on screens too narrow for all of them. */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="flex-1 md:hidden"
-          contentContainerClassName="flex-grow items-center justify-center">
-          {pillRow(true)}
-        </ScrollView>
+        <View className="items-center hidden md:flex">{pillRow()}</View>
+        {/* Below md the sections live in the BottomDock; the bar keeps
+            only the right cluster, and the page gets the top back. */}
+        <View className="flex-1 md:hidden" />
 
         <View className="flex-none md:flex-1 flex-row items-center justify-end gap-1.5 md:gap-2">
         {showCrossLink ? (
