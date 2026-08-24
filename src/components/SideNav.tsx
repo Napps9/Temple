@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Pressable, ScrollView, View } from 'react-native';
 
 import { NavAccountMenu } from './NavAccountMenu';
 import { renderIconSlot, type IconSlot } from './icon-slot';
@@ -27,11 +27,10 @@ import { useGymNavLinks } from '@/lib/useGymNavLinks';
 // route are untouched; the destinations below are ordinary pushes, not new
 // routes.
 //
-// The rail collapses to an icon strip. The choice sticks across sessions,
-// and the state lives in the layout rather than here: when the rail
-// narrows, the layout pads the content by the width difference so every
-// page stays exactly where it was — collapsing tidies the chrome away
-// without reflowing the work.
+// The rail collapses to an icon strip. The choice sticks across sessions.
+// The fold is animated and the content glides with it — an instant snap
+// that froze the page in place read as stiff, so the width tweens and
+// the flex layout re-centres every frame alongside it.
 export const RAIL_WIDTH = 246;
 export const RAIL_COLLAPSED_WIDTH = 68;
 const COLLAPSED_KEY = 'staff_rail_collapsed';
@@ -69,9 +68,24 @@ export function SideNav({
 
   const gymLinks = useGymNavLinks();
 
+  // Width can't ride the native driver, and doesn't need to: the tween is
+  // a one-off toggle, and driving layout each frame is exactly what lets
+  // the page glide instead of jump.
+  const widthAnim = useRef(
+    new Animated.Value(collapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH),
+  ).current;
+  useEffect(() => {
+    Animated.timing(widthAnim, {
+      toValue: collapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH,
+      duration: 240,
+      easing: Easing.inOut(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [collapsed, widthAnim]);
+
   return (
-    <View
-      style={{ width: collapsed ? RAIL_COLLAPSED_WIDTH : RAIL_WIDTH }}
+    <Animated.View
+      style={{ width: widthAnim, overflow: 'hidden' }}
       className="flex-none bg-surface dark:bg-surface-dk border-r border-line dark:border-line-dk">
       <ScrollView contentContainerClassName="p-3 gap-3.5 flex-1">
         <View className={collapsed ? 'gap-1.5' : 'flex-row items-center gap-1.5'}>
@@ -181,7 +195,7 @@ export function SideNav({
           <NavAccountMenu variant="staff" anchor="bottom-left" showLabel={!collapsed} />
         </View>
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 
   function NavRow({

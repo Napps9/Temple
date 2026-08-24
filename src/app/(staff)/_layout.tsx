@@ -3,12 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 
 import { BottomDock, DOCK_CLEARANCE } from '@/components/BottomDock';
-import {
-  RAIL_COLLAPSED_WIDTH,
-  RAIL_WIDTH,
-  SideNav,
-  useRailCollapsed,
-} from '@/components/SideNav';
+import { SideNav, useRailCollapsed } from '@/components/SideNav';
 import { TopNav, type NavSection } from '@/components/TopNav';
 import { LG, MD } from '@/lib/breakpoint';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -122,14 +117,7 @@ export default function StaffLayout() {
           collapsed={railCollapsed}
           onToggleCollapsed={toggleRailCollapsed}
         />
-        {/* Collapsing must not move the work: pad the content by the width
-            the rail gave up, so every page keeps its exact position and the
-            collapse reads as chrome folding away, not a reflow. */}
-        <View
-          className="flex-1 min-w-0"
-          style={{ paddingLeft: railCollapsed ? RAIL_WIDTH - RAIL_COLLAPSED_WIDTH : 0 }}>
-          {tabs}
-        </View>
+        <View className="flex-1 min-w-0">{tabs}</View>
       </View>
     );
   }
