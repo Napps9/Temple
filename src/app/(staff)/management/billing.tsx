@@ -12,13 +12,7 @@ import { Input } from '@/components/Input';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useGymMembership, useRole } from '@/lib/auth';
-import {
-  centsToRateInput,
-  formatMoney,
-  parseRateToCents,
-} from '@/lib/coach-earnings';
 import { errorMessage, functionErrorMessage } from '@/lib/errors';
-import { estimateElsewhereMarkup } from '@/lib/payment-savings';
 import { fetchStripeHealth, stripeHealthQueryKey } from '@/lib/stripe-health';
 import { supabase } from '@/lib/supabase';
 import { useGymCurrency } from '@/lib/useGymCurrency';
@@ -37,9 +31,6 @@ export default function BillingScreen() {
   const [connecting, setConnecting] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const currency = useGymCurrency();
-  const [volumeInput, setVolumeInput] = useState(() => centsToRateInput(500_000));
-  const volumeCents = parseRateToCents(volumeInput) ?? 0;
-  const elsewhere = estimateElsewhereMarkup(volumeCents);
 
   // Returning from Stripe's OAuth round-trip: if we came from setup, bounce
   // back to it now the account is connected. The ?backTo param is lost
@@ -256,40 +247,6 @@ export default function BillingScreen() {
           title="Billing & payments"
           subtitle="Connect your gym's Stripe account to charge members for memberships and credit packs. You keep 100% — Temple takes no cut of your payments."
         />
-
-        <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-5 gap-3">
-          <Text className="text-ink dark:text-ink-dk font-semibold">
-            What that's worth
-          </Text>
-          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-            Card processing itself (roughly 2.9% + 30p, set by Stripe and
-            the card networks) is unavoidable anywhere you go — but many
-            gym platforms add their own margin on top of it, or take a
-            cut of member bookings. Temple adds nothing on top.
-          </Text>
-          <Input
-            label={`Roughly how much do members pay you a month (${currency})?`}
-            value={volumeInput}
-            onChangeText={setVolumeInput}
-            keyboardType="decimal-pad"
-            placeholder="5000"
-          />
-          <View className="bg-primary/5 rounded-ctl p-3">
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              At that volume, a platform charging an extra 1–3% on top of
-              processing would cost you roughly{' '}
-              <Text className="font-semibold">
-                {formatMoney(elsewhere.lowCents, currency)}–
-                {formatMoney(elsewhere.highCents, currency)}
-              </Text>{' '}
-              a month. On Temple, that stays with you.
-            </Text>
-          </View>
-          <Text className="text-ink-3 dark:text-ink-3-dk text-[11px]">
-            Illustrative only — platform fee structures vary and change
-            over time.
-          </Text>
-        </View>
 
         {params.stripe === 'connected' && connected ? (
           <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-card p-4">

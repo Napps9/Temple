@@ -65,10 +65,9 @@ function lockupSvg({ ink = INK } = {}) {
 const ASSETS = [
   // The app icon is the star on ink — the owner's pick over paper.
   ['assets/images/icon.png', starSvg({ pad: 7, bg: INK }), 1024],
-  // Favicons ride transparent: the magenta clears the UI floor on a light
-  // tab strip and a dark one alike.
-  ['assets/images/favicon.png', starSvg({ pad: 1.5 }), 48],
-  ['assets/images/favicon-32.png', starSvg({ pad: 1.5 }), 32],
+  // Favicons take the ink tile, same as the app icon — owner's call.
+  ['assets/images/favicon.png', starSvg({ pad: 3, bg: INK }), 48],
+  ['assets/images/favicon-32.png', starSvg({ pad: 3, bg: INK }), 32],
   ['assets/images/splash-icon.png', starSvg({ pad: 2 }), 192],
   // Android adaptive layers: magenta star on the generated ink background;
   // the monochrome layer is single-colour by platform rule.
