@@ -36,8 +36,8 @@ describe('contrastRatio', () => {
     expect(Math.round(contrastRatio('#000000', '#FFFFFF'))).toBe(21);
   });
   it('is symmetric', () => {
-    expect(contrastRatio('#C7385C', '#F7F7F8')).toBeCloseTo(
-      contrastRatio('#F7F7F8', '#C7385C'),
+    expect(contrastRatio('#E04898', '#F7F7F8')).toBeCloseTo(
+      contrastRatio('#F7F7F8', '#E04898'),
       5,
     );
   });

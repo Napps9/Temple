@@ -44,7 +44,7 @@ cut only) and is the only serif in the product. Everything else is Geist.
 |------|-----|----------|
 | Ink | `#14161A` | the mark, wordmark and action fill on a light surface |
 | Paper | `#F4F5F6` | the mark, wordmark and action fill on a dark surface |
-| Dawn | `#C7385C → #CC6B32 → #A87A24` light / `#E4526E → #EE8A4A → #E8B25A` dark | brand moments only |
+| Dawn | `#E04898 → #EA5D7C → #D37254` light / `#E04898 → #EE5E7E → #F08260` dark | brand moments only |
 
 The brand is monochrome, actions included: the primary action on a page
 is the *filled* thing — ink button on light, paper button on dark, the

@@ -28,8 +28,8 @@ export const ACCENT = {
 // set is the same dawn, deepened until every stop clears it
 // (contrast.test.ts holds the floor).
 export const DAWN = {
-  light: ['#C7385C', '#CC6B32', '#A87A24'],
-  dark: ['#E4526E', '#EE8A4A', '#E8B25A'],
+  light: ['#E04898', '#EA5D7C', '#D37254'],
+  dark: ['#E04898', '#EE5E7E', '#F08260'],
 } as const;
 
 export function dawnGradient(scheme: Scheme): string {
