@@ -134,6 +134,11 @@ export type MySubscription = {
   // nothing is actually renewing this until they (or staff) move it
   // onto real billing.
   imported_legacy: boolean;
+  // A scheduled plan switch (0260). Downgrades never apply mid-cycle: the
+  // apply-plan-changes worker performs the swap at the first renewal on or
+  // after pending_change_not_before. Null unless a change is waiting.
+  pending_plan_id: string | null;
+  pending_change_not_before: string | null;
   // Dunning state. The membership stays 'active' through Stripe's retry
   // window on purpose — the member keeps training — so this, not status, is
   // how a failing payment is visible. A row exists only while a run of
@@ -157,6 +162,7 @@ export type MySubscription = {
     monthly_price_cents: number | null;
     notice_period_days: number | null;
   } | null;
+  pending_plan: { name: string; monthly_price_cents: number | null } | null;
 };
 
 // The gym's live plan catalogue, member-readable (membership_plans
@@ -202,10 +208,12 @@ export function useMySubscriptions(
         }
       : false,
     queryFn: async (): Promise<MySubscription[]> => {
+      // Both plan embeds name their FK: pending_plan_id (0260) is a second
+      // FK onto membership_plans, so a bare embed is ambiguous to PostgREST.
       const { data, error } = await supabase
         .from('plan_subscriptions')
         .select(
-          'id, plan_id, status, credit_balance, paid_period_end, period_resets_at, cancelled_at, created_at, price_cents, stripe_subscription_id, imported_legacy, plan_subscription_dunning(past_due_since, payment_failure_count, last_payment_error, next_payment_attempt), membership_invoice_links(invoice_url), membership_plans(name, kind, credit_count, monthly_price_cents, notice_period_days)',
+          'id, plan_id, status, credit_balance, paid_period_end, period_resets_at, cancelled_at, created_at, price_cents, stripe_subscription_id, imported_legacy, pending_plan_id, pending_change_not_before, plan_subscription_dunning(past_due_since, payment_failure_count, last_payment_error, next_payment_attempt), membership_invoice_links(invoice_url), membership_plans!plan_id(name, kind, credit_count, monthly_price_cents, notice_period_days), pending_plan:membership_plans!pending_plan_id(name, monthly_price_cents)',
         )
         .eq('gym_id', gymId!)
         .eq('profile_id', profileId!)

@@ -192,7 +192,7 @@ Deno.serve(async (req: Request) => {
         .maybeSingle(),
       service
         .from('plan_subscriptions')
-        .select('price_cents, membership_plans(name, monthly_price_cents)')
+        .select('price_cents, membership_plans!plan_id(name, monthly_price_cents)')
         .eq('id', subscriptionId)
         .maybeSingle(),
       service.from('gyms').select('currency').eq('id', gymId).maybeSingle(),

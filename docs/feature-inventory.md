@@ -3113,21 +3113,31 @@ The Manage page presents a tab strip:
   button that opens Stripe Checkout via `stripe-checkout`. Gated by the
   gym's `members_can_self_checkout` toggle.
 - **Membership change / cancel workflow** [member + `can_assign_plan`] —
-  on `/membership`, switching to another recurring plan now changes the
-  Stripe subscription **in place** (price swap, `proration_behavior=none`,
-  same renewal date) instead of starting a second one; the member can
-  also cancel at period end. Each gym sets, per direction, whether the
-  change is self-serve or needs approval (`gyms.membership_upgrade_policy`
-  / `_downgrade_policy` / `_cancel_policy`; defaults: upgrade self-serve,
-  downgrade + cancel request). Owner edits them in the Manage → Plans tab
-  (RPC `set_membership_change_policies`). Where approval is needed the
-  member files a `membership_change_requests` row (RLS self
-  insert/withdraw); staff work the queue from the Timeline's `RequestCard`
-  and the Members list's Requests filter
-  (RPC `staff_membership_change_requests`) and approve/reject. The Stripe
-  change + row update run together in the `stripe-modify-subscription`
-  edge function under the service role. Credit packs and one-off class
-  buys are untouched.
+  on `/membership`, switching plans changes the Stripe subscription **in
+  place** (same renewal date, never a second one), and the two directions
+  differ on purpose: an **upgrade** applies immediately, pro-rated and
+  charged today (`proration_behavior=always_invoice` +
+  `payment_behavior=error_if_incomplete`, so a declined card fails the
+  whole switch), with the exact charge previewed first via the
+  `preview_switch` action; a **downgrade** (or equal-price move) never
+  takes anything away mid-cycle — it is recorded as `pending_plan_id`
+  (+ `pending_change_not_before` = now + the current plan's notice) on
+  the subscription row and applied by the `apply-plan-changes` worker at
+  the first renewal whose `paid_period_end` has cleared that gate, poked
+  by the `dispatch-plan-changes` cron (every 15 min, 45-minute lead so
+  the swap precedes Stripe's invoice). The member or staff unschedule via
+  `cancel_pending_plan_change`; the member can also cancel at period end.
+  Each gym sets, per direction, whether the change is self-serve or needs
+  approval (`gyms.membership_upgrade_policy` / `_downgrade_policy` /
+  `_cancel_policy`; defaults: upgrade self-serve, downgrade + cancel
+  request). Owner edits them in the Manage → Plans tab (RPC
+  `set_membership_change_policies`). Where approval is needed the member
+  files a `membership_change_requests` row (RLS self insert/withdraw);
+  staff work the queue from the Timeline's `RequestCard` and the Members
+  list's Requests filter (RPC `staff_membership_change_requests`) and
+  approve/reject. The Stripe change + row update run together in the
+  `stripe-modify-subscription` edge function under the service role.
+  Credit packs and one-off class buys are untouched.
 - **Refunds** [`can_refund`] — a **Refund** action on each plan in a
   member's staff detail screen (`members/[profile]`). Opens a dialog with
   four modes, each previewing its amount live (`src/lib/refunds.ts`, pure +

@@ -176,6 +176,73 @@ export function useModifySubscription(
   });
 }
 
+export type SwitchPreview = {
+  direction: 'upgrade' | 'downgrade';
+  // Stripe's own pro-rated figure for an upgrade; null when the preview
+  // fails (the confirm copy then says "the difference" without a number)
+  // and always null for a downgrade — nothing is charged today.
+  charge_today_cents: number | null;
+  currency: string | null;
+  notice_period_days?: number;
+};
+
+// What a switch would do before committing: the direction, and for an
+// upgrade the exact charge Stripe would take today. Read-only — a
+// mutation only because it runs on demand per plan, not per render.
+export function usePreviewSwitch() {
+  return useMutation({
+    mutationFn: async (args: {
+      planSubscriptionId: string;
+      targetPlanId: string;
+    }): Promise<SwitchPreview> => {
+      const { data, error } = await supabase.functions.invoke(
+        'stripe-modify-subscription',
+        {
+          body: {
+            action: 'preview_switch',
+            plan_subscription_id: args.planSubscriptionId,
+            target_plan_id: args.targetPlanId,
+          },
+        },
+      );
+      if (error) {
+        const ctx = (error as { context?: Response }).context;
+        let msg = error.message;
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const respBody = await ctx.json();
+            if (respBody?.error) msg = String(respBody.error);
+          } catch {
+            // not JSON — keep the generic message
+          }
+        }
+        throw new Error(msg);
+      }
+      return data as SwitchPreview;
+    },
+  });
+}
+
+// Unschedule a pending plan change. The RPC allows the row's own member
+// or staff with can_assign_plan; it raises when nothing is scheduled.
+export function useCancelPendingChange(
+  gymId: string | undefined,
+  profileId: string | undefined,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (planSubscriptionId: string) => {
+      const { error } = await supabase.rpc('cancel_pending_plan_change', {
+        p_plan_subscription_id: planSubscriptionId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['my-subscriptions', gymId, profileId] });
+    },
+  });
+}
+
 // ============================================================================
 // Staff side — the approval queue + the owner policy editor.
 // ============================================================================

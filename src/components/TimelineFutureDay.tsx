@@ -135,7 +135,7 @@ export function TimelineFutureDay({
       const { data, error } = await supabase
         .from('plan_subscriptions')
         .select(
-          'profile_id, paid_period_end, membership_plans(name), member:profiles!profile_id(full_name)',
+          'profile_id, paid_period_end, membership_plans!plan_id(name), member:profiles!profile_id(full_name)',
         )
         .eq('gym_id', gymId!)
         .eq('status', 'active')

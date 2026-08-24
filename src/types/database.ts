@@ -1982,6 +1982,9 @@ export type Database = {
           price_cents: number | null;
           priority: number;
           imported_legacy: boolean;
+          pending_plan_id: string | null;
+          pending_change_not_before: string | null;
+          pending_change_requested_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -2000,6 +2003,9 @@ export type Database = {
           price_cents?: number | null;
           priority?: number;
           imported_legacy?: boolean;
+          pending_plan_id?: string | null;
+          pending_change_not_before?: string | null;
+          pending_change_requested_at?: string | null;
           created_at?: string;
         };
         Update: Partial<{
@@ -2018,6 +2024,9 @@ export type Database = {
           price_cents: number | null;
           priority: number;
           imported_legacy: boolean;
+          pending_plan_id: string | null;
+          pending_change_not_before: string | null;
+          pending_change_requested_at: string | null;
           created_at: string;
         }>;
         Relationships: [];
@@ -5671,6 +5680,14 @@ export type Database = {
       update_store_subscription_shipping: {
         Args: { p_sub_id: string; p_name: string; p_address: Json };
         Returns: void;
+      };
+      cancel_pending_plan_change: {
+        Args: { p_plan_subscription_id: string };
+        Returns: null;
+      };
+      dispatch_plan_changes: {
+        Args: Record<string, never>;
+        Returns: number;
       };
     };
     Enums: {

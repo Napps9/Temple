@@ -209,7 +209,7 @@ export default function MemberDetailScreen() {
       const { data, error } = await supabase
         .from('plan_subscriptions')
         .select(
-          'id, status, credit_balance, price_cents, paid_period_end, period_resets_at, cancelled_at, created_at, imported_legacy, membership_plans(name, kind, credit_count, notice_period_days)',
+          'id, status, credit_balance, price_cents, paid_period_end, period_resets_at, cancelled_at, created_at, imported_legacy, membership_plans!plan_id(name, kind, credit_count, notice_period_days)',
         )
         .eq('gym_id', membership!.gymId)
         .eq('profile_id', profileId!)

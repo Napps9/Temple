@@ -138,6 +138,10 @@ verify_jwt = true
 [functions.stripe-modify-subscription]
 verify_jwt = true
 
+# Cron-poked plan-change worker; re-authorises via x-automation-secret / service-role.
+[functions.apply-plan-changes]
+verify_jwt = false
+
 # Stripe webhook — Connect events from gyms' accounts. No JWT (Stripe
 # carries none); guarded by the signature against STRIPE_WEBHOOK_SECRET.
 [functions.stripe-webhook]

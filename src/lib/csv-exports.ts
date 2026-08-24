@@ -111,7 +111,7 @@ export function useExportMembershipsCsv() {
       const { data, error } = await supabase
         .from('plan_subscriptions')
         .select(
-          'id, profile_id, status, paid_period_end, created_at, membership_plans(name), profiles!profile_id(full_name)',
+          'id, profile_id, status, paid_period_end, created_at, membership_plans!plan_id(name), profiles!profile_id(full_name)',
         )
         .eq('gym_id', membership.gymId)
         .order('created_at', { ascending: false });

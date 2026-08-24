@@ -384,7 +384,7 @@ async function latestSub(
   const { data } = await ctx.supabase
     .from('plan_subscriptions')
     .select(
-      'id, status, credit_balance, paid_period_end, membership_plans(name, kind, credit_count)',
+      'id, status, credit_balance, paid_period_end, membership_plans!plan_id(name, kind, credit_count)',
     )
     .eq('gym_id', ctx.gymId)
     .eq('profile_id', profileId)

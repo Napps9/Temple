@@ -155,7 +155,7 @@ export function MembersList() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('plan_subscriptions')
-        .select('profile_id, status, credit_balance, price_cents, membership_plans(name)')
+        .select('profile_id, status, credit_balance, price_cents, membership_plans!plan_id(name)')
         .eq('gym_id', membership!.gymId)
         .in('status', [
           'active',

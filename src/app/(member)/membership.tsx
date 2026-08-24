@@ -23,6 +23,7 @@ import {
   hasPendingCheckout,
   markPendingCheckout,
 } from '@/lib/pending-checkout';
+import { scheduledChangeEffective, switchDirection } from '@/lib/plan-change';
 import { supabase } from '@/lib/supabase';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import {
@@ -43,10 +44,12 @@ import {
   type MySubscription,
 } from '@/lib/subscriptions';
 import {
+  useCancelPendingChange,
   useFileChangeRequest,
   useMembershipPolicies,
   useModifySubscription,
   useMyChangeRequests,
+  usePreviewSwitch,
   useWithdrawChangeRequest,
   type MembershipChangePolicy,
   type MyChangeRequest,
@@ -277,12 +280,16 @@ function CurrentSubCard({
   continuingBilling,
   onUpdateCard,
   updatingCard,
+  onCancelChange,
+  cancellingChange,
 }: {
   sub: MySubscription;
   onContinueBilling?: () => void;
   continuingBilling?: boolean;
   onUpdateCard?: () => void;
   updatingCard?: boolean;
+  onCancelChange?: () => void;
+  cancellingChange?: boolean;
 }) {
   const currency = useGymCurrency();
   const plan = sub.membership_plans;
@@ -363,6 +370,39 @@ function CurrentSubCard({
 
         <DetailRow label="Started" value={fmtDate(sub.created_at)} />
       </View>
+
+      {sub.pending_plan_id ? (
+        <View className="bg-amber-500/10 border border-amber-500/30 rounded-ctl p-3 gap-2">
+          <Text className="text-amber-800 dark:text-amber-300 text-sm font-medium">
+            {(() => {
+              const to = sub.pending_plan?.name ?? 'a new plan';
+              const eff = scheduledChangeEffective(
+                sub.paid_period_end,
+                sub.pending_change_not_before,
+              );
+              if (eff.kind === 'on')
+                return `Switching to ${to} on ${fmtDate(eff.date)}`;
+              if (eff.kind === 'after')
+                return `Switching to ${to} at the first renewal after ${fmtDate(eff.date)}`;
+              return `Switching to ${to} at your next renewal`;
+            })()}
+          </Text>
+          <Text className="text-amber-700/80 dark:text-amber-300/80 text-xs">
+            You keep {plan?.name ?? 'your current plan'} until then.
+          </Text>
+          {onCancelChange ? (
+            <View className="flex-row">
+              <ChipButton
+                label={cancellingChange ? 'Cancelling…' : 'Cancel change'}
+                icon="close"
+                tone="neutral"
+                disabled={cancellingChange}
+                onPress={onCancelChange}
+              />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
 
       {!cancelling && notice > 0 ? (
         <>
@@ -687,6 +727,12 @@ export default function MembershipScreen() {
   const modify = useModifySubscription(gymId, session?.user.id);
   const fileReq = useFileChangeRequest(gymId, session?.user.id);
   const withdrawReq = useWithdrawChangeRequest(gymId, session?.user.id);
+  const preview = usePreviewSwitch();
+  const cancelChange = useCancelPendingChange(gymId, session?.user.id);
+  // The plan whose switch button has been pressed once — its card shows
+  // the inline confirm (with the pro-rated figure for an upgrade) until
+  // the member confirms or backs out.
+  const [confirmPlanId, setConfirmPlanId] = useState<string | null>(null);
 
   const currentSubs = (subs.data ?? []).filter((s) =>
     CURRENT_SUB_STATUSES.has(s.status),
@@ -745,7 +791,8 @@ export default function MembershipScreen() {
           (p) => p.plan_id === pendingForSub.target_plan_id,
         )?.name ?? null)
       : null;
-  const changeError = modify.error ?? fileReq.error ?? withdrawReq.error;
+  const changeError =
+    modify.error ?? fileReq.error ?? withdrawReq.error ?? cancelChange.error;
 
   // Once we've been waiting past the cutoff with nothing recorded, switch
   // the copy from "any second now" to an honest "delayed" state. Polling
@@ -931,6 +978,12 @@ export default function MembershipScreen() {
                 }
                 onUpdateCard={() => portal.mutate(s.id)}
                 updatingCard={portal.isPending && portal.variables === s.id}
+                onCancelChange={
+                  s.pending_plan_id ? () => cancelChange.mutate(s.id) : undefined
+                }
+                cancellingChange={
+                  cancelChange.isPending && cancelChange.variables === s.id
+                }
               />
             ))}
             {recurringSub ? (
@@ -1115,6 +1168,14 @@ export default function MembershipScreen() {
                           </Text>
                         );
                       }
+                      if (recurringSub.pending_plan_id) {
+                        return (
+                          <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+                            A plan change is already scheduled — cancel it above
+                            first.
+                          </Text>
+                        );
+                      }
                       if (pendingForSub) {
                         return (
                           <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
@@ -1122,12 +1183,13 @@ export default function MembershipScreen() {
                           </Text>
                         );
                       }
-                      const currentPrice =
-                        recurringSub.price_cents ??
-                        recurringSub.membership_plans?.monthly_price_cents ??
-                        0;
-                      const targetPrice = plan.monthly_price_cents ?? 0;
-                      const isUpgrade = targetPrice > currentPrice;
+                      const isUpgrade =
+                        switchDirection(
+                          recurringSub.price_cents ??
+                            recurringSub.membership_plans?.monthly_price_cents ??
+                            null,
+                          plan.monthly_price_cents,
+                        ) === 'upgrade';
                       const pol = isUpgrade
                         ? (policies.data?.upgrade ?? 'request')
                         : (policies.data?.downgrade ?? 'request');
@@ -1135,18 +1197,103 @@ export default function MembershipScreen() {
                         const switching =
                           modify.isPending &&
                           modify.variables?.targetPlanId === plan.plan_id;
+                        const confirming = confirmPlanId === plan.plan_id;
+                        if (confirming && !(isUpgrade && preview.isPending)) {
+                          const confirmSwitch = () =>
+                            modify.mutate(
+                              {
+                                planSubscriptionId: recurringSub.id,
+                                kind: 'switch_plan',
+                                targetPlanId: plan.plan_id,
+                              },
+                              { onSuccess: () => setConfirmPlanId(null) },
+                            );
+                          if (isUpgrade) {
+                            // charge_today_cents is null when Stripe's preview
+                            // failed — promise the pro-rated difference in
+                            // words rather than showing a number we invented.
+                            const charge = preview.data?.charge_today_cents ?? null;
+                            return (
+                              <View className="gap-3">
+                                <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
+                                  {charge != null
+                                    ? `You'll pay ${money(
+                                        charge,
+                                        preview.data?.currency ?? currency,
+                                      )} today for the rest of this period.${
+                                        recurringSub.paid_period_end
+                                          ? ` Your next bill stays ${fmtDate(
+                                              recurringSub.paid_period_end,
+                                            )} at ${planPriceLabel(plan, currency)}.`
+                                          : ''
+                                      }`
+                                    : "You'll pay the pro-rated difference for the rest of this period today."}
+                                </Text>
+                                <View className="flex-row gap-2">
+                                  <Button loading={switching} onPress={confirmSwitch}>
+                                    Confirm upgrade
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    onPress={() => setConfirmPlanId(null)}>
+                                    Not now
+                                  </Button>
+                                </View>
+                              </View>
+                            );
+                          }
+                          // The gate the server will write is now + the current
+                          // plan's notice; estimate it here so the copy can say
+                          // whether this renewal or a later one carries it.
+                          const noticeDays =
+                            recurringSub.membership_plans?.notice_period_days ?? 0;
+                          const eff = scheduledChangeEffective(
+                            recurringSub.paid_period_end,
+                            noticeDays > 0
+                              ? new Date(
+                                  Date.now() + noticeDays * 24 * 60 * 60 * 1000,
+                                ).toISOString()
+                              : null,
+                          );
+                          const keepName =
+                            recurringSub.membership_plans?.name ??
+                            'your current plan';
+                          return (
+                            <View className="gap-3">
+                              <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
+                                {eff.kind === 'on'
+                                  ? `Switches at your renewal on ${fmtDate(eff.date)} — you keep ${keepName} until then.`
+                                  : eff.kind === 'after'
+                                    ? `Switches after your ${noticeDays}-day notice, at the first renewal from ${fmtDate(eff.date)} — you keep ${keepName} until then.`
+                                    : `Switches at your next renewal — you keep ${keepName} until then.`}
+                              </Text>
+                              <View className="flex-row gap-2">
+                                <Button loading={switching} onPress={confirmSwitch}>
+                                  Confirm switch
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  onPress={() => setConfirmPlanId(null)}>
+                                  Not now
+                                </Button>
+                              </View>
+                            </View>
+                          );
+                        }
                         return (
                           <Button
                             variant="plain"
                             icon="swap-horizontal-outline"
-                            loading={switching}
-                            onPress={() =>
-                              modify.mutate({
-                                planSubscriptionId: recurringSub.id,
-                                kind: 'switch_plan',
-                                targetPlanId: plan.plan_id,
-                              })
-                            }>
+                            loading={confirming && preview.isPending}
+                            onPress={() => {
+                              setConfirmPlanId(plan.plan_id);
+                              if (isUpgrade) {
+                                preview.mutate({
+                                  planSubscriptionId: recurringSub.id,
+                                  targetPlanId: plan.plan_id,
+                                });
+                              }
+                            }}>
                             {isUpgrade
                               ? 'Upgrade to this plan'
                               : 'Switch to this plan'}

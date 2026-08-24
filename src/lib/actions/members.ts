@@ -80,7 +80,7 @@ async function buildCard(
   const [subs, comps, tags, dun, dead] = await Promise.all([
     ctx.supabase
       .from('plan_subscriptions')
-      .select('status, credit_balance, price_cents, membership_plans(name)')
+      .select('status, credit_balance, price_cents, membership_plans!plan_id(name)')
       .eq('gym_id', ctx.gymId)
       .eq('profile_id', row.profile_id)
       .order('created_at', { ascending: false })
@@ -434,7 +434,7 @@ async function currentMembership(
 ): Promise<SubRowLite | null> {
   const { data } = await ctx.supabase
     .from('plan_subscriptions')
-    .select('id, plan_id, price_cents, stripe_subscription_id, membership_plans(name)')
+    .select('id, plan_id, price_cents, stripe_subscription_id, membership_plans!plan_id(name)')
     .eq('gym_id', ctx.gymId)
     .eq('profile_id', profileId)
     .in('status', ['active', 'cancelled_at_period_end', 'refunded_retained'])

@@ -332,7 +332,7 @@ Deno.serve(async (req: Request) => {
     const { data: psRow } = await service
       .from('plan_subscriptions')
       .select(
-        'id, gym_id, profile_id, plan_id, status, credit_balance, paid_period_end, stripe_subscription_id, created_at, membership_plans(name, kind, credit_count)',
+        'id, gym_id, profile_id, plan_id, status, credit_balance, paid_period_end, stripe_subscription_id, created_at, membership_plans!plan_id(name, kind, credit_count)',
       )
       .eq('id', psId)
       .maybeSingle();
