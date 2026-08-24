@@ -7,6 +7,7 @@ import { PageHead } from '@/components/PageHead';
 import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
+import { Appear } from '@/components/ChatReveal';
 import { Screen } from '@/components/Screen';
 import { FieldLabel } from '@/components/SectionLabel';
 import { useThemeColors } from '@/lib/theme';
@@ -61,6 +62,9 @@ export default function DirectThread() {
   const messages = useQuery({
     queryKey: ['dm-thread', session?.user.id, peer],
     enabled: !!session?.user.id && !!peer,
+    // A conversation, not a report: poll so the peer's replies land while
+    // the thread is open — same cadence as the agent conversation screen.
+    refetchInterval: 5000,
     queryFn: async (): Promise<DirectMessageRow[]> => {
       const me = session!.user.id;
       const { data, error: err } = await supabase
@@ -153,8 +157,8 @@ export default function DirectThread() {
                 {group.rows.map((m) => {
                   const fromMe = m.sender_id === session?.user.id;
                   return (
+                    <Appear key={m.id}>
                     <View
-                      key={m.id}
                       className={`max-w-[80%] rounded-card px-3 py-2 ${
                         fromMe
                           ? 'self-end bg-primary'
@@ -171,7 +175,7 @@ export default function DirectThread() {
                       <Text
                         className={
                           fromMe
-                            ? 'text-white/70 text-[10px] mt-1 text-right'
+                            ? 'text-on-primary/70 text-[10px] mt-1 text-right'
                             : 'text-ink-3 dark:text-ink-3-dk text-[10px] mt-1'
                         }>
                         {new Date(m.created_at).toLocaleTimeString(undefined, {
@@ -180,6 +184,7 @@ export default function DirectThread() {
                         })}
                       </Text>
                     </View>
+                    </Appear>
                   );
                 })}
               </View>
