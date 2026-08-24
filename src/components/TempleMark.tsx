@@ -1,75 +1,23 @@
 import { View } from 'react-native';
-import Svg, { Path, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
+import { STAR } from './AIMark';
 import { Text } from './Text';
+import { BRAND } from '@/lib/theme';
 import { useThemeColors } from '@/lib/theme';
 
-// Temple's mark, drawn rather than loaded.
+// Temple's mark is the star, in the brand magenta — the same four-point
+// silhouette the AI wears, because the AI front desk is the thing Temple
+// leads with, and the colour is what separates the two jobs: magenta
+// means Temple, ink means "a machine wrote this" (AIMark). The
+// three-offset-cards mark this replaces survives as a design motif (the
+// get-started deck, the ghost cards), not as the logo.
 //
-// The three offset cards, back by the owner's call — the silhouette the
-// product carried before the portico, in the one-ink form it took when
-// the mark first lost its colour: the front card holds the column as a
-// knockout, and the gold and steel-blue cards behind became hairlines.
-// One colour, because the system this sits in gets its depth from a
-// hairline and a tone step and has no gradients or drop shadows
-// anywhere else.
-//
-// Drawn as SVG rather than a PNG pair so it takes the ink of whatever it
-// is placed on, at any size, in either scheme, without a second file.
-
-// The front card with the column cut out of it, as one even-odd path: the
-// column has to be a hole rather than a filled shape, because the mark is
-// placed on surface and on ground, and a hole is the only version that is
-// right on both.
-export const CARD =
-  'M5 0H67A5 5 0 0 1 72 5V67A5 5 0 0 1 67 72H5A5 5 0 0 1 0 67V5A5 5 0 0 1 5 0Z' +
-  'M27 31.5A9 6 0 0 1 45 31.5V63H27Z';
-
-// Below this the two cards behind stop being depth and start being noise:
-// their stroke lands under half a pixel, the doorway loses the room it
-// needs, and what is left is two grey smudges. A favicon-sized mark is the
-// front card alone. The lockup sits above this deliberately — dropping the
-// cards there would throw away the silhouette in the one place the mark is
-// most often seen.
-export const GHOSTS_ABOVE = 20;
-
+// Drawn rather than loaded, same as ever: one path, any size, no files.
 export function TempleMark({ size = 44, color }: { size?: number; color?: string }) {
-  const colors = useThemeColors();
-  const ink = color ?? colors.ink;
-  const ghosts = size >= GHOSTS_ABOVE;
   return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox={ghosts ? '-2 -2 96 96' : '-2 -2 76 76'}
-      accessibilityLabel="Temple">
-      {ghosts ? (
-        <>
-          <Rect
-            x={20.8}
-            y={20.8}
-            width={70.4}
-            height={70.4}
-            rx={5}
-            fill="none"
-            stroke={ink}
-            strokeWidth={2}
-            strokeOpacity={0.3}
-          />
-          <Rect
-            x={10.8}
-            y={10.8}
-            width={70.4}
-            height={70.4}
-            rx={5}
-            fill="none"
-            stroke={ink}
-            strokeWidth={2}
-            strokeOpacity={0.55}
-          />
-        </>
-      ) : null}
-      <Path d={CARD} fill={ink} fillRule="evenodd" />
+    <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityLabel="Temple">
+      <Path d={STAR} fill={color ?? BRAND} />
     </Svg>
   );
 }
@@ -104,19 +52,26 @@ export function TempleWordmark({
   );
 }
 
-// Mark and wordmark together. The mark runs a little taller than the type
-// because it is a square with two cards trailing off its bottom-right —
-// the front card, which is the part that reads, is only three quarters of
-// the box, so matching the box to the cap height leaves the mark looking
-// undersized next to the word.
+// The lockup: the word with the star tucked against the final letter's
+// shoulder, the way a signature dots its own i. The star keeps the brand
+// magenta whatever ink the word takes; `color` overrides both for the
+// rare surface that needs one.
 export function TempleLockup({ size = 26, color }: { size?: number; color?: string }) {
+  const starSize = Math.round(size * 0.42);
   return (
-    <View
-      className="flex-row items-center"
-      style={{ gap: Math.round(size * 0.34) }}
-      accessibilityLabel="Temple">
-      <TempleMark size={Math.round(size * 1.08)} color={color} />
+    <View accessibilityLabel="Temple">
       <TempleWordmark size={size} color={color} />
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          right: -Math.round(size * 0.18),
+          top: -Math.round(size * 0.2),
+        }}>
+        <Svg width={starSize} height={starSize} viewBox="0 0 24 24">
+          <Path d={STAR} fill={color ?? BRAND} />
+        </Svg>
+      </View>
     </View>
   );
 }

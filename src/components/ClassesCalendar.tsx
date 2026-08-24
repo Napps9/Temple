@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -30,7 +31,7 @@ import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
 import { useClassRecurrences } from '@/lib/useClassCatalog';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
-import { useThemeColors } from '@/lib/theme';
+import { DAWN, useThemeColors } from '@/lib/theme';
 import { labelOn } from '@/lib/contrast';
 
 type CreateRequest = { date?: Date; hour?: number };
@@ -1030,9 +1031,15 @@ export function ClassesCalendar({
                     onPress={() => setCreateAt({ date })}
                     accessibilityRole="button"
                     accessibilityLabel="Add class"
-                    className="bg-primary rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 hover:opacity-90 active:bg-primary-dark shadow-float">
-                    <Ionicons name="add" size={16} color={colors.onPrimary} />
-                    <Text className="hidden md:flex text-on-primary text-sm font-semibold">
+                    className="rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 overflow-hidden hover:opacity-90 active:opacity-80 shadow-float">
+                    <LinearGradient
+                      colors={[...DAWN.light]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                    />
+                    <Ionicons name="add" size={16} color="#FFFFFF" />
+                    <Text className="hidden md:flex text-sm font-semibold" style={{ color: '#FFFFFF' }}>
                       Add class
                     </Text>
                   </Pressable>
@@ -1359,13 +1366,13 @@ function AgendaView({
                 className="flex-1 items-center gap-1.5">
                 <Text
                   className={`text-xs font-semibold uppercase ${
-                    today ? 'text-primary' : 'text-ink-3 dark:text-ink-3-dk'
+                    today ? 'text-brand' : 'text-ink-3 dark:text-ink-3-dk'
                   }`}>
                   {DAY_LETTERS[d.getDay()]}
                 </Text>
                 <View
                   className={`w-9 h-9 rounded-full items-center justify-center ${
-                    selected ? 'bg-raised dark:bg-raised-dk border border-line-strong dark:border-line-strong-dk' : ''
+                    selected ? 'bg-brand/10 border border-brand' : ''
                   }`}>
                   <Text
                     className={`font-bold text-base ${
@@ -1716,13 +1723,13 @@ function DayView({
                 className="flex-1 md:flex-none md:w-12 items-center gap-1.5">
                 <Text
                   className={`text-xs font-semibold uppercase ${
-                    today ? 'text-primary' : 'text-ink-3 dark:text-ink-3-dk'
+                    today ? 'text-brand' : 'text-ink-3 dark:text-ink-3-dk'
                   }`}>
                   {DAY_LETTERS[d.getDay()]}
                 </Text>
                 <View
                   className={`w-9 h-9 rounded-full items-center justify-center ${
-                    selected ? 'bg-raised dark:bg-raised-dk border border-line-strong dark:border-line-strong-dk' : ''
+                    selected ? 'bg-brand/10 border border-brand' : ''
                   }`}>
                   <Text
                     className={`font-bold text-base ${

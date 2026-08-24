@@ -27,6 +27,10 @@ export const ACCENT = {
 // #0A0B0D fall under the 3:1 large-text floor on #F7F7F8 — the light
 // set is the same dawn, deepened until every stop clears it
 // (contrast.test.ts holds the floor).
+// The brand's flat colour — the dawn's leading stop, worn by the logo
+// star, the favicon, and the platform's selected states in both schemes.
+export const BRAND = '#E04898';
+
 export const DAWN = {
   light: ['#E04898', '#EA5D7C', '#D37254'],
   dark: ['#E04898', '#EE5E7E', '#F08260'],

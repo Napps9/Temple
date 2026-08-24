@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ManageNavSheet } from './ManageNavSheet';
 import { NavAccountMenu } from './NavAccountMenu';
 import { haptic } from '@/lib/haptic';
-import { useThemeColors } from '@/lib/theme';
+import { BRAND, useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
 
@@ -114,13 +114,13 @@ export function TopNav({
                 : 'flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full'
             } active:opacity-70 ${
               active
-                ? 'bg-raised dark:bg-raised-dk'
+                ? 'bg-brand/10'
                 : 'hover:bg-raised/60 dark:hover:bg-raised-dk/60'
             }`}>
             <Ionicons
               name={s.icon}
               size={stacked ? 19 : 17}
-              color={active ? colors.ink : colors.ink3}
+              color={active ? BRAND : colors.ink3}
             />
             <Text
               className={`${stacked ? 'text-[11px]' : 'text-sm'} ${

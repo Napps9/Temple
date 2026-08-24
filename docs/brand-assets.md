@@ -13,27 +13,31 @@ the PWA icon. That is gone: a gym is identified by its name.
 
 ## The mark
 
-The **three offset cards**, in one ink: the front card holds the doorway
-column as a knockout, and the two cards behind it are hairline ghosts.
+The **star**, in the brand magenta (`#E04898`) — the four-point
+silhouette the AI wears, promoted to the logo by the owner's call,
+because the AI front desk is the thing Temple leads with. Colour is
+what separates the two jobs the silhouette does: **magenta means
+Temple** (the mark, the favicon, the app icon), **ink means "a machine
+wrote this"** (`AIMark`, the agent's byline in threads and bylines).
+Never swap those.
 
-This is the original Temple silhouette in the form it took when the mark
-first lost its colour — the gold and steel-blue cards became strokes,
-the column became a hole — and it is back by the owner's call, replacing
-the portico that briefly stood in for it. The doorway is a knockout
-rather than a filled shape because the mark sits on surface and on
-ground, and a hole is the only version that is right on both.
+The mark is the favicon (transparent ground — the magenta reads on a
+light tab strip and a dark one) and the app icon (on an ink tile).
 
-Below ~20px the ghost cards stop being depth and start being noise —
-their stroke lands under half a pixel — so a favicon-sized mark is the
-front card alone. The component applies this cut automatically
-(`GHOSTS_ABOVE`), and the generated favicons follow it.
+The three-offset-cards silhouette this replaces is retired as the logo
+but survives as a **design motif**: the get-started deck's stacked
+cards and the athlete screen's hairline ghost plates still echo it.
 
-## The wordmark
+## The wordmark and lockup
 
 **temple**, lowercase, set in **Fraunces 700**. Lowercase and serif on
 purpose: Temple is the thing a gym runs on, not a monument, and the old
 letterspaced `TEMPLE` caps with a `TECHNOLOGY` tagline said the opposite.
 There is no tagline any more.
+
+The **lockup** is the word with the star tucked against the final
+letter's shoulder (up and right of the last `e`). The star keeps the
+brand magenta whatever ink the word takes.
 
 Fraunces is loaded by the app (`@expo-google-fonts/fraunces`, the 700
 cut only) and is the only serif in the product. Everything else is Geist.
@@ -42,23 +46,34 @@ cut only) and is the only serif in the product. Everything else is Geist.
 
 | Role | Hex | Used for |
 |------|-----|----------|
-| Ink | `#14161A` | the mark, wordmark and action fill on a light surface |
-| Paper | `#F4F5F6` | the mark, wordmark and action fill on a dark surface |
-| Dawn | `#E04898 → #EA5D7C → #D37254` light / `#E04898 → #EE5E7E → #F08260` dark | brand moments only |
+| Ink | `#14161A` | the wordmark and text on a light surface |
+| Paper | `#F4F5F6` | the wordmark and text on a dark surface |
+| Brand | `#E04898` | the star, the favicon, selected/active states |
+| Dawn | `#E04898 → #EA5D7C → #D37254` light-set / `#E04898 → #EE5E7E → #F08260` vivid-set | gradient fills and brand moments |
 
-The brand is monochrome, actions included: the primary action on a page
-is the *filled* thing — ink button on light, paper button on dark, the
-same inversion the mark uses — not a coloured thing. The one moment of
-colour is the **dawn gradient** (`DAWN` in `src/lib/theme.ts`, applied
-via `<BrandHeadline>`): the headline on the logged-out screens, the
-top rule on Temple's emails, and the big-moment hero cards
-(`BrandGradientHero` — talk-to-your-AI, go-live), whose content is
-always ink. Never a button, an icon tint, or a repeated row element. Two stop sets because the vivid stops that sing on a dark
-ground fall under the 3:1 large-text floor on paper —
-`src/lib/contrast.test.ts` asserts every stop clears it on its ground.
+Where the colour goes in the product (`BRAND` and `DAWN` in
+`src/lib/theme.ts`):
 
-Everyday colour in the product comes from content, not chrome: gyms
-colour their own class types, tags and campaign emails.
+- **Selected and active states** are the flat brand magenta — the
+  active nav row (`bg-brand/10` + a magenta icon), the selected day in
+  the calendar strip, the today letter.
+- **The one primary action per page** wears the dawn gradient with a
+  white label (`Button` variant `primary`, the calendar's Add class
+  pill). Repeated actions stay ink/plain — eight gradient pills is a
+  loud list, not eight invitations.
+- **Initials avatars** wear the dawn gradient with a white initial.
+- **Brand moments** keep it: logged-out headlines (`BrandHeadline`),
+  the email top rule, and the hero cards (`BrandGradientHero`), whose
+  content is ink.
+
+Two dawn stop sets, chosen by what sits on them: the **vivid set**
+carries INK content (heroes, dark-ground headlines); the **light set**
+is the same dawn deepened until WHITE content clears the 3:1 floor on
+every stop (buttons, avatars, light-ground headlines).
+`src/lib/contrast.test.ts` asserts every pairing.
+
+Everyday colour beyond that comes from content, not chrome: gyms colour
+their own class types, tags and campaign emails.
 
 There is no burnt orange, no gold, no steel blue, no tagline grey, and
 no `#2563EB` — that last was the old default *gym* colour and never had
@@ -73,15 +88,14 @@ Import the components, not the files:
 ```tsx
 import { TempleLockup, TempleMark, TempleWordmark } from '@/components/TempleMark';
 
-<TempleLockup size={28} />   // mark + wordmark, sized from the type
-<TempleMark size={44} />     // mark alone
+<TempleLockup size={28} />   // wordmark + star, sized from the type
+<TempleMark size={44} />     // the star alone, brand magenta
 <TempleWordmark size={26} /> // wordmark alone
 ```
 
-All three take the active scheme's ink automatically and accept a
-`color` override for the rare surface that needs one (a coloured hero, a
-photo scrim). Nothing needs an `on-light` / `on-dark` choice any more —
-that decision moved into `useThemeColors()`.
+The wordmark takes the active scheme's ink automatically; the star is
+always the brand magenta. All three accept a `color` override for the
+rare surface that needs one (a photo scrim, a gradient hero).
 
 ## The flat files
 
@@ -90,36 +104,38 @@ print job.
 
 | File | What |
 |------|------|
-| `mark-on-{light,dark}.svg` | the mark, vector, prefer this |
-| `mark-on-{light,dark}-512px.png` | the mark, raster |
-| `lockup-on-{light,dark}.svg` | mark + wordmark, Fraunces inlined |
-| `lockup-on-{light,dark}-960px.png` | mark + wordmark, raster |
+| `mark-on-{light,dark}.svg` | the star, vector, prefer this |
+| `mark-on-{light,dark}-512px.png` | the star, raster |
+| `lockup-on-{light,dark}.svg` | wordmark + star, Fraunces inlined |
+| `lockup-on-{light,dark}-960px.png` | wordmark + star, raster |
 
 `on-light` / `on-dark` names the **background** it will sit on, not the
-colour of the artwork.
+colour of the artwork — the star itself is identical in both; only the
+wordmark's ink flips.
 
 The app icon, favicon, splash and Android adaptive layers are generated
 into `assets/images/` from the same source and are wired into
-`app.json`.
+`app.json`. The email lockup PNGs in `public/email/` come from the same
+script.
 
 ## Regenerating
 
-Every flat file above comes from one script, which shares the mark's path
-data with the component:
+Every flat file above comes from one script, which shares the star's
+path data with the component:
 
 ```bash
 node scripts/brand/build-marks.mjs
 ```
 
-Run it after any change to `TempleMark.tsx`. It needs Chromium. If the
-script and the component ever disagree, the component is right — it is
-what people actually see.
+Run it after any change to `TempleMark.tsx` or `AIMark.tsx`'s `STAR`.
+It needs Chromium. If the script and the component ever disagree, the
+component is right — it is what people actually see.
 
 ## Do / don't
 
-- **Do** keep clear space around the mark of roughly one column's width.
-- **Do** let the component pick ink or paper; only pass `color` when the
-  surface is neither.
-- **Don't** recolour it, rotate it, stretch it, add a shadow, or rebuild
-  it by hand.
+- **Do** keep clear space around the star of roughly one point's width.
+- **Do** keep the star magenta in brand positions and ink in AI-byline
+  positions — the colour is the meaning.
+- **Don't** recolour it otherwise, rotate it, stretch it, add a shadow,
+  or rebuild it by hand.
 - **Don't** put the wordmark in anything but Fraunces 700, lowercase.

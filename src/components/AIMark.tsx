@@ -25,7 +25,7 @@ import { useThemeColors } from '@/lib/theme';
 //
 // Sizes under 22 render bare, standing in for a line icon. 22 and up take
 // the tile.
-const STAR =
+export const STAR =
   'M12 2.1c.85 4.6 2.3 6.9 5.6 7.95l3.3.95-3.3.95c-3.3 1.05-4.75 3.35-5.6 7.95-.85-4.6-2.3-6.9-5.6-7.95L3.1 11l3.3-.95C9.7 9 11.15 6.7 12 2.1z';
 
 const TILE_AT = 22;

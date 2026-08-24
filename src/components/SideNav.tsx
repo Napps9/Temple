@@ -11,7 +11,7 @@ import { Text } from './Text';
 import type { NavSection } from './TopNav';
 import { useGymMembership } from '@/lib/auth';
 import { haptic } from '@/lib/haptic';
-import { useThemeColors } from '@/lib/theme';
+import { BRAND, useThemeColors } from '@/lib/theme';
 import { useGymBrand } from '@/lib/useGymBrand';
 import { useGymNavLinks } from '@/lib/useGymNavLinks';
 
@@ -190,10 +190,10 @@ export function SideNav({ sections }: { sections: NavSection[] }) {
           collapsed ? 'justify-center px-0 py-2.5' : 'gap-2.5 px-3 py-2'
         } ${
           active
-            ? 'bg-raised dark:bg-raised-dk'
+            ? 'bg-brand/10'
             : 'hover:bg-raised/60 dark:hover:bg-raised-dk/60'
         }`}>
-        {renderIconSlot(icon, 18, active ? colors.ink : colors.ink3)}
+        {renderIconSlot(icon, 18, active ? BRAND : colors.ink3)}
         {collapsed ? null : (
           <Text
             className={`flex-1 text-[14px] ${

@@ -25,9 +25,11 @@ already exist.
   the `primary` colour token is driven by a runtime CSS variable
   carrying **Temple's action fill** — ink `#14161A` light, paper
   `#F4F5F6` dark, from `ACCENT` in `src/lib/theme.ts`. The accent is
-  mono; the only colour the brand keeps is the `DAWN` gradient,
-  reserved for brand moments (logged-out headlines via
-  `<BrandHeadline>`, the email top rule) and never for buttons. Gyms
+  mono for repeated controls; the brand colour is the magenta `BRAND`
+  (selected/active states, the star logo) and the `DAWN` gradient (the
+  one primary action per page via `Button` primary, initials avatars,
+  logged-out headlines via `<BrandHeadline>`, hero cards, the email top
+  rule) — see docs/brand-assets.md for the placement rules. Gyms
   used to set the primary colour; they no longer recolour Temple's
   chrome. Don't hard-code hexes — use `useThemeColors().primary`.
 - **Data**: `@tanstack/react-query` for client state, Supabase (RLS

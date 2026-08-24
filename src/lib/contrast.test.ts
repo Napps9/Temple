@@ -20,6 +20,14 @@ describe('contrastRatio', () => {
       contrastRatio(ACCENT.dark.onPrimary, ACCENT.dark.primary),
     ).toBeGreaterThanOrEqual(4.5);
   });
+  it('keeps a white label readable on every gradient-button stop', () => {
+    // Gradient fills that carry white content (the primary button, the
+    // dawn avatars) use the deepened light stop set — the label has to
+    // clear the UI floor on the thinnest stop, not just the average.
+    for (const stop of DAWN.light) {
+      expect(contrastRatio('#FFFFFF', stop)).toBeGreaterThanOrEqual(3);
+    }
+  });
   it('keeps ink readable on every hero-gradient stop', () => {
     // BrandGradientHero paints the vivid dawn stops in both schemes and
     // puts ink content on top — every stop has to carry it above the UI

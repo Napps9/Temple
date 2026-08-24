@@ -1,6 +1,9 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { Image, View } from 'react-native';
+
 import { Text } from './Text';
+import { DAWN } from '@/lib/theme';
 
 export function Avatar({
   name,
@@ -26,11 +29,15 @@ export function Avatar({
           onError={() => setFailed(true)}
         />
       ) : (
-        <Text
-          className="text-ink-2 dark:text-ink-2-dk font-semibold"
-          style={{ fontSize }}>
-          {initial}
-        </Text>
+        <LinearGradient
+          colors={[...DAWN.light]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+          <Text className="font-semibold" style={{ fontSize, color: '#FFFFFF' }}>
+            {initial}
+          </Text>
+        </LinearGradient>
       )}
     </View>
   );

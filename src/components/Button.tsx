@@ -6,7 +6,8 @@ import { Text } from './Text';
 import { renderIconSlot, type IconSlot } from './icon-slot';
 
 import { haptic } from '@/lib/haptic';
-import { useThemeColors } from '@/lib/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { DAWN, useThemeColors } from '@/lib/theme';
 
 type Variant = 'primary' | 'plain' | 'secondary' | 'ghost' | 'destructive';
 
@@ -39,7 +40,7 @@ type Props = {
 // previous near-invisible white-on-white version disappeared inside
 // modal footers and on light-mode pages.
 const containerStyles: Record<Variant, string> = {
-  primary: 'bg-primary hover:opacity-90 active:bg-primary-dark shadow-soft',
+  primary: 'overflow-hidden hover:opacity-90 active:opacity-80 shadow-soft',
   plain:
     'bg-surface dark:bg-surface-dk border border-line-strong dark:border-line-strong-dk hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk',
   secondary:
@@ -49,9 +50,9 @@ const containerStyles: Record<Variant, string> = {
     'bg-surface dark:bg-surface-dk border border-line dark:border-line-dk border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-50 dark:active:bg-red-900/20',
 };
 
-// Primary label colour comes from the contrast check below, not a class
-// — the fill is the gym's own brand colour, so white isn't guaranteed
-// readable on it.
+// Primary wears the dawn gradient — the one action per page is the one
+// place the brand's colour is allowed to be a fill — and its label is
+// white, which clears the UI floor on every stop (contrast.test.ts).
 const textStyles: Record<Variant, string> = {
   primary: 'font-semibold',
   plain: 'text-ink dark:text-ink-dk font-semibold',
@@ -74,10 +75,7 @@ export const Button = forwardRef<View, Props>(function Button(
 ) {
   const colors = useThemeColors();
   const isDisabled = disabled || loading;
-  // The label on the accent fill is a theme token now that the accent is
-  // Temple's own — white on the light accent, near-black ink on the
-  // lifted dark one.
-  const primaryLabel = colors.onPrimary;
+  const primaryLabel = '#FFFFFF';
   // Icon + spinner tint tracks the variant's text colour, so a leading
   // icon and its label are never two different colours.
   const accent: Record<Variant, string> = {
@@ -108,6 +106,14 @@ export const Button = forwardRef<View, Props>(function Button(
       className={`rounded-ctl px-5 py-3 items-center justify-center ${containerStyles[variant]} ${
         isDisabled ? 'opacity-50' : ''
       }`}>
+      {variant === 'primary' ? (
+        <LinearGradient
+          colors={[...DAWN.light]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        />
+      ) : null}
       {loading ? (
         <ActivityIndicator color={tint} />
       ) : (

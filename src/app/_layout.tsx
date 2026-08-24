@@ -22,7 +22,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { CookieBanner } from '@/components/CookieBanner';
 import { hexToRgbTriplet } from '@/lib/brand';
-import { ACCENT, useThemeColors, useThemePreference } from '@/lib/theme';
+import { ACCENT, useThemeColors, useThemePreference, BRAND } from '@/lib/theme';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -142,6 +142,7 @@ function ThemedShell() {
       '--color-on-primary': hexToRgbTriplet(accent.onPrimary),
       '--color-link': hexToRgbTriplet(accent.ink),
       '--color-secondary': hexToRgbTriplet(accent.ink),
+      '--color-brand': hexToRgbTriplet(BRAND),
     });
   }, [scheme]);
 
@@ -157,6 +158,7 @@ function ThemedShell() {
     root.setProperty('--color-on-primary', hexToRgbTriplet(accent.onPrimary));
     root.setProperty('--color-link', hexToRgbTriplet(accent.ink));
     root.setProperty('--color-secondary', hexToRgbTriplet(accent.ink));
+    root.setProperty('--color-brand', hexToRgbTriplet(BRAND));
   }, [scheme]);
 
   // Keep the browser's OS-chrome colour (Safari notch tint, Android URL bar)

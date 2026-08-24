@@ -1,6 +1,7 @@
 // Regenerates every Temple mark asset from the one path in this file.
 //
-// The mark is drawn in exactly two places — src/components/TempleMark.tsx
+// The mark is the brand star — the AI star's silhouette in the brand
+// magenta — drawn in exactly two places: src/components/TempleMark.tsx
 // for anything inside the app, and here for the files a build tool or an
 // app store needs as a flat file. If the two ever disagree, this file is
 // the one that is stale: the component is what people actually see.
@@ -18,36 +19,21 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 const INK = '#14161A';
 const PAPER = '#F4F5F6';
+// The dawn's leading stop — BRAND in src/lib/theme.ts.
+const MAGENTA = '#E04898';
 
-// The three offset cards, kept identical to CARD in
-// src/components/TempleMark.tsx: the front card holds the column as an
-// even-odd knockout, the two cards behind are hairline ghosts. Below
-// ~20px the ghosts stop being depth and start being noise, so small
-// renders (favicons) are the front card alone — the same rule the
-// component applies via GHOSTS_ABOVE.
-const CARD =
-  'M5 0H67A5 5 0 0 1 72 5V67A5 5 0 0 1 67 72H5A5 5 0 0 1 0 67V5A5 5 0 0 1 5 0Z' +
-  'M27 31.5A9 6 0 0 1 45 31.5V63H27Z';
+// Kept identical to STAR in src/components/AIMark.tsx.
+const STAR =
+  'M12 2.1c.85 4.6 2.3 6.9 5.6 7.95l3.3.95-3.3.95c-3.3 1.05-4.75 3.35-5.6 7.95-.85-4.6-2.3-6.9-5.6-7.95L3.1 11l3.3-.95C9.7 9 11.15 6.7 12 2.1z';
 
-function glyph(ink, ghosts) {
-  return (
-    (ghosts
-      ? `<rect x="20.8" y="20.8" width="70.4" height="70.4" rx="5" fill="none" stroke="${ink}" stroke-width="2" stroke-opacity="0.3"/>` +
-        `<rect x="10.8" y="10.8" width="70.4" height="70.4" rx="5" fill="none" stroke="${ink}" stroke-width="2" stroke-opacity="0.55"/>`
-      : '') + `<path d="${CARD}" fill="${ink}" fill-rule="evenodd"/>`
-  );
-}
-
-// `pad` widens the viewBox so the mark sits inside a tile with air around
-// it — app icons need the margin, a mark in a row does not. The glyph box
-// is the component's: 96 with the ghost cards, 76 without.
-function markSvg({ ink = INK, pad = 0, bg = null, ghosts = true } = {}) {
-  const box = ghosts ? 96 : 76;
-  const min = -2 - pad;
-  const span = box + pad * 2;
+// `pad` widens the viewBox so the star sits inside a tile with air around
+// it — app icons need the margin, a mark in a row does not.
+function starSvg({ fill = MAGENTA, pad = 0, bg = null } = {}) {
+  const min = 0 - pad;
+  const span = 24 + pad * 2;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${min} ${min} ${span} ${span}" width="${span}" height="${span}">${
     bg ? `<rect x="${min}" y="${min}" width="${span}" height="${span}" fill="${bg}"/>` : ''
-  }${glyph(ink, ghosts)}</svg>`;
+  }<path d="${STAR}" fill="${fill}"/></svg>`;
 }
 
 // Fraunces, inlined so the lockup is self-contained and renders on a
@@ -58,40 +44,42 @@ const fontCss = `@font-face{font-family:'Fraunces';font-weight:700;src:url(data:
   join(ROOT, 'node_modules/@expo-google-fonts/fraunces/700Bold/Fraunces_700Bold.ttf'),
 ).toString('base64')}) format('truetype')}`;
 
+// The word with the star tucked against the final letter's shoulder —
+// same offsets as TempleLockup in the component (right -0.18em, up
+// -0.20em, star 0.42em).
 function lockupSvg({ ink = INK } = {}) {
   const size = 26;
-  const markW = Math.round(size * 1.08);
-  const gap = Math.round(size * 0.34);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136 34" width="136" height="34">
+  const starSize = Math.round(size * 0.42);
+  const wordW = 78; // Fraunces 700 'temple' at 26px
+  const starX = wordW - Math.round(starSize * 0.45);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -8 92 40" width="92" height="40">
 <style>${fontCss}
 .w{font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:${size}px;fill:${ink}}</style>
-<svg x="0" y="3" width="${markW}" height="${markW}" viewBox="-2 -2 96 96">${glyph(ink, true)}</svg>
-<text class="w" x="${markW + gap}" y="26">temple</text>
+<text class="w" x="0" y="24">temple</text>
+<svg x="${starX}" y="${-Math.round(size * 0.2) - 2}" width="${starSize}" height="${starSize}" viewBox="0 0 24 24"><path d="${STAR}" fill="${MAGENTA}"/></svg>
 </svg>`;
 }
 
 // One entry per file the build, an app store, or a person putting the
 // mark on something asks for. `size` present means also rasterise it.
 const ASSETS = [
-  // The app icon is the mark on paper — a transparent icon renders on
-  // whatever the launcher feels like, which is not a decision to give away.
-  ['assets/images/icon.png', markSvg({ pad: 9, bg: PAPER }), 1024],
-  ['assets/images/favicon.png', markSvg({ pad: 4, bg: PAPER, ghosts: false }), 48],
-  ['assets/images/favicon-32.png', markSvg({ pad: 4, bg: PAPER, ghosts: false }), 32],
-  // Splash and the Android foreground sit on their own background colour,
-  // so these are transparent by design.
-  ['assets/images/splash-icon.png', markSvg({ pad: 2 }), 192],
-  ['assets/images/android-icon-foreground.png', markSvg({ pad: 22 }), 432],
-  ['assets/images/android-icon-monochrome.png', markSvg({ pad: 22 }), 432],
+  // The app icon is the star on ink — the owner's pick over paper.
+  ['assets/images/icon.png', starSvg({ pad: 7, bg: INK }), 1024],
+  // Favicons ride transparent: the magenta clears the UI floor on a light
+  // tab strip and a dark one alike.
+  ['assets/images/favicon.png', starSvg({ pad: 1.5 }), 48],
+  ['assets/images/favicon-32.png', starSvg({ pad: 1.5 }), 32],
+  ['assets/images/splash-icon.png', starSvg({ pad: 2 }), 192],
+  // Android adaptive layers: magenta star on the generated ink background;
+  // the monochrome layer is single-colour by platform rule.
+  ['assets/images/android-icon-foreground.png', starSvg({ pad: 14 }), 432],
+  ['assets/images/android-icon-background.png', starSvg({ fill: 'none', pad: 14, bg: INK }), 432],
+  ['assets/images/android-icon-monochrome.png', starSvg({ fill: '#FFFFFF', pad: 14 }), 432],
 
-  ['assets/images/temple-brand/mark-on-light.svg', markSvg({ ink: INK })],
-  ['assets/images/temple-brand/mark-on-dark.svg', markSvg({ ink: PAPER })],
-  ['assets/images/temple-brand/mark-on-light-512px.png', markSvg({ pad: 2 }), 512],
-  [
-    'assets/images/temple-brand/mark-on-dark-512px.png',
-    markSvg({ ink: PAPER, pad: 2 }),
-    512,
-  ],
+  ['assets/images/temple-brand/mark-on-light.svg', starSvg()],
+  ['assets/images/temple-brand/mark-on-dark.svg', starSvg()],
+  ['assets/images/temple-brand/mark-on-light-512px.png', starSvg({ pad: 1 }), 512],
+  ['assets/images/temple-brand/mark-on-dark-512px.png', starSvg({ pad: 1 }), 512],
   ['assets/images/temple-brand/lockup-on-light.svg', lockupSvg({ ink: INK })],
   ['assets/images/temple-brand/lockup-on-dark.svg', lockupSvg({ ink: PAPER })],
 ];
@@ -102,19 +90,19 @@ const WIDE = [
   [
     'assets/images/temple-brand/lockup-on-light-960px.png',
     lockupSvg({ ink: INK }),
-    960,
-    240,
+    920,
+    400,
   ],
   [
     'assets/images/temple-brand/lockup-on-dark-960px.png',
     lockupSvg({ ink: PAPER }),
-    960,
-    240,
+    920,
+    400,
   ],
   // Every Temple email embeds this as a foreground <img> — Gmail strips
   // SVGs, so it has to be a PNG at a public URL. 560px for a 196px slot.
-  ['public/email/temple-lockup.png', lockupSvg({ ink: INK }), 560, 140],
-  ['public/email/temple-lockup-on-dark.png', lockupSvg({ ink: PAPER }), 560, 140],
+  ['public/email/temple-lockup.png', lockupSvg({ ink: INK }), 460, 200],
+  ['public/email/temple-lockup-on-dark.png', lockupSvg({ ink: PAPER }), 460, 200],
 ];
 
 function write(path, contents) {

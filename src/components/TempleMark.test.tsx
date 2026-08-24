@@ -3,36 +3,25 @@ import { describe, expect, it } from 'vitest';
 
 import { renderWithProviders as render, screen } from '../../test/render';
 
-import { CARD, GHOSTS_ABOVE, TempleLockup, TempleMark, TempleWordmark } from './TempleMark';
+import { STAR } from './AIMark';
+import { TempleLockup, TempleMark, TempleWordmark } from './TempleMark';
+import { BRAND } from '@/lib/theme';
 
 // The mark is drawn rather than loaded, so what is worth checking is the
-// shape contract: one even-odd path for the front card (the column is a
-// knockout, not a filled shape), the two ghost cards behind it as
-// hairline rects — and that they drop below the size where they stop
-// being depth and start being noise.
+// contract: the brand star is the AI star's silhouette in the brand
+// magenta, and the lockup is the word plus that star — not the word plus
+// whatever colour the scheme happens to be in.
 describe('TempleMark', () => {
-  it('is the front card plus two ghost cards', () => {
-    const { container } = render(<TempleMark size={44} />);
-    expect(container.querySelectorAll('path').length).toBe(1);
-    expect(container.querySelectorAll('rect').length).toBe(2);
-  });
-
-  it('draws the card with the column as a knockout', () => {
+  it('is the star in the brand magenta', () => {
     const { container } = render(<TempleMark size={44} />);
     const path = container.querySelector('path');
-    expect(path?.getAttribute('d')).toBe(CARD);
-    expect(path?.getAttribute('fill-rule')).toBe('evenodd');
+    expect(path?.getAttribute('d')).toBe(STAR);
+    expect(path?.getAttribute('fill')).toBe(BRAND);
   });
 
-  it('drops the ghost cards at favicon sizes', () => {
-    const { container } = render(<TempleMark size={GHOSTS_ABOVE - 1} />);
-    expect(container.querySelectorAll('path').length).toBe(1);
-    expect(container.querySelectorAll('rect').length).toBe(0);
-  });
-
-  it('takes the scheme’s ink unless it is told otherwise', () => {
-    const { container } = render(<TempleMark size={44} color="#FF0000" />);
-    expect(container.querySelector('path')?.getAttribute('fill')).toBe('#FF0000');
+  it('takes a colour override for surfaces that need one', () => {
+    const { container } = render(<TempleMark size={44} color="#FFFFFF" />);
+    expect(container.querySelector('path')?.getAttribute('fill')).toBe('#FFFFFF');
   });
 
   it('says what it is to a screen reader', () => {
@@ -49,17 +38,11 @@ describe('TempleWordmark', () => {
 });
 
 describe('TempleLockup', () => {
-  it('is the mark and the word', () => {
+  it('is the word and the star', () => {
     const { container } = render(<TempleLockup size={28} />);
     expect(screen.getByText('temple')).toBeTruthy();
-    expect(container.querySelector('path')?.getAttribute('d')).toBe(CARD);
-  });
-
-  it('draws the mark taller than the type', () => {
-    // The front card is only three quarters of the box, so a mark matched
-    // to the type size lands visibly short of the word.
-    const { container } = render(<TempleLockup size={26} />);
-    const svg = container.querySelector('svg');
-    expect(Number(svg?.getAttribute('width'))).toBeGreaterThan(26);
+    const path = container.querySelector('path');
+    expect(path?.getAttribute('d')).toBe(STAR);
+    expect(path?.getAttribute('fill')).toBe(BRAND);
   });
 });

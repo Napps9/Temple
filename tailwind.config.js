@@ -20,6 +20,7 @@ module.exports = {
         // Brand "Text" colour — links and CTA copy. Brand "Secondary" —
         // accent chips / tints. Both runtime-driven like primary.
         link: 'rgb(var(--color-link) / <alpha-value>)',
+        brand: 'rgb(var(--color-brand) / <alpha-value>)',
         secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
 
         // ------------------------------------------------------------------
