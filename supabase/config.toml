@@ -54,6 +54,18 @@ content_path = "./supabase/templates/email_change.html"
 subject = "Your Temple sign-in link"
 content_path = "./supabase/templates/magic_link.html"
 
+# The app never triggers these two today (no inviteUserByEmail call, no
+# reauthenticate() flow) — branded anyway so an invite sent from the
+# dashboard's Users page, or a future secure-password-change, arrives
+# wearing the company chrome instead of Supabase's default.
+[auth.email.template.invite]
+subject = "You're invited to Temple"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.reauthentication]
+subject = "Your Temple verification code"
+content_path = "./supabase/templates/reauthentication.html"
+
 # Communications Suite delivery + tracking workers. send-campaign needs a
 # signed-in staff caller (it re-checks can_manage_comms); track is the
 # public open-pixel / click-redirect / unsubscribe endpoint, so JWT

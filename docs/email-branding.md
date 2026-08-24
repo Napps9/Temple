@@ -39,7 +39,8 @@ does **not** push auth config. So these templates apply:
   `supabase config push` (after `supabase link`), **or** by pasting each
   `supabase/templates/*.html` into Dashboard → Authentication → Email
   Templates and setting the matching subject. Re-do this only when a
-  template changes.
+  template changes. Full runbook (SMTP sender, subjects table, redirect
+  URLs, test path): `docs/auth-email-setup.md`.
 
 Template variables are Supabase's own (`{{ .ConfirmationURL }}` etc.); the
 HTML otherwise mirrors the transactional layout so all Temple email looks
