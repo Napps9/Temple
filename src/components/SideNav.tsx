@@ -59,35 +59,51 @@ export function SideNav({ sections }: { sections: NavSection[] }) {
     <View
       className={`${collapsed ? 'w-[68px]' : 'w-[246px]'} flex-none bg-surface dark:bg-surface-dk border-r border-line dark:border-line-dk`}>
       <ScrollView contentContainerClassName="p-3 gap-3.5 flex-1">
-        <Pressable
-          onPress={() => {
-            haptic.selection();
-            router.replace('/timeline' as never);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={brand.gymName}
-          className={`flex-row items-center rounded-ctl border border-line dark:border-line-dk hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk ${
-            collapsed ? 'justify-center px-0 py-2' : 'px-2.5 py-2'
-          }`}>
-          {collapsed ? (
-            <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold">
-              {brand.gymName.charAt(0).toUpperCase()}
-            </Text>
-          ) : (
-            <View className="flex-1 min-w-0">
-              <Text
-                className="text-ink dark:text-ink-dk text-[13.5px] font-semibold"
-                numberOfLines={1}>
-                {brand.gymName}
+        <View className={collapsed ? 'gap-1.5' : 'flex-row items-center gap-1.5'}>
+          <Pressable
+            onPress={() => {
+              haptic.selection();
+              router.replace('/timeline' as never);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={brand.gymName}
+            className={`flex-row items-center rounded-ctl border border-line dark:border-line-dk hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk ${
+              collapsed ? 'justify-center px-0 py-2' : 'flex-1 min-w-0 px-2.5 py-2'
+            }`}>
+            {collapsed ? (
+              <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold">
+                {brand.gymName.charAt(0).toUpperCase()}
               </Text>
-              <Text
-                className="text-ink-3 dark:text-ink-3-dk text-[12px]"
-                numberOfLines={1}>
-                {membership?.role ? titleCase(membership.role) : 'Staff'}
-              </Text>
-            </View>
-          )}
-        </Pressable>
+            ) : (
+              <View className="flex-1 min-w-0">
+                <Text
+                  className="text-ink dark:text-ink-dk text-[13.5px] font-semibold"
+                  numberOfLines={1}>
+                  {brand.gymName}
+                </Text>
+                <Text
+                  className="text-ink-3 dark:text-ink-3-dk text-[12px]"
+                  numberOfLines={1}>
+                  {membership?.role ? titleCase(membership.role) : 'Staff'}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+          <Pressable
+            onPress={toggleCollapsed}
+            accessibilityRole="button"
+            accessibilityLabel={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            hitSlop={4}
+            className={`items-center justify-center rounded-ctl hover:bg-raised dark:hover:bg-raised-dk active:opacity-70 ${
+              collapsed ? 'py-1.5' : 'w-7 h-9'
+            }`}>
+            <Ionicons
+              name={collapsed ? 'chevron-forward-outline' : 'chevron-back-outline'}
+              size={15}
+              color={colors.ink3}
+            />
+          </Pressable>
+        </View>
 
         <View className="gap-0.5">
           {sections.map((s) => (
@@ -142,25 +158,6 @@ export function SideNav({ sections }: { sections: NavSection[] }) {
           {collapsed ? null : (
             <Text className="text-blue-500 text-[12.5px] font-semibold">
               Viewing Staff
-            </Text>
-          )}
-        </Pressable>
-
-        <Pressable
-          onPress={toggleCollapsed}
-          accessibilityRole="button"
-          accessibilityLabel={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className={`flex-row items-center rounded-ctl hover:bg-raised/60 dark:hover:bg-raised-dk/60 active:opacity-70 ${
-            collapsed ? 'justify-center px-0 py-2' : 'gap-2.5 px-3 py-2'
-          }`}>
-          <Ionicons
-            name={collapsed ? 'chevron-forward-outline' : 'chevron-back-outline'}
-            size={16}
-            color={colors.ink3}
-          />
-          {collapsed ? null : (
-            <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px] font-medium">
-              Collapse
             </Text>
           )}
         </Pressable>
