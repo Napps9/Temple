@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Animated, Easing, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { AIMark } from '@/components/AIMark';
 import { Spinner } from '@/components/EmptyState';
 import { Text, TextInput } from '@/components/Text';
@@ -226,6 +226,14 @@ export default function SetupScreen() {
   const queryClient = useQueryClient();
 
   const [messages, setMessages] = useState<Msg[]>([]);
+  // The conversation arrives like one. Assistant turns sit hidden until a
+  // typing indicator has "written" them — one at a time, paced by length —
+  // while the owner's own messages always land instantly. Render-side on
+  // purpose: the flow logic below still appends whole exchanges at once,
+  // and only the reveal is theatrical, so nothing about what gets asked or
+  // saved can drift for the sake of the animation.
+  const [revealed, setRevealed] = useState(0);
+  const [typing, setTyping] = useState(false);
   const [step, setStep] = useState<Step | null>(null);
   const [input, setInput] = useState('');
   const [seeded, setSeeded] = useState(false);
@@ -394,6 +402,28 @@ export default function SetupScreen() {
     advance(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress.data, seeded, membership]);
+
+  useEffect(() => {
+    if (revealed >= messages.length) {
+      setTyping(false);
+      return;
+    }
+    const next = messages[revealed];
+    if (next.kind === 'mine') {
+      setRevealed((r) => r + 1);
+      return;
+    }
+    setTyping(true);
+    const pause =
+      'text' in next && typeof next.text === 'string'
+        ? Math.min(400 + next.text.length * 5, 1200)
+        : 350;
+    const timer = setTimeout(() => {
+      setTyping(false);
+      setRevealed((r) => r + 1);
+    }, pause);
+    return () => clearTimeout(timer);
+  }, [messages, revealed]);
 
   const parse = useMutation({
     mutationFn: async (args: {
@@ -689,7 +719,10 @@ export default function SetupScreen() {
     },
   });
 
-  if (!session) return <Redirect href="/" />;
+  // Strictly null: undefined means the session is still being restored,
+  // and redirecting during that window bounces a signed-in owner through
+  // the root consent gate on every hard refresh of /setup.
+  if (session === null) return <Redirect href="/" />;
   if (membership && role && role !== 'owner') return <Redirect href="/classes" />;
   if (!membership || progress.isLoading) {
     return (
@@ -757,11 +790,10 @@ export default function SetupScreen() {
           // pins to the top with a screen of dead space); once the thread
           // outgrows the viewport it scrolls exactly as before.
           contentContainerClassName="flex-grow justify-end gap-4 py-4 px-4 md:max-w-2xl md:mx-auto md:w-full">
-          {messages.map((m, i) =>
-            m.kind === 'class-builder' ? (
+          {messages.slice(0, revealed).map((m, i) => {
+            const node = m.kind === 'class-builder' ? (
               m.open ? (
                 <ClassBuilderCard
-                  key={i}
                   busy={busy}
                   onApply={confirmTimetable}
                   onSkip={() => {
@@ -777,7 +809,6 @@ export default function SetupScreen() {
             ) : m.kind === 'stripe-card' ? (
               m.open ? (
                 <StripeCard
-                  key={i}
                   onSkip={() => {
                     setMessages((prev) => closeCards(prev));
                     pushMsgs({
@@ -791,7 +822,6 @@ export default function SetupScreen() {
             ) : m.kind === 'plan-builder' ? (
               m.open ? (
                 <PlanBuilderCard
-                  key={i}
                   busy={busy}
                   onApply={confirmPlans}
                   onSkip={() => {
@@ -807,7 +837,6 @@ export default function SetupScreen() {
             ) : m.kind === 'waiver-card' ? (
               m.open ? (
                 <WaiverCard
-                  key={i}
                   gymId={membership.gymId}
                   onDone={(receipt) => {
                     setMessages((prev) => closeCards(prev));
@@ -827,7 +856,6 @@ export default function SetupScreen() {
             ) : m.kind === 'team-card' ? (
               m.open ? (
                 <TeamCard
-                  key={i}
                   onDone={(receipt) => {
                     setMessages((prev) => closeCards(prev));
                     pushMsgs({ kind: 'receipt', text: receipt });
@@ -838,7 +866,6 @@ export default function SetupScreen() {
             ) : m.kind === 'members-card' ? (
               m.open ? (
                 <MembersImportCard
-                  key={i}
                   gymId={membership.gymId}
                   initial={handoff.current}
                   stripeConnected={doneKeys.has('stripe')}
@@ -860,7 +887,6 @@ export default function SetupScreen() {
             ) : m.kind === 'workouts-card' ? (
               m.open ? (
                 <WorkoutsImportCard
-                  key={i}
                   gymId={membership.gymId}
                   onWrongStep={(csv, name) => {
                     handoff.current = { csv, name };
@@ -884,7 +910,6 @@ export default function SetupScreen() {
               ) : null
             ) : (
               <MessageRow
-                key={i}
                 msg={m}
                 busy={busy}
                 onConfirmTimetable={confirmTimetable}
@@ -898,10 +923,13 @@ export default function SetupScreen() {
                 onHaveALook={haveALook}
                 onReword={rewordCard}
               />
-            ),
-          )}
+            );
+            return node ? <Appear key={i}>{node}</Appear> : null;
+          })}
 
-          {step === 'golive' ? (
+          {typing ? <TypingIndicator /> : null}
+
+          {step === 'golive' && revealed >= messages.length ? (
             <GoLive
               doneKeys={doneKeys}
               allDone={allRequiredDone}
@@ -975,9 +1003,67 @@ function StepSkip({
 }
 
 function TempleAvatar() {
-  const colors = useThemeColors();
+  return <AIMark size={24} />;
+}
+
+// A message doesn't pop into place, it arrives: a short fade and rise on
+// mount, applied to every revealed row so the whole thread reads as being
+// written rather than loaded.
+function Appear({ children }: { children: ReactNode }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 220,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [anim]);
   return (
-    <AIMark size={24} />
+    <Animated.View
+      style={{
+        opacity: anim,
+        transform: [
+          { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) },
+        ],
+      }}>
+      {children}
+    </Animated.View>
+  );
+}
+
+function TypingIndicator() {
+  const colors = useThemeColors();
+  const a = useRef(new Animated.Value(0.25)).current;
+  const b = useRef(new Animated.Value(0.25)).current;
+  const c = useRef(new Animated.Value(0.25)).current;
+  useEffect(() => {
+    const loops = [a, b, c].map((v, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 140),
+          Animated.timing(v, { toValue: 1, duration: 280, useNativeDriver: true }),
+          Animated.timing(v, { toValue: 0.25, duration: 280, useNativeDriver: true }),
+          Animated.delay((2 - i) * 140),
+        ]),
+      ),
+    );
+    loops.forEach((l) => l.start());
+    return () => loops.forEach((l) => l.stop());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <View className="flex-row gap-2.5 pr-7">
+      <TempleAvatar />
+      <View className="self-start bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl rounded-bl-md px-3.5 py-3 flex-row items-center gap-1.5">
+        {[a, b, c].map((v, i) => (
+          <Animated.View
+            key={i}
+            style={{ opacity: v, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.ink3 }}
+          />
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -1248,7 +1334,7 @@ function RuleQuestion({
               }`}>
               <Text
                 className={`text-sm font-semibold ${
-                  i === 0 ? 'text-ink dark:text-ink-dk' : 'text-ink-2 dark:text-ink-2-dk'
+                  i === 0 ? 'text-on-primary' : 'text-ink-2 dark:text-ink-2-dk'
                 }`}>
                 {o.label}
               </Text>
