@@ -6,8 +6,10 @@
 // Table-based (not div/max-width) so it renders consistently across
 // clients including Outlook's Word engine, with a "bulletproof" button.
 //
-// Brand palette (docs/brand-assets.md): ink #14161A, paper #F4F5F6,
-// accent #C2410C. Emails are light-only, so the light values apply.
+// Brand palette (docs/brand-assets.md): ink #14161A, paper #F4F5F6.
+// The action button is ink; the card's top rule carries the dawn
+// gradient — the brand's one moment of colour (solid-ink fallback for
+// clients that drop CSS gradients). Emails are light-only.
 //
 // Pure string builder — no imports — so it drops into any Deno function.
 
@@ -55,7 +57,7 @@ export function templeEmailHtml(opts: {
   // Raw HTML for the body (caller escapes any dynamic text). Typically a
   // paragraph or two; receipts pass a table here.
   bodyHtml: string;
-  // Primary call-to-action button (the accent, centered, bulletproof).
+  // Primary call-to-action button (ink, centered, bulletproof).
   button?: { label: string; url: string };
   // Small grey line under the card.
   footerNote?: string;
@@ -72,7 +74,7 @@ export function templeEmailHtml(opts: {
 
   const buttonHtml = button
     ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:26px auto 6px;">
-         <tr><td align="center" bgcolor="#C2410C" style="border-radius:8px;">
+         <tr><td align="center" bgcolor="#14161A" style="border-radius:8px;">
            <a href="${button.url}" style="display:inline-block;padding:14px 30px;font-family:${FONT};font-size:16px;font-weight:600;line-height:1;color:#ffffff;text-decoration:none;border-radius:8px;">${escapeHtml(
              button.label,
            )}</a>
@@ -109,7 +111,7 @@ export function templeEmailHtml(opts: {
         <tr><td style="background:#ffffff;border:1px solid #E4E6E9;border-radius:16px;overflow:hidden;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
-              <td height="4" style="height:4px;background:#14161A;font-size:0;line-height:0;">&nbsp;</td>
+              <td height="4" style="height:4px;background:#14161A;background-image:linear-gradient(100deg,#E4526E 0%,#EE8A4A 55%,#E8B25A 100%);font-size:0;line-height:0;">&nbsp;</td>
             </tr>
           </table>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">

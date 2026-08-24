@@ -23,10 +23,13 @@ already exist.
 - **App**: Expo Router (Expo 56) on React Native + React Native Web
 - **Styling**: NativeWind 4 (Tailwind-flavoured), `darkMode: 'class'`,
   the `primary` colour token is driven by a runtime CSS variable
-  carrying **Temple's accent** — `#C2410C` light, `#F0783C` dark, from
-  `ACCENT` in `src/lib/theme.ts`. Gyms used to set that colour; they no
-  longer recolour Temple's chrome. Don't hard-code the hex — use
-  `useThemeColors().primary`.
+  carrying **Temple's action fill** — ink `#14161A` light, paper
+  `#F4F5F6` dark, from `ACCENT` in `src/lib/theme.ts`. The accent is
+  mono; the only colour the brand keeps is the `DAWN` gradient,
+  reserved for brand moments (logged-out headlines via
+  `<BrandHeadline>`, the email top rule) and never for buttons. Gyms
+  used to set the primary colour; they no longer recolour Temple's
+  chrome. Don't hard-code hexes — use `useThemeColors().primary`.
 - **Data**: `@tanstack/react-query` for client state, Supabase (RLS
   Postgres + Storage + Auth) for everything else.
 - **Tests**: `vitest` for JS/TS, `pgTAP` for SQL.

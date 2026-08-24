@@ -72,7 +72,7 @@ export function inviteUrl(origin: string, code: string): string {
   return `${cleanedOrigin}/accept-invite?code=${encodeURIComponent(code)}`;
 }
 
-// Convert "#C2410C" → "194 65 12" (space-separated RGB triplet) for the
+// Convert "#14161A" → "20 22 26" (space-separated RGB triplet) for the
 // CSS variables Tailwind splices into `rgb(... / <alpha-value>)`. Only
 // ThemedShell calls it, to push ACCENT into the `primary` token.
 const FALLBACK_TRIPLET = '194 65 12';

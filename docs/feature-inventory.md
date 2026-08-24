@@ -3202,9 +3202,9 @@ The Manage page presents a tab strip:
     dark palette from the light one by WCAG contrast, and a runtime
     `useGymBrand` that pushed the result into Tailwind's `primary` token
     so the nav mark, every button and even the PWA icon wore the gym's
-    colours. **Removed.** Temple's chrome is Temple's — one accent,
-    `#C2410C` light / `#F0783C` dark — and a gym is identified by its
-    name. The `gyms` colour and logo columns are kept, not dropped, so
+    colours. **Removed.** Temple's chrome is Temple's — the action fill is ink
+    `#14161A` light / paper `#F4F5F6` dark — and a gym is identified by
+    its name. The `gyms` colour and logo columns are kept, not dropped, so
     an already-published gym website still renders from its snapshot.
   - **Health screening** [`can_manage_parq`] — upload a waiver PDF for
     members to sign (primary), and/or build a question-by-question

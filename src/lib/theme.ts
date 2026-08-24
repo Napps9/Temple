@@ -4,23 +4,38 @@ import { useEffect } from 'react';
 
 const KEY = 'app_theme';
 
-// Temple's accent, and the whole of it. This used to be the gym's saved
-// colour, resolved per scheme and pushed into the Tailwind `primary`
-// token at runtime; gyms no longer recolour Temple's chrome, so the
-// token's source is a constant and every `bg-primary` call site keeps
-// working unchanged.
+// Temple's accent is ink. The primary action on a page is the filled
+// thing, not the coloured thing — an ink button on a light ground, a
+// paper button on a dark one, the same inversion the mark itself uses.
+// This token used to be the gym's saved colour, then a burnt orange;
+// both are gone, and every `bg-primary` call site keeps working
+// unchanged because the source is still this one constant.
 //
-// Two values rather than one because a burnt orange that carries a white
-// label on #F7F7F8 is too dark to read against #0A0B0D. `primaryDark` is
-// the pressed/hover step, not the dark-scheme partner.
+// `primaryDark` is the pressed/hover step, not the dark-scheme partner:
+// ink presses lighter and paper presses darker, because each is already
+// at its end of the ramp.
 export const ACCENT = {
-  // `onPrimary` is the label colour for anything filled with the accent.
-  // White clears AA on the light accent; on the lifted dark accent white
-  // fails, so the label is near-black ink — the same pairing the design
-  // boards carry as --accent-ink.
-  light: { primary: '#C2410C', primaryDark: '#A5370A', ink: '#14161A', onPrimary: '#FFFFFF' },
-  dark: { primary: '#F0783C', primaryDark: '#CC6633', ink: '#F4F5F6', onPrimary: '#1A0D05' },
+  light: { primary: '#14161A', primaryDark: '#2A2E33', ink: '#14161A', onPrimary: '#FFFFFF' },
+  dark: { primary: '#F4F5F6', primaryDark: '#D9DBDE', ink: '#F4F5F6', onPrimary: '#14161A' },
 } as const;
+
+// The one moment of colour the brand keeps: a dawn gradient, reserved
+// for brand moments — the headline on the logged-out screens and the
+// top rule on Temple's emails. Never a button, an icon tint, or a
+// repeated row element; the accent above stays ink so the gradient
+// stays an event. Two stop sets because the vivid stops that sing on
+// #0A0B0D fall under the 3:1 large-text floor on #F7F7F8 — the light
+// set is the same dawn, deepened until every stop clears it
+// (contrast.test.ts holds the floor).
+export const DAWN = {
+  light: ['#C7385C', '#CC6B32', '#A87A24'],
+  dark: ['#E4526E', '#EE8A4A', '#E8B25A'],
+} as const;
+
+export function dawnGradient(scheme: Scheme): string {
+  const [a, b, c] = DAWN[scheme];
+  return `linear-gradient(100deg, ${a} 0%, ${b} 55%, ${c} 100%)`;
+}
 
 export type Scheme = 'light' | 'dark';
 
@@ -63,8 +78,9 @@ export function useThemeColors() {
     // and is the runtime twin of the `ground` Tailwind token.
     screenBg: dark ? '#0A0B0D' : '#F7F7F8',
     statusBar: dark ? ('light' as const) : ('dark' as const),
-    // Temple's accent. Drives solid fills, active-state emphasis and
-    // icon tints — the one action per page, never a repeated row action.
+    // Temple's action fill — ink on light, paper on dark. Drives solid
+    // fills and active-state emphasis: the one action per page, never a
+    // repeated row action.
     primary: accent.primary,
     // The label on an accent fill (`text-on-primary` / colors.onPrimary).
     onPrimary: accent.onPrimary,

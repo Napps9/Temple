@@ -42,18 +42,26 @@ cut only) and is the only serif in the product. Everything else is Geist.
 
 | Role | Hex | Used for |
 |------|-----|----------|
-| Ink | `#14161A` | the mark and wordmark on a light surface |
-| Paper | `#F4F5F6` | the mark and wordmark on a dark surface |
-| Accent | `#C2410C` light / `#F0783C` dark | the one action per page |
+| Ink | `#14161A` | the mark, wordmark and action fill on a light surface |
+| Paper | `#F4F5F6` | the mark, wordmark and action fill on a dark surface |
+| Dawn | `#C7385C → #CC6B32 → #A87A24` light / `#E4526E → #EE8A4A → #E8B25A` dark | brand moments only |
 
-The mark is ink or paper and never the accent. Two accent values rather
-than one because a burnt orange carrying a white label on `#F7F7F8` is
-too dark to read against `#0A0B0D`; both clear the 3:1 UI floor on their
-own ground, which `src/lib/contrast.test.ts` asserts.
+The brand is monochrome, actions included: the primary action on a page
+is the *filled* thing — ink button on light, paper button on dark, the
+same inversion the mark uses — not a coloured thing. The one moment of
+colour is the **dawn gradient** (`DAWN` in `src/lib/theme.ts`, applied
+via `<BrandHeadline>`): the headline on the logged-out screens and the
+top rule on Temple's emails. Never a button, an icon tint, or a repeated
+row element. Two stop sets because the vivid stops that sing on a dark
+ground fall under the 3:1 large-text floor on paper —
+`src/lib/contrast.test.ts` asserts every stop clears it on its ground.
 
-There is no gold, no steel blue, no tagline grey, and no `#2563EB` —
-that last was the old default *gym* colour and never had anything to do
-with Temple.
+Everyday colour in the product comes from content, not chrome: gyms
+colour their own class types, tags and campaign emails.
+
+There is no burnt orange, no gold, no steel blue, no tagline grey, and
+no `#2563EB` — that last was the old default *gym* colour and never had
+anything to do with Temple.
 
 ---
 

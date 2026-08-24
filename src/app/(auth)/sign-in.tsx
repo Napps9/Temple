@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
 import { Text } from '@/components/Text';
 
+import { BrandHeadline } from '@/components/BrandHeadline';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { Screen } from '@/components/Screen';
@@ -130,9 +131,9 @@ export default function SignInScreen() {
           <View className="items-center gap-3">
             <TempleLockup size={28} />
             <View className="items-center gap-1">
-              <Text className="text-ink dark:text-ink-dk text-2xl font-semibold">
+              <BrandHeadline className="text-2xl font-semibold">
                 Welcome back
-              </Text>
+              </BrandHeadline>
               <Text className="text-ink-2 dark:text-ink-2-dk">
                 Sign in to continue
               </Text>

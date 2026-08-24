@@ -112,7 +112,7 @@ export const TABLES = {
       operating_defaults_reviewed_at: iso(-90),
       logo_url: null,
       logo_url_dark: null,
-      primary_color: '#C2410C',
+      primary_color: '#14161A',
       week_starts_on: 1,
       timezone: 'Europe/London',
       default_class_capacity: 12,

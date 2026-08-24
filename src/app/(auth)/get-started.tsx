@@ -5,6 +5,7 @@ import { Animated, Easing, PanResponder, Pressable, ScrollView, View } from 'rea
 import { Text } from '@/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandHeadline } from '@/components/BrandHeadline';
 import { LegalConsentNotice } from '@/components/LegalConsentNotice';
 import { TempleLockup } from '@/components/TempleMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -186,9 +187,9 @@ export default function GetStartedScreen() {
 
           {/* Header */}
           <View className="gap-2">
-            <Text className="text-ink dark:text-white text-3xl font-semibold text-center">
+            <BrandHeadline className="text-3xl font-semibold text-center">
               Welcome to Temple
-            </Text>
+            </BrandHeadline>
             <Text className="text-ink-2 dark:text-ink-2-dk text-center">
               Pick how you’ll use it — swipe through, you can always switch
               later.

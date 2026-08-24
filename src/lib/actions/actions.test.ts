@@ -835,7 +835,7 @@ describe('the draft, in the chat', () => {
     expect(card.note).toBeNull();
     // Temple orange, not the retired blue: gyms no longer recolour
     // the product, so the email fallback matches the brand too.
-    expect(card.primaryColor).toBe('#C2410C');
+    expect(card.primaryColor).toBe('#14161A');
     expect(card.gymName).toBe('Your gym');
     // Not a rendering of the draft — the draft. Same builder apply uses,
     // so what the owner reads is what the send worker posts. The subject
