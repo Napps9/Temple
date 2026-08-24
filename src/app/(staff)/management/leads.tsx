@@ -8,7 +8,7 @@ import { AIMark } from '@/components/AIMark';
 import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
-import { BrandGradientHero } from '@/components/BrandGradientHero';
+import { BrandGradientHero, HERO_INK } from '@/components/BrandGradientHero';
 import { Button } from '@/components/Button';
 import { Sheet, SheetAction } from '@/components/Sheet';
 import { ChipButton } from '@/components/ChipButton';
@@ -360,23 +360,25 @@ export default function LeadsScreen() {
         </View>
 
         {isOwner && agentSettings.data?.vapi_assistant_id && Platform.OS === 'web' ? (
-          <BrandGradientHero color={colors.primary}>
+          <BrandGradientHero>
             <Pressable
               onPress={() => setCallOpen(true)}
               className="flex-row items-center gap-5 px-7 py-6 active:opacity-90">
-              <View className="w-[46px] h-[46px] rounded-card items-center justify-center bg-white/20">
-                <Ionicons name="mic" size={22} color="#FFFFFF" />
+              <View
+                className="w-[46px] h-[46px] rounded-card items-center justify-center"
+                style={{ backgroundColor: 'rgba(20,22,26,0.10)' }}>
+                <Ionicons name="mic" size={22} color={HERO_INK} />
               </View>
               <View className="flex-1">
-                <Text className="text-white font-bold text-[19px] leading-6">
+                <Text className="font-bold text-[19px] leading-6" style={{ color: HERO_INK }}>
                   Hear how it sounds right now
                 </Text>
-                <Text className="text-white/85 text-[13px] mt-1">
+                <Text className="text-[13px] mt-1" style={{ color: 'rgba(20,22,26,0.72)' }}>
                   No phone needed — talk to your AI right here in the browser.
                 </Text>
               </View>
-              <View className="bg-white rounded-ctl px-4 py-2.5">
-                <Text className="font-semibold text-xs" style={{ color: colors.primary }}>
+              <View className="rounded-ctl px-4 py-2.5" style={{ backgroundColor: HERO_INK }}>
+                <Text className="font-semibold text-xs" style={{ color: '#FFFFFF' }}>
                   Start talking
                 </Text>
               </View>
@@ -386,14 +388,16 @@ export default function LeadsScreen() {
           // Browser voice calls need @vapi-ai/web, which only exists on web
           // (the native TalkToAssistant is a hard no-op) — a "Start talking"
           // button here would just do nothing when tapped on the phone app.
-          <BrandGradientHero color={colors.primary}>
+          <BrandGradientHero>
             <View className="flex-row items-center gap-5 px-7 py-6">
-              <View className="w-[46px] h-[46px] rounded-card items-center justify-center bg-white/20">
-                <Ionicons name="mic" size={22} color="#FFFFFF" />
+              <View
+                className="w-[46px] h-[46px] rounded-card items-center justify-center"
+                style={{ backgroundColor: 'rgba(20,22,26,0.10)' }}>
+                <Ionicons name="mic" size={22} color={HERO_INK} />
               </View>
               <View className="flex-1">
-                <Text className="text-white font-bold text-[19px] leading-6">Talk to your AI</Text>
-                <Text className="text-white/85 text-[13px] mt-1">
+                <Text className="font-bold text-[19px] leading-6" style={{ color: HERO_INK }}>Talk to your AI</Text>
+                <Text className="text-[13px] mt-1" style={{ color: 'rgba(20,22,26,0.72)' }}>
                   Best on desktop for now — open Temple in a browser to talk to it live.
                 </Text>
               </View>

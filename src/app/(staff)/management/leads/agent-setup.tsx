@@ -9,7 +9,7 @@ import { Text } from '@/components/Text';
 
 import { AgentBriefBuilder } from '@/components/AgentBriefBuilder';
 import { BackLink } from '@/components/BackLink';
-import { BrandGradientHero } from '@/components/BrandGradientHero';
+import { BrandGradientHero, HERO_INK } from '@/components/BrandGradientHero';
 import { Button } from '@/components/Button';
 import { DurationField } from '@/components/DurationField';
 import { Screen } from '@/components/Screen';
@@ -19,7 +19,6 @@ import { VoiceSampleButton } from '@/components/VoiceSampleButton';
 import { provisionFrontDesk, syncVapiAssistant } from '@/lib/agent-sync';
 import { AGENT_VOICES } from '@/lib/agent-voices';
 import { useGymMembership } from '@/lib/auth';
-import { contrastRatio } from '@/lib/contrast';
 import { copyToClipboard } from '@/lib/clipboard';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -498,7 +497,6 @@ export default function AgentSetupWizard() {
           <LiveHero
             gymName={brand.gymName}
             number={number}
-            primaryColor={colors.primary}
             onDone={() => router.replace('/management/leads')}
           />
         ) : step === 4 ? (
@@ -750,24 +748,19 @@ function ProvisioningChecklist({ step, resuming }: { step: number; resuming: boo
 function LiveHero({
   gymName,
   number,
-  primaryColor,
   onDone,
 }: {
   gymName: string;
   number: string | null;
-  primaryColor: string;
   onDone: () => void;
 }) {
-  // Same brand-fill contrast pick as Button.tsx's primary variant — the
-  // fill is the gym's own colour, so white text isn't guaranteed to read.
-  const ink =
-    contrastRatio(primaryColor, '#FFFFFF') >= contrastRatio(primaryColor, '#111827')
-      ? '#FFFFFF'
-      : '#111827';
-  const tint = (opacity: string) => (ink === '#FFFFFF' ? `rgba(255,255,255,${opacity})` : `rgba(17,24,39,${opacity})`);
+  // The hero is the dawn gradient and its content is always ink — the
+  // fill stopped being a per-gym colour, so the contrast pick went with it.
+  const ink = HERO_INK;
+  const tint = (opacity: string) => `rgba(20,22,26,${opacity})`;
 
   return (
-    <BrandGradientHero color={primaryColor}>
+    <BrandGradientHero>
       <View className="px-8 py-8 gap-4 items-center">
         <View
           className="w-16 h-16 rounded-full items-center justify-center"
@@ -798,8 +791,9 @@ function LiveHero({
         ) : null}
         <Pressable
           onPress={onDone}
-          className="bg-white rounded-ctl px-6 py-3 self-stretch items-center">
-          <Text className="font-semibold" style={{ color: primaryColor }}>
+          className="rounded-ctl px-6 py-3 self-stretch items-center"
+          style={{ backgroundColor: HERO_INK }}>
+          <Text className="font-semibold" style={{ color: '#FFFFFF' }}>
             Done
           </Text>
         </Pressable>

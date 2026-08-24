@@ -76,7 +76,7 @@ export function Appear({ children }: { children: ReactNode }) {
 // Three pulsing dots beside the AI mark. Also the honest face of a real
 // wait: callers show it while an actual reply is being generated, not
 // only during the staged reveal.
-export function TypingIndicator() {
+export function TypingIndicator({ side = 'start' }: { side?: 'start' | 'end' }) {
   const colors = useThemeColors();
   const a = useRef(new Animated.Value(0.25)).current;
   const b = useRef(new Animated.Value(0.25)).current;
@@ -97,9 +97,11 @@ export function TypingIndicator() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
-    <View className="flex-row gap-2.5 pr-7">
+    <View
+      className={`flex-row items-start gap-2.5 ${side === 'end' ? 'self-end flex-row-reverse pl-7' : 'pr-7'}`}>
       <AIMark size={24} />
-      <View className="self-start bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl rounded-bl-md px-3.5 py-3 flex-row items-center gap-1.5">
+      <View
+        className={`bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-2xl ${side === 'end' ? 'rounded-br-md' : 'rounded-bl-md'} px-3.5 py-3 flex-row items-center gap-1.5`}>
         {[a, b, c].map((v, i) => (
           <Animated.View
             key={i}

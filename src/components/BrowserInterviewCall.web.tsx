@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { Appear } from './ChatReveal';
 import { Text } from './Text';
 
 import { errorMessage } from '@/lib/errors';
@@ -142,7 +143,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
             disabled={preparing}
             className={`flex-1 py-2.5 rounded-ctl items-center bg-primary ${preparing ? 'opacity-60' : ''}`}>
             {preparing ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={colors.onPrimary} />
             ) : (
               <Text className="font-semibold text-sm text-on-primary">Allow &amp; start talking</Text>
             )}
@@ -179,15 +180,16 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
         <ScrollView className="max-h-40" showsVerticalScrollIndicator={false}>
           <View className="gap-2">
             {call.turns.map((t, i) => (
-              <View
-                key={i}
-                className={`max-w-[86%] rounded-ctl px-3 py-2 ${
-                  t.role === 'user'
-                    ? 'self-end bg-primary/10'
-                    : 'self-start bg-white dark:bg-raised-dk'
-                }`}>
-                <Text className="text-ink dark:text-ink-dk text-xs">{t.text}</Text>
-              </View>
+              <Appear key={i}>
+                <View
+                  className={`max-w-[86%] rounded-ctl px-3 py-2 ${
+                    t.role === 'user'
+                      ? 'self-end bg-primary/10'
+                      : 'self-start bg-white dark:bg-raised-dk'
+                  }`}>
+                  <Text className="text-ink dark:text-ink-dk text-xs">{t.text}</Text>
+                </View>
+              </Appear>
             ))}
           </View>
         </ScrollView>

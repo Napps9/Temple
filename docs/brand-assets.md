@@ -50,9 +50,10 @@ The brand is monochrome, actions included: the primary action on a page
 is the *filled* thing — ink button on light, paper button on dark, the
 same inversion the mark uses — not a coloured thing. The one moment of
 colour is the **dawn gradient** (`DAWN` in `src/lib/theme.ts`, applied
-via `<BrandHeadline>`): the headline on the logged-out screens and the
-top rule on Temple's emails. Never a button, an icon tint, or a repeated
-row element. Two stop sets because the vivid stops that sing on a dark
+via `<BrandHeadline>`): the headline on the logged-out screens, the
+top rule on Temple's emails, and the big-moment hero cards
+(`BrandGradientHero` — talk-to-your-AI, go-live), whose content is
+always ink. Never a button, an icon tint, or a repeated row element. Two stop sets because the vivid stops that sing on a dark
 ground fall under the 3:1 large-text floor on paper —
 `src/lib/contrast.test.ts` asserts every stop clears it on its ground.
 

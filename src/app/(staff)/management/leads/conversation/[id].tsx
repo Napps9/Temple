@@ -7,6 +7,7 @@ import { Text } from '@/components/Text';
 
 import { AIMark } from '@/components/AIMark';
 import { BackLink } from '@/components/BackLink';
+import { Appear, TypingIndicator } from '@/components/ChatReveal';
 import { Button } from '@/components/Button';
 import { Sheet, SheetAction } from '@/components/Sheet';
 import { ChipButton } from '@/components/ChipButton';
@@ -357,6 +358,14 @@ export default function AgentConversationScreen() {
   const c = conversation.data;
   const status = c?.status;
   const rows = messages.data ?? [];
+  // The AI owes a reply: SMS thread, still on the AI, and the lead spoke
+  // last. The 5s poll that brings the reply also clears the indicator, so
+  // the dots are honest — they show exactly while the agent is composing.
+  const aiComposing =
+    c?.channel === 'sms' &&
+    c?.status === 'active' &&
+    rows.length > 0 &&
+    rows[rows.length - 1].role === 'lead';
   // Staff's own follow-up texts land in this same conversation's messages
   // (see lead-agent-staff-send) alongside the call's spoken turns — split
   // them out so the recorded call and any SMS sent from here read as two
@@ -395,11 +404,13 @@ export default function AgentConversationScreen() {
   function renderBubble(m: MessageRow) {
     if (m.role === 'system') {
       return (
-        <View key={m.id} className="px-4 py-2">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-xs italic">
-            {m.body}
-          </Text>
-        </View>
+        <Appear key={m.id}>
+          <View className="px-4 py-2">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs italic">
+              {m.body}
+            </Text>
+          </View>
+        </Appear>
       );
     }
     const fromLead = m.role === 'lead';
@@ -407,7 +418,8 @@ export default function AgentConversationScreen() {
     const active = m.id === activeId;
     const seekable = audio.supported && m.seconds_from_start != null;
     return (
-      <View key={m.id} className={`gap-1 ${fromLead ? 'items-start' : 'items-end'}`}>
+      <Appear key={m.id}>
+      <View className={`gap-1 ${fromLead ? 'items-start' : 'items-end'}`}>
         <Pressable
           disabled={!seekable}
           onPress={() => seekable && audio.seek(m.seconds_from_start ?? 0)}
@@ -488,6 +500,7 @@ export default function AgentConversationScreen() {
           />
         ) : null}
       </View>
+      </Appear>
     );
   }
 
@@ -617,6 +630,7 @@ export default function AgentConversationScreen() {
           <>
             <View className="gap-2" ref={transcriptRef}>
               {rows.map(renderBubble)}
+              {aiComposing ? <TypingIndicator side="end" /> : null}
               {messages.isSuccess && rows.length === 0 ? (
                 <Text className="text-ink-2 dark:text-ink-2-dk text-center py-6">
                   No messages yet.

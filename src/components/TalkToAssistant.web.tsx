@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, View } from 'react-native';
+import { Appear } from './ChatReveal';
 import { Text } from './Text';
 
 import { copyToClipboard } from '@/lib/clipboard';
@@ -215,15 +216,16 @@ function LiveBody({
       <ScrollView className="max-h-40" showsVerticalScrollIndicator={false}>
         <View className="gap-2">
           {call.turns.map((t, i) => (
-            <View
-              key={i}
-              className={`max-w-[86%] rounded-ctl px-3 py-2 ${
-                t.role === 'user'
-                  ? 'self-end bg-primary/10'
-                  : 'self-start bg-raised dark:bg-raised-dk'
-              }`}>
-              <Text className="text-ink dark:text-ink-dk text-xs">{t.text}</Text>
-            </View>
+            <Appear key={i}>
+              <View
+                className={`max-w-[86%] rounded-ctl px-3 py-2 ${
+                  t.role === 'user'
+                    ? 'self-end bg-primary/10'
+                    : 'self-start bg-raised dark:bg-raised-dk'
+                }`}>
+                <Text className="text-ink dark:text-ink-dk text-xs">{t.text}</Text>
+              </View>
+            </Appear>
           ))}
         </View>
       </ScrollView>
@@ -262,15 +264,16 @@ function EndedBody({ call, onClose }: { call: CallState; onClose?: () => void })
             </Text>
           ) : (
             call.turns.map((t, i) => (
-              <View
-                key={i}
-                className={`max-w-[86%] rounded-ctl px-3 py-2 ${
-                  t.role === 'user'
-                    ? 'self-end bg-primary/10'
-                    : 'self-start bg-raised dark:bg-raised-dk'
-                }`}>
-                <Text className="text-ink dark:text-ink-dk text-xs">{t.text}</Text>
-              </View>
+              <Appear key={i}>
+                <View
+                  className={`max-w-[86%] rounded-ctl px-3 py-2 ${
+                    t.role === 'user'
+                      ? 'self-end bg-primary/10'
+                      : 'self-start bg-raised dark:bg-raised-dk'
+                  }`}>
+                  <Text className="text-ink dark:text-ink-dk text-xs">{t.text}</Text>
+                </View>
+              </Appear>
             ))
           )}
         </View>
@@ -311,6 +314,9 @@ function EndedBody({ call, onClose }: { call: CallState; onClose?: () => void })
 // "active" would need a second brand colour with no established
 // per-gym equivalent, so intensity carries that instead.
 function VoiceOrb({ speaking, color }: { speaking: boolean; color: string }) {
+  // The bars sit on the primary fill, so they take on-primary — hardcoded
+  // white disappears in dark mode now that the fill is paper.
+  const barColor = useThemeColors().onPrimary;
   const glow = useRef(new Animated.Value(0)).current;
   const bars = useRef([0, 1, 2].map(() => new Animated.Value(0.35))).current;
 
@@ -375,7 +381,7 @@ function VoiceOrb({ speaking, color }: { speaking: boolean; color: string }) {
             style={{
               width: 3,
               borderRadius: 2,
-              backgroundColor: '#FFFFFF',
+              backgroundColor: barColor,
               height: 14,
               transform: [{ scaleY: b }],
             }}

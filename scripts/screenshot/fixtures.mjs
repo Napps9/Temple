@@ -337,6 +337,27 @@ export const TABLES = {
     { id: 'e2', gym_id: GYM_ID, title: 'Bank holiday timetable', status: 'draft', created_at: iso(-3), sent_at: null, recipient_count: 0 },
   ],
 
+  // One live SMS thread ending on the lead's turn with the AI still on
+  // it — exactly the state where the conversation screen shows the
+  // typing indicator.
+  agent_conversations: [
+    {
+      id: 'conv-1',
+      gym_id: GYM_ID,
+      phone: '+44 7700 900123',
+      channel: 'sms',
+      status: 'active',
+      lead: { id: 'lead-1', full_name: 'Jess Fletcher' },
+    },
+  ],
+  agent_messages: [
+    { id: 'am1', role: 'lead', body: 'Hi — do you do a free trial class?', created_at: iso(-1, 9), seconds_from_start: null, duration_ms: null },
+    { id: 'am2', role: 'agent', body: 'We do — your first class is on us. Fancy this week? We have HIIT Tuesday 6pm and Strength Foundations Thursday 7am.', created_at: iso(-1, 9), seconds_from_start: null, duration_ms: null },
+    { id: 'am3', role: 'lead', body: 'Tuesday could work. Is it beginner friendly?', created_at: iso(-1, 10), seconds_from_start: null, duration_ms: null },
+    { id: 'am4', role: 'agent', body: 'Completely — the coach scales everything, and about half the class started in the last few months. Want me to book you in for Tuesday 6pm?', created_at: iso(-1, 10), seconds_from_start: null, duration_ms: null },
+    { id: 'am5', role: 'lead', body: 'Yes please, book me in!', created_at: iso(0, 8), seconds_from_start: null, duration_ms: null },
+  ],
+
   gym_agent_settings: [
     { gym_id: GYM_ID, enabled: true, phone_number: '+44 20 7946 0958', voice_enabled: true, vapi_assistant_id: 'va-1', context: null, voice_id: 'v1', front_desk_entitled: true, provision_status: 'ready' },
   ],

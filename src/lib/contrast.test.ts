@@ -20,6 +20,14 @@ describe('contrastRatio', () => {
       contrastRatio(ACCENT.dark.onPrimary, ACCENT.dark.primary),
     ).toBeGreaterThanOrEqual(4.5);
   });
+  it('keeps ink readable on every hero-gradient stop', () => {
+    // BrandGradientHero paints the vivid dawn stops in both schemes and
+    // puts ink content on top — every stop has to carry it above the UI
+    // floor or the hero furniture disappears.
+    for (const stop of DAWN.dark) {
+      expect(contrastRatio('#14161A', stop)).toBeGreaterThanOrEqual(3);
+    }
+  });
   it('keeps every dawn stop above the large-text floor on its ground', () => {
     // The gradient only ever paints headline-sized text, so 3:1 (the
     // large-text floor) is the bar — and it is why DAWN carries two stop

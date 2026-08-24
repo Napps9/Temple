@@ -419,7 +419,7 @@ export function AgentSettings() {
             <RingingIcon color={colors.primary} />
           ) : (
             <View className="w-12 h-12 rounded-full bg-primary items-center justify-center">
-              <Ionicons name={heroTab === 'teach' ? 'call' : 'mic'} size={20} color="#FFFFFF" />
+              <Ionicons name={heroTab === 'teach' ? 'call' : 'mic'} size={20} color={colors.onPrimary} />
             </View>
           )}
           <View className="flex-1">
@@ -743,7 +743,6 @@ export function AgentSettings() {
                   buildCallWidgetSnippet({
                     phoneNumber: agentNumber!,
                     gymName: brand.gymName,
-                    accentColor: colors.primary,
                   }),
                 )
               }
