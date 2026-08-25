@@ -1398,11 +1398,7 @@ function AgendaView({
                   }`}>
                   <Text
                     className={`font-bold text-base ${
-                      selected
-                        ? 'text-ink dark:text-ink-dk'
-                        : today
-                          ? 'text-ink dark:text-ink-dk font-semibold'
-                          : 'text-ink dark:text-ink-dk'
+                      today ? 'text-brand' : 'text-ink dark:text-ink-dk'
                     }`}>
                     {d.getDate()}
                   </Text>
@@ -1579,7 +1575,7 @@ function AgendaCard({
           ) : null}
           <Text
             numberOfLines={1}
-            className="text-ink dark:text-ink-dk font-semibold flex-1">
+            className="text-ink dark:text-ink-dk text-base font-semibold flex-1">
             {sessionLabel(session)}
           </Text>
         </View>
@@ -1755,11 +1751,7 @@ function DayView({
                   }`}>
                   <Text
                     className={`font-bold text-base ${
-                      selected
-                        ? 'text-ink dark:text-ink-dk'
-                        : today
-                          ? 'text-ink dark:text-ink-dk font-semibold'
-                          : 'text-ink dark:text-ink-dk'
+                      today ? 'text-brand' : 'text-ink dark:text-ink-dk'
                     }`}>
                     {d.getDate()}
                   </Text>
@@ -1882,7 +1874,7 @@ function DayGrid({
             key={hour}
             className="flex-row gap-4 border-t border-line dark:border-line-dk"
             style={{ height: HOUR_HEIGHT }}>
-            <Text className="text-ink-3 dark:text-ink-3-dk text-sm w-14 pt-3">
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs w-14 pt-3">
               {label}
             </Text>
             <View className="flex-1 py-1.5">
@@ -2022,10 +2014,7 @@ function DayClassCard({
             </View>
           ) : null}
         </View>
-        <Text
-          className={`text-ink dark:text-ink-dk font-medium ${
-            inGrid ? 'text-sm' : 'text-base'
-          }`}>
+        <Text className="text-ink dark:text-ink-dk font-medium text-sm">
           {fmtTime(start)} — {fmtTime(end)}
         </Text>
         {inGrid ? null : (
@@ -2145,16 +2134,14 @@ function WeekView({
                   i > 0 ? 'border-l' : ''
                 }`}>
                 <Text
-                  className={`text-xs uppercase tracking-wide ${
-                    today
-                      ? 'text-ink dark:text-ink-dk font-semibold'
-                      : 'text-ink-2 dark:text-ink-2-dk'
+                  className={`text-xs font-semibold uppercase ${
+                    today ? 'text-brand' : 'text-ink-3 dark:text-ink-3-dk'
                   }`}>
                   {d.toLocaleDateString(undefined, { weekday: 'short' })}
                 </Text>
                 <Text
-                  className={`text-lg font-bold mt-0.5 ${
-                    today ? 'text-primary' : 'text-ink dark:text-ink-dk'
+                  className={`font-bold text-base mt-0.5 ${
+                    today ? 'text-brand' : 'text-ink dark:text-ink-dk'
                   }`}>
                   {d.getDate()}
                 </Text>
