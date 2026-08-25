@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildGymFeed,
   classChangeTitle,
+  isPinnedNow,
   unreadOnly,
   type GymFeedItem,
 } from './inbox-feed';
@@ -83,5 +84,61 @@ describe('classChangeTitle', () => {
 
   it('falls back to the reschedule wording for unknown kinds', () => {
     expect(classChangeTitle('something_new')).toBe('Class times changed');
+  });
+});
+
+describe('isPinnedNow', () => {
+  const now = new Date('2026-08-25T12:00:00Z');
+
+  it('is false when the notice was never pinned', () => {
+    expect(isPinnedNow({ pinned: false }, now)).toBe(false);
+    expect(
+      isPinnedNow(
+        { pinned: false, pinned_until: '2026-09-01T00:00:00Z' },
+        now,
+      ),
+    ).toBe(false);
+  });
+
+  it('treats a pin with no window as pinned until unpinned', () => {
+    expect(isPinnedNow({ pinned: true }, now)).toBe(true);
+    expect(
+      isPinnedNow({ pinned: true, pinned_from: null, pinned_until: null }, now),
+    ).toBe(true);
+  });
+
+  it('is false before the window opens', () => {
+    expect(
+      isPinnedNow({ pinned: true, pinned_from: '2026-08-26T00:00:00Z' }, now),
+    ).toBe(false);
+  });
+
+  it('is false once the window has closed', () => {
+    expect(
+      isPinnedNow({ pinned: true, pinned_until: '2026-08-24T00:00:00Z' }, now),
+    ).toBe(false);
+  });
+
+  // The end is exclusive: a pin that ends at noon is not pinned at noon.
+  it('treats the end of the window as exclusive', () => {
+    expect(
+      isPinnedNow({ pinned: true, pinned_until: '2026-08-25T12:00:00Z' }, now),
+    ).toBe(false);
+    expect(
+      isPinnedNow({ pinned: true, pinned_until: '2026-08-25T12:00:01Z' }, now),
+    ).toBe(true);
+  });
+
+  it('is true inside a window with both bounds', () => {
+    expect(
+      isPinnedNow(
+        {
+          pinned: true,
+          pinned_from: '2026-08-24T00:00:00Z',
+          pinned_until: '2026-08-31T00:00:00Z',
+        },
+        now,
+      ),
+    ).toBe(true);
   });
 });

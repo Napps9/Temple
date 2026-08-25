@@ -3,6 +3,7 @@ import { View, useWindowDimensions } from 'react-native';
 
 import { BottomDock, DOCK_CLEARANCE } from '@/components/BottomDock';
 import { MD } from '@/lib/breakpoint';
+import { PinnedNotice } from '@/components/PinnedNotice';
 import { TopNav, type NavSection } from '@/components/TopNav';
 import { useSession } from '@/lib/auth';
 import { useThemeColors } from '@/lib/theme';
@@ -34,6 +35,10 @@ export default function MemberLayout() {
   return (
     <View className="flex-1 bg-ground dark:bg-ground-dk">
       <TopNav sections={MEMBER_SECTIONS} variant="member" />
+      {/* The gym's live pinned notice sits under the bar rather than on
+          any one page: the whole point is that it finds the member
+          wherever they are. It renders nothing when nothing is pinned. */}
+      <PinnedNotice />
       {/* backBehavior="history": when a back press bubbles past a tab's
           inner stack, return to the tab the user was actually on. The
           default is firstRoute, which teleported an unhandled back to

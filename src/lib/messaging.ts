@@ -28,6 +28,8 @@ export type AnnouncementRow = {
   title: string;
   body: string;
   pinned: boolean;
+  pinned_from: string | null;
+  pinned_until: string | null;
   created_at: string;
 };
 

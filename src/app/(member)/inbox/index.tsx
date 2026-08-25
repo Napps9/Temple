@@ -20,6 +20,7 @@ import { errorMessage } from '@/lib/errors';
 import {
   buildGymFeed,
   classChangeTitle,
+  isPinnedNow,
   unreadOnly,
   type GymFeedItem,
   type InboxChip,
@@ -201,7 +202,9 @@ export default function Inbox() {
     queryFn: async (): Promise<AnnouncementRow[]> => {
       const { data, error } = await supabase
         .from('gym_announcements')
-        .select('id, gym_id, posted_by, title, body, pinned, created_at')
+        .select(
+          'id, gym_id, posted_by, title, body, pinned, pinned_from, pinned_until, created_at',
+        )
         .eq('gym_id', gymId!)
         .order('pinned', { ascending: false })
         .order('created_at', { ascending: false });
@@ -304,7 +307,7 @@ export default function Inbox() {
         id: a.id,
         ts: a.created_at,
         unread: announcementReads.data ? !announcementReads.data.has(a.id) : false,
-        pinned: a.pinned,
+        pinned: isPinnedNow(a),
         title: a.title,
         body: a.body,
         dotColor: null,
@@ -721,6 +724,28 @@ function GymFeedSection({
   );
 }
 
+// A pin that nobody remembers to remove is the reason 0261 exists, so
+// the composer offers a window first and "until I unpin it" last.
+const PIN_DEFAULT_DAYS = 7;
+const PIN_DURATIONS: {
+  label: string;
+  days: number | null;
+  icon: 'time-outline' | 'infinite-outline';
+}[] = [
+  { label: 'A week', days: 7, icon: 'time-outline' },
+  { label: 'Two weeks', days: 14, icon: 'time-outline' },
+  { label: 'A month', days: 30, icon: 'time-outline' },
+  { label: 'Until I unpin it', days: null, icon: 'infinite-outline' },
+];
+
+function pinDurationBlurb(days: number): string {
+  return new Date(Date.now() + days * 86_400_000).toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+}
+
 function AnnouncementComposer({
   gymId,
   posterId,
@@ -734,6 +759,7 @@ function AnnouncementComposer({
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [pinned, setPinned] = useState(false);
+  const [pinDays, setPinDays] = useState<number | null>(PIN_DEFAULT_DAYS);
   const [error, setError] = useState<string | null>(null);
 
   const post = useMutation({
@@ -741,12 +767,18 @@ function AnnouncementComposer({
       if (!title.trim() || !body.trim()) {
         throw new Error('Title and body are required');
       }
+      const until =
+        pinned && pinDays != null
+          ? new Date(Date.now() + pinDays * 86_400_000).toISOString()
+          : null;
       const { error: e } = await supabase.from('gym_announcements').insert({
         gym_id: gymId,
         posted_by: posterId,
         title: title.trim(),
         body: body.trim(),
         pinned,
+        pinned_from: pinned ? new Date().toISOString() : null,
+        pinned_until: until,
       });
       if (e) throw e;
     },
@@ -754,8 +786,10 @@ function AnnouncementComposer({
       setTitle('');
       setBody('');
       setPinned(false);
+      setPinDays(PIN_DEFAULT_DAYS);
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['gym-announcements'] });
+      queryClient.invalidateQueries({ queryKey: ['pinned-announcement'] });
       onPosted();
     },
     onError: (e) => setError(errorMessage(e, 'Could not post')),
@@ -780,13 +814,37 @@ function AnnouncementComposer({
         style={{ minHeight: 100, textAlignVertical: 'top' }}
         autoCapitalize="sentences"
       />
-      <View className="flex-row items-center gap-2">
-        <Switch
-          accessibilityLabel="Pin to top"
-          value={pinned}
-          onValueChange={setPinned}
-        />
-        <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Pin to top</Text>
+      <View className="gap-2">
+        <View className="flex-row items-center gap-2">
+          <Switch
+            accessibilityLabel="Pin to the top of the app"
+            value={pinned}
+            onValueChange={setPinned}
+          />
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
+            Pin to the top of the app
+          </Text>
+        </View>
+        {pinned ? (
+          <>
+            <View className="flex-row flex-wrap gap-1.5">
+              {PIN_DURATIONS.map((d) => (
+                <ChipButton
+                  key={d.label}
+                  label={d.label}
+                  icon={d.icon}
+                  tone={pinDays === d.days ? 'filled' : 'neutral'}
+                  onPress={() => setPinDays(d.days)}
+                />
+              ))}
+            </View>
+            <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
+              {pinDays == null
+                ? 'Stays up until you unpin it.'
+                : `Comes down on its own ${pinDurationBlurb(pinDays)}.`}
+            </Text>
+          </>
+        ) : null}
       </View>
       {error ? (
         <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>

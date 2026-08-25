@@ -842,6 +842,10 @@ export type Database = {
           title: string;
           body: string;
           pinned: boolean;
+          // The pin's window (0261). Both null means pinned until
+          // somebody unpins it, which is what every pre-0261 row is.
+          pinned_from: string | null;
+          pinned_until: string | null;
           // The closure this notice is about (0257); FK guards same-gym.
           closure_id: string | null;
           created_at: string;
@@ -853,6 +857,8 @@ export type Database = {
           title: string;
           body: string;
           pinned?: boolean;
+          pinned_from?: string | null;
+          pinned_until?: string | null;
           closure_id?: string | null;
           created_at?: string;
         };
@@ -863,6 +869,8 @@ export type Database = {
           title: string;
           body: string;
           pinned: boolean;
+          pinned_from: string | null;
+          pinned_until: string | null;
           closure_id: string | null;
           created_at: string;
         }>;
@@ -4431,6 +4439,15 @@ export type Database = {
       acknowledge_staff_alert: {
         Args: { p_alert_id: string };
         Returns: null;
+      };
+      set_announcement_pin: {
+        Args: {
+          p_announcement_id: string;
+          p_pinned: boolean;
+          p_pinned_from?: string | null;
+          p_pinned_until?: string | null;
+        };
+        Returns: void;
       };
       announcement_read_stats: {
         Args: { p_announcement_id: string };

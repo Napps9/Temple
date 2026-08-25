@@ -33,6 +33,20 @@ export function classChangeTitle(kind: string): string {
   return NOTICE_TITLE[kind] ?? 'Class times changed';
 }
 
+// A pin now carries a window (0261). Both bounds null is the original
+// behaviour — pinned until somebody unpins it — so a row written before
+// the window existed still reads as pinned.
+export function isPinnedNow(
+  a: { pinned: boolean; pinned_from?: string | null; pinned_until?: string | null },
+  now: Date = new Date(),
+): boolean {
+  if (!a.pinned) return false;
+  const t = now.getTime();
+  if (a.pinned_from && new Date(a.pinned_from).getTime() > t) return false;
+  if (a.pinned_until && new Date(a.pinned_until).getTime() <= t) return false;
+  return true;
+}
+
 // Pinned announcements lead regardless of age — that is what pinning is
 // for — then everything else by recency.
 export function buildGymFeed(items: GymFeedItem[]): GymFeedItem[] {

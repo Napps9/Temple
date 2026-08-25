@@ -806,6 +806,13 @@ export function ClassesCalendar({
             title: copy.title,
             body: copy.body,
             pinned: true,
+            // A closure notice has a natural end: the day the gym
+            // reopens. Pinning it past that is how a notice about a
+            // closed Monday is still shouting in October (0261).
+            pinned_from: new Date().toISOString(),
+            pinned_until: new Date(
+              new Date(`${args.end}T00:00:00`).getTime() + 86_400_000,
+            ).toISOString(),
             closure_id: closureId,
           });
         } catch {

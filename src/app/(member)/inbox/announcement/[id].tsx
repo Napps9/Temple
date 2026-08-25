@@ -6,10 +6,12 @@ import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
+import { ChipButton } from '@/components/ChipButton';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import { isPinnedNow } from '@/lib/inbox-feed';
 import { timeAgo } from '@/lib/messaging';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
@@ -21,6 +23,8 @@ type AnnouncementDetail = {
   title: string;
   body: string;
   pinned: boolean;
+  pinned_from: string | null;
+  pinned_until: string | null;
   closure_id: string | null;
   created_at: string;
   author: { full_name: string | null } | null;
@@ -34,6 +38,14 @@ type AnnouncementDetail = {
 // The "Read by X of Y members" line is staff-only by the owner's call:
 // reach is a measure for the person who posts, not a score for the
 // people who read. The RPC enforces the same gate server-side.
+function formatPinEnd(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+}
+
 export default function AnnouncementDetail() {
   const colors = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -48,7 +60,7 @@ export default function AnnouncementDetail() {
       const { data, error } = await supabase
         .from('gym_announcements')
         .select(
-          'id, gym_id, title, body, pinned, closure_id, created_at, author:profiles!posted_by(full_name)',
+          'id, gym_id, title, body, pinned, pinned_from, pinned_until, closure_id, created_at, author:profiles!posted_by(full_name)',
         )
         .eq('id', id!)
         .limit(1);
@@ -122,6 +134,26 @@ export default function AnnouncementDetail() {
     },
   });
 
+  // Pinning is the one property of a posted announcement that can
+  // change, and 0195 left no client UPDATE on this table — so it moves
+  // through set_announcement_pin or not at all.
+  const setPin = useMutation({
+    mutationFn: async (until: string | null | 'off') => {
+      const { error } = await supabase.rpc('set_announcement_pin', {
+        p_announcement_id: id!,
+        p_pinned: until !== 'off',
+        p_pinned_from: until === 'off' ? null : new Date().toISOString(),
+        p_pinned_until: until === 'off' ? null : until,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['announcement', id] });
+      queryClient.invalidateQueries({ queryKey: ['gym-announcements'] });
+      queryClient.invalidateQueries({ queryKey: ['pinned-announcement'] });
+    },
+  });
+
   const gotIt = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from('announcement_reads').upsert(
@@ -157,7 +189,7 @@ export default function AnnouncementDetail() {
               title={a.title}
               subtitle={`Posted by ${a.author?.full_name ?? 'the gym'} · ${timeAgo(a.created_at)}`}
               action={
-                a.pinned ? (
+                isPinnedNow(a) ? (
                   <View className="flex-row items-center gap-1 rounded-full bg-raised dark:bg-raised-dk px-2.5 py-1">
                     <Ionicons name="pin" size={12} color={colors.ink2} />
                     <Text className="text-ink-2 dark:text-ink-2-dk text-xs font-semibold">
@@ -212,6 +244,49 @@ export default function AnnouncementDetail() {
                   </Text>
                 ) : null}
               </View>
+            ) : null}
+
+            {canSeeReach ? (
+              <View className="flex-row items-center flex-wrap gap-1.5">
+                {isPinnedNow(a) ? (
+                  <>
+                    <ChipButton
+                      label="Unpin"
+                      icon="close"
+                      onPress={() => setPin.mutate('off')}
+                    />
+                    <ChipButton
+                      label="Another week"
+                      icon="pin"
+                      onPress={() =>
+                        setPin.mutate(
+                          new Date(Date.now() + 7 * 86_400_000).toISOString(),
+                        )
+                      }
+                    />
+                  </>
+                ) : (
+                  <ChipButton
+                    label="Pin for a week"
+                    icon="pin"
+                    onPress={() =>
+                      setPin.mutate(
+                        new Date(Date.now() + 7 * 86_400_000).toISOString(),
+                      )
+                    }
+                  />
+                )}
+                {a.pinned && a.pinned_until ? (
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-xs pl-1">
+                    Comes down {formatPinEnd(a.pinned_until)}
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
+            {setPin.error ? (
+              <Text className="text-red-500 dark:text-red-400 text-sm">
+                {errorMessage(setPin.error, 'Could not change the pin')}
+              </Text>
             ) : null}
 
             {canSeeReach && stats.data ? (

@@ -382,6 +382,19 @@ rental, or a **physical subscription box** shipped every cycle.
   shows each reader **"What changed for you"** — their own cancelled
   classes for that closure, "none were affected" when so, and a note
   when the closure has since been lifted.
+- **Pinned notices, with a window** (0261) — a pin now carries
+  `pinned_from` / `pinned_until`, and the composer offers a week / two
+  weeks / a month / until I unpin it. The live pin renders as a one-line
+  strip **under the top bar on every member screen**
+  (`src/components/PinnedNotice.tsx`, mounted in `(member)/_layout.tsx`)
+  — ink, never the accent, and one notice at a time: the newest live pin
+  wins. Dismissing it writes the same `announcement_reads` row reading it
+  does, so it also clears the bell. Changing a pin after posting goes
+  through `set_announcement_pin` (the only writer — 0195 revoked client
+  UPDATE on the table), gated on `can_post_announcements` and capped at a
+  year; the announcement page carries Unpin / Another week for staff.
+  The close-gym flow's notice now expires the day after the gym reopens.
+  Both bounds null is the pre-0261 behaviour, pinned until unpinned.
 - **One-feed inbox** — filter chips (New / All / From the gym / Direct,
   plus capability-gated Alerts and Cover) over a single feed: pinned
   announcements first, then broadcasts and closure/cancellation notices

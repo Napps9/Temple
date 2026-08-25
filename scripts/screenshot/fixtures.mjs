@@ -456,9 +456,9 @@ export const TABLES = {
   ],
 
   gym_announcements: [
-    { id: 'ann1', gym_id: GYM_ID, posted_by: 'a3', author: { full_name: 'Priya Raman' }, title: 'Closed bank holiday Monday', body: 'The gym is closed Monday 31 August. Saturday and Sunday run as normal — Tuesday is back to the full timetable.', pinned: true, closure_id: 'cl1', created_at: iso(-4, 10) },
-    { id: 'ann2', gym_id: GYM_ID, posted_by: 'a3', title: 'New barbells have landed', body: 'Twelve new competition bars are on the racks. The old ones move to the garage gym rail.', pinned: false, created_at: iso(-1, 7) },
-    { id: 'ann3', gym_id: GYM_ID, posted_by: 'a3', title: 'Car park resurfacing', body: 'The council are resurfacing the car park Thursday morning. Street parking on Foundry Lane is free before 10am.', pinned: false, created_at: iso(-9, 9) },
+    { id: 'ann1', gym_id: GYM_ID, posted_by: 'a3', author: { full_name: 'Priya Raman' }, title: 'Closed bank holiday Monday', body: 'The gym is closed Monday 31 August. Saturday and Sunday run as normal — Tuesday is back to the full timetable.', pinned: true, pinned_from: iso(-4, 10), pinned_until: iso(6, 0), closure_id: 'cl1', created_at: iso(-4, 10) },
+    { id: 'ann2', gym_id: GYM_ID, posted_by: 'a3', title: 'New barbells have landed', body: 'Twelve new competition bars are on the racks. The old ones move to the garage gym rail.', pinned: false, pinned_from: null, pinned_until: null, created_at: iso(-1, 7) },
+    { id: 'ann3', gym_id: GYM_ID, posted_by: 'a3', title: 'Car park resurfacing', body: 'The council are resurfacing the car park Thursday morning. Street parking on Foundry Lane is free before 10am.', pinned: false, pinned_from: null, pinned_until: null, created_at: iso(-9, 9) },
   ],
   // ann3 read, ann1/ann2 unread — the feed shows a mix of dots.
   announcement_reads: [
