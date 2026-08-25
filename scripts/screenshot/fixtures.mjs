@@ -455,6 +455,11 @@ export const TABLES = {
     { id: 'dm4', gym_id: GYM_ID, sender_id: 'a3', recipient_id: USER_ID, body: 'There is a 15 minute primer built in, come as you are.', created_at: iso(-1, 9), read_at: null },
   ],
 
+  plan_coupons: [
+    { id: 'cp1', gym_id: GYM_ID, code: 'JAN50', name: 'January half price', discount_kind: 'percent', percent_off: 50, amount_off_cents: null, currency: null, duration: 'repeating', duration_in_months: 3, valid_from: iso(-20), valid_until: iso(35), max_redemptions: 50, per_member_limit: 1, archived_at: null, stripe_coupon_id: 'co_live', created_by: 'a3', created_at: iso(-20) },
+    { id: 'cp2', gym_id: GYM_ID, code: 'FIRSTFREE', name: 'First month free', discount_kind: 'percent', percent_off: 100, amount_off_cents: null, currency: null, duration: 'once', duration_in_months: null, valid_from: iso(-5), valid_until: null, max_redemptions: null, per_member_limit: 1, archived_at: null, stripe_coupon_id: null, created_by: 'a3', created_at: iso(-5) },
+  ],
+
   member_milestones: [
     { id: 'ms1', gym_id: GYM_ID, profile_id: USER_ID, kind: 'personal_best', movement_key: 'back_squat', track_key: '1rm', body: '102.5 kg — up from 100 kg.', performed_at: iso(0, 7), read_at: null, created_at: iso(0, 7) },
   ],

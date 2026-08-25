@@ -85,6 +85,10 @@ Deno.serve(async (req: Request) => {
   const planId = body.plan_id;
   const origin = (body.origin ?? 'https://app.jointemple.io').replace(/\/+$/, '');
   const legacySubscriptionId = body.legacy_subscription_id;
+  const couponCode =
+    typeof body.coupon_code === 'string' && body.coupon_code.trim() !== ''
+      ? body.coupon_code.trim()
+      : null;
   // Optional client return path. Must be relative (leading slash, no
   // scheme) so it can't be turned into an open redirect; defaults to the
   // membership landing the app root already handles.
@@ -158,6 +162,36 @@ Deno.serve(async (req: Request) => {
     legacySubId = legacy.id as string;
   }
 
+  // The coupon, validated by the same function the member's screen
+  // calls as they type — AS THE CALLER, so auth.uid() resolves and the
+  // per-member limit means something. Re-checked here rather than
+  // trusted from the client, because this is where it turns into money.
+  let coupon: {
+    coupon_id: string;
+    code: string;
+    name: string | null;
+    discount_kind: string;
+    percent_off: number | null;
+    amount_off_cents: number | null;
+    currency: string | null;
+    duration: string;
+    duration_in_months: number | null;
+  } | null = null;
+  if (couponCode) {
+    const { data: preview, error: previewError } = await caller.rpc(
+      'preview_plan_coupon',
+      { p_gym_id: gymId, p_plan_id: planId, p_code: couponCode },
+    );
+    if (previewError) {
+      return json({ error: previewError.message }, 400);
+    }
+    const row = (preview ?? [])[0];
+    if (!row || row.reason) {
+      return json({ error: row?.reason ?? 'That code isn\'t recognised' }, 409);
+    }
+    coupon = row;
+  }
+
   // Credit packs are a one-off purchase; everything else bills monthly.
   const recurring = plan.kind !== 'credit_pack';
 
@@ -228,6 +262,46 @@ Deno.serve(async (req: Request) => {
         .eq('plan_id', planId);
     }
 
+    // 2b. The Stripe Coupon, created lazily and cached on the row for
+    //     the same reason the Price is: SQL cannot call Stripe, and an
+    //     owner may write an offer before connecting Stripe at all.
+    //
+    //     Only the arithmetic is mirrored. max_redemptions, redeem_by
+    //     and the plan list stay ours — a Stripe-side max_redemptions
+    //     would brick this cached id the moment it filled up, and the
+    //     per-member limit has no expression there at all.
+    let stripeCouponId: string | null = null;
+    if (coupon) {
+      const { data: couponRow } = await service
+        .from('plan_coupons')
+        .select('stripe_coupon_id')
+        .eq('id', coupon.coupon_id)
+        .maybeSingle();
+      stripeCouponId = (couponRow?.stripe_coupon_id as string | null) ?? null;
+      if (!stripeCouponId) {
+        const couponParams: Record<string, string> =
+          coupon.discount_kind === 'percent'
+            ? { percent_off: String(coupon.percent_off) }
+            : {
+                amount_off: String(coupon.amount_off_cents),
+                currency: (coupon.currency ?? currency).toLowerCase(),
+              };
+        couponParams.duration = coupon.duration;
+        if (coupon.duration === 'repeating') {
+          couponParams.duration_in_months = String(coupon.duration_in_months);
+        }
+        couponParams.name = coupon.name ?? coupon.code;
+        couponParams['metadata[gym_id]'] = gymId;
+        couponParams['metadata[coupon_id]'] = coupon.coupon_id;
+        const made = await stripe('coupons', couponParams, STRIPE_SECRET_KEY, account);
+        stripeCouponId = made.id as string;
+        await service
+          .from('plan_coupons')
+          .update({ stripe_coupon_id: stripeCouponId })
+          .eq('id', coupon.coupon_id);
+      }
+    }
+
     // 3. Checkout session. Metadata is mirrored onto the subscription /
     //    payment intent so the webhook can map the result back.
     const sessionParams: Record<string, string> = {
@@ -242,6 +316,10 @@ Deno.serve(async (req: Request) => {
       'metadata[profile_id]': user.id,
     };
     if (legacySubId) sessionParams['metadata[legacy_subscription_id]'] = legacySubId;
+    if (coupon && stripeCouponId) {
+      sessionParams['discounts[0][coupon]'] = stripeCouponId;
+      sessionParams['metadata[coupon_id]'] = coupon.coupon_id;
+    }
     const metaPrefix = recurring
       ? 'subscription_data[metadata]'
       : 'payment_intent_data[metadata]';
@@ -249,6 +327,7 @@ Deno.serve(async (req: Request) => {
     sessionParams[`${metaPrefix}[plan_id]`] = planId;
     sessionParams[`${metaPrefix}[profile_id]`] = user.id;
     if (legacySubId) sessionParams[`${metaPrefix}[legacy_subscription_id]`] = legacySubId;
+    if (coupon) sessionParams[`${metaPrefix}[coupon_id]`] = coupon.coupon_id;
 
     const session = await stripe(
       'checkout/sessions',

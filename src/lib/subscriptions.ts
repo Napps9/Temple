@@ -24,11 +24,15 @@ export function useStartCheckout(
 ) {
   return useMutation({
     mutationFn: async (
-      args: string | { planId: string; legacySubscriptionId?: string },
+      args:
+        | string
+        | { planId: string; legacySubscriptionId?: string; couponCode?: string | null },
     ) => {
       if (!gymId) throw new Error('No gym');
-      const { planId, legacySubscriptionId } =
-        typeof args === 'string' ? { planId: args, legacySubscriptionId: undefined } : args;
+      const { planId, legacySubscriptionId, couponCode } =
+        typeof args === 'string'
+          ? { planId: args, legacySubscriptionId: undefined, couponCode: null }
+          : args;
       const { data, error } = await supabase.functions.invoke('stripe-checkout', {
         body: {
           gym_id: gymId,
@@ -36,6 +40,7 @@ export function useStartCheckout(
           origin: checkoutOrigin(),
           success_path: opts?.successPath,
           legacy_subscription_id: legacySubscriptionId,
+          coupon_code: couponCode ?? null,
         },
       });
       if (error) {

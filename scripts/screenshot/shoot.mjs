@@ -44,6 +44,7 @@ const ROUTES = [
   ['tasks', '/management/tasks'],
   ['book', '/book'],
   ['inbox', '/inbox'],
+  ['membership', '/membership'],
   ['track', '/track'],
   ['account', '/account'],
 ];

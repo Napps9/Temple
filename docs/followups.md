@@ -385,7 +385,7 @@ because there is no plan.
 - What does the owner see when it's used — a Timeline receipt ("Sam
   took Saturday 9am on a trial link") is the obvious answer.
 
-### 8b. Limited-time coupons — first month free, one-off, not recurring
+### ~~8b. Limited-time coupons — first month free, one-off, not recurring~~ (shipped 0264)
 
 **The job:** the owner runs an offer — first month free, 50% off
 January, a referral reward — and needs it to apply once and then stop,

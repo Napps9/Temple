@@ -2580,6 +2580,55 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      // Limited-time offers (0264). Staff-readable; a member's only
+      // window is preview_plan_coupon, which needs the code.
+      plan_coupons: {
+        Row: {
+          id: string;
+          gym_id: string;
+          code: string;
+          name: string | null;
+          discount_kind: 'percent' | 'amount';
+          percent_off: number | null;
+          amount_off_cents: number | null;
+          currency: string | null;
+          duration: 'once' | 'repeating';
+          duration_in_months: number | null;
+          valid_from: string;
+          valid_until: string | null;
+          max_redemptions: number | null;
+          per_member_limit: number;
+          archived_at: string | null;
+          stripe_coupon_id: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      plan_coupon_plans: {
+        Row: { coupon_id: string; plan_id: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      plan_coupon_redemptions: {
+        Row: {
+          id: string;
+          coupon_id: string;
+          gym_id: string;
+          profile_id: string;
+          plan_id: string | null;
+          source: 'self_serve' | 'staff';
+          stripe_checkout_session_id: string | null;
+          stripe_subscription_id: string | null;
+          applied_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       // A personal best, written down so it can be said out loud
       // (0263). Same shape as the other one-member notices.
       member_milestones: {
@@ -4511,6 +4560,45 @@ export type Database = {
         Args: { p_alert_id: string };
         Returns: null;
       };
+      upsert_plan_coupon: {
+        Args: {
+          p_gym_id: string;
+          p_code: string;
+          p_discount_kind: 'percent' | 'amount';
+          p_coupon_id?: string | null;
+          p_name?: string | null;
+          p_percent_off?: number | null;
+          p_amount_off_cents?: number | null;
+          p_duration?: 'once' | 'repeating';
+          p_duration_in_months?: number | null;
+          p_valid_from?: string | null;
+          p_valid_until?: string | null;
+          p_max_redemptions?: number | null;
+          p_per_member_limit?: number;
+          p_plan_ids?: string[] | null;
+        };
+        Returns: string;
+      };
+      archive_plan_coupon: {
+        Args: { p_coupon_id: string };
+        Returns: void;
+      };
+      preview_plan_coupon: {
+        Args: { p_gym_id: string; p_plan_id: string; p_code: string };
+        Returns: {
+          coupon_id: string;
+          code: string;
+          name: string | null;
+          discount_kind: 'percent' | 'amount';
+          percent_off: number | null;
+          amount_off_cents: number | null;
+          currency: string | null;
+          duration: 'once' | 'repeating';
+          duration_in_months: number | null;
+          discounted_first_cents: number | null;
+          reason: string | null;
+        }[];
+      };
       record_personal_best: {
         Args: {
           p_gym_id: string;
@@ -5322,6 +5410,7 @@ export type Database = {
           p_plan_id: string;
           p_until?: string | null;
           p_mode?: string;
+          p_coupon_code?: string | null;
         };
         Returns: {
           subscription_id: string;

@@ -23,6 +23,7 @@ import { currencySymbol } from '@/lib/setup-flow';
 import { planKindLabel, planPriceLabel } from '@/lib/subscriptions';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useSetupAutoReturn } from '@/lib/useSetupAutoReturn';
+import { PlanCouponsPanel } from '@/components/PlanCouponsPanel';
 import { useCan } from '@/lib/useCan';
 import { useThemeColors } from '@/lib/theme';
 
@@ -1173,6 +1174,7 @@ export default function PlansScreen() {
           subtitle="Define your membership plans. Existing subscribers keep the price and credits they signed up with — editing a plan only changes what new subscribers get."
         />
         <PlansPanel />
+        <PlanCouponsPanel />
       </ScrollView>
     </Screen>
   );

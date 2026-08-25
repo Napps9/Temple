@@ -196,6 +196,32 @@ rental, or a **physical subscription box** shipped every cycle.
   steps aside once options exist); an orders queue with the buyer,
   items, shipping address and a **Mark shipped / done** action; a **Sales
   this month** tile [`can_see_store_revenue`].
+- **Offer codes** (0264) [`can_manage_plans`, owner-only by default] —
+  limited-time coupons on membership plans. Percent or fixed amount,
+  once or N months, valid-from/until, a redemption cap and a per-member
+  limit, optionally restricted to chosen plans (**empty list = every
+  plan**, as `plan_class_types` means every class type). Written on
+  Manage → Plans; the member types the code on their plan card before
+  subscribing.
+  **The code is ours, the arithmetic is Stripe's**: a Stripe Coupon is
+  created lazily on the gym's connected account at first checkout and
+  cached on `plan_coupons.stripe_coupon_id`, then attached to the
+  Checkout Session via `discounts[0][coupon]` — not
+  `allow_promotion_codes`, which would move validation to Stripe's
+  dashboard where the per-member limit and plan list don't exist. Only
+  the discount arithmetic is mirrored; the caps stay in Postgres.
+  `preview_plan_coupon` is the single decider, called both by the
+  member's field as they type and by `stripe-checkout` before it takes
+  money, so the screen and the charge cannot disagree; an unrecognised,
+  archived or other-gym code all give the same vague refusal so codes
+  can't be enumerated. Because a Stripe Coupon is immutable, the money
+  fields freeze here once `stripe_coupon_id` is set — enforced by a
+  BEFORE UPDATE trigger as well as the RPC. Redemptions are **counted,
+  not reserved** (the webhook writes one on `checkout.session.completed`,
+  idempotent per session). `assign_member_plan` also takes a
+  `p_coupon_code`, but be clear what that means: **that path is unbilled**,
+  so a coupon there changes the price the membership is *recorded* at
+  and takes no money.
 - **Owner settings** — switch the store off/on (on by default for
   every gym since 0154) and set the shipping fee (`gyms.store_enabled`
   / `store_shipping_fee_cents`, RPC `set_store_settings`). Owners pick

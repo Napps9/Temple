@@ -637,6 +637,32 @@ Deno.serve(async (req: Request) => {
         amountCents: (obj.amount_total as number) ?? 0,
         currency: ((obj.currency as string) ?? 'gbp').toUpperCase(),
       });
+
+      // The coupon is redeemed when the money moved, not when the code
+      // was typed. Idempotent on the checkout session, so a Stripe
+      // retry counts it once. Nothing in invoice.paid needs to change:
+      // amount_total already carries the discount, so billing_events
+      // records the real money either way.
+      const couponId = meta.coupon_id as string | undefined;
+      if (couponId) {
+        const { error: couponErr } = await service.rpc('_apply_plan_coupon', {
+          p_coupon_id: couponId,
+          p_gym_id: gymId,
+          p_profile_id: profileId,
+          p_plan_id: planId,
+          p_stripe_checkout_session_id: obj.id,
+          p_stripe_subscription_id: subId,
+        });
+        if (couponErr) {
+          // A missed redemption count must not fail a paid checkout —
+          // the member is on the plan and Stripe has the money.
+          console.warn('stripe-webhook: coupon redemption not recorded', {
+            couponId,
+            sessionId: obj.id,
+            error: couponErr.message,
+          });
+        }
+      }
     } else if (type === 'invoice.paid') {
       // invoice.subscription was moved onto invoice.parent in newer API
       // versions (2025+/dahlia); read whichever carries it, or every

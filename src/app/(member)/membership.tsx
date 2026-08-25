@@ -8,6 +8,7 @@ import { Text } from '@/components/Text';
 import { BackLink } from '@/components/BackLink';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
+import { CouponField } from '@/components/CouponField';
 import { FirstClassBanner } from '@/components/FirstClassBanner';
 import { IconTile, ListRow, RuledList } from '@/components/ListRow';
 import { EmptyState } from '@/components/EmptyState';
@@ -692,6 +693,9 @@ export default function MembershipScreen() {
   // the inline confirm (with the pro-rated figure for an upgrade) until
   // the member confirms or backs out.
   const [confirmPlanId, setConfirmPlanId] = useState<string | null>(null);
+  // An applied offer code, per plan card — the member may try one on a
+  // plan, change their mind and look at another.
+  const [couponFor, setCouponFor] = useState<Record<string, string | null>>({});
 
   const currentSubs = (subs.data ?? []).filter((s) =>
     CURRENT_SUB_STATUSES.has(s.status),
@@ -1244,13 +1248,34 @@ export default function MembershipScreen() {
                     }
                     // No membership yet — start one.
                     return canSelfCheckout ? (
-                      <Button
-                        variant="plain"
-                        onPress={() => checkout.mutate(plan.plan_id)}
-                        loading={busy}
-                        icon="card-outline">
-                        Subscribe
-                      </Button>
+                      <View className="gap-2">
+                        {gymId ? (
+                          <CouponField
+                            gymId={gymId}
+                            planId={plan.plan_id}
+                            priceCents={plan.monthly_price_cents}
+                            currency={currency}
+                            onApplied={(code) =>
+                              setCouponFor((prev) => ({
+                                ...prev,
+                                [plan.plan_id]: code,
+                              }))
+                            }
+                          />
+                        ) : null}
+                        <Button
+                          variant="plain"
+                          onPress={() =>
+                            checkout.mutate({
+                              planId: plan.plan_id,
+                              couponCode: couponFor[plan.plan_id] ?? null,
+                            })
+                          }
+                          loading={busy}
+                          icon="card-outline">
+                          Subscribe
+                        </Button>
+                      </View>
                     ) : null;
                   })()}
                 </View>
