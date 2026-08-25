@@ -235,26 +235,25 @@ function NowLine({ topPx }: { topPx: number }) {
 type PositionedSession = {
   session: ClassSession;
   topPx: number;
-  spanPx: number;
+  heightPx: number;
   leftPct: number;
   widthPct: number;
 };
 
-// A card is the same size whatever the class's length — a 30-minute class
-// and a 90-minute one carry the same pill, the same time range and the same
-// type, so they get the same box. Duration is read from the time range
-// printed on the card (and the agenda's "45 min"), not from how tall the
-// card grew: sizing by duration meant a 30-minute class had to render its
-// content in 38px, which clipped the time mid-glyph, while anything under
-// 84 minutes silently dropped to smaller type.
+// A card grows with the class — a 90-minute session covers 90 minutes of
+// grid — but it never shrinks below what its content needs, and the
+// content is one size at every duration. Sizing purely by duration is
+// what used to make a 30-minute class render its time range in 38px
+// (clipped mid-glyph) and demote everything under 84 minutes to smaller
+// type with its detail dropped.
 //
-// The grid still tells the truth about time — cards sit at their start
-// minute, and the hours a class really covers stay blocked. What changes is
-// that a card's own box no longer stretches. CARD_SPAN_MIN is how many
-// minutes of grid one rendered card visually covers; overlap packing uses
-// it so two cards that would collide on screen are laid out side by side,
-// exactly as two genuinely overlapping classes already are.
-const CARD_SPAN_MIN = 55;
+// `minCardPx` is that floor, and it differs by grid: the day card carries
+// a pill and a time range, the week tile two lines of 10px. Overlap
+// packing keys off what a card actually covers on screen — the floor
+// included — so two short classes close enough to collide are laid out
+// side by side, the same treatment genuinely overlapping classes get.
+const DAY_CARD_MIN_PX = 76;
+const WEEK_TILE_MIN_PX = 44;
 
 function layoutDay(
   sessions: ClassSession[] | undefined,
@@ -262,7 +261,9 @@ function layoutDay(
   baseHour: number,
   hourHeight: number,
   totalHours: number,
+  minCardPx: number,
 ): PositionedSession[] {
+  const minCardMin = (minCardPx / hourHeight) * 60;
   const items = (sessions ?? [])
     .filter((s) => isSameDay(new Date(s.starts_at), day))
     .map((s) => {
@@ -280,7 +281,7 @@ function layoutDay(
     .sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin)
     // What the card occupies on screen: its own box if the class is
     // shorter than one, otherwise the class's real span.
-    .map((it) => ({ ...it, drawnEndMin: Math.max(it.endMin, it.startMin + CARD_SPAN_MIN) }));
+    .map((it) => ({ ...it, drawnEndMin: Math.max(it.endMin, it.startMin + minCardMin) }));
 
   const columnEnds: number[] = [];
   const itemColumns = items.map((it) => {
@@ -305,9 +306,10 @@ function layoutDay(
       positioned.push({
         session: it.session,
         topPx: (it.startMin / 60) * hourHeight,
-        // The hours the class really covers — what blanks the "+ Add a
-        // class" placeholders underneath a long class.
-        spanPx: ((it.endMin - it.startMin) / 60) * hourHeight - 2,
+        heightPx: Math.max(
+          minCardPx,
+          ((it.endMin - it.startMin) / 60) * hourHeight - 2,
+        ),
         leftPct: (col / cols) * 100,
         widthPct: (1 / cols) * 100,
       });
@@ -331,7 +333,7 @@ function occupiedHourSet(
   for (const p of positioned) {
     const startHour = baseHour + Math.floor(p.topPx / hourHeight);
     const endHour =
-      baseHour + Math.ceil((p.topPx + p.spanPx) / hourHeight) - 1;
+      baseHour + Math.ceil((p.topPx + p.heightPx) / hourHeight) - 1;
     for (let h = startHour; h <= endHour; h += 1) out.add(h);
   }
   return out;
@@ -1853,8 +1855,14 @@ function DayGrid({
   onSessionPress: (id: string) => void;
   bookedSet: Set<string>;
 }) {
-  const colors = useThemeColors();
-  const positioned = layoutDay(sessions, date, HOURS[0], HOUR_HEIGHT, HOURS.length);
+  const positioned = layoutDay(
+    sessions,
+    date,
+    HOURS[0],
+    HOUR_HEIGHT,
+    HOURS.length,
+    DAY_CARD_MIN_PX,
+  );
   const occupied = occupiedHourSet(positioned, HOURS[0], HOUR_HEIGHT);
   const now = new Date();
   const isToday = isSameDay(date, now);
@@ -1908,37 +1916,13 @@ function DayGrid({
           left: TIME_GUTTER_PX,
           right: 0,
         }}>
-        {/* The hours the class actually runs, marked in its own colour
-            behind the card. The card is one size for every class, so this
-            is what keeps a 90-minute session legibly longer than a 30 —
-            without shrinking anybody's type to fit. */}
-        {positioned.map((p) => (
-          <View
-            key={`${p.session.id}-span`}
-            pointerEvents="none"
-            style={{
-              position: 'absolute',
-              top: p.topPx,
-              height: p.spanPx,
-              left: `${p.leftPct}%`,
-              width: `${p.widthPct}%`,
-              padding: 2,
-            }}>
-            <View
-              className="flex-1 rounded-card"
-              style={{
-                backgroundColor: sessionColor(p.session, colors.primary),
-                opacity: 0.1,
-              }}
-            />
-          </View>
-        ))}
         {positioned.map((p) => (
           <View
             key={p.session.id}
             style={{
               position: 'absolute',
               top: p.topPx,
+              height: p.heightPx,
               left: `${p.leftPct}%`,
               width: `${p.widthPct}%`,
               padding: 2,
@@ -1994,7 +1978,7 @@ function DayClassCard({
             }
       }
       disabled={isPast}
-      style={inGrid ? { width: '100%' } : undefined}
+      style={inGrid ? { height: '100%', width: '100%' } : undefined}
       className={`bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk flex-row items-start gap-3 active:bg-raised dark:active:bg-raised-dk overflow-hidden ${
         inGrid ? 'p-3' : 'p-4'
       } ${
@@ -2229,10 +2213,16 @@ function WeekGrid({
   // Per-day layout + occupancy so empty cells keep their "+ Add a
   // class" hit target while occupied ones step out of the way for
   // the absolute tile overlay.
-  const colors = useThemeColors();
   const perDay = weekDays.map((d) => ({
     day: d,
-    positioned: layoutDay(sessions, d, HOURS[0], HOUR_HEIGHT, HOURS.length),
+    positioned: layoutDay(
+      sessions,
+      d,
+      HOURS[0],
+      HOUR_HEIGHT,
+      HOURS.length,
+      WEEK_TILE_MIN_PX,
+    ),
   }));
   const occupiedByDayIdx = perDay.map((p) =>
     occupiedHourSet(p.positioned, HOURS[0], HOUR_HEIGHT),
@@ -2305,31 +2295,11 @@ function WeekGrid({
             style={{ position: 'relative' }}>
             {positioned.map((p) => (
               <View
-                key={`${p.session.id}-span`}
-                pointerEvents="none"
-                style={{
-                  position: 'absolute',
-                  top: p.topPx,
-                  height: p.spanPx,
-                  left: `${p.leftPct}%`,
-                  width: `${p.widthPct}%`,
-                  padding: 1,
-                }}>
-                <View
-                  className="flex-1 rounded-md"
-                  style={{
-                    backgroundColor: sessionColor(p.session, colors.primary),
-                    opacity: 0.1,
-                  }}
-                />
-              </View>
-            ))}
-            {positioned.map((p) => (
-              <View
                 key={p.session.id}
                 style={{
                   position: 'absolute',
                   top: p.topPx,
+                  height: p.heightPx,
                   left: `${p.leftPct}%`,
                   width: `${p.widthPct}%`,
                   padding: 1,
@@ -2378,7 +2348,7 @@ function WeekTile({
             }
       }
       disabled={isPast}
-      style={{ width: '100%' }}
+      style={{ height: '100%', width: '100%' }}
       className={`bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-md p-1.5 gap-1 border overflow-hidden active:bg-raised dark:active:bg-raised-dk ${
         bookedByMe
           ? 'border-emerald-400 dark:border-emerald-600'
