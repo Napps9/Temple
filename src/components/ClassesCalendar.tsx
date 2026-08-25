@@ -253,7 +253,9 @@ type PositionedSession = {
 // included — so two short classes close enough to collide are laid out
 // side by side, the same treatment genuinely overlapping classes get.
 const DAY_CARD_MIN_PX = 76;
-const WEEK_TILE_MIN_PX = 44;
+// The week column runs the same card at the same type, only tighter, so
+// its floor is the day card's less the padding it gives back.
+const WEEK_TILE_MIN_PX = 60;
 
 function layoutDay(
   sessions: ClassSession[] | undefined,
@@ -1946,16 +1948,19 @@ function DayClassCard({
   onPress,
   bookedByMe,
   inGrid,
+  dense,
   dimPast,
 }: {
   session: ClassSession;
   onPress: () => void;
   bookedByMe?: boolean;
-  // Inside the time grid the card is pinned to its start minute and sizes
-  // to its own content, so every class reads the same whatever its length.
-  // The roomier list card (book mode on a wide screen) also carries the
-  // coach and the spot count, which the grid has no width for.
+  // Inside the time grid the card fills its duration block. The roomier
+  // list card (book mode on a wide screen) also carries the coach and the
+  // spot count, which the grid has no width for.
   inGrid?: boolean;
+  // A week column is a seventh of the screen: the box tightens, the type
+  // does not. A class has to read the same in Week as it does in Day.
+  dense?: boolean;
   // Book mode only: a finished class (end time in the past) is dimmed
   // and made unpressable — there is nothing left to book.
   dimPast?: boolean;
@@ -1979,14 +1984,18 @@ function DayClassCard({
       }
       disabled={isPast}
       style={inGrid ? { height: '100%', width: '100%' } : undefined}
-      className={`bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk flex-row items-start gap-3 active:bg-raised dark:active:bg-raised-dk overflow-hidden ${
-        inGrid ? 'p-3' : 'p-4'
+      className={`bg-surface dark:bg-surface-dk border flex-row items-start gap-3 active:bg-raised dark:active:bg-raised-dk overflow-hidden ${
+        dense ? 'rounded-md p-1.5' : inGrid ? 'rounded-card p-3' : 'rounded-card p-4'
+      } ${
+        bookedByMe
+          ? 'border-emerald-400 dark:border-emerald-600'
+          : 'border-line dark:border-line-dk'
       } ${
         isPast
           ? 'opacity-50'
           : 'hover:border-line-strong dark:hover:border-line-strong-dk hover:shadow-float'
       }`}>
-      <View className={`flex-1 ${inGrid ? 'gap-1' : 'gap-1.5'}`}>
+      <View className={`flex-1 ${dense ? 'gap-0.5' : inGrid ? 'gap-1' : 'gap-1.5'}`}>
         <View className="flex-row items-center gap-2">
           <View
             style={{ backgroundColor: sessionColor(session, colors.primary) }}
@@ -2304,8 +2313,10 @@ function WeekGrid({
                   width: `${p.widthPct}%`,
                   padding: 1,
                 }}>
-                <WeekTile
+                <DayClassCard
                   session={p.session}
+                  inGrid
+                  dense
                   onPress={() => onSessionPress(p.session.id)}
                   bookedByMe={bookedSet.has(p.session.id)}
                   dimPast={dimPast}
@@ -2319,60 +2330,6 @@ function WeekGrid({
         ))}
       </View>
     </View>
-  );
-}
-
-function WeekTile({
-  session,
-  onPress,
-  bookedByMe,
-  dimPast,
-}: {
-  session: ClassSession;
-  onPress: () => void;
-  bookedByMe?: boolean;
-  dimPast?: boolean;
-}) {
-  const colors = useThemeColors();
-  const start = new Date(session.starts_at);
-  const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
-  const isPast = dimPast === true && end.getTime() <= Date.now();
-  return (
-    <Pressable
-      onPress={
-        isPast
-          ? undefined
-          : () => {
-              haptic.tap();
-              onPress();
-            }
-      }
-      disabled={isPast}
-      style={{ height: '100%', width: '100%' }}
-      className={`bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-md p-1.5 gap-1 border overflow-hidden active:bg-raised dark:active:bg-raised-dk ${
-        bookedByMe
-          ? 'border-emerald-400 dark:border-emerald-600'
-          : 'border-line dark:border-line-dk'
-      } ${isPast ? 'opacity-50' : ''}`}>
-      <View className="flex-row items-center gap-1">
-        {bookedByMe ? (
-          <Ionicons name="checkmark-circle" size={10} color="#10B981" />
-        ) : (
-          <View
-            style={{ backgroundColor: sessionColor(session, colors.primary) }}
-            className="w-1.5 h-1.5 rounded-full"
-          />
-        )}
-        <Text
-          className="text-ink dark:text-ink-dk text-[10px] font-semibold flex-1"
-          numberOfLines={1}>
-          {sessionLabel(session)}
-        </Text>
-      </View>
-      <Text className="text-ink-2 dark:text-ink-2-dk text-[10px]" numberOfLines={1}>
-        {`${fmtTime(start)} – ${fmtTime(end)}`}
-      </Text>
-    </Pressable>
   );
 }
 
