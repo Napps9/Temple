@@ -227,6 +227,47 @@ export function prRowIds(
   return ids;
 }
 
+// Whether a new result beats what came before it — the message rule,
+// which is deliberately NOT the badge rule. prRowIds marks a
+// first-ever log as a PR, and for a badge that is right: it is the
+// best so far. Saying "new best" about a number nobody has ever lifted
+// reads as a machine talking, so a claim needs a prior best, and has
+// to beat it strictly.
+//
+// The server re-derives this from stored rows before writing anything
+// (record_personal_best, 0263); this is the same rule, kept here so
+// the client can reason about it and so it is testable in isolation.
+export function personalBestClaim(
+  priorRows: JournalRow[],
+  scheme: Pick<Scheme, 'metric' | 'better'>,
+  candidate: { value_numeric: number | null; value_seconds: number | null },
+): boolean {
+  const value =
+    scheme.metric === 'time' ? candidate.value_seconds : candidate.value_numeric;
+  if (value == null) return false;
+  const prior = bestOf(
+    priorRows.map(
+      (r): TrackedResultRow => ({
+        id: r.id,
+        workout_id: r.workout_id ?? '',
+        movement_key: r.movement_key,
+        track_key: r.track_key ?? '',
+        value_numeric: r.value_numeric,
+        value_seconds: r.value_seconds,
+        value_unit: r.value_unit,
+        notes: r.notes,
+        performed_at: r.performed_at,
+      }),
+    ),
+    scheme,
+  );
+  if (!prior) return false;
+  const priorValue =
+    scheme.metric === 'time' ? prior.value_seconds : prior.value_numeric;
+  if (priorValue == null) return false;
+  return scheme.better === 'higher' ? value > priorValue : value < priorValue;
+}
+
 // Best-of across the union for a given scheme. Filters by track_key
 // before delegating to bestOf() from src/lib/track.ts so the same
 // MIN/MAX-by-direction logic is reused.

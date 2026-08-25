@@ -13,6 +13,7 @@ import { useGymMembership, useSession } from '@/lib/auth';
 import { displayToKg, type WeightUnit } from '@/lib/weight';
 import { useGymWeightUnit } from '@/lib/useGymWeightUnit';
 import { errorMessage } from '@/lib/errors';
+import { claimPersonalBests } from '@/lib/milestones';
 import {
   allSchemeOptions,
   findScheme,
@@ -209,11 +210,39 @@ export function RecordMovementResultModal({
         .from('tracked_movement_results')
         .insert(rows);
       if (resultsError) throw resultsError;
+
+      // Now the results are stored, ask whether any of them beat what
+      // was there before. The server re-derives the prior best from the
+      // stored journal rather than trusting anything sent here.
+      if (gymId) {
+        await claimPersonalBests(
+          gymId,
+          parsed.map(({ draft, scheme, parsedValue }) => {
+            const opt = draft.option!;
+            const isTime = scheme.metric === 'time';
+            return {
+              movementKey: opt.movementKey,
+              trackKey: opt.schemeKey,
+              scheme,
+              valueNumeric: isTime
+                ? null
+                : scheme.metric === 'weight'
+                  ? displayToKg(parsedValue, weightUnit)
+                  : parsedValue,
+              valueSeconds: isTime ? parsedValue : null,
+              valueUnit: isTime ? null : defaultUnit(scheme.metric),
+              performedAt: performedAtIso,
+            };
+          }),
+        );
+      }
     },
     onSuccess: () => {
       setError(null);
       markSaved();
       queryClient.invalidateQueries({ queryKey: ['tracked-journal'] });
+      queryClient.invalidateQueries({ queryKey: ['inbox-unread-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['my-milestones'] });
       queryClient.invalidateQueries({ queryKey: ['tracked-results-by-movement'] });
       queryClient.invalidateQueries({ queryKey: ['tracked-results-by-group'] });
       queryClient.invalidateQueries({ queryKey: [MY_REP_MAXES_KEY] });

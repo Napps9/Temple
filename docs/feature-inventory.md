@@ -355,6 +355,19 @@ rental, or a **physical subscription box** shipped every cycle.
   max distance, max calories, load-based formats) and
   strength-movement leaderboards (rep-max per scheme), honouring
   the gym's appear-in-leaderboards opt-in.
+- **Personal-best messages** (0263) — beating a stored best writes a
+  `member_milestones` row and the member gets an inbox card ("New best ·
+  Back squat — 102.5 kg, up from 100 kg"), counted by the bell through a
+  sixth `inbox_unread_summary` column and marked read on open. Written by
+  `record_personal_best`, which re-derives the prior best from the stored
+  journal (both halves — direct results and section-tagged ones) rather
+  than trusting the client, and takes the scheme's metric and direction
+  as validated parameters, the arrangement `strength_leaderboard` has
+  used since 0101. **A first-ever log is not a personal best**: the
+  badge counts it (it is the best so far), a message would be a machine
+  talking. One card per best, idempotent per movement per local day.
+  Claimed from the movement recorder; a result tagged inside a workout
+  section counts towards the record but does not itself raise a card.
 - **Movement-activity badges** — Track-home group tiles show "N new"
   when the member has fresh logs in that group; clears on visit.
 - **Injury tracker** — gender-neutral body silhouette with tappable

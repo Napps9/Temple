@@ -2580,6 +2580,31 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      // A personal best, written down so it can be said out loud
+      // (0263). Same shape as the other one-member notices.
+      member_milestones: {
+        Row: {
+          id: string;
+          gym_id: string;
+          profile_id: string;
+          kind: 'personal_best';
+          movement_key: string;
+          track_key: string;
+          value_numeric: number | null;
+          value_seconds: number | null;
+          previous_numeric: number | null;
+          previous_seconds: number | null;
+          value_unit: string | null;
+          body: string;
+          performed_at: string;
+          idempotency_key: string;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: Partial<{ read_at: string | null }>;
+        Relationships: [];
+      };
       // Trial passes (0262): a link that lets somebody claim a free
       // class. Read-only from the client; every write is an RPC.
       trial_passes: {
@@ -4486,6 +4511,25 @@ export type Database = {
         Args: { p_alert_id: string };
         Returns: null;
       };
+      record_personal_best: {
+        Args: {
+          p_gym_id: string;
+          p_movement_key: string;
+          p_track_key: string;
+          p_metric: string;
+          p_better: string;
+          p_value_numeric?: number | null;
+          p_value_seconds?: number | null;
+          p_value_unit?: string | null;
+          p_performed_at?: string;
+          p_local_day?: string | null;
+        };
+        Returns: string | null;
+      };
+      mark_milestones_read: {
+        Args: { p_gym_id: string };
+        Returns: void;
+      };
       create_trial_pass: {
         Args: {
           p_gym_id: string;
@@ -5004,6 +5048,7 @@ export type Database = {
           class_broadcast_unread: number;
           class_change_unread: number;
           payment_unread: number;
+          milestone_unread: number;
         }[];
       };
       can_dm: {

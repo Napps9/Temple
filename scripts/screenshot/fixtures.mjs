@@ -455,6 +455,10 @@ export const TABLES = {
     { id: 'dm4', gym_id: GYM_ID, sender_id: 'a3', recipient_id: USER_ID, body: 'There is a 15 minute primer built in, come as you are.', created_at: iso(-1, 9), read_at: null },
   ],
 
+  member_milestones: [
+    { id: 'ms1', gym_id: GYM_ID, profile_id: USER_ID, kind: 'personal_best', movement_key: 'back_squat', track_key: '1rm', body: '102.5 kg — up from 100 kg.', performed_at: iso(0, 7), read_at: null, created_at: iso(0, 7) },
+  ],
+
   gym_announcements: [
     { id: 'ann1', gym_id: GYM_ID, posted_by: 'a3', author: { full_name: 'Priya Raman' }, title: 'Closed bank holiday Monday', body: 'The gym is closed Monday 31 August. Saturday and Sunday run as normal — Tuesday is back to the full timetable.', pinned: true, pinned_from: iso(-4, 10), pinned_until: iso(6, 0), closure_id: 'cl1', created_at: iso(-4, 10) },
     { id: 'ann2', gym_id: GYM_ID, posted_by: 'a3', title: 'New barbells have landed', body: 'Twelve new competition bars are on the racks. The old ones move to the garage gym rail.', pinned: false, pinned_from: null, pinned_until: null, created_at: iso(-1, 7) },
@@ -736,6 +740,9 @@ export const RPCS = {
   ],
   // A trial link, as an anonymous visitor sees it (0262). The pass is
   // class-type scoped, so the page offers a picker.
+  // A personal best, freshly logged (0263).
+  mark_milestones_read: [],
+  record_personal_best: [],
   trial_pass_offer: [
     {
       gym_id: GYM_ID, gym_name: 'The Forge', gym_slug: 'the-forge',
@@ -753,7 +760,7 @@ export const RPCS = {
   class_session_hold_counts: [],
   my_pending_trial_class: [],
   inbox_unread_summary: [
-    { dm_unread: 2, announcement_unread: 2, class_broadcast_unread: 1, class_change_unread: 1, payment_unread: 1 },
+    { dm_unread: 2, announcement_unread: 2, class_broadcast_unread: 1, class_change_unread: 1, payment_unread: 1, milestone_unread: 1 },
   ],
   mark_class_change_notifications_read: null,
   announcement_read_stats: [{ read_count: 186, member_count: 214 }],

@@ -26,6 +26,7 @@ import {
   type InboxChip,
 } from '@/lib/inbox-feed';
 import { injuryTitle } from '@/lib/injuries';
+import { movementName } from '@/lib/movements';
 import {
   snippet,
   timeAgo,
@@ -57,6 +58,15 @@ type CoverNotificationRow = {
     requested_end: string | null;
     requester: { full_name: string | null } | null;
   } | null;
+};
+
+type MilestoneRow = {
+  id: string;
+  movement_key: string;
+  track_key: string;
+  body: string;
+  performed_at: string;
+  read_at: string | null;
 };
 
 type StaffAlertRow = {
@@ -478,6 +488,7 @@ export default function Inbox() {
       />
       <InjuryCheckInCard />
       <LogNudgeCard />
+      {gymId ? <MilestoneCards gymId={gymId} /> : null}
     </>
   );
 
@@ -1014,6 +1025,76 @@ function LogNudgeCard() {
         onPress={() => router.push('/track' as never)}
       />
     </View>
+  );
+}
+
+// A personal best, as its own card. One per best, by the owner's call:
+// somebody who put 2.5kg on a squat and took ten seconds off a row did
+// two things, and rolling them into a line would flatten both.
+//
+// Reading the inbox is the acknowledgement — the cards mark themselves
+// read on open, the way the cover tab does, because every one of them
+// is a thing that has already happened rather than a thing to decide.
+function MilestoneCards({ gymId }: { gymId: string }) {
+  const queryClient = useQueryClient();
+  const marked = useRef(false);
+
+  const rows = useQuery({
+    queryKey: ['my-milestones', gymId],
+    queryFn: async (): Promise<MilestoneRow[]> => {
+      const { data, error } = await supabase
+        .from('member_milestones')
+        .select('id, movement_key, track_key, body, performed_at, read_at')
+        .eq('gym_id', gymId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return (data ?? []) as MilestoneRow[];
+    },
+  });
+
+  useEffect(() => {
+    const unread = (rows.data ?? []).some((r) => r.read_at === null);
+    if (!unread || marked.current) return;
+    marked.current = true;
+    supabase.rpc('mark_milestones_read', { p_gym_id: gymId }).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['inbox-unread-summary'] });
+    });
+  }, [rows.data, gymId, queryClient]);
+
+  const items = (rows.data ?? []).filter(
+    (r) => Date.now() - new Date(r.performed_at).getTime() < 14 * 86_400_000,
+  );
+  if (items.length === 0) return null;
+
+  return (
+    <>
+      {items.map((m) => (
+        <View
+          key={m.id}
+          className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-card p-4 gap-2">
+          <View className="flex-row items-center gap-2">
+            <Ionicons name="trophy" size={18} color="#D97706" />
+            <Text className="flex-1 text-amber-800 dark:text-amber-300 font-semibold">
+              New best · {movementName(m.movement_key)}
+            </Text>
+          </View>
+          <Text className="text-amber-800 dark:text-amber-300 text-sm">
+            {m.body}
+          </Text>
+          <ChipButton
+            tone="amber"
+            className="self-start"
+            label="See the numbers"
+            icon="arrow-forward"
+            iconSide="right"
+            onPress={() =>
+              router.push(`/track/movement/${m.movement_key}` as never)
+            }
+          />
+        </View>
+      ))}
+    </>
   );
 }
 

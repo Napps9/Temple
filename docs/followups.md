@@ -305,7 +305,7 @@ surface: a member who doesn't open the Inbox never sees it.
 - Does a pin push to email, or is it in-app only? Today announcements
   are in-app only, and there is no push anywhere in the app.
 
-### 7b. Tell the member when they hit a personal best
+### ~~7b. Tell the member when they hit a personal best~~ (shipped 0263)
 
 **The job:** a member finishes a session, logs a lift, and beats their
 old number — that's the moment the gym should say something.

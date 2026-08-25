@@ -8,6 +8,7 @@ import {
   type DirectInputRow,
   type SectionForDerivation,
   type TagInputRow,
+  personalBestClaim,
 } from './movement-journal';
 
 function direct(
@@ -280,5 +281,74 @@ describe('deriveTagValue', () => {
       section({ section_format: 'max_calories', total_calories: 142 }),
     );
     expect(v).toEqual({ value_numeric: 142, value_seconds: null });
+  });
+});
+
+describe('personalBestClaim', () => {
+  const heavier = { metric: 'weight' as const, better: 'higher' as const };
+  const faster = { metric: 'time' as const, better: 'lower' as const };
+
+  // The rule the badge gets right and a message would get wrong.
+  it('is false with nothing to beat', () => {
+    expect(
+      personalBestClaim([], heavier, { value_numeric: 100, value_seconds: null }),
+    ).toBe(false);
+  });
+
+  it('is true when the new value beats the stored best', () => {
+    const prior = mergeJournal(
+      [direct({ id: 'a', performed_at: '2026-03-01T09:00:00Z', value_numeric: 100 })],
+      [],
+    );
+    expect(
+      personalBestClaim(prior, heavier, {
+        value_numeric: 102.5,
+        value_seconds: null,
+      }),
+    ).toBe(true);
+  });
+
+  it('is false when it only equals it', () => {
+    const prior = mergeJournal(
+      [direct({ id: 'a', performed_at: '2026-03-01T09:00:00Z', value_numeric: 100 })],
+      [],
+    );
+    expect(
+      personalBestClaim(prior, heavier, {
+        value_numeric: 100,
+        value_seconds: null,
+      }),
+    ).toBe(false);
+  });
+
+  it('reads lower-is-better the other way round', () => {
+    const prior = mergeJournal(
+      [
+        direct({
+          id: 'a',
+          performed_at: '2026-03-01T09:00:00Z',
+          track_key: '2000m',
+          value_numeric: null,
+          value_seconds: 420,
+        }),
+      ],
+      [],
+    );
+    expect(
+      personalBestClaim(prior, faster, { value_numeric: null, value_seconds: 400 }),
+    ).toBe(true);
+    expect(
+      personalBestClaim(prior, faster, { value_numeric: null, value_seconds: 430 }),
+    ).toBe(false);
+  });
+
+  it('is false for a result with no value', () => {
+    const prior = mergeJournal(
+      [direct({ id: 'a', performed_at: '2026-03-01T09:00:00Z', value_numeric: 100 })],
+      [],
+    );
+    expect(
+      personalBestClaim(prior, heavier, { value_numeric: null, value_seconds: null }),
+    ).toBe(false);
   });
 });
