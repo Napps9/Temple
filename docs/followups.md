@@ -261,3 +261,166 @@ that's been designed around yet.
 **Revisit when:** a real sales conversation surfaces this as a blocker
 (per Plan Three's original discovery-spike recommendation), and the
 business has picked one of the two Apple operating models above.
+
+---
+
+## 7. Announcements members actually see, and a word when they hit a PB
+
+Gym-owner feedback, 25 August 2026. Two asks, both about the gym's
+voice reaching the member instead of waiting in a list.
+
+### 7a. Pin an announcement to the top of the member app, for a window
+
+**The job:** the owner has something everyone needs to know *this
+week* — the gym is closed Monday, the summer schedule starts, the
+comp sign-up closes Friday — and needs it seen without hoping people
+open the Inbox.
+
+**What exists:** `gym_announcements` (0029) already carries a `pinned`
+boolean and the gym-created index sorts on it. Posting is gated by
+`can_post_announcements`. The post lands in the member Inbox
+(`/inbox`) and rolls into the "what needs you" bell count
+(`inbox_unread_summary` → `useNotificationCount`). That's the whole
+surface: a member who doesn't open the Inbox never sees it.
+
+**What's missing:**
+- A **time window** on the pin — `pinned_from` / `pinned_until` rather
+  than a boolean the owner has to remember to switch off. The
+  boolean's failure mode is a stale notice pinned for a month.
+- A **header surface** in the member app. `TopNav` (member variant,
+  `src/app/(member)/_layout.tsx`) renders above every member tab, so a
+  banner strip under it appears on Book, Track, Programming — wherever
+  they are — and doesn't need a new screen.
+- Per-member **dismiss** state, so a seen pin stops shouting but stays
+  in the Inbox. `announcement_reads` already exists from 0029; a pin
+  dismissal is arguably the same row.
+
+**Open questions:**
+- One pin at a time, or a stack? (Recommendation: one — the newest
+  in-window pin wins; a stack is a second inbox.)
+- Does the banner recolour, or stay ink with the accent reserved for
+  the page's single action? The accent rule says ink.
+- Should staff see pins too, or only members? (The owner posting it
+  doesn't need it shouted back at them.)
+- Does a pin push to email, or is it in-app only? Today announcements
+  are in-app only, and there is no push anywhere in the app.
+
+### 7b. Tell the member when they hit a personal best
+
+**The job:** a member finishes a session, logs a lift, and beats their
+old number — that's the moment the gym should say something.
+
+**What exists:** PB detection is real but **client-side and
+display-only** — `prRowIds` in `src/lib/movement-journal.ts` walks the
+journal ascending and marks the rows that were records when recorded;
+`MovementDetailView` renders the badge. Nothing is written down, so
+nothing can be sent. The messaging plumbing to send it is all there
+(inbox, `inbox_unread_summary`, the bell).
+
+**What's missing:** the record has to become an event, not a derived
+badge — something the recorder writes (or a trigger writes) at log
+time, which is what a milestone message can hang off. Then the message
+itself: a member-facing inbox card in the teammate's voice ("New best
+back squat — 105 kg, up 2.5 from March"), consistent with the roadmap's
+"a milestone message, never a redesign".
+
+**Open questions:**
+- Every PB, or only meaningful ones? A first-ever log of a movement is
+  technically a PB and shouldn't read as a celebration. Likely rule:
+  needs a prior best to beat.
+- Rate limit — a member logging six movements after a session
+  shouldn't get six cards. One "today's bests" card per day?
+- Does staff see it? A PB feed is a genuinely good coach surface, but
+  it's a separate ask; don't build it into this one.
+- Opt-out: this is celebratory, some members won't want it. Email
+  preferences already have categories; in-app cards don't.
+
+---
+
+## 8. Free trials — a free way in, and a limited-time offer
+
+Gym-owner feedback, 25 August 2026. Both are the same job seen from
+two ends: get a prospect through the door without them committing.
+
+### 8a. A link that books a lead into one specific class, free
+
+**The job:** the owner meets someone (Instagram, a walk-past, a
+referral) and wants to send one link that puts them in Saturday's
+9am — no card, no membership, no phone tag.
+
+**What exists:** the pieces are unusually close.
+- `/lead/<slug>` captures an enquiry with no account
+  (`capture_public_lead`, granted to `anon`, gated on
+  `gyms.public_lead_capture_enabled`).
+- `/join/<slug>` signs someone up as a member, and already accepts
+  pre-seeded `name` / `email` params — the AI agent sends personalised
+  onboarding links today.
+- The lead pipeline has a `trial_attended` stage waiting for exactly
+  this signal, and `converted` attribution hangs off it.
+- Staff can already book a non-paying person into a class
+  (`staff_book_member`, used for walk-ins, guests and comps).
+
+**What's missing:** a **trial invite** object — a gym-created,
+tokenised link that names one class session (or a class type and lets
+them pick a session), carries an expiry and a use count, and on
+redemption creates the profile + membership, books the session, and
+either creates the lead at `trial_attended` or moves an existing one.
+The guardrails matter more than the flow: waiver + PAR-Q + consent
+still have to be signed by their own hand before they're on a gym floor
+(the roadmap is explicit that those screens are permanent), and a
+booking made by a trial link must not consume a plan's credits,
+because there is no plan.
+
+**Open questions:**
+- One link per lead (tokenised, single-use, attributable) or one
+  shareable link per class the owner can post publicly? They're
+  different products — the first is sales, the second is marketing.
+  Recommendation: build the shareable one, and let the sales one be
+  the same link with a `lead` param.
+- Does a trial land as a real `gym_memberships` row with a
+  zero-entitlement state, or as something lighter? `entitlement-states.md`
+  is the place to answer this — a trialist who books but has no plan is
+  a state the booking code already has opinions about.
+- Cap per person: one trial ever, one per quarter, or the owner's call?
+- What does the owner see when it's used — a Timeline receipt ("Sam
+  took Saturday 9am on a trial link") is the obvious answer.
+
+### 8b. Limited-time coupons — first month free, one-off, not recurring
+
+**The job:** the owner runs an offer — first month free, 50% off
+January, a referral reward — and needs it to apply once and then stop,
+without them remembering to undo it.
+
+**What exists:** nothing. `membership_plans` carries a single
+`monthly_price_cents`; `plan_subscriptions` bills from it via Stripe.
+There is no discount concept anywhere in the schema, in the store
+(`store_products.price_cents` is flat), or in checkout. The dunning
+work (0176) is the closest neighbour and it's about failed payments,
+not discounted ones.
+
+**What's missing:** a coupon object (code, percent or fixed amount,
+duration = once / N cycles, valid-from / valid-until, max redemptions,
+per-member limit) and redemption rows that record who used what and
+when. The billing half is the real work: Stripe has first-class
+Coupons and Promotion Codes, and the right answer is almost certainly
+to mirror rather than reimplement — create the coupon in the connected
+account and attach it to the subscription, so proration, invoices and
+the receipt email all stay Stripe's job. A Temple-side discount that
+Stripe doesn't know about will drift from the invoices the member
+actually receives.
+
+**Open questions:**
+- Membership plans only, or the store too? (Recommendation: plans
+  first. Store discounts are a different checkout path and a different
+  job.)
+- Does a coupon apply at self-serve signup (member types a code), or
+  does staff attach it when assigning a plan, or both? Both is likely
+  right, but the self-serve path needs abuse limits the staff path
+  doesn't.
+- "First month free" on a `credit_pack` plan is meaningless — which
+  plan kinds can a coupon attach to?
+- Interaction with 8a: is "free trial class" just a 100%-off coupon
+  with one use? Probably not — the trial link's value is that it needs
+  no account and no card, and a coupon presumes both.
+- Who can create one? New capability key (`can_manage_offers`) or
+  fold into owner-only, like plan pricing is today.
