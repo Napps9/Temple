@@ -6,7 +6,7 @@
 -- freeze once Stripe has seen them.
 
 begin;
-select plan(22);
+select plan(27);
 
 \ir _helpers.psql
 
@@ -22,6 +22,7 @@ declare
   v_plan2  uuid;
   v_far    uuid;
   v_striped uuid;
+  v_pack    uuid;
 begin
   perform _test_mk_membership(v_gym, v_owner, 'owner');
   perform _test_mk_membership(v_gym, v_admin, 'admin');
@@ -34,6 +35,10 @@ begin
   values (v_gym, 'Off-peak', 'unlimited', 4000) returning plan_id into v_plan2;
   insert into public.membership_plans (gym_id, name, kind, monthly_price_cents)
   values (v_other, 'Elsewhere', 'unlimited', 5000) returning plan_id into v_far;
+  insert into public.membership_plans
+    (gym_id, name, kind, credit_count, monthly_price_cents)
+  values (v_gym, '10-class pack', 'credit_pack', 10, 9000)
+  returning plan_id into v_pack;
 
   -- A coupon Stripe already holds, for the freeze assertions. Inserted
   -- here rather than through the RPC because only the webhook's service
@@ -44,6 +49,7 @@ begin
   returning id into v_striped;
 
   perform set_config('test.striped', v_striped::text, false);
+  perform set_config('test.pack',    v_pack::text,    false);
   perform set_config('test.gym',    v_gym::text,    false);
   perform set_config('test.owner',  v_owner::text,  false);
   perform set_config('test.admin',  v_admin::text,  false);
@@ -254,6 +260,47 @@ select ok(
 select ok(
   not has_function_privilege('anon', 'public.preview_plan_coupon(uuid,uuid,text)', 'execute'),
   'anon cannot preview a coupon'
+);
+
+-- 12. A discount measured in months cannot be honoured on a one-off
+--     pack, so it is refused before it can be half-applied (0265).
+select _test_act_as(current_setting('test.owner')::uuid);
+select lives_ok(
+  $$select public.upsert_plan_coupon(
+      current_setting('test.gym')::uuid, 'threemonths', 'percent',
+      null, null, 25, null, 'repeating', 3)$$,
+  'an owner can write a three-month offer'
+);
+select _test_act_as(current_setting('test.member')::uuid);
+select is(
+  (select reason from public.preview_plan_coupon(
+     current_setting('test.gym')::uuid,
+     current_setting('test.pack')::uuid, 'THREEMONTHS')),
+  'That code runs for several months, so it can''t be used on a one-off pack',
+  'a repeating discount is refused on a credit pack'
+);
+select is(
+  (select reason from public.preview_plan_coupon(
+     current_setting('test.gym')::uuid,
+     current_setting('test.plan')::uuid, 'THREEMONTHS')),
+  null,
+  'and still applies to the membership beside it'
+);
+-- A one-off discount on a pack is fine — it is one charge either way.
+select _test_act_as(current_setting('test.owner')::uuid);
+select lives_ok(
+  $$select public.upsert_plan_coupon(
+      current_setting('test.gym')::uuid, 'tenoff', 'percent',
+      null, null, 10)$$,
+  'an owner can write a one-off offer'
+);
+select _test_act_as(current_setting('test.member')::uuid);
+select is(
+  (select reason from public.preview_plan_coupon(
+     current_setting('test.gym')::uuid,
+     current_setting('test.pack')::uuid, 'TENOFF')),
+  null,
+  'a one-off discount is fine on a pack'
 );
 
 select * from finish();

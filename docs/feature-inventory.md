@@ -221,7 +221,12 @@ rental, or a **physical subscription box** shipped every cycle.
   idempotent per session). `assign_member_plan` also takes a
   `p_coupon_code`, but be clear what that means: **that path is unbilled**,
   so a coupon there changes the price the membership is *recorded* at
-  and takes no money.
+  and takes no money. A repeating discount is refused on a `credit_pack`
+  plan (0265) — a pack is one charge, so "three months off" is a promise
+  the machinery cannot keep. The Stripe half (the Coupon created on the
+  connected account, and the session it is attached to) is checked by
+  `scripts/stripe-check/coupon-check.mjs`, which needs a test key and a
+  network that can reach Stripe — a cloud session cannot.
 - **Owner settings** — switch the store off/on (on by default for
   every gym since 0154) and set the shipping fee (`gyms.store_enabled`
   / `store_shipping_fee_cents`, RPC `set_store_settings`). Owners pick
