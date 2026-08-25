@@ -235,10 +235,26 @@ function NowLine({ topPx }: { topPx: number }) {
 type PositionedSession = {
   session: ClassSession;
   topPx: number;
-  heightPx: number;
+  spanPx: number;
   leftPct: number;
   widthPct: number;
 };
+
+// A card is the same size whatever the class's length — a 30-minute class
+// and a 90-minute one carry the same pill, the same time range and the same
+// type, so they get the same box. Duration is read from the time range
+// printed on the card (and the agenda's "45 min"), not from how tall the
+// card grew: sizing by duration meant a 30-minute class had to render its
+// content in 38px, which clipped the time mid-glyph, while anything under
+// 84 minutes silently dropped to smaller type.
+//
+// The grid still tells the truth about time — cards sit at their start
+// minute, and the hours a class really covers stay blocked. What changes is
+// that a card's own box no longer stretches. CARD_SPAN_MIN is how many
+// minutes of grid one rendered card visually covers; overlap packing uses
+// it so two cards that would collide on screen are laid out side by side,
+// exactly as two genuinely overlapping classes already are.
+const CARD_SPAN_MIN = 55;
 
 function layoutDay(
   sessions: ClassSession[] | undefined,
@@ -261,22 +277,25 @@ function layoutDay(
       startMin: Math.max(0, it.startMin),
       endMin: Math.min(totalHours * 60, it.endMin),
     }))
-    .sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
+    .sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin)
+    // What the card occupies on screen: its own box if the class is
+    // shorter than one, otherwise the class's real span.
+    .map((it) => ({ ...it, drawnEndMin: Math.max(it.endMin, it.startMin + CARD_SPAN_MIN) }));
 
   const columnEnds: number[] = [];
   const itemColumns = items.map((it) => {
     let col = columnEnds.findIndex((end) => end <= it.startMin);
     if (col === -1) col = columnEnds.length;
-    columnEnds[col] = it.endMin;
+    columnEnds[col] = it.drawnEndMin;
     return col;
   });
 
   const positioned: PositionedSession[] = [];
   let clusterStart = 0;
-  let clusterEnd = items.length > 0 ? items[0].endMin : -1;
+  let clusterEnd = items.length > 0 ? items[0].drawnEndMin : -1;
   for (let i = 1; i <= items.length; i += 1) {
     if (i < items.length && items[i].startMin < clusterEnd) {
-      clusterEnd = Math.max(clusterEnd, items[i].endMin);
+      clusterEnd = Math.max(clusterEnd, items[i].drawnEndMin);
       continue;
     }
     const cols = Math.max(...itemColumns.slice(clusterStart, i)) + 1;
@@ -286,17 +305,16 @@ function layoutDay(
       positioned.push({
         session: it.session,
         topPx: (it.startMin / 60) * hourHeight,
-        heightPx: Math.max(
-          22,
-          ((it.endMin - it.startMin) / 60) * hourHeight - 2,
-        ),
+        // The hours the class really covers — what blanks the "+ Add a
+        // class" placeholders underneath a long class.
+        spanPx: ((it.endMin - it.startMin) / 60) * hourHeight - 2,
         leftPct: (col / cols) * 100,
         widthPct: (1 / cols) * 100,
       });
     }
     if (i < items.length) {
       clusterStart = i;
-      clusterEnd = items[i].endMin;
+      clusterEnd = items[i].drawnEndMin;
     }
   }
   return positioned;
@@ -313,7 +331,7 @@ function occupiedHourSet(
   for (const p of positioned) {
     const startHour = baseHour + Math.floor(p.topPx / hourHeight);
     const endHour =
-      baseHour + Math.ceil((p.topPx + p.heightPx) / hourHeight) - 1;
+      baseHour + Math.ceil((p.topPx + p.spanPx) / hourHeight) - 1;
     for (let h = startHour; h <= endHour; h += 1) out.add(h);
   }
   return out;
@@ -1835,6 +1853,7 @@ function DayGrid({
   onSessionPress: (id: string) => void;
   bookedSet: Set<string>;
 }) {
+  const colors = useThemeColors();
   const positioned = layoutDay(sessions, date, HOURS[0], HOUR_HEIGHT, HOURS.length);
   const occupied = occupiedHourSet(positioned, HOURS[0], HOUR_HEIGHT);
   const now = new Date();
@@ -1889,20 +1908,44 @@ function DayGrid({
           left: TIME_GUTTER_PX,
           right: 0,
         }}>
+        {/* The hours the class actually runs, marked in its own colour
+            behind the card. The card is one size for every class, so this
+            is what keeps a 90-minute session legibly longer than a 30 —
+            without shrinking anybody's type to fit. */}
+        {positioned.map((p) => (
+          <View
+            key={`${p.session.id}-span`}
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              top: p.topPx,
+              height: p.spanPx,
+              left: `${p.leftPct}%`,
+              width: `${p.widthPct}%`,
+              padding: 2,
+            }}>
+            <View
+              className="flex-1 rounded-card"
+              style={{
+                backgroundColor: sessionColor(p.session, colors.primary),
+                opacity: 0.1,
+              }}
+            />
+          </View>
+        ))}
         {positioned.map((p) => (
           <View
             key={p.session.id}
             style={{
               position: 'absolute',
               top: p.topPx,
-              height: p.heightPx,
               left: `${p.leftPct}%`,
               width: `${p.widthPct}%`,
               padding: 2,
             }}>
             <DayClassCard
               session={p.session}
-              heightPx={p.heightPx}
+              inGrid
               onPress={() => onSessionPress(p.session.id)}
               bookedByMe={bookedSet.has(p.session.id)}
             />
@@ -1918,16 +1961,17 @@ function DayClassCard({
   session,
   onPress,
   bookedByMe,
-  heightPx,
+  inGrid,
   dimPast,
 }: {
   session: ClassSession;
   onPress: () => void;
   bookedByMe?: boolean;
-  // When provided, the card is rendered inside the absolute
-  // duration-block layer and fills its parent (height/width 100%).
-  // Without it (book-mode list view) the card sizes to content.
-  heightPx?: number;
+  // Inside the time grid the card is pinned to its start minute and sizes
+  // to its own content, so every class reads the same whatever its length.
+  // The roomier list card (book mode on a wide screen) also carries the
+  // coach and the spot count, which the grid has no width for.
+  inGrid?: boolean;
   // Book mode only: a finished class (end time in the past) is dimmed
   // and made unpressable — there is nothing left to book.
   dimPast?: boolean;
@@ -1938,13 +1982,7 @@ function DayClassCard({
   const mine = !!session.coach_id && session.coach_id === me?.user.id;
   const start = new Date(session.starts_at);
   const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
-  const inGrid = heightPx != null;
   const isPast = dimPast === true && end.getTime() <= Date.now();
-  // The full layout (coach avatar + spot count) needs ~108px to render
-  // without clipping. Below that we use the clean chip + time card, so a
-  // standard 1-hour block (≈78px at the current hour height) reads big
-  // but uncramped; the detail layout kicks in for 90-minute+ sessions.
-  const compact = inGrid && heightPx! < 110;
   return (
     <Pressable
       onPress={
@@ -1956,24 +1994,22 @@ function DayClassCard({
             }
       }
       disabled={isPast}
-      style={
-        inGrid ? { height: '100%', width: '100%' } : undefined
-      }
+      style={inGrid ? { width: '100%' } : undefined}
       className={`bg-surface dark:bg-surface-dk rounded-card border border-line dark:border-line-dk flex-row items-start gap-3 active:bg-raised dark:active:bg-raised-dk overflow-hidden ${
-        compact ? 'p-2' : 'p-4'
+        inGrid ? 'p-3' : 'p-4'
       } ${
         isPast
           ? 'opacity-50'
           : 'hover:border-line-strong dark:hover:border-line-strong-dk hover:shadow-float'
       }`}>
-      <View className={`flex-1 ${compact ? 'gap-0.5' : 'gap-1.5'}`}>
+      <View className={`flex-1 ${inGrid ? 'gap-1' : 'gap-1.5'}`}>
         <View className="flex-row items-center gap-2">
           <View
             style={{ backgroundColor: sessionColor(session, colors.primary) }}
-            className={`self-start rounded-full ${compact ? 'px-2 py-0.5' : 'px-2.5 py-1'}`}>
+            className="self-start rounded-full px-2.5 py-1">
             <Text
               style={{ color: labelOn(sessionColor(session, colors.primary)) }}
-              className={`font-semibold ${compact ? 'text-[10px]' : 'text-xs'}`}>
+              className="font-semibold text-xs">
               {sessionLabel(session)}
             </Text>
           </View>
@@ -1995,23 +2031,23 @@ function DayClassCard({
         </View>
         <Text
           className={`text-ink dark:text-ink-dk font-medium ${
-            compact ? 'text-xs' : 'text-base'
+            inGrid ? 'text-sm' : 'text-base'
           }`}>
           {fmtTime(start)} — {fmtTime(end)}
         </Text>
-        {!compact ? (
+        {inGrid ? null : (
           <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
             {session.capacity} spots
           </Text>
-        ) : null}
+        )}
       </View>
-      {!compact ? (
+      {inGrid ? null : (
         <Avatar
           name={session.coach?.full_name}
           avatarUrl={session.coach?.avatar_url}
           size={36}
         />
-      ) : null}
+      )}
     </Pressable>
   );
 }
@@ -2193,6 +2229,7 @@ function WeekGrid({
   // Per-day layout + occupancy so empty cells keep their "+ Add a
   // class" hit target while occupied ones step out of the way for
   // the absolute tile overlay.
+  const colors = useThemeColors();
   const perDay = weekDays.map((d) => ({
     day: d,
     positioned: layoutDay(sessions, d, HOURS[0], HOUR_HEIGHT, HOURS.length),
@@ -2268,11 +2305,31 @@ function WeekGrid({
             style={{ position: 'relative' }}>
             {positioned.map((p) => (
               <View
+                key={`${p.session.id}-span`}
+                pointerEvents="none"
+                style={{
+                  position: 'absolute',
+                  top: p.topPx,
+                  height: p.spanPx,
+                  left: `${p.leftPct}%`,
+                  width: `${p.widthPct}%`,
+                  padding: 1,
+                }}>
+                <View
+                  className="flex-1 rounded-md"
+                  style={{
+                    backgroundColor: sessionColor(p.session, colors.primary),
+                    opacity: 0.1,
+                  }}
+                />
+              </View>
+            ))}
+            {positioned.map((p) => (
+              <View
                 key={p.session.id}
                 style={{
                   position: 'absolute',
                   top: p.topPx,
-                  height: p.heightPx,
                   left: `${p.leftPct}%`,
                   width: `${p.widthPct}%`,
                   padding: 1,
@@ -2281,7 +2338,6 @@ function WeekGrid({
                   session={p.session}
                   onPress={() => onSessionPress(p.session.id)}
                   bookedByMe={bookedSet.has(p.session.id)}
-                  heightPx={p.heightPx}
                   dimPast={dimPast}
                 />
               </View>
@@ -2300,19 +2356,16 @@ function WeekTile({
   session,
   onPress,
   bookedByMe,
-  heightPx,
   dimPast,
 }: {
   session: ClassSession;
   onPress: () => void;
   bookedByMe?: boolean;
-  heightPx: number;
   dimPast?: boolean;
 }) {
   const colors = useThemeColors();
   const start = new Date(session.starts_at);
   const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
-  const compact = heightPx < 38;
   const isPast = dimPast === true && end.getTime() <= Date.now();
   return (
     <Pressable
@@ -2325,7 +2378,7 @@ function WeekTile({
             }
       }
       disabled={isPast}
-      style={{ height: '100%', width: '100%' }}
+      style={{ width: '100%' }}
       className={`bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-md p-1.5 gap-1 border overflow-hidden active:bg-raised dark:active:bg-raised-dk ${
         bookedByMe
           ? 'border-emerald-400 dark:border-emerald-600'
@@ -2347,7 +2400,7 @@ function WeekTile({
         </Text>
       </View>
       <Text className="text-ink-2 dark:text-ink-2-dk text-[10px]" numberOfLines={1}>
-        {compact ? fmtTime(start) : `${fmtTime(start)} – ${fmtTime(end)}`}
+        {`${fmtTime(start)} – ${fmtTime(end)}`}
       </Text>
     </Pressable>
   );
