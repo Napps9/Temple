@@ -97,6 +97,7 @@ async function stripeGet(
 
 type Plan = {
   plan_id: string;
+  gym_id: string;
   name: string;
   kind: 'unlimited' | 'credit_period' | 'credit_pack';
   credit_count: number | null;
@@ -181,7 +182,7 @@ Deno.serve(async (req: Request) => {
     const { data } = await service
       .from('membership_plans')
       .select(
-        'plan_id, name, kind, credit_count, monthly_price_cents, stripe_price_id, archived_at',
+        'plan_id, gym_id, name, kind, credit_count, monthly_price_cents, stripe_price_id, archived_at',
       )
       .eq('plan_id', planId)
       .eq('gym_id', gymId)
@@ -215,6 +216,14 @@ Deno.serve(async (req: Request) => {
   // Get-or-create the connected-account Price for a plan, cached on the row.
   async function ensurePrice(plan: Plan, account: string): Promise<string> {
     if (plan.stripe_price_id) return plan.stripe_price_id;
+    // The gym's currency, not a hardcoded 'gbp' — see the note in
+    // stripe-checkout. A Price is immutable once created.
+    const { data: gymRow } = await service
+      .from('gyms')
+      .select('currency')
+      .eq('id', plan.gym_id)
+      .maybeSingle();
+    const currency = ((gymRow?.currency as string | null) ?? 'GBP').toLowerCase();
     const product = await stripePost(
       'products',
       { name: plan.name },
@@ -225,7 +234,7 @@ Deno.serve(async (req: Request) => {
       'prices',
       {
         product: product.id as string,
-        currency: 'gbp',
+        currency,
         unit_amount: String(plan.monthly_price_cents ?? 0),
         'recurring[interval]': 'month',
       },

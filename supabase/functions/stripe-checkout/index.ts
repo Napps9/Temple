@@ -160,7 +160,20 @@ Deno.serve(async (req: Request) => {
 
   // Credit packs are a one-off purchase; everything else bills monthly.
   const recurring = plan.kind !== 'credit_pack';
-  const currency = 'gbp';
+
+  // The gym's own currency, not a hardcoded 'gbp'. gyms.currency has
+  // existed since 0027 and the app renders every price with it, so a
+  // euro gym has been reading euros on screen and having its Stripe
+  // Price created in pounds. Cached prices predating this keep the
+  // currency they were created with — Stripe prices are immutable —
+  // so a gym that was billing in the wrong one needs its
+  // membership_plans.stripe_price_id cleared to re-mint.
+  const { data: gymRow } = await service
+    .from('gyms')
+    .select('currency')
+    .eq('id', gymId)
+    .maybeSingle();
+  const currency = ((gymRow?.currency as string | null) ?? 'GBP').toLowerCase();
 
   try {
     // 1. Customer on the connected account, reused across checkouts.

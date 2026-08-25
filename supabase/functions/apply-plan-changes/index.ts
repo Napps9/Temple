@@ -188,6 +188,15 @@ Deno.serve(async (req: Request) => {
 
       let priceId = target.stripe_price_id as string | null;
       if (!priceId) {
+        // The gym's currency, not a hardcoded 'gbp' — see the note in
+        // stripe-checkout. A Price is immutable once created, so the
+        // wrong currency here is permanent for that plan.
+        const { data: gymRow } = await service
+          .from('gyms')
+          .select('currency')
+          .eq('id', row.gym_id)
+          .maybeSingle();
+        const currency = ((gymRow?.currency as string | null) ?? 'GBP').toLowerCase();
         const product = await stripePost(
           'products',
           { name: target.name as string },
@@ -198,7 +207,7 @@ Deno.serve(async (req: Request) => {
           'prices',
           {
             product: product.id as string,
-            currency: 'gbp',
+            currency,
             unit_amount: String(target.monthly_price_cents ?? 0),
             'recurring[interval]': 'month',
           },
