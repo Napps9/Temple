@@ -5,6 +5,7 @@ import {
   inviteUrl,
   joinUrl,
   normaliseHex,
+  trialUrl,
   slugify,
 } from './brand';
 
@@ -44,6 +45,26 @@ describe('joinUrl', () => {
   it('handles a trailing slash on the origin', () => {
     expect(joinUrl('https://app.temple/', 'iron-temple')).toBe(
       'https://app.temple/join/iron-temple',
+    );
+  });
+});
+
+describe('trialUrl', () => {
+  it('builds /trial/<token>', () => {
+    expect(trialUrl('https://app.temple', 'A1B2C3D4')).toBe(
+      'https://app.temple/trial/A1B2C3D4',
+    );
+  });
+  it('handles a trailing slash on the origin', () => {
+    expect(trialUrl('https://app.temple/', 'A1B2C3D4')).toBe(
+      'https://app.temple/trial/A1B2C3D4',
+    );
+  });
+  // Tokens are hex today, but the URL builder is not the place to
+  // assume that — a token with a slash in it must not invent a path.
+  it('escapes the token', () => {
+    expect(trialUrl('https://app.temple', 'a/b?c')).toBe(
+      'https://app.temple/trial/a%2Fb%3Fc',
     );
   });
 });

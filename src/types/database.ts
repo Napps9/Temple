@@ -2580,6 +2580,52 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      // Trial passes (0262): a link that lets somebody claim a free
+      // class. Read-only from the client; every write is an RPC.
+      trial_passes: {
+        Row: {
+          id: string;
+          gym_id: string;
+          token: string;
+          kind: 'public' | 'personal';
+          class_type_id: string | null;
+          session_id: string | null;
+          lead_id: string | null;
+          invited_email: string | null;
+          invited_name: string | null;
+          passes: number;
+          valid_days: number;
+          max_redemptions: number | null;
+          expires_at: string;
+          revoked_at: string | null;
+          note: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      trial_pass_redemptions: {
+        Row: {
+          id: string;
+          trial_pass_id: string;
+          gym_id: string;
+          profile_id: string;
+          lead_id: string | null;
+          comp_grant_id: string | null;
+          session_id: string | null;
+          // The seat is spoken for until this moment; a hold also stops
+          // counting once its holder books.
+          held_until: string | null;
+          booking_id: string | null;
+          booked_at: string | null;
+          redeemed_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       comp_grants: {
         Row: {
           grant_id: string;
@@ -4439,6 +4485,86 @@ export type Database = {
       acknowledge_staff_alert: {
         Args: { p_alert_id: string };
         Returns: null;
+      };
+      create_trial_pass: {
+        Args: {
+          p_gym_id: string;
+          p_class_type_id?: string | null;
+          p_session_id?: string | null;
+          p_passes?: number;
+          p_valid_days?: number;
+          p_max_redemptions?: number | null;
+          p_expires_at?: string | null;
+          p_lead_id?: string | null;
+          p_invited_email?: string | null;
+          p_invited_name?: string | null;
+          p_note?: string | null;
+        };
+        Returns: { pass_id: string; token: string; kind: string }[];
+      };
+      revoke_trial_pass: {
+        Args: { p_pass_id: string };
+        Returns: void;
+      };
+      trial_pass_offer: {
+        Args: { p_token: string };
+        Returns: {
+          gym_id: string;
+          gym_name: string;
+          gym_slug: string;
+          kind: string;
+          class_type_id: string | null;
+          class_type_name: string | null;
+          session_id: string | null;
+          session_name: string | null;
+          starts_at: string | null;
+          duration_minutes: number | null;
+          coach_name: string | null;
+          passes: number;
+          invited_first_name: string | null;
+        }[];
+      };
+      trial_pass_sessions: {
+        Args: { p_token: string };
+        Returns: {
+          session_id: string;
+          session_name: string;
+          starts_at: string;
+          duration_minutes: number;
+          coach_name: string | null;
+          spaces_left: number;
+        }[];
+      };
+      redeem_trial_pass: {
+        Args: { p_token: string; p_session_id?: string | null };
+        Returns: {
+          redemption_id: string;
+          gym_id: string;
+          session_id: string;
+          session_name?: string;
+          starts_at?: string;
+          held_until: string | null;
+          comp_grant_id: string | null;
+          already: boolean;
+        };
+      };
+      my_pending_trial_class: {
+        Args: { p_gym_id: string };
+        Returns: {
+          redemption_id: string;
+          session_id: string;
+          session_name: string;
+          starts_at: string;
+          held_until: string | null;
+        }[];
+      };
+      mark_trial_class_booked: {
+        Args: { p_redemption_id: string; p_booking_id?: string | null };
+        Returns: void;
+      };
+      class_session_hold_counts: {
+        Args: { p_session_ids: string[] };
+        Returns: { session_id: string; holds: number }[];
       };
       set_announcement_pin: {
         Args: {

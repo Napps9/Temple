@@ -1348,6 +1348,16 @@ function AgendaView({
       for (const r of (data ?? []) as { class_session_id: string }[]) {
         m.set(r.class_session_id, (m.get(r.class_session_id) ?? 0) + 1);
       }
+      // A seat claimed from a trial link and not yet taken is spoken
+      // for: _book_class_for counts it, so the number on the card has
+      // to as well, or the last spot is offered to somebody who will
+      // then be refused (0262).
+      const { data: holds } = await supabase.rpc('class_session_hold_counts', {
+        p_session_ids: dayIds,
+      });
+      for (const h of (holds ?? []) as { session_id: string; holds: number }[]) {
+        m.set(h.session_id, (m.get(h.session_id) ?? 0) + h.holds);
+      }
       return m;
     },
   });

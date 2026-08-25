@@ -9,11 +9,13 @@ import { Text } from '@/components/Text';
 import { ChipButton } from '@/components/ChipButton';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { ClassesCalendar } from '@/components/ClassesCalendar';
+import { FirstClassBanner } from '@/components/FirstClassBanner';
 import { MemberGetStartedChecklist } from '@/components/MemberGetStartedChecklist';
 import { PostClassLogPrompt } from '@/components/PostClassLogPrompt';
 import { FieldLabel } from '@/components/SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { invalidateBookingCaches } from '@/lib/bookings';
+import { useStagedFirstClass } from '@/lib/first-class';
 import { errorMessage, isParqRequiredError, isWaiverRequiredError } from '@/lib/errors';
 import { haptic } from '@/lib/haptic';
 import {
@@ -262,12 +264,22 @@ function NextClassCard() {
 
 export default function Book() {
   const recommendation = useRecommendedClass();
+  const membership = useGymMembership();
+  // A seat claimed from a trial link is held, not booked — the gates
+  // come first. Book is where a trialist lands once they are through
+  // them, so this is where the held seat turns into a booking.
+  const trialClass = useStagedFirstClass({
+    gymId: membership.data?.gymId,
+    ready: true,
+    source: 'trial',
+  });
   return (
     <ClassesCalendar
       mode="book"
       recommendedSessionId={recommendation.data?.id ?? null}
       topSlot={
         <View className="gap-2">
+          <FirstClassBanner result={trialClass.result} />
           <MemberGetStartedChecklist />
           <PostClassLogPrompt />
           <NextClassCard />

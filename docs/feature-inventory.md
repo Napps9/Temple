@@ -3265,6 +3265,36 @@ owner-only **AI Sales Agent** CTA launches the setup wizard
 with an inline member search for cases where auto-attribute on
 signup didn't fire.
 
+### Free trial links
+
+[`can_issue_comp_grant`; a lead-addressed link also needs
+`can_work_leads`] (0262) A **trial pass** is a link that lets somebody
+with no account claim a free class. Two shapes, one table: a **public**
+link the gym posts anywhere, and a **personal** link minted for one lead
+that only works from the address it was sent to. Minted from Manage →
+AI Front Desk (on the lead card) or Settings → Branding, alongside the
+gym's other public links; revocable, and expiring on their own.
+
+The claimant opens `/trial/<token>`, sees the gym and the class, picks a
+session if the pass is class-type scoped, and signs up. **Redeeming does
+not book.** It creates the membership, issues a one-class `comp_grants`
+row (the entitlement that has existed for free trials since 0009), puts
+the prospect in the lead pipeline at `intro_booked`, and **holds the
+seat** — for 24 hours, never past the hour before the class. The
+consent, waiver and PAR-Q screens then run as they do for anyone, and
+the booking happens through `book_class` as them, so every gate applies.
+`useStagedFirstClass({source: 'trial'})` on Book turns the held seat
+into a booking the moment they are through.
+
+A held seat counts against capacity everywhere it matters —
+`_book_class_for`, the trial page's own session picker, and the class
+calendar's spots-left (via `class_session_hold_counts`) — and stops
+counting the instant its holder books or the hold lapses. Expiry is a
+predicate, not a sweep: nothing is scheduled and nothing can fail to
+run. The anonymous surfaces (`trial_pass_offer`, `trial_pass_sessions`)
+return nothing at all for a token that is unknown, revoked, spent or
+past, and never echo the invited address back.
+
 ### Public lead capture
 
 A gym can share an enquiry URL (`/lead/<slug>`) that lets a prospect

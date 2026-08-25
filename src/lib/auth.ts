@@ -496,6 +496,89 @@ export async function completePendingJoin(args: {
   return { gymId: data as unknown as string };
 }
 
+// Redeeming a trial link as a brand-new person. Signs up, then claims
+// the free class — which HOLDS the seat rather than booking it: the
+// waiver, PAR-Q and consent are still signed by their own hand first,
+// and the booking happens on the far side of those screens.
+//
+// Public links go through ordinary signUp with email confirmation. A
+// posted link proves nothing about the address typed next to it, so it
+// must not reach the pre-confirmed account path an addressed invite
+// earns.
+export async function redeemTrialWithSignup(args: {
+  email: string;
+  password: string;
+  fullName: string;
+  token: string;
+  sessionId?: string | null;
+}): Promise<
+  | { status: 'claimed'; gymId: string; sessionId: string | null }
+  | { status: 'pending_confirmation'; email: string }
+> {
+  const { email, password, fullName, token, sessionId } = args;
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: confirmRedirectTo(),
+      data: {
+        full_name: fullName,
+        pending_trial_token: token,
+        pending_trial_session: sessionId ?? null,
+      },
+    },
+  });
+  if (error) throw error;
+  const resolved = await ensureSessionAfterSignUp(email, password, data.session);
+  if (resolved.status === 'pending_confirmation') {
+    return { status: 'pending_confirmation', email };
+  }
+  return completePendingTrial({ token, sessionId: sessionId ?? null });
+}
+
+// Claims a trial link from a session that already exists — somebody
+// signed in, or somebody who just confirmed their email.
+export async function completePendingTrial(args: {
+  token: string;
+  sessionId: string | null;
+}): Promise<{ status: 'claimed'; gymId: string; sessionId: string | null }> {
+  const { data, error } = await supabase.rpc('redeem_trial_pass', {
+    p_token: args.token,
+    p_session_id: args.sessionId,
+  });
+  if (error) throw error;
+  const claim = (data ?? {}) as { gym_id?: string; session_id?: string | null };
+  await clearPendingTrialMetadata();
+  return {
+    status: 'claimed',
+    gymId: (claim.gym_id ?? '') as string,
+    sessionId: claim.session_id ?? null,
+  };
+}
+
+async function clearPendingTrialMetadata(): Promise<void> {
+  try {
+    await supabase.auth.updateUser({
+      data: { pending_trial_token: null, pending_trial_session: null },
+    });
+  } catch {
+    // Ignore — best effort.
+  }
+}
+
+// Reads the pending-trial hint left by redeemTrialWithSignup when email
+// confirmation deferred the claim. Mirror of pendingJoinFromSession.
+export function pendingTrialFromSession(
+  session: { user: { user_metadata?: Record<string, unknown> | null } } | null,
+): { token: string; sessionId: string | null } | null {
+  const meta = session?.user.user_metadata ?? null;
+  const token =
+    typeof meta?.pending_trial_token === 'string' ? meta.pending_trial_token : '';
+  if (!token) return null;
+  const sid = meta?.pending_trial_session;
+  return { token, sessionId: typeof sid === 'string' ? sid : null };
+}
+
 // Clears the pending-invite hint once the membership exists.
 async function clearPendingInviteMetadata(): Promise<void> {
   try {

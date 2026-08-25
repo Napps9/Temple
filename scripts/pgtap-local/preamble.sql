@@ -8,6 +8,15 @@
 create extension if not exists pgcrypto;
 create extension if not exists pg_trgm;
 
+-- On Supabase pgcrypto lives in the extensions schema, and the functions
+-- that mint tokens schema-qualify it (0014, 0262) because their own
+-- search_path is public only. Here it lands in public, so without this
+-- alias every one of those calls dies with "schema extensions does not
+-- exist" — a failure the harness invents rather than reports.
+create schema if not exists extensions;
+create or replace function extensions.gen_random_bytes(integer)
+returns bytea language sql as $$ select public.gen_random_bytes($1) $$;
+
 do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then
     create role anon nologin noinherit;

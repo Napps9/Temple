@@ -269,7 +269,7 @@ business has picked one of the two Apple operating models above.
 Gym-owner feedback, 25 August 2026. Two asks, both about the gym's
 voice reaching the member instead of waiting in a list.
 
-### 7a. Pin an announcement to the top of the member app, for a window
+### ~~7a. Pin an announcement to the top of the member app, for a window~~ (shipped 0261)
 
 **The job:** the owner has something everyone needs to know *this
 week* — the gym is closed Monday, the summer schedule starts, the
@@ -342,7 +342,7 @@ back squat — 105 kg, up 2.5 from March"), consistent with the roadmap's
 Gym-owner feedback, 25 August 2026. Both are the same job seen from
 two ends: get a prospect through the door without them committing.
 
-### 8a. A link that books a lead into one specific class, free
+### ~~8a. A link that books a lead into one specific class, free~~ (shipped 0262)
 
 **The job:** the owner meets someone (Instagram, a walk-past, a
 referral) and wants to send one link that puts them in Saturday's

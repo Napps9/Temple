@@ -72,6 +72,14 @@ export function inviteUrl(origin: string, code: string): string {
   return `${cleanedOrigin}/accept-invite?code=${encodeURIComponent(code)}`;
 }
 
+// The trial-link URL for a minted token. One route serves both shapes —
+// a poster link anyone can claim and a link sent to one prospect — so
+// what the page shows is decided by the token, not the URL.
+export function trialUrl(origin: string, token: string): string {
+  const cleanedOrigin = origin.replace(/\/+$/, '');
+  return `${cleanedOrigin}/trial/${encodeURIComponent(token)}`;
+}
+
 // Convert "#14161A" → "20 22 26" (space-separated RGB triplet) for the
 // CSS variables Tailwind splices into `rgb(... / <alpha-value>)`. Only
 // ThemedShell calls it, to push ACCENT into the `primary` token.

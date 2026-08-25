@@ -6,6 +6,7 @@ import {
   pendingGymFromSession,
   pendingInviteFromSession,
   pendingJoinFromSession,
+  pendingTrialFromSession,
   useGymMembership,
   useRole,
   useSession,
@@ -157,7 +158,8 @@ export default function Index() {
     const resumable =
       pendingGymFromSession(session) ||
       pendingJoinFromSession(session) ||
-      pendingInviteFromSession(session);
+      pendingInviteFromSession(session) ||
+      pendingTrialFromSession(session);
     return <Redirect href={resumable ? '/welcome' : '/athlete'} />;
   }
   if (consent.isLoading) return <Loading />;

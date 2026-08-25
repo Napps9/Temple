@@ -14,6 +14,7 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { Input } from '@/components/Input';
 import { useGymMembership } from '@/lib/auth';
+import { TrialLinkCard } from '@/components/TrialLinkCard';
 import { joinUrl, leadUrl, normaliseHex, slugify } from '@/lib/brand';
 import { copyToClipboard } from '@/lib/clipboard';
 import { errorMessage } from '@/lib/errors';
@@ -48,6 +49,7 @@ export function BrandingPanel() {
   const colors = useThemeColors();
   const { data: membership } = useGymMembership();
   const canManageStaff = useCan('can_manage_staff');
+  const canIssueComp = useCan('can_issue_comp_grant') === true;
   const queryClient = useQueryClient();
 
   const gym = useQuery({
@@ -325,6 +327,13 @@ export function BrandingPanel() {
             </View>
           ) : null}
         </View>
+
+        {/* The free way in sits with the gym's other public links: a
+            prospect who is ready to try a class is one step past the
+            enquiry form, not a different kind of person. */}
+        {gym.data?.id && canIssueComp ? (
+          <TrialLinkCard gymId={gym.data.id} />
+        ) : null}
     </View>
   );
 }

@@ -12,6 +12,7 @@ import { BrandGradientHero, HERO_INK } from '@/components/BrandGradientHero';
 import { Button } from '@/components/Button';
 import { Sheet, SheetAction } from '@/components/Sheet';
 import { ChipButton } from '@/components/ChipButton';
+import { TrialLinkCard } from '@/components/TrialLinkCard';
 import {
   DATE_RE,
   DateRangeCta,
@@ -788,6 +789,9 @@ function LeadDetailModal({
 }) {
   const colors = useThemeColors();
   const queryClient = useQueryClient();
+  // Minting a trial link is issuing a comp grant, deferred — so it
+  // carries that capability, not the leads one this screen runs on.
+  const canIssueComp = useCan('can_issue_comp_grant') === true;
   const [error, setError] = useState<string | null>(null);
   const [convertPicker, setConvertPicker] = useState(false);
   const [reassignOpen, setReassignOpen] = useState(false);
@@ -1029,6 +1033,17 @@ function LeadDetailModal({
                     />
                   ) : null}
                 </View>
+              ) : null}
+
+              {canIssueComp ? (
+                <TrialLinkCard
+                  gymId={gymId}
+                  lead={{
+                    id: lead.id,
+                    full_name: lead.full_name,
+                    email: lead.email,
+                  }}
+                />
               ) : null}
 
               {convertPicker ? (

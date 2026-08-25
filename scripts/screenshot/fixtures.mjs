@@ -734,6 +734,24 @@ export const RPCS = {
     { peer_profile_id: 'a3', peer_full_name: 'Priya Raman', peer_role: 'coach', last_message_id: 'dm4', last_message_body: 'There is a 15 minute primer built in, come as you are.', last_message_at: iso(-1, 9), last_message_from_me: false, unread_count: 2 },
     { peer_profile_id: 'a1', peer_full_name: 'Amara Nwosu', peer_role: 'member', last_message_id: 'dm-a1', last_message_body: 'Same time Thursday? I will grab the good rower.', last_message_at: iso(-2, 18), last_message_from_me: true, unread_count: 0 },
   ],
+  // A trial link, as an anonymous visitor sees it (0262). The pass is
+  // class-type scoped, so the page offers a picker.
+  trial_pass_offer: [
+    {
+      gym_id: GYM_ID, gym_name: 'The Forge', gym_slug: 'the-forge',
+      kind: 'public', class_type_id: 'ct1', class_type_name: 'Foundations',
+      session_id: null, session_name: null, starts_at: null,
+      duration_minutes: null, coach_name: null, passes: 1,
+      invited_first_name: null,
+    },
+  ],
+  trial_pass_sessions: [
+    { session_id: 's1', session_name: 'Foundations', starts_at: iso(1, 18), duration_minutes: 60, coach_name: 'Priya Raman', spaces_left: 4 },
+    { session_id: 's2', session_name: 'Foundations', starts_at: iso(2, 7), duration_minutes: 60, coach_name: 'Danny Okafor', spaces_left: 1 },
+    { session_id: 's3', session_name: 'Foundations', starts_at: iso(3, 18), duration_minutes: 60, coach_name: 'Priya Raman', spaces_left: 0 },
+  ],
+  class_session_hold_counts: [],
+  my_pending_trial_class: [],
   inbox_unread_summary: [
     { dm_unread: 2, announcement_unread: 2, class_broadcast_unread: 1, class_change_unread: 1, payment_unread: 1 },
   ],

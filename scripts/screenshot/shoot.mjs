@@ -54,10 +54,20 @@ const SIZES = [
   ['desk', 1280, 900],
 ];
 
+// Public routes are rendered in a fresh context BEFORE signing in —
+// they are the only screens whose whole job is to work for somebody who
+// has no account, and a signed-in render shows a different page.
+const PUBLIC_ROUTES = [
+  ['trial', '/trial/DEMO1234'],
+];
+
 const only = process.argv.slice(2);
-const routes = only.length
-  ? ROUTES.filter(([name, path]) => only.some((o) => name.includes(o) || path.includes(o)))
-  : ROUTES;
+const pick = (list) =>
+  only.length
+    ? list.filter(([name, path]) => only.some((o) => name.includes(o) || path.includes(o)))
+    : list;
+const routes = pick(ROUTES);
+const publicRoutes = pick(PUBLIC_ROUTES);
 
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
 
@@ -105,6 +115,22 @@ for (const [sizeName, width, height] of SIZES) {
         failures.push(`${sizeName}/${scheme}: ${e.message}`);
       }
     });
+
+    for (const [name, path] of publicRoutes) {
+      const file = join(OUT, `${name}-${sizeName}-${scheme}.png`);
+      try {
+        await page.goto(`http://localhost:${PORT}${path}`, {
+          waitUntil: 'networkidle',
+          timeout: 30000,
+        });
+        await page.waitForTimeout(1200);
+        await page.screenshot({ path: file, fullPage: true });
+        shot += 1;
+        console.log(`  ${name} ${sizeName} ${scheme} (signed out)`);
+      } catch (e) {
+        failures.push(`${name} ${sizeName} ${scheme}: ${e.message}`);
+      }
+    }
 
     try {
       await signIn(page);

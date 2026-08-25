@@ -12,10 +12,12 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   completePendingGym,
   completePendingInvite,
+  completePendingTrial,
   completePendingJoin,
   pendingGymFromSession,
   pendingInviteFromSession,
   pendingJoinFromSession,
+  pendingTrialFromSession,
   refreshMembership,
   useGymMembership,
   useSession,
@@ -42,7 +44,8 @@ export default function WelcomeScreen() {
   const pendingGym = pendingGymFromSession(session ?? null);
   const pendingJoin = pendingJoinFromSession(session ?? null);
   const pendingInvite = pendingInviteFromSession(session ?? null);
-  const resumable = pendingGym ?? pendingJoin ?? pendingInvite;
+  const pendingTrial = pendingTrialFromSession(session ?? null);
+  const resumable = pendingGym ?? pendingJoin ?? pendingInvite ?? pendingTrial;
 
   const resume = useMutation({
     mutationFn: async () => {
@@ -58,6 +61,10 @@ export default function WelcomeScreen() {
         await completePendingInvite(pendingInvite);
         return;
       }
+      if (pendingTrial) {
+        await completePendingTrial(pendingTrial);
+        return;
+      }
       throw new Error('Nothing to resume');
     },
     onSuccess: async () => {
@@ -70,7 +77,7 @@ export default function WelcomeScreen() {
       setResumeError(errorMessage(e, 'Could not finish setting up your gym')),
   });
 
-  const joining = pendingJoin || pendingInvite;
+  const joining = pendingJoin || pendingInvite || pendingTrial;
   const icon = pendingGym
     ? 'business-outline'
     : joining
@@ -78,14 +85,18 @@ export default function WelcomeScreen() {
       : 'compass-outline';
   const heading = pendingGym
     ? `Finish setting up ${pendingGym.name}`
-    : joining
-      ? 'Finish joining your gym'
-      : "You're not in a gym yet";
+    : pendingTrial
+      ? 'Claim your free class'
+      : joining
+        ? 'Finish joining your gym'
+        : "You're not in a gym yet";
   const subcopy = pendingGym
     ? "Email confirmed. Pick up where you left off — one tap and your gym is ready."
-    : joining
-      ? "Email confirmed. One tap to join and you're in."
-      : 'Create your own gym, or open the invite your gym emailed you to join theirs.';
+    : pendingTrial
+      ? "Email confirmed. One tap and your spot is held."
+      : joining
+        ? "Email confirmed. One tap to join and you're in."
+        : 'Create your own gym, or open the invite your gym emailed you to join theirs.';
 
   return (
     <SafeAreaView
