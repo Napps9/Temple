@@ -264,7 +264,7 @@ business has picked one of the two Apple operating models above.
 
 ---
 
-## 7. Announcements members actually see, and a word when they hit a PB
+## ~~7. Announcements members actually see, and a word when they hit a PB~~ (both shipped)
 
 Gym-owner feedback, 25 August 2026. Two asks, both about the gym's
 voice reaching the member instead of waiting in a list.
@@ -337,7 +337,7 @@ back squat — 105 kg, up 2.5 from March"), consistent with the roadmap's
 
 ---
 
-## 8. Free trials — a free way in, and a limited-time offer
+## ~~8. Free trials — a free way in, and a limited-time offer~~ (both shipped)
 
 Gym-owner feedback, 25 August 2026. Both are the same job seen from
 two ends: get a prospect through the door without them committing.
