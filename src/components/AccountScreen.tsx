@@ -15,6 +15,7 @@ import { CoachEarningsCard } from './CoachEarningsCard';
 import { GymShareCard } from './GymShareCard';
 import { Input } from './Input';
 import { LeaderboardPrivacyCard } from './LeaderboardPrivacyCard';
+import { SmsOptInCard } from './SmsOptInCard';
 import { LeaveGymDialog } from './LeaveGymDialog';
 import { ListRow, RuledList } from './ListRow';
 import { Screen } from './Screen';
@@ -193,15 +194,13 @@ export function AccountScreen() {
       }
 
       // Separate table since 0179 — phone is not something the rest of the
-      // gym gets to read off the profile row.
+      // gym gets to read off the profile row. Through the RPC since 0270,
+      // which normalises to E.164 alongside what was typed and refuses a
+      // number nobody could dial, here where the field is still on screen.
       if (phoneChanged) {
-        const { error } = await supabase
-          .from('member_contact_details')
-          .upsert(
-            { profile_id: session.user.id, phone: nextPhone || null,
-              updated_at: new Date().toISOString() },
-            { onConflict: 'profile_id' },
-          );
+        const { error } = await supabase.rpc('set_my_contact_phone', {
+          p_phone: nextPhone,
+        });
         if (error) throw error;
       }
       if (emailChanged) {
@@ -302,6 +301,8 @@ export function AccountScreen() {
         <GymShareCard />
 
         <LeaderboardPrivacyCard />
+
+        <SmsOptInCard />
 
         {membership && session ? (
           <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-2">

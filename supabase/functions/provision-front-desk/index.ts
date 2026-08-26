@@ -158,15 +158,26 @@ Deno.serve(async (req: Request) => {
       return await fail(`twilio_unreachable: ${String(e).slice(0, 100)}`);
     }
   } else {
+    // A UK *local* number cannot carry SMS, which is what kept texts dark
+    // (the "option A, voice-first" decision). Ask for a mobile that does
+    // both first, and only fall back to a local voice-only number if none
+    // is available — a gym with a voice number is still a working front
+    // desk, it just cannot text. What we bought is recorded below rather
+    // than assumed from which branch we took.
     let candidate: string;
     try {
-      const res = await fetch(
-        `${twBase}/AvailablePhoneNumbers/GB/Local.json?VoiceEnabled=true&PageSize=5`,
-        { headers: { Authorization: twAuth } },
-      );
-      if (!res.ok) return await fail(`twilio_search_${res.status}`);
-      const data = await res.json();
-      candidate = data?.available_phone_numbers?.[0]?.phone_number ?? '';
+      const search = async (kind: 'Mobile' | 'Local', sms: boolean) => {
+        const params = new URLSearchParams({ VoiceEnabled: 'true', PageSize: '5' });
+        if (sms) params.set('SmsEnabled', 'true');
+        const res = await fetch(
+          `${twBase}/AvailablePhoneNumbers/GB/${kind}.json?${params}`,
+          { headers: { Authorization: twAuth } },
+        );
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data?.available_phone_numbers?.[0]?.phone_number ?? null;
+      };
+      candidate = (await search('Mobile', true)) ?? (await search('Local', false)) ?? '';
       if (!candidate) return await fail('no_numbers_available');
     } catch (e) {
       return await fail(`twilio_unreachable: ${String(e).slice(0, 100)}`);
@@ -192,6 +203,11 @@ Deno.serve(async (req: Request) => {
       }
       const data = await res.json();
       number = data.phone_number;
+      // Read the capability off the number we actually bought rather than
+      // off which search matched: a fallback, a Twilio change, or a
+      // reserved number would all make our intent a lie, and a gym whose
+      // switch says it can text but cannot is worse than one that admits it.
+      const smsCapable = data?.capabilities?.sms === true;
       // Persist the SID and the number together — never one without the
       // other, or a resume can't tell "bought" from "half-bought".
       await service
@@ -199,6 +215,7 @@ Deno.serve(async (req: Request) => {
         .update({
           twilio_number_sid: data.sid,
           phone_number: number,
+          sms_capable: smsCapable,
           updated_at: new Date().toISOString(),
         })
         .eq('gym_id', gymId);

@@ -397,6 +397,7 @@ export type Database = {
           phone_number: string | null;
           voice_enabled: boolean;
           vapi_assistant_id: string | null;
+          sms_capable: boolean;
           context: string | null;
           voice_provider: string | null;
           voice_id: string | null;
@@ -420,6 +421,7 @@ export type Database = {
           phone_number?: string | null;
           voice_enabled?: boolean;
           vapi_assistant_id?: string | null;
+          sms_capable?: boolean;
           context?: string | null;
           voice_provider?: string | null;
           voice_id?: string | null;
@@ -442,6 +444,7 @@ export type Database = {
           phone_number: string | null;
           voice_enabled: boolean;
           vapi_assistant_id: string | null;
+          sms_capable: boolean;
           context: string | null;
           voice_provider: string | null;
           voice_id: string | null;
@@ -1410,6 +1413,7 @@ export type Database = {
           left_at: string | null;
           created_at: string;
           appear_in_leaderboards: boolean;
+          sms_opt_in: boolean;
           require_membership_to_book: boolean | null;
         };
         Insert: {
@@ -1423,6 +1427,7 @@ export type Database = {
           left_at?: string | null;
           created_at?: string;
           appear_in_leaderboards?: boolean;
+          sms_opt_in?: boolean;
         };
         Update: Partial<{
           id: string;
@@ -1435,6 +1440,7 @@ export type Database = {
           left_at: string | null;
           created_at: string;
           appear_in_leaderboards: boolean;
+          sms_opt_in: boolean;
           require_membership_to_book: boolean | null;
         }>;
         Relationships: [
@@ -1948,15 +1954,18 @@ export type Database = {
         Row: {
           profile_id: string;
           phone: string | null;
+          phone_e164: string | null;
           updated_at: string;
         };
         Insert: {
           profile_id: string;
           phone?: string | null;
+          phone_e164?: string | null;
           updated_at?: string;
         };
         Update: Partial<{
           phone: string | null;
+          phone_e164: string | null;
           updated_at: string;
         }>;
         Relationships: [];
@@ -4739,6 +4748,22 @@ export type Database = {
           taken: number | null;
           waiting: number | null;
           is_full: boolean;
+        }[];
+      };
+      set_my_contact_phone: {
+        Args: { p_phone: string };
+        Returns: void;
+      };
+      set_my_sms_opt_in: {
+        Args: { p_gym_id: string; p_value: boolean };
+        Returns: void;
+      };
+      my_sms_readiness: {
+        Args: { p_gym_id: string };
+        Returns: {
+          opted_in: boolean;
+          has_phone: boolean;
+          gym_can_text: boolean;
         }[];
       };
       set_checkout_recovery_job: {
