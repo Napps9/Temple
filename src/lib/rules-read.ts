@@ -12,7 +12,7 @@ export const GYM_RULES_SELECT =
   'cancel_cutoff_minutes_before, require_membership_to_book, ' +
   'week_starts_on, allow_minors, weight_unit, dm_scope, ' +
   'class_leaderboards_enabled, strength_leaderboards_enabled, ' +
-  'show_class_capacity, ' +
+  'show_class_capacity, billing_anchor_day, ' +
   'public_signup_enabled, public_lead_capture_enabled, ' +
   'members_can_self_checkout, ' +
   'expiring_within_days, parq_expiry_days, health_retention_months, ' +
@@ -30,6 +30,7 @@ export type GymRulesRow = {
   dm_scope: 'full_gym' | 'member_coach_only';
   class_leaderboards_enabled: boolean;
   show_class_capacity: boolean;
+  billing_anchor_day: number | null;
   strength_leaderboards_enabled: boolean;
   public_signup_enabled: boolean;
   public_lead_capture_enabled: boolean;
@@ -113,6 +114,7 @@ export function choicesFromGym(
     leaderboards_on:
       gym.class_leaderboards_enabled || gym.strength_leaderboards_enabled,
     show_class_capacity: gym.show_class_capacity,
+    billing_anchor_day: gym.billing_anchor_day ?? 0,
     public_signup: gym.public_signup_enabled,
     public_lead_capture: gym.public_lead_capture_enabled,
     members_can_self_checkout: gym.members_can_self_checkout,

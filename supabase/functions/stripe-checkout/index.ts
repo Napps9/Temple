@@ -326,6 +326,34 @@ Deno.serve(async (req: Request) => {
       sessionParams['discounts[0][coupon]'] = stripeCouponId;
       sessionParams['metadata[coupon_id]'] = coupon.coupon_id;
     }
+    // A common billing date, if the gym has picked one (0274). The next
+    // anchor and what the part-month is worth are computed in SQL, where
+    // "midnight on the 1st in Europe/London" is a thing Postgres gets
+    // right and pgTAP can hold it to.
+    //
+    // Below a pound the proration is not charged at all: Stripe rolls a
+    // sub-minimum amount onto the customer balance instead of invoicing
+    // it, so the member appears to have paid nothing, no invoice.paid
+    // fires, and the gym never sees them arrive. trial_end says the same
+    // thing honestly — free until the anchor.
+    if (recurring) {
+      const { data: anchorRows } = await service.rpc('gym_billing_anchor', {
+        p_gym_id: gymId,
+        p_price_cents: plan.monthly_price_cents,
+      });
+      const anchor = (anchorRows ?? [])[0] as
+        | { anchor_at: string; prorated_cents: number }
+        | undefined;
+      if (anchor) {
+        const at = Math.floor(new Date(anchor.anchor_at).getTime() / 1000);
+        if ((anchor.prorated_cents ?? 0) >= 100) {
+          sessionParams['subscription_data[billing_cycle_anchor]'] = String(at);
+        } else {
+          sessionParams['subscription_data[trial_end]'] = String(at);
+        }
+      }
+    }
+
     const metaPrefix = recurring
       ? 'subscription_data[metadata]'
       : 'payment_intent_data[metadata]';

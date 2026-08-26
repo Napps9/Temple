@@ -116,6 +116,10 @@ export type RuleChoices = {
   public_lead_capture: boolean;
   members_can_self_checkout: boolean;
   expiring_within_days: number;
+  // 0 means "on the day they joined", which is what every gym does
+  // until an owner picks a date. Null would be truer but the rule sheet
+  // speaks in values it can put on a chip.
+  billing_anchor_day: number;
   parq_expiry_days: number;
   health_retention_months: number;
   cover_warning_hours: number;
@@ -139,6 +143,7 @@ export const DEFAULT_RULE_CHOICES: RuleChoices = {
   public_lead_capture: true,
   members_can_self_checkout: true,
   expiring_within_days: 14,
+  billing_anchor_day: 0,
   parq_expiry_days: 365,
   health_retention_months: 3,
   cover_warning_hours: 48,
@@ -217,6 +222,12 @@ export const RULE_FIELD_OPTIONS: Record<RuleField, FieldOption[]> = {
     { label: '14 days', value: 14 },
     { label: '7 days', value: 7 },
     { label: '30 days', value: 30 },
+  ],
+  billing_anchor_day: [
+    { label: 'the day they joined', value: 0 },
+    { label: 'the 1st', value: 1 },
+    { label: 'the 15th', value: 15 },
+    { label: 'the 28th', value: 28 },
   ],
   parq_expiry_days: [
     { label: 'year', value: 365 },
@@ -398,6 +409,7 @@ export function ruleSheet(c: RuleChoices): SheetGroup[] {
       fine: true,
       lines: [
         line({ t: 'Memberships show as expiring ' }, { f: 'expiring_within_days' }, { t: ' out' }),
+        line({ t: 'Members are billed on ' }, { f: 'billing_anchor_day' }),
         line({ t: 'Health questionnaires renew every ' }, { f: 'parq_expiry_days' }),
         line({ t: 'Health data is deleted ' }, { f: 'health_retention_months' }, { t: ' after someone leaves' }),
         line({ t: 'Uncovered classes raise a warning ' }, { f: 'cover_warning_hours' }, { t: ' ahead' }),

@@ -60,6 +60,7 @@ export type Database = {
           weight_unit: 'kg' | 'lb';
           class_leaderboards_enabled: boolean;
           show_class_capacity: boolean;
+          billing_anchor_day: number | null;
           strength_leaderboards_enabled: boolean;
           dm_scope: 'full_gym' | 'member_coach_only';
           logo_url: string | null;
@@ -113,6 +114,7 @@ export type Database = {
           weight_unit?: 'kg' | 'lb';
           class_leaderboards_enabled?: boolean;
           show_class_capacity?: boolean;
+          billing_anchor_day?: number | null;
           strength_leaderboards_enabled?: boolean;
           dm_scope?: 'full_gym' | 'member_coach_only';
           logo_url?: string | null;
@@ -157,6 +159,7 @@ export type Database = {
           currency: string;
           class_leaderboards_enabled: boolean;
           show_class_capacity: boolean;
+          billing_anchor_day: number | null;
           strength_leaderboards_enabled: boolean;
           dm_scope: 'full_gym' | 'member_coach_only';
           logo_url: string | null;
@@ -4767,6 +4770,14 @@ export type Database = {
       publish_class_programming: {
         Args: { p_gym_id: string; p_date: string; p_published_at?: string | null };
         Returns: number;
+      };
+      set_gym_billing_anchor: {
+        Args: { p_gym_id: string; p_day: number | null };
+        Returns: void;
+      };
+      gym_billing_anchor: {
+        Args: { p_gym_id: string; p_price_cents?: number };
+        Returns: { anchor_at: string; prorated_cents: number }[];
       };
       set_my_contact_phone: {
         Args: { p_phone: string };

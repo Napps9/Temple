@@ -14,6 +14,7 @@ import { IconTile, ListRow, RuledList } from '@/components/ListRow';
 import { EmptyState } from '@/components/EmptyState';
 import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
+import { BillingDateNote } from '@/components/BillingDateNote';
 import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { formatMoney } from '@/lib/coach-earnings';
@@ -1001,6 +1002,8 @@ export default function MembershipScreen() {
           <SectionLabel>
             {currentSubs.length > 0 ? 'Switch or add a plan' : 'Plans'}
           </SectionLabel>
+
+          <BillingDateNote gymId={gymId} />
 
           {plans.isLoading ? (
             <Text className="text-ink-2 dark:text-ink-2-dk text-sm">

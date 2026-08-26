@@ -24,6 +24,7 @@ const FRESH_GYM: GymRulesRow = {
   class_leaderboards_enabled: true,
   strength_leaderboards_enabled: true,
   show_class_capacity: true,
+  billing_anchor_day: null,
   public_signup_enabled: true,
   public_lead_capture_enabled: true,
   members_can_self_checkout: true,

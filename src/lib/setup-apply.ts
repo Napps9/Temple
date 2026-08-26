@@ -288,6 +288,10 @@ export async function applyRules(
       'set_class_capacity_visibility',
       { p_gym_id: gymId, p_value: choices.show_class_capacity },
     ],
+    [
+      'set_gym_billing_anchor',
+      { p_gym_id: gymId, p_day: choices.billing_anchor_day || null },
+    ],
     ['set_gym_public_signup', { p_gym_id: gymId, p_enabled: choices.public_signup }],
     [
       'set_gym_public_lead_capture',
