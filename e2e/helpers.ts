@@ -59,8 +59,11 @@ export async function say(page: Page, sentence: string): Promise<void> {
 
 // Members do not land on the Timeline — src/app/index.tsx redirects them
 // to /book — so signIn's wait can never pass for one.
+// `||`, not `??`: run-the-gym passes this through from an optional
+// workflow input, so "unset" arrives as the empty string rather than
+// undefined, and ?? would hand sign-in a blank email.
 export const MEMBER_EMAIL =
-  process.env.E2E_MEMBER_EMAIL ?? `member01@${SLUG}.temple.test`;
+  process.env.E2E_MEMBER_EMAIL || `member01@${SLUG}.temple.test`;
 
 export async function signInMember(page: Page, email = MEMBER_EMAIL): Promise<void> {
   await page.addInitScript(() => {

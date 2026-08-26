@@ -130,7 +130,7 @@ demo owner and coach1 (`E2E_*` env overrides). Journeys 2 and 3 need
 `ANTHROPIC_API_KEY` on the hosted functions — `E2E_PARSER=0` skips
 them. The report uploads as a workflow artifact. The specs are written
 against the real screens' copy and have not yet run against the live
-app; expect first-run selector fixes. Six journeys:
+app; expect first-run selector fixes. The journeys:
 
 | Journey | What it catches |
 |---|---|

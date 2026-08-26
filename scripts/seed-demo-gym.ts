@@ -152,6 +152,18 @@ function printCredentials(plan: DemoPlan): void {
   console.log(`Members:  member01@${plan.emailDomain} … member${String(members.length).padStart(2, '0')}@${plan.emailDomain}`);
   console.log(`Password: ${plan.password}  (all accounts)`);
   console.log(`Timeline: ${countWaiting(plan.agentActions)} question(s) waiting, ${plan.agentActions.length - countWaiting(plan.agentActions)} receipt(s) behind them`);
+  // Which members ended up queued behind the full class. The three are
+  // picked by a propensity roll out of forty, so nothing downstream can
+  // guess them — and journey 8's waitlist assertion needs to be pointed
+  // at one, or it skips itself rather than passing vacuously.
+  const byId = new Map(plan.users.map((u) => [u.id, u.email]));
+  const queued = plan.waitlist
+    .slice()
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+    .map((w) => byId.get(w.profile_id) ?? w.profile_id);
+  if (queued.length > 0) {
+    console.log(`Waitlist: ${queued.join('  ')}  (in queue order)`);
+  }
   console.log(`Teardown: npm run seed:demo -- --teardown --slug ${plan.gym.slug}`);
 }
 

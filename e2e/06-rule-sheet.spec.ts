@@ -26,7 +26,9 @@ test('the rule sheet opens, offers options on tap, and saves a value', async ({ 
 
   // Re-selecting the current value is a save that changes nothing —
   // exercises the write path without altering the gym. The selected
-  // chip carries bg-primary (NativeWind classes land verbatim on web).
-  await page.locator('[tabindex="0"].bg-primary').first().click();
+  // chip carries bg-raised (NativeWind classes land verbatim on web):
+  // selected is a soft tint, not the accent, because a sheet full of
+  // accent-filled chips is a wash rather than a selection.
+  await page.locator('[tabindex="0"].bg-raised').first().click();
   await expect(page.getByText(/couldn.t|failed|error/i)).toHaveCount(0);
 });

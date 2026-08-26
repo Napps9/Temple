@@ -5,7 +5,7 @@ name: Run the gym
 #
 #   sim   simulate weeks of activity into the hosted demo gym, then run
 #         the real tick RPCs and print what each job proposed
-#   e2e   the six Playwright journeys against the deployed app, at
+#   e2e   the Playwright journeys against the deployed app, at
 #         phone and desktop widths
 #   eval  ~55 sentences through the deployed parser, refusal traps
 #         included
@@ -38,6 +38,13 @@ on:
       seed:
         description: Sim seed — same seed, same month (sim only)
         default: "2026"
+      member_email:
+        description: >-
+          Member the waitlist journey signs in as (e2e only; blank =
+          member01). The seeder prints "Waitlist:" with the three it
+          queued — journey 8 skips its rank assertion for a member who
+          holds no entry.
+        default: ""
 
 env:
   DO_NOT_TRACK: "1"
@@ -93,9 +100,10 @@ jobs:
         env:
           HUSKY: "0"
       - run: npx playwright install --with-deps chromium
-      - name: Six journeys, two widths
+      - name: The journeys, two widths
         env:
           E2E_SLUG: ${{ inputs.slug }}
+          E2E_MEMBER_EMAIL: ${{ inputs.member_email }}
         run: npm run e2e
       - uses: actions/upload-artifact@v4
         if: always()
