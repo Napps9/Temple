@@ -726,7 +726,7 @@ export type Database = {
           gym_id: string;
           phone: string;
           lead_id: string | null;
-          channel: 'sms' | 'voice';
+          channel: 'sms' | 'voice' | 'whatsapp';
           status: 'active' | 'handed_off' | 'closed';
           last_message_at: string;
           last_message_role: string | null;
@@ -737,7 +737,7 @@ export type Database = {
           gym_id: string;
           phone: string;
           lead_id?: string | null;
-          channel: 'sms' | 'voice';
+          channel: 'sms' | 'voice' | 'whatsapp';
           status?: 'active' | 'handed_off' | 'closed';
           last_message_at?: string;
           last_message_role?: string | null;

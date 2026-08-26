@@ -33,7 +33,7 @@ export type Conversation = {
   gym_id: string;
   phone: string;
   lead_id: string | null;
-  channel: 'sms' | 'voice';
+  channel: 'sms' | 'voice' | 'whatsapp';
   status: 'active' | 'handed_off' | 'closed';
 };
 
@@ -148,7 +148,7 @@ export async function getOrCreateConversation(
   service: Client,
   gymId: string,
   phone: string,
-  channel: 'sms' | 'voice',
+  channel: 'sms' | 'voice' | 'whatsapp',
 ): Promise<Conversation> {
   const { data, error } = await service
     .from('agent_conversations')
@@ -317,7 +317,7 @@ export async function fetchGymSnapshot(
 export function buildSystemPrompt(
   gym: AgentGym,
   snapshot: GymSnapshot,
-  channel: 'sms' | 'voice',
+  channel: 'sms' | 'voice' | 'whatsapp',
   coachingText = '',
 ): string {
   const today = new Date().toLocaleDateString('en-GB', {
@@ -328,9 +328,14 @@ export function buildSystemPrompt(
     year: 'numeric',
   });
   const style =
-    channel === 'sms'
-      ? 'You are texting. Keep every reply under 450 characters, plain text only — no markdown, no emoji. One question at a time.'
-      : 'You are on a phone call. Keep answers short and conversational.';
+    channel === 'voice'
+      ? 'You are on a phone call. Keep answers short and conversational.'
+      : channel === 'whatsapp'
+        // Same discipline as a text — WhatsApp has no length limit worth
+        // using, and a wall of text from a business somebody has not
+        // joined yet reads as a mailshot.
+        ? 'You are messaging on WhatsApp. Keep every reply under 450 characters, plain text only — no markdown, no emoji. One question at a time.'
+        : 'You are texting. Keep every reply under 450 characters, plain text only — no markdown, no emoji. One question at a time.';
   return [
     `You are the friendly AI front-desk assistant for ${gym.name}, a gym. Today is ${today}.`,
     "Your job: answer questions from prospects, get their name, capture them as a lead, and help keen ones join. Mention that you're the gym's AI assistant when you introduce yourself, and say so plainly if anyone asks whether they're talking to a human.",
@@ -362,7 +367,7 @@ export type ToolContext = {
   service: Client;
   gym: AgentGym;
   conversation: Conversation;
-  channel: 'sms' | 'voice';
+  channel: 'sms' | 'voice' | 'whatsapp';
   appOrigin: string;
   twilio: { accountSid: string; authToken: string } | null;
   supabaseUrl: string;

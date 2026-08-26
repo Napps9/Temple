@@ -67,11 +67,28 @@ Deno.serve(async (req: Request) => {
   const { MessageSid, From, To, Body } = params;
   if (!MessageSid || !From || !To) return twiml();
 
+  // WhatsApp arrives on this same webhook, addressed
+  // "whatsapp:+447700900123". The prefix is a wire detail and stays one:
+  // agent_stop_conversation matches on phone, leads.phone is E.164, and
+  // agent_capture_lead dedupes on it — storing the prefix would silently
+  // stop all three matching for exactly the people using the newest
+  // channel (0275).
+  const channel: 'sms' | 'whatsapp' = From.startsWith('whatsapp:')
+    ? 'whatsapp'
+    : 'sms';
+  const fromNumber = From.replace(/^whatsapp:/, '');
+  const toNumber = To.replace(/^whatsapp:/, '');
+
   const service = createClient(SUPABASE_URL, SERVICE_KEY);
-  const gym = await resolveGymByNumber(service, To);
+  const gym = await resolveGymByNumber(service, toNumber);
   if (!gym || !gym.settings.enabled) return twiml();
 
-  const conversation = await getOrCreateConversation(service, gym.id, From, 'sms');
+  const conversation = await getOrCreateConversation(
+    service,
+    gym.id,
+    fromNumber,
+    channel,
+  );
 
   const body = (Body ?? '').trim();
   if (!body) return twiml();
@@ -89,7 +106,7 @@ Deno.serve(async (req: Request) => {
     // because it looks like it worked.
     await service.rpc('member_stop_texts', {
       p_gym_id: gym.id,
-      p_phone: From,
+      p_phone: fromNumber,
     });
     // Twilio Advanced Opt-Out sends the compliance reply itself.
     return twiml();
@@ -206,7 +223,7 @@ async function reply(
     text = await runAgentLoop({
       apiKey,
       model: Deno.env.get('LEAD_AGENT_MODEL') ?? 'claude-sonnet-5',
-      system: buildSystemPrompt(gym, snapshot, 'sms', coaching),
+      system: buildSystemPrompt(gym, snapshot, conversation.channel, coaching),
       messages: history,
       tools: SMS_TOOLS,
       ctx,
@@ -216,18 +233,24 @@ async function reply(
   if (!text) {
     // No model available (or the loop died): don't leave the prospect
     // hanging — promise a human and mark the thread handed off.
-    text = `Thanks for getting in touch with ${gym.name}! A coach will text you back shortly.`;
+    text = `Thanks for getting in touch with ${gym.name}! A coach will ${
+      conversation.channel === 'whatsapp' ? 'message' : 'text'
+    } you back shortly.`;
     await service.rpc('agent_request_handoff', {
       p_conversation_id: conversation.id,
       p_reason: apiKey ? 'Agent could not generate a reply' : 'Agent not configured',
     });
   }
 
+  // The prefix goes back on at the wire, both ends — Twilio routes a
+  // WhatsApp message by the address shape, not by the account.
+  const wire = (n: string) =>
+    conversation.channel === 'whatsapp' ? `whatsapp:${n}` : n;
   const sent = await sendTwilioSms(
     env.twilioSid,
     env.twilioToken,
-    gym.settings.phone_number,
-    conversation.phone,
+    wire(gym.settings.phone_number),
+    wire(conversation.phone),
     text,
   );
   if (sent.sid) {
