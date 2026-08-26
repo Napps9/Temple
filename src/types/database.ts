@@ -4708,6 +4708,17 @@ export type Database = {
           is_full: boolean;
         }[];
       };
+      compute_member_tenure: {
+        Args: { p_gym_id: string };
+        Returns: {
+          departed_count: number;
+          // null until somebody has completed a stay — reporting a median
+          // built from nobody would be a lie in the optimistic direction.
+          median_days_left: number | null;
+          still_here_count: number;
+          still_here_median_days: number | null;
+        }[];
+      };
       set_class_capacity_visibility: {
         Args: { p_gym_id: string; p_value: boolean };
         Returns: void;

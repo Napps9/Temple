@@ -112,3 +112,39 @@ export function ppDelta(current: number, previous: number): Delta {
   const sign = diff > 0 ? '+' : '';
   return { direction, label: `${sign}${diff.toFixed(1)} pp` };
 }
+
+// How long a stay lasted, for a tile roughly 150px wide. Days below two
+// months, months below two years, then years to one decimal — an
+// eleven-month median reading "334 days" is arithmetic, not an answer.
+export function formatStay(days: number): string {
+  if (days < 60) return `${Math.round(days)} ${Math.round(days) === 1 ? 'day' : 'days'}`;
+  if (days < 730) return `${Math.round(days / 30.44)} mo`;
+  return `${(days / 365.25).toFixed(1)} yr`;
+}
+
+export type Tenure = {
+  departed_count: number;
+  median_days_left: number | null;
+  still_here_count: number;
+  still_here_median_days: number | null;
+};
+
+// Both halves, always. Reporting only the members who left is the
+// survivorship trap — a young gym that has so far lost only the people
+// who were never going to stay would read as though nobody lasts.
+export function tenureLine(t: Tenure | null | undefined): {
+  value: string;
+  subtitle: string;
+} {
+  if (!t) return { value: '—', subtitle: 'no history yet' };
+  const here =
+    t.still_here_count === 0
+      ? 'nobody here yet'
+      : t.still_here_median_days === null
+        ? `${t.still_here_count} here now`
+        : `${t.still_here_count} here, ${formatStay(t.still_here_median_days)} so far`;
+  if (t.departed_count === 0 || t.median_days_left === null) {
+    return { value: '—', subtitle: here };
+  }
+  return { value: formatStay(t.median_days_left), subtitle: here };
+}

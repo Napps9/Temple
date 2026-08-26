@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   dayBefore,
+  formatStay,
   mirrorRange,
   monthLabel,
   monthRange,
   pctDelta,
+  tenureLine,
   pickPrimaryCurrency,
   ppDelta,
   previousMonthRange,
@@ -119,5 +121,51 @@ describe('pickPrimaryCurrency', () => {
         'EUR',
       ).currency,
     ).toBe('GBP');
+  });
+});
+
+describe('formatStay', () => {
+  it('counts days below two months', () => {
+    expect(formatStay(1)).toBe('1 day');
+    expect(formatStay(45)).toBe('45 days');
+  });
+
+  it('switches to months, because 334 days is arithmetic not an answer', () => {
+    expect(formatStay(334)).toBe('11 mo');
+  });
+
+  it('switches to years past two', () => {
+    expect(formatStay(913)).toBe('2.5 yr');
+  });
+});
+
+describe('tenureLine', () => {
+  it('reports both halves', () => {
+    expect(
+      tenureLine({
+        departed_count: 43,
+        median_days_left: 334,
+        still_here_count: 143,
+        still_here_median_days: 240,
+      }),
+    ).toEqual({ value: '11 mo', subtitle: '143 here, 8 mo so far' });
+  });
+
+  // The survivorship guard: no completed stays means no median to report,
+  // and inventing one from the people still training would be a lie in the
+  // optimistic direction.
+  it('withholds a median when nobody has left', () => {
+    expect(
+      tenureLine({
+        departed_count: 0,
+        median_days_left: null,
+        still_here_count: 12,
+        still_here_median_days: 30,
+      }),
+    ).toEqual({ value: '—', subtitle: '12 here, 30 days so far' });
+  });
+
+  it('survives a gym with nothing in it', () => {
+    expect(tenureLine(null)).toEqual({ value: '—', subtitle: 'no history yet' });
   });
 });

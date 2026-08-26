@@ -66,7 +66,9 @@ import {
   pctDelta,
   pickPrimaryCurrency,
   ppDelta,
+  tenureLine,
   type RevenueRow,
+  type Tenure,
 } from '@/lib/metrics';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import type { GymRole } from '@/types/database';
@@ -1215,6 +1217,23 @@ function InsightsStats({
   );
   const gymId = membership?.gymId;
 
+  // How long a stay lasts. Not driven by the date range — a tenure is a
+  // fact about the whole roster, and slicing it by "this month" would
+  // answer a question nobody asked.
+  const tenure = useQuery({
+    queryKey: ['member-tenure', gymId],
+    enabled: !!gymId && canSeeInsights,
+    queryFn: async (): Promise<Tenure | null> => {
+      const { data, error } = await supabase.rpc('compute_member_tenure', {
+        p_gym_id: gymId!,
+      });
+      if (error) throw error;
+      return ((data ?? [])[0] as Tenure | undefined) ?? null;
+    },
+  });
+
+  const { value: tenureValue, subtitle: tenureSubtitle } = tenureLine(tenure.data);
+
   const revenueCurrent = useQuery({
     queryKey: ['manage-revenue', gymId, start, end],
     enabled: !!gymId && showRevenue && rangeValid,
@@ -1374,6 +1393,16 @@ function InsightsStats({
               subtitle="of members checked in"
               delta={attendanceDelta}
               href="/management/attendance"
+            />
+          </View>
+        ) : null}
+        {canSeeInsights ? (
+          <View className="w-1/2 lg:w-1/3 p-1.5">
+            <StatTile
+              title="Members stay"
+              value={tenureValue}
+              subtitle={tenureSubtitle}
+              tone={tenure.data && tenure.data.departed_count > 0 ? 'default' : 'muted'}
             />
           </View>
         ) : null}
