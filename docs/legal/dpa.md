@@ -100,8 +100,8 @@ Temple maintains, at minimum (detailed in Annex C):
 ## 7. Sub-processors
 
 The Gym gives general authorisation for Temple to engage the sub-processors
-listed in **Annex B** (currently Supabase, Stripe, Resend, Vercel, and — for
-optional features — Anthropic and Pexels). Temple imposes data-protection
+listed in **Annex B** (currently Supabase, Stripe, Resend, Twilio, Vercel,
+and — for optional features — Anthropic and Pexels). Temple imposes data-protection
 terms on each no less protective than this DPA and remains liable for their
 performance. Temple will give the Gym at least **30 days' notice** before
 adding or replacing a sub-processor (by email to the Gym's registered admin
@@ -167,6 +167,7 @@ Liability under this DPA is subject to the limitations in the Terms.
 | Supabase | Database, auth, storage | Project region (confirm in Project → settings; London/Frankfurt = UK/EU) | None if UK/EU region; otherwise UK IDTA / EU SCCs — confirm on vendor DPA |
 | Stripe | Payments infrastructure | US + global | UK IDTA / EU SCCs (+ EU–US DPF where certified) — confirm on vendor DPA |
 | Resend | Email delivery | US | UK IDTA / EU SCCs — confirm on vendor DPA |
+| Twilio | SMS + voice delivery (member phone number, message body) | US + global | UK IDTA / EU SCCs — confirm on vendor DPA |
 | Vercel | Hosting / delivery | US + global | UK IDTA / EU SCCs (+ EU–US DPF where certified) — confirm on vendor DPA |
 | Anthropic (optional) | AI import assistance (aggregate, no member rows) | US | UK IDTA / EU SCCs — confirm on vendor DPA |
 | Pexels (optional) | Stock-photo search (no member data) | US | No personal data processed |

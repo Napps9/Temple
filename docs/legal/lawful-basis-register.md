@@ -78,6 +78,7 @@ DPA). Recorded here for completeness:
 | Emergency contact | Third-party contact data | As above (health-adjacent) |
 | Waiver signatures | Signature, liability record | Contract / **legal claims** (retained 6 years, DPA §10) |
 | Marketing email + open/click tracking | Engagement | Gym's **PECR** consent/soft-opt-in |
+| **Member SMS** — personal bests and other notices | Mobile number, message body | Gym's **PECR** consent — explicit opt-in only (`gym_memberships.sms_opt_in`, default off), withdrawable in-app or by texting STOP |
 
 ## C. Retention (summary — see DPA §10 / Privacy §5)
 
