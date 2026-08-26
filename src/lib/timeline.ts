@@ -327,6 +327,37 @@ function agentActionLine(e: TimelineEvent): TimelineLine {
     }
   }
 
+  if (kind === 'checkout_recovery_message') {
+    const plan =
+      typeof payload.plan_name === 'string' && payload.plan_name
+        ? payload.plan_name
+        : 'a membership';
+    const hours =
+      typeof payload.hours_since === 'number' ? payload.hours_since : null;
+    switch (status) {
+      case 'proposed':
+        return {
+          text: hours
+            ? `${first} started signing up for ${plan} ${hours} hour${hours === 1 ? '' : 's'} ago and didn't finish paying — say something?`
+            : `${first} started signing up for ${plan} and didn't finish paying — say something?`,
+          tone: 'amber',
+        };
+      case 'approved':
+      case 'executed':
+        return {
+          text: `I've told ${first} their place is still here.`,
+          tone: 'neutral',
+        };
+      case 'rejected':
+        return { text: `${first} — you said leave it, so I did.`, tone: 'neutral' };
+      default:
+        return {
+          text: `The question about ${first} lapsed — nothing was sent.`,
+          tone: 'neutral',
+        };
+    }
+  }
+
   if (kind === 'credits_low_message') {
     const left =
       typeof payload.credits_left === 'number' ? payload.credits_left : null;

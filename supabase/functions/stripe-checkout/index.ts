@@ -314,6 +314,12 @@ Deno.serve(async (req: Request) => {
       'metadata[gym_id]': gymId,
       'metadata[plan_id]': planId,
       'metadata[profile_id]': user.id,
+      // An hour, not Stripe's default day. The recovery job (0269) works a
+      // window that opens two hours after the attempt, and a session still
+      // alive then would put a link in an email that dies before most
+      // people read it. Expiring it early also makes the abandonment a
+      // fact we learn about the same morning rather than the next one.
+      expires_at: String(Math.floor(Date.now() / 1000) + 60 * 60),
     };
     if (legacySubId) sessionParams['metadata[legacy_subscription_id]'] = legacySubId;
     if (coupon && stripeCouponId) {
@@ -335,6 +341,24 @@ Deno.serve(async (req: Request) => {
       STRIPE_SECRET_KEY,
       account,
     );
+    // Record the attempt before handing back the URL: this row is the only
+    // evidence that somebody reached the payment page, and the webhook only
+    // ever hears about the sessions that succeed. Best-effort — a failure
+    // to record must never cost the member their checkout.
+    if (session.id) {
+      const { error: attemptError } = await service
+        .from('checkout_attempts')
+        .insert({
+          gym_id: gymId,
+          profile_id: user.id,
+          plan_id: planId,
+          stripe_session_id: session.id,
+        });
+      if (attemptError) {
+        console.error('checkout_attempts insert failed', attemptError.message);
+      }
+    }
+
     return json({ url: session.url });
   } catch (e) {
     return json({ error: String((e as Error)?.message ?? e) }, 502);

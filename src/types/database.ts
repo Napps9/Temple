@@ -556,7 +556,8 @@ export type Database = {
             | 'first_week_message'
             | 'credits_low_message'
             | 'plan_upgrade_offer'
-            | 'class_return_message';
+            | 'class_return_message'
+            | 'checkout_recovery_message';
           subject_profile: string | null;
           subject_subscription: string | null;
           case_id: string | null;
@@ -644,7 +645,8 @@ export type Database = {
             | 'first_week_message'
             | 'credits_low_message'
             | 'plan_upgrade_offer'
-            | 'class_return_message';
+            | 'class_return_message'
+            | 'checkout_recovery_message';
           level: 'autonomous' | 'approval' | 'reserved';
           updated_by: string | null;
           updated_at: string;
@@ -702,7 +704,8 @@ export type Database = {
             | 'first_week_message'
             | 'credits_low_message'
             | 'plan_upgrade_offer'
-            | 'class_return_message';
+            | 'class_return_message'
+            | 'checkout_recovery_message';
           body: string;
           approved_by: string | null;
           approved_at: string;
@@ -4737,6 +4740,14 @@ export type Database = {
           waiting: number | null;
           is_full: boolean;
         }[];
+      };
+      set_checkout_recovery_job: {
+        Args: { p_gym_id: string; p_enabled: boolean };
+        Returns: void;
+      };
+      agent_checkout_recovery_tick: {
+        Args: Record<string, never>;
+        Returns: unknown;
       };
       set_member_macro_targets: {
         Args: {

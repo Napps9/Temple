@@ -1,6 +1,7 @@
 // Stripe billing Phase 2 — webhook. Receives Connect events from gyms'
 // connected accounts, verifies the signature, and records the result:
 //   checkout.session.completed → create/activate the plan_subscription
+//   checkout.session.expired   → stamp the attempt Stripe gave up on
 //   invoice.paid               → extend paid_period_end (renewals), reset
 //                                credit_period credits
 //   customer.subscription.deleted → mark cancelled
@@ -638,6 +639,21 @@ Deno.serve(async (req: Request) => {
         currency: ((obj.currency as string) ?? 'gbp').toUpperCase(),
       });
 
+      // The attempt is finished. The recovery tick (0269) does not depend
+      // on this arriving — it also checks for a live subscription — but
+      // stamping it keeps the table honest about what actually happened.
+      const { error: attemptErr } = await service
+        .from('checkout_attempts')
+        .update({ completed_at: new Date().toISOString() })
+        .eq('stripe_session_id', obj.id)
+        .is('completed_at', null);
+      if (attemptErr) {
+        console.warn('stripe-webhook: checkout attempt not stamped', {
+          session: obj.id,
+          error: attemptErr.message,
+        });
+      }
+
       // The coupon is redeemed when the money moved, not when the code
       // was typed. Idempotent on the checkout session, so a Stripe
       // retry counts it once. Nothing in invoice.paid needs to change:
@@ -663,6 +679,24 @@ Deno.serve(async (req: Request) => {
           });
         }
       }
+    } else if (type === 'checkout.session.expired') {
+      // Stripe gives up on the session. Recording it is bookkeeping, not
+      // the trigger: the recovery tick works off "uncompleted and older
+      // than two hours" precisely so a webhook that never arrives cannot
+      // make a real abandonment invisible.
+      const { error: expiredErr } = await service
+        .from('checkout_attempts')
+        .update({ expired_at: new Date().toISOString() })
+        .eq('stripe_session_id', obj.id)
+        .is('completed_at', null)
+        .is('expired_at', null);
+      if (expiredErr) {
+        console.warn('stripe-webhook: checkout expiry not stamped', {
+          session: obj.id,
+          error: expiredErr.message,
+        });
+      }
+      return ok();
     } else if (type === 'invoice.paid') {
       // invoice.subscription was moved onto invoice.parent in newer API
       // versions (2025+/dahlia); read whichever carries it, or every

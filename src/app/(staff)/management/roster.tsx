@@ -34,7 +34,8 @@ type AuthorityRow = {
     | 'first_week_message'
     | 'credits_low_message'
     | 'plan_upgrade_offer'
-    | 'class_return_message';
+    | 'class_return_message'
+    | 'checkout_recovery_message';
   level: 'autonomous' | 'approval' | 'reserved';
 };
 
@@ -370,6 +371,28 @@ export default function Roster() {
             qc.invalidateQueries({ queryKey: ['agent-authority', gymId] })
           }
         />
+        <SimpleJob
+          gymId={gymId}
+          isOwner={isOwner}
+          kind="checkout_recovery_message"
+          name="The checkout nobody finished"
+          onDescription="Notices when somebody reached the payment page and stopped, and offers to say something while it is still the same day. Between two and twenty-four hours after, three a day at most, and never twice for the same person and plan."
+          offTitle="Somebody got as far as their card and stopped — want me to say something?"
+          offLines={[
+            'Reaching the payment page and not finishing is usually the card machine rather than a change of mind, and nobody currently finds out it happened.',
+            'I wait two hours before saying anything — people pay on another device, or come back after lunch — and I stop asking after a day, because by then it is a different conversation.',
+            'Never anybody who is paying you now, however they got there.',
+            'The message never carries a payment link. Checkout links expire within the hour, and a dead link is worse than saying nothing.',
+          ]}
+          enableRpc="set_checkout_recovery_job"
+          disableRpc="set_checkout_recovery_job"
+          level={levelFor('checkout_recovery_message')}
+          onSetLevel={(l) => setLevel('checkout_recovery_message', l)}
+          authorityLoaded={authority.data !== undefined}
+          onChanged={() =>
+            qc.invalidateQueries({ queryKey: ['agent-authority', gymId] })
+          }
+        />
       </ScrollView>
     </Screen>
   );
@@ -402,14 +425,16 @@ function SimpleJob({
     | 'set_first_week_job'
     | 'set_credits_low_job'
     | 'set_plan_upgrade_job'
-    | 'set_class_return_job';
+    | 'set_class_return_job'
+    | 'set_checkout_recovery_job';
   disableRpc:
     | 'set_retention_job'
     | 'set_cover_job'
     | 'set_first_week_job'
     | 'set_credits_low_job'
     | 'set_plan_upgrade_job'
-    | 'set_class_return_job';
+    | 'set_class_return_job'
+    | 'set_checkout_recovery_job';
   level: 'autonomous' | 'approval' | 'reserved' | undefined;
   onSetLevel: (l: 'approval' | 'autonomous') => void;
   authorityLoaded: boolean;

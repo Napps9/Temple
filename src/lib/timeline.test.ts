@@ -242,6 +242,69 @@ describe('formatTimelineLine', () => {
     expect(noDays.text).toBe("Priya joined and hasn't been in yet — say something?");
   });
 
+  // The ninth job. "Didn't finish paying" is a different fact from "hasn't
+  // been in" and from "gone quiet" — this person has never been a member,
+  // and a line that greets them as one reads as a mistake.
+  it('asks about a checkout nobody finished', () => {
+    const proposed = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: 'Tom Fletcher',
+        detail: {
+          action_kind: 'checkout_recovery_message',
+          status: 'proposed',
+          payload: { member_name: 'Tom Fletcher', plan_name: 'Unlimited', hours_since: 3 },
+        },
+      }),
+    );
+    expect(proposed).toEqual({
+      text: "Tom started signing up for Unlimited 3 hours ago and didn't finish paying — say something?",
+      tone: 'amber',
+    });
+
+    const one = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: 'Tom Fletcher',
+        detail: {
+          action_kind: 'checkout_recovery_message',
+          status: 'proposed',
+          payload: { member_name: 'Tom Fletcher', plan_name: 'Unlimited', hours_since: 1 },
+        },
+      }),
+    );
+    expect(one.text).toContain('1 hour ago');
+
+    const sent = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: 'Tom Fletcher',
+        detail: {
+          action_kind: 'checkout_recovery_message',
+          status: 'executed',
+          payload: { member_name: 'Tom Fletcher', plan_name: 'Unlimited' },
+        },
+      }),
+    );
+    expect(sent.text).toBe("I've told Tom their place is still here.");
+
+    // A plan that has since been deleted still has to make a sentence.
+    const noPlan = formatTimelineLine(
+      evt({
+        kind: 'agent_action',
+        subject: 'Tom Fletcher',
+        detail: {
+          action_kind: 'checkout_recovery_message',
+          status: 'proposed',
+          payload: { member_name: 'Tom Fletcher' },
+        },
+      }),
+    );
+    expect(noPlan.text).toBe(
+      "Tom started signing up for a membership and didn't finish paying — say something?",
+    );
+  });
+
   // The fifth job. One class left has to read as "1 class"; the count is
   // the whole content of the line, so a plural bug is the sentence.
   it('counts the classes left on a pack', () => {
