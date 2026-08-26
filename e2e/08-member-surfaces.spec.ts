@@ -47,13 +47,32 @@ test('a thread says who you are talking to', async ({ page }) => {
 test('the waitlist card and the class modal agree', async ({ page }) => {
   await signInMember(page);
   await page.goto('/bookings');
-  await page.getByText(/^Waitlisted \(\d+\)$/).click();
 
-  const card = page.getByText(/You're next in line|#\d+ on the waitlist/).first();
-  if ((await card.count()) === 0) {
-    test.skip(true, 'this demo member holds no waitlist entry to compare');
+  // The pill's count comes from the class_waitlist rows themselves, not
+  // from my_waitlist_ranks, so it settles whether this member holds a
+  // place before anything is asserted about the number on the card.
+  // Counting the cards instead raced the tab's render and skipped the
+  // test on a member who was queued first in line.
+  const pill = page.getByText(/^Waitlisted \(\d+\)$/);
+  await expect(pill).toBeVisible({ timeout: 30_000 });
+  const queued = Number((await pill.innerText()).match(/\((\d+)\)/)![1]);
+  if (queued === 0) {
+    test.skip(
+      true,
+      'this member holds no waitlist entry — the seeder prints the three it queued, pass one as member_email',
+    );
     return;
   }
+  await pill.click();
+
+  // "On the waitlist" with no number is bookings.tsx's null-rank
+  // fallback: the rows came back but my_waitlist_ranks did not. That is
+  // precisely the break this journey exists to catch, and it must fail
+  // rather than quietly read as a card without a rank.
+  await expect(page.getByText('On the waitlist', { exact: true })).toHaveCount(0);
+
+  const card = page.getByText(/You're next in line|#\d+ on the waitlist/).first();
+  await expect(card).toBeVisible({ timeout: 15_000 });
   const cardText = (await card.innerText()).trim();
   const cardRank = cardText.startsWith("You're next")
     ? 1
@@ -61,7 +80,7 @@ test('the waitlist card and the class modal agree', async ({ page }) => {
 
   await card.click();
   const modal = page.getByText(/You're #\d+ on the waitlist/).first();
-  await expect(modal).toBeVisible();
+  await expect(modal).toBeVisible({ timeout: 15_000 });
   const modalRank = Number((await modal.innerText()).match(/#(\d+)/)![1]);
 
   // Two screens, one class. Bookings rendered class_waitlist.position —
