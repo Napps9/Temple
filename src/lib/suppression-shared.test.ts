@@ -112,3 +112,34 @@ describe('every recurring sender checks', () => {
     expect(SUPPRESSED_REASON).toMatch(/bounced|spam/);
   });
 });
+
+// The join-invite worker has no queue table to mark, so its skip is a
+// counter in the response rather than a 'skipped' row — which is why it
+// sits outside the list above. It has three refusals to honour, not one:
+// a bounced address, an unsubscribe taken through a campaign's one-click
+// link while the person is still pending, and the refusal the gym's old
+// system carried into the import.
+describe('the join-invite worker', () => {
+  const src = () =>
+    readFileSync('supabase/functions/send-member-join-invites/index.ts', 'utf8');
+
+  it('holds back a bounced address', () => {
+    expect(src()).toMatch(/loadSuppressed\(service, \[gymId\]\)/);
+    expect(src()).toMatch(/suppressed\.has\(gymId, row\.email\)/);
+  });
+
+  it('holds back a blanket unsubscribe', () => {
+    expect(src()).toMatch(/from\('email_unsubscribes'\)/);
+    expect(src()).toMatch(/\.is\('topic', null\)/);
+  });
+
+  it('honours the refusal the import carried', () => {
+    expect(src()).toMatch(/\.eq\('unsubscribed', false\)/);
+  });
+
+  // "0 sent" with no reason sends staff chasing a broken address that
+  // isn't broken.
+  it('reports the skip rather than folding it into failed', () => {
+    expect(src()).toMatch(/return json\(\{ sent, failed, skipped \}\)/);
+  });
+});

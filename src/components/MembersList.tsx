@@ -798,9 +798,16 @@ function PendingMemberCard({
         },
       );
       if (e) throw new Error(await functionErrorMessage(e));
-      return data as { sent: number; failed: number };
+      return data as { sent: number; failed: number; skipped: number };
     },
     onSuccess: (d) => {
+      // Held back and undeliverable are different answers, and telling
+      // staff the address is broken when the person unsubscribed sends
+      // them chasing a fault that isn't there.
+      if (d.skipped > 0 && d.sent === 0) {
+        setError('Not sent — they have unsubscribed, or the address has bounced.');
+        return;
+      }
       if (d.sent === 0) {
         setError('Could not send — the email address may be undeliverable.');
         return;

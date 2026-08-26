@@ -480,7 +480,12 @@ rental, or a **physical subscription box** shipped every cycle.
   becomes a real `email_unsubscribes` row at **import** time via a trigger
   (with a backfill) rather than at signup: the row is address-keyed and
   never needed a profile, and between import and signup the refusal existed
-  nowhere the senders look.
+  nowhere the senders look. `send-member-join-invites` consulted neither
+  table — the only one of the six senders that consulted neither — so it
+  reads all three now (the suppression, the blanket unsubscribe, and the
+  imported flag) and returns `skipped` alongside `sent` and `failed`, because
+  the single-row callers were telling staff an address was undeliverable
+  when the person had simply said no.
 - **A personal best, out loud** (0272) — `record_personal_best` enqueues
   email and SMS alongside the milestone row, using the **frozen body** it
   already writes, so all three channels say the same sentence and a member

@@ -785,3 +785,54 @@ listening."* Turning the same switch off in the app did not. Both
 perform the same skip. The enqueue-time doctrine still holds for
 everything else; what changed is that the two ways of saying no get the
 same answer.
+
+### The worker that missed its deploy
+
+`0277`'s migration shipped; its edge-function change did not, and the
+reason is worth writing down because it will happen again.
+
+The CI run GitHub created for the `0277` commit sat at status `queued`
+for two hours with no jobs assigned, and the cancel API refused it —
+*"cannot cancel a workflow run that has not been queued yet"* — so it had
+never been dispatched at all. `ci.yml` has no `workflow_dispatch`, so the
+only lever was a fresh push, and an empty commit provided one.
+
+That empty commit is what did the damage. The **Work out which edge
+functions changed** step diffs `github.event.before → GITHUB_SHA`, and
+for that push `before` was the commit carrying the edge-function change.
+The diff was empty, the log read *"No edge function changed. / Nothing to
+deploy."*, and `send-member-join-invites` stayed on its old code while the
+migration went out. Green CI said so in three jobs.
+
+**The shape of the trap**: an empty commit re-triggers CI but resets the
+changed-function window past whatever the previous push contained. Any
+push that follows a skipped or undispatched run has the same hole. The
+fix is to make the next push touch the function's own directory — there
+is no way to widen the window backwards.
+
+The reads it now carries are not a touch for its own sake. Of the six
+senders it was the only one consulting neither `email_suppressions` nor
+`email_unsubscribes`, which is exactly why `pending_members.unsubscribed`
+had to be read directly here. It checks all three now, and reports
+`skipped` alongside `sent` and `failed` — the two single-row callers said
+*"the email address may be undeliverable"* for a person who had simply
+said no, which sends staff chasing a fault that is not there.
+
+### What could and could not be verified
+
+The two member surfaces were checked against a database with all 277
+migrations applied: `gym_directory` and `my_waitlist_ranks` carry the
+argument names and return columns the call sites use, execute is granted
+to `authenticated` and revoked from `anon`, a member reading
+`gym_memberships` directly still gets exactly one row while the definer
+returns the roster minus the caller, and after the person at the front of
+a waitlist leaves the raw `position` stays 3 while the rank correctly
+reads 2.
+
+What that does not cover is the HTTP hop — PostgREST's schema cache, and
+the client actually rendering what comes back. `src/types/database.ts` is
+hand-maintained and both call sites cast through `as unknown as`, so a
+wrong parameter name typechecks perfectly. `e2e/08-member-surfaces.spec.ts`
+is the only thing in the repo that would catch it; it runs against the
+deployed app, which this container's network policy cannot reach, so it
+has to run in CI or from a machine that can.

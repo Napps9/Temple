@@ -56,3 +56,19 @@ export async function say(page: Page, sentence: string): Promise<void> {
   // otherwise hits a strict-mode violation against the previous card.
   await page.getByLabel('Send', { exact: true }).click();
 }
+
+// Members do not land on the Timeline — src/app/index.tsx redirects them
+// to /book — so signIn's wait can never pass for one.
+export const MEMBER_EMAIL =
+  process.env.E2E_MEMBER_EMAIL ?? `member01@${SLUG}.temple.test`;
+
+export async function signInMember(page: Page, email = MEMBER_EMAIL): Promise<void> {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('temple.cookieConsent', 'rejected');
+  });
+  await page.goto('/sign-in');
+  await page.getByRole('textbox', { name: 'Email' }).fill(email);
+  await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
+  await page.getByText('Sign in', { exact: true }).last().click();
+  await page.waitForURL('**/book**', { timeout: 30_000 });
+}

@@ -18,6 +18,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { safeOrigin } from '../_shared/caller.ts';
 
 import { escapeHtml, linkFallbackHtml, templeEmailHtml } from '../_shared/email-layout.ts';
+import { loadSuppressed } from '../_shared/suppression.ts';
 
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -120,10 +121,14 @@ Deno.serve(async (req: Request) => {
 
   const joinUrl = `${origin}/join/${gym.slug}`;
 
-  // 0277 turns the imported flag into a real email_unsubscribes row at
-  // import time, which fixes every reader that consults that table. This
-  // worker consults it not at all, so it reads the flag directly: the
-  // refusal was made to the gym's old system and it still counts.
+  // Of the six senders this is the only one that read neither
+  // email_suppressions nor email_unsubscribes, which is why the imported
+  // flag had to be read directly here. It reads all three now.
+  //
+  // The flag is the refusal the gym's old system carried. A join invite
+  // is close to transactional, and 0175 carves a failing payment out of a
+  // marketing unsubscribe — this is not that: the person said no before
+  // Temple ever had their address.
   let query = service
     .from('pending_members')
     .select('id, email, full_name')
@@ -136,12 +141,31 @@ Deno.serve(async (req: Request) => {
   const { data: targets, error: tErr } = await query;
   if (tErr) return json({ error: tErr.message }, 500);
   if (!targets || targets.length === 0) {
-    return json({ sent: 0, failed: 0 });
+    return json({ sent: 0, failed: 0, skipped: 0 });
   }
+
+  // A dead address and a refusal are different facts (0229) and both stop
+  // a send. The unsubscribe read is not a duplicate of the flag above: a
+  // person can also unsubscribe through a campaign's one-click link while
+  // still pending, which the imported flag never learns.
+  const suppressed = await loadSuppressed(service, [gymId]);
+  const { data: unsubRows } = await service
+    .from('email_unsubscribes')
+    .select('email')
+    .eq('gym_id', gymId)
+    .is('topic', null);
+  const unsubscribed = new Set(
+    (unsubRows ?? []).map((r: { email: string }) => r.email.trim().toLowerCase()),
+  );
 
   let sent = 0;
   let failed = 0;
+  let skipped = 0;
   for (const row of targets as { id: string; email: string; full_name: string | null }[]) {
+    if (suppressed.has(gymId, row.email) || unsubscribed.has(row.email.trim().toLowerCase())) {
+      skipped += 1;
+      continue;
+    }
     const firstName = row.full_name ? row.full_name.trim().split(/\s+/)[0] : null;
     try {
       const res = await fetch('https://api.resend.com/emails', {
@@ -180,5 +204,8 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return json({ sent, failed });
+  // skipped is reported, not folded into failed: an owner looking at
+  // "0 sent" needs to know the difference between nothing worked and
+  // nobody was reachable.
+  return json({ sent, failed, skipped });
 });
