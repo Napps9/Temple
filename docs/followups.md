@@ -427,7 +427,7 @@ actually receives.
 
 ---
 
-## 9. Twelve asks from four gyms
+## ~~9. Twelve asks from four gyms~~ (ten shipped, two are decisions)
 
 Gym-owner feedback, 26 August 2026 — ACE Performance, Zade & Gareth,
 James, plus two we had already put in writing and not built. Five
@@ -507,7 +507,7 @@ been in `compute_insight_summary` since `0102` and rendered nowhere.
 `gym_insight_targets` stays unread; its editor was dropped deliberately
 in `0207` and its `*_target` columns are 0 for every gym.
 
-### 9f. Celebrate a PB by email or text — the smallest thing left
+### ~~9f. Celebrate a PB by email or text~~ (shipped 0270-0272)
 
 **The job:** a member hits a personal best and hears about it even if
 they never open the app.
@@ -530,7 +530,7 @@ the in-app card said, and the ESP never handles a training record.
 - One card per PB or one per day? The milestone row is already
   per-day-idempotent, so per-day falls out for free.
 
-### 9g. Write ahead for coaches only
+### ~~9g. Write ahead for coaches only~~ (shipped 0273)
 
 **The job:** a head coach plans weeks ahead without members reading next
 week's session.
@@ -555,7 +555,7 @@ entire release mechanism. No cron, no worker.
   session (~12 weeks by default), so "weeks ahead" has a ceiling that
   is not this feature's.
 
-### 9h. A common billing date, pro-rated to the 1st
+### ~~9h. A common billing date, pro-rated to the 1st~~ (shipped 0274)
 
 **The job:** ACE want everyone billed on the same day so chasing is one
 job a month.
@@ -584,7 +584,7 @@ Degrade to the shape in words rather than to a number we invented.
   anchor, and changing what somebody already pays without asking is the
   worst surprise in the product.
 
-### 9i. WhatsApp as a front-desk channel
+### ~~9i. WhatsApp as a front-desk channel~~ (inbound shipped 0275)
 
 **The job:** committed to James. People reach the gym where they already
 talk.
@@ -609,7 +609,7 @@ pre-approved templates.
 - Every outbound job assumes `agent_outbound_messages.channel in ('email')`.
   A second channel built before those jobs want it gets built twice.
 
-### 9j. Appointment booking — consults, intros, PT
+### ~~9j. Appointment booking — consults, intros, PT~~ (shipped 0276)
 
 **The job:** publish bookable one-to-one slots.
 
@@ -666,3 +666,45 @@ external booking has nobody to point at. Either external bookings mint a
 shadow profile, or the table grows a nullable external-party column.
 `used_entitlement_kind` / `used_entitlement_id` already exist to record
 what paid for a seat.
+
+
+---
+
+### What the twelve came to
+
+Ten shipped. The two that were never engineering — MyFitnessPal (9k) and
+ClassPass (9l) — stayed decisions, with their seams written down above so
+neither is harder to start than it was.
+
+**The three that turned out bigger than the note said, and why:**
+
+- **9f was not "one more trigger".** In-app was done (0263) and email was
+  indeed small, but *text* did not exist: no member SMS path anywhere, and
+  the one seam that looked like one (`lead_notifications.channel = 'sms'`)
+  is force-`skipped` by its worker. Worse, the number every gym gets
+  provisioned is a UK **local** number, which cannot carry SMS at all —
+  the "option A, voice-first" decision. So it took a general member
+  channel (0271), an SMS-capable number and a normalised phone (0270), and
+  an opt-in, before the PB itself (0272) was three lines.
+- **9a hid two defects** — see above.
+- **9j needed availability from scratch.** The booking half was nearly
+  free because an appointment is a capacity-1 class session; what did not
+  exist anywhere was any notion of when a coach is around.
+
+**Two things a person still has to do:**
+
+1. **Twilio needs the DPA's 30 days' notice.** It is in Annex B and the
+   lawful-basis register now (0272), but §7 requires the Gym be told
+   before a new sub-processor starts processing. Member texts should not
+   go live until that notice has run.
+2. **Existing gyms hold voice-only numbers.** `sms_capable` backfilled
+   false for them, correctly — their number genuinely cannot text. New
+   provisions ask Twilio for a mobile first. A swap path (buy mobile,
+   move the Vapi assistant, release the local number) is not built, and
+   probably never needs to be: the live path is still gated on Temple's UK
+   regulatory bundle, so in practice no gym has a number yet.
+
+**And one follow-up this created:** `class_waitlist_self_or_staff_select`
+has the same guardian gap `class_bookings` had before 0266 — a parent who
+waitlists a child cannot see the entry. One clause, but a different table,
+and it wants its own change.

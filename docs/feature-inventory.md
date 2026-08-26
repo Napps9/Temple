@@ -429,6 +429,45 @@ rental, or a **physical subscription box** shipped every cycle.
 - **Injury check-in nudge** — inbox card + Track-tile badge when an
   injury is overdue for its weekly check-in.
 
+### Reaching a member
+- **The member channel** (0271) — `member_outbound_messages`, one queue for
+  anything the gym sends a member, with `send-member-messages` draining
+  email through Resend and SMS through Twilio behind one set of quiet hours
+  (`_shared/gym-clock.ts`, 09:00-20:00 gym-local, lifted out of
+  `send-agent-messages`). **Outbound only**, which is the whole difference
+  from the five notification queues: they carry an `in_app` channel because
+  for them the row *is* the notification, and a personal best already has
+  its own in-app surface. The row never carries the address — the worker
+  resolves the email and the phone itself under the service role, because
+  `can_see_email` and `can_see_full_pii` are separate capabilities from
+  anything that reads these rows. SMS drains serially rather than eight at
+  a time: it spends real money against `daily_message_cap`, and eight
+  workers racing that counter would overshoot by up to seven texts.
+- **Texting a member at all** (0270) — three things had to become true.
+  `gym_agent_settings.sms_capable` records whether the gym's provisioned
+  number can carry SMS, read off Twilio's capabilities at purchase rather
+  than assumed (every gym provisioned before 0270 has a UK **local**
+  number, which cannot). `member_contact_details.phone_e164` sits beside
+  `phone` — the member keeps seeing what they typed, the sender gets
+  something dialable or nothing, and `_normalise_uk_phone` returns null
+  rather than a guess. And `gym_memberships.sms_opt_in` defaults **false**:
+  opt-in, the member's own, exactly like `appear_in_leaderboards`.
+  `my_sms_readiness` tells the switch which of the three is missing, since
+  a member cannot read `gym_agent_settings`.
+- **STOP means something** (0271) — `member_stop_texts` clears the opt-in
+  and skips anything already queued. Before it, a member texting STOP hit
+  `agent_stop_conversation`, which closes a *lead's* thread: Twilio's
+  Advanced Opt-Out would block delivery at the carrier while Temple went on
+  queueing texts and believing they arrived.
+- **A personal best, out loud** (0272) — `record_personal_best` enqueues
+  email and SMS alongside the milestone row, using the **frozen body** it
+  already writes, so all three channels say the same sentence and a member
+  who reads the text then opens the app is not told two different things.
+  Deliberately **not** an email-automation trigger: it would double-send
+  against this path, and an owner-authored template cannot say what the
+  card says. A blanket unsubscribe **is** honoured — the opposite of 0175's
+  call for a failing payment, because a PB is genuinely declinable.
+
 ### Nutrition
 - **Macro targets** (0268) [`can_set_macro_targets`, owner + admin +
   coach by default] — a coach sets protein, carbs and fat in grams on the
@@ -2444,6 +2483,19 @@ The staff area shows up when `can_access_staff_area` is on.
   — 57 to go, 5 months left." pgTAP: `roster_and_goals.sql`.
 
 ### Programming
+- **Writing ahead** (0273) — `class_programming.published_at`: null is a
+  draft, a past timestamp is live, a future one is scheduled, and
+  `published_at <= now()` in the member's SELECT policy is the entire
+  release mechanism. No cron, no worker, nothing to fail overnight — the
+  row becomes visible because time passed. Staff read everything under
+  `can_edit_classes` (0219's rule: read and write move together). The
+  editor gains one switch, the day card a Draft/Scheduled chip, and the
+  write became `save_class_programming` — a draft is a state a member must
+  not be able to reach, and the modal had upserted the table directly since
+  0007. **`copy_week` lands as a draft**: it is how a coach writes ahead, so
+  publishing it would have put next week on the members' calendar the
+  moment they asked. The migration backfills `published_at = updated_at`,
+  without which every gym's live programming would have vanished on deploy.
 - **The roadmap** (roadmap phase 5, 0205 — `programming_blocks`) — a year
   of named training blocks ("Squat strength — 8 weeks", "Open prep") set
   by the owner or head coach, visible to the whole team. Lives inside
@@ -2674,6 +2726,37 @@ The staff area shows up when `can_access_staff_area` is on.
   archived class types so historical analysis still works.
 
 ### Classes & operations
+- **One-to-one time** (0276) [`can_edit_classes` to publish] — intros,
+  consults and PT as capacity-1 `class_sessions`, not a second table:
+  bookings, waitlist, cancellation, notifications, entitlements and
+  check-in already hang off that row, and an appointment differs from a
+  class only in how many fit and who picks the time. `book_appointment`
+  ends in `_book_class_for`, so waiver, PAR-Q, entitlement and membership
+  apply unchanged. What was new is availability — nothing knew when a coach
+  was around — so `coach_availability` is a standing weekly pattern per
+  coach per appointment type (0 = Sunday, matching `gym_hours` and
+  `class_recurrences`). **Slots are computed, never materialised**: an
+  appointment does not exist until somebody takes it, and a year of empty
+  capacity-1 sessions would put phantom classes into every count and
+  calendar. Which makes the race the thing to get right — two people
+  tapping the same 9am is find-or-create on a row that does not exist, so a
+  transaction-scoped advisory lock on (gym, coach, start) is the only lock
+  that can exist before the row does. Filtered out of `ClassesCalendar`:
+  somebody's booked half hour is not a class with one spot left. Owner
+  surface: Manage → Settings → One-to-one time. pgTAP: `time_with_a_coach`.
+- **A common billing date** (0274) — `gyms.billing_anchor_day`, 1-28,
+  **nullable and defaulting null**, where null is exactly today's behaviour
+  (each member renews on the day they joined) so no existing gym changes.
+  28 rather than 31 because a day February lacks is a rule somebody has to
+  remember. The anchor and the part-month are computed in SQL, where
+  timezone maths is testable; checkout passes
+  `subscription_data[billing_cycle_anchor]`. **Below a pound it passes
+  `trial_end` instead** — Stripe rolls a sub-minimum proration onto the
+  customer balance rather than invoicing it, so a member joining on the
+  30th would appear to have paid nothing and no `invoice.paid` would fire.
+  The member is told the shape ("the rest of this month, then the 1st");
+  the figure itself is Stripe's, on Stripe's own page, per 0264's doctrine.
+  New joins only. Reads as a sentence in the rule sheet.
 - **Class types editor** [`can_edit_classes`] — name, colour (the
   swatch picker dots any hue already used by a sibling class type so
   two don't clash), recurring schedule (days, times, duration,
@@ -3529,6 +3612,20 @@ all owner-only; `phone_number` and `vapi_assistant_id` are service-role
 only — Temple provisions them). pgTAP: `agent_front_desk_settings`,
 `agent_conversations_isolation`, `agent_capture_lead`,
 `agent_stop_consent`.
+
+**WhatsApp (0275).** A third channel on the same webhook rather than a
+near-copy of it: the agent brain already took a channel,
+`agent_conversations` has been keyed `(gym_id, phone, channel)` since 0136,
+and WhatsApp rides Twilio's same Messages resource. The `whatsapp:` address
+prefix is added and stripped at the wire and never stored — `phone` is
+E.164 everywhere, and storing the prefix would silently stop
+`agent_stop_conversation`, `agent_capture_lead`'s dedupe and
+`member_stop_texts` matching for exactly the people on the newest channel.
+One person on two channels keeps two threads, which is what the composite
+key has always said. **Inbound only**: anything the agent starts needs a
+Meta-approved template per gym on top of business verification, and
+answering somebody who messaged first needs neither. pgTAP:
+`where_people_already_talk`.
 
 **Call review, coaching & voice (0137)** [`can_review_ai_calls`, owner/admin].
 Voice calls are recorded (Vapi artifact) and pulled into a private
