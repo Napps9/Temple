@@ -28,6 +28,7 @@ import { StatTile } from '@/components/StatTile';
 import { TalkToAssistant } from '@/components/TalkToAssistant';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
+import { mirrorRange, pctDelta, ppDelta } from '@/lib/metrics';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 import { useThemeColors } from '@/lib/theme';
@@ -82,6 +83,23 @@ const STATUS_COLORS: Record<LeadStatus, string> = {
   committed: '#F59E0B',
   converted: '#059669',
   lost: '#6B7280',
+};
+
+// The four lifecycle columns this screen reads off compute_insight_summary.
+// The RPC returns fourteen; naming the ones we use keeps the cast honest
+// and stops a renamed column reading as a confident 0.
+type Lifecycle = {
+  intros_new: number;
+  lead_conversions: number;
+  retention_now: number;
+  retention_base: number;
+};
+
+const EMPTY_LIFECYCLE: Lifecycle = {
+  intros_new: 0,
+  lead_conversions: 0,
+  retention_now: 0,
+  retention_base: 0,
 };
 
 const STATUS_ORDER: LeadStatus[] = [
@@ -267,42 +285,71 @@ export default function LeadsScreen() {
   );
   const { start, end } = range;
   const rangeValid = DATE_RE.test(start) && DATE_RE.test(end) && start <= end;
+  // The same period, immediately before — so every lifecycle tile can say
+  // whether the number moved rather than just what it is.
+  const prev = useMemo(
+    () => (rangeValid ? mirrorRange(range) : null),
+    [start, end, rangeValid],
+  );
   const gymId = membership?.gymId;
 
   // New leads captured in the period — a plain count against the leads
   // table itself, unlike intro sessions / conversions below which come
   // from the same lifecycle RPC the old Insights tab used.
+  const countNewLeads = async (from: string, to: string) => {
+    const { count, error } = await supabase
+      .from('leads')
+      .select('id', { count: 'exact', head: true })
+      .eq('gym_id', gymId!)
+      .gte('captured_at', from)
+      .lte('captured_at', `${to}T23:59:59`);
+    if (error) throw error;
+    return count ?? 0;
+  };
+
   const newLeadsCount = useQuery({
     queryKey: ['leads-new-count', gymId, start, end],
     enabled: !!gymId && canWorkLeads === true && rangeValid,
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('leads')
-        .select('id', { count: 'exact', head: true })
-        .eq('gym_id', gymId!)
-        .gte('captured_at', start)
-        .lte('captured_at', `${end}T23:59:59`);
-      if (error) throw error;
-      return count ?? 0;
-    },
+    queryFn: () => countNewLeads(start, end),
   });
+
+  const newLeadsCountPrev = useQuery({
+    queryKey: ['leads-new-count', gymId, prev?.start, prev?.end],
+    enabled: !!gymId && canWorkLeads === true && !!prev,
+    queryFn: () => countNewLeads(prev!.start, prev!.end),
+  });
+
+  const fetchLifecycle = async (from: string, to: string): Promise<Lifecycle> => {
+    const { data, error } = await supabase.rpc('compute_insight_summary', {
+      p_gym_id: gymId!,
+      p_period_start: from,
+      p_period_end: to,
+    });
+    if (error) throw error;
+    const rows = data as unknown as Lifecycle[] | null;
+    return rows?.[0] ?? EMPTY_LIFECYCLE;
+  };
 
   const leadLifecycleStats = useQuery({
     queryKey: ['leads-lifecycle-summary', gymId, start, end],
     enabled: !!gymId && canSeeLifecycle && rangeValid,
-    queryFn: async (): Promise<{ intros_new: number; lead_conversions: number }> => {
-      const { data, error } = await supabase.rpc('compute_insight_summary', {
-        p_gym_id: gymId!,
-        p_period_start: start,
-        p_period_end: end,
-      });
-      if (error) throw error;
-      const rows = data as unknown as
-        | { intros_new: number; lead_conversions: number }[]
-        | null;
-      return rows?.[0] ?? { intros_new: 0, lead_conversions: 0 };
-    },
+    queryFn: () => fetchLifecycle(start, end),
   });
+
+  const leadLifecycleStatsPrev = useQuery({
+    queryKey: ['leads-lifecycle-summary', gymId, prev?.start, prev?.end],
+    enabled: !!gymId && canSeeLifecycle && !!prev,
+    queryFn: () => fetchLifecycle(prev!.start, prev!.end),
+  });
+
+  // retention_base is members as of period start; a gym with none had
+  // nobody to keep, and 0/0 is not 0% — it is no answer.
+  const retentionPct = (row: Lifecycle | undefined): number | null =>
+    row && row.retention_base > 0
+      ? (row.retention_now / row.retention_base) * 100
+      : null;
+  const retentionNow = retentionPct(leadLifecycleStats.data);
+  const retentionPrev = retentionPct(leadLifecycleStatsPrev.data);
 
   if (canWorkLeads === false) return <Redirect href="/management" />;
   if (!membership) return null;
@@ -333,7 +380,13 @@ export default function LeadsScreen() {
             <StatTile
               title="New leads"
               value={newLeadsCount.isLoading ? '—' : newLeadsCount.data ?? 0}
-              subtitle="captured this period"
+              delta={
+                newLeadsCount.data !== undefined &&
+                newLeadsCountPrev.data !== undefined
+                  ? pctDelta(newLeadsCount.data, newLeadsCountPrev.data)
+                  : undefined
+              }
+              subtitle="vs previous period"
             />
             {canSeeLifecycle ? (
               <>
@@ -344,7 +397,15 @@ export default function LeadsScreen() {
                       ? '—'
                       : leadLifecycleStats.data?.intros_new ?? 0
                   }
-                  subtitle="started this period"
+                  delta={
+                    leadLifecycleStats.data && leadLifecycleStatsPrev.data
+                      ? pctDelta(
+                          leadLifecycleStats.data.intros_new,
+                          leadLifecycleStatsPrev.data.intros_new,
+                        )
+                      : undefined
+                  }
+                  subtitle="vs previous period"
                 />
                 <StatTile
                   title="Conversion to member"
@@ -353,7 +414,37 @@ export default function LeadsScreen() {
                       ? '—'
                       : leadLifecycleStats.data?.lead_conversions ?? 0
                   }
-                  subtitle="in this period"
+                  delta={
+                    leadLifecycleStats.data && leadLifecycleStatsPrev.data
+                      ? pctDelta(
+                          leadLifecycleStats.data.lead_conversions,
+                          leadLifecycleStatsPrev.data.lead_conversions,
+                        )
+                      : undefined
+                  }
+                  subtitle="vs previous period"
+                />
+                <StatTile
+                  title="Members kept"
+                  value={
+                    leadLifecycleStats.isLoading
+                      ? '—'
+                      : retentionNow === null
+                        ? '—'
+                        : `${retentionNow.toFixed(0)}%`
+                  }
+                  delta={
+                    retentionNow !== null && retentionPrev !== null
+                      ? ppDelta(retentionNow, retentionPrev)
+                      : undefined
+                  }
+                  subtitle={
+                    retentionNow === null
+                      ? 'nobody to keep yet'
+                      : `${leadLifecycleStats.data?.retention_now ?? 0} of ${
+                          leadLifecycleStats.data?.retention_base ?? 0
+                        } stayed`
+                  }
                 />
               </>
             ) : null}
