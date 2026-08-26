@@ -194,19 +194,29 @@ export default function BookingsScreen() {
         />
 
         <PillNav
+          // A count only once there is one to show. `data?.length ?? 0`
+          // rendered a confident zero both while the query was still in
+          // flight and when it had failed outright — so a member was told
+          // they were on no waitlists before anyone had looked, and again
+          // if the looking broke. Zero is a plausible answer, which is
+          // what makes it the worst possible placeholder.
           items={[
-            { key: 'upcoming', label: `Upcoming (${upcoming.length})` },
+            {
+              key: 'upcoming',
+              label: bookings.isSuccess
+                ? `Upcoming (${upcoming.length})`
+                : 'Upcoming',
+            },
             {
               key: 'waitlisted',
-              // No count when the query failed. `data?.length ?? 0` told a
-              // member they were on no waitlists whenever the read broke,
-              // which is the same lie as a wrong rank and harder to spot:
-              // zero is a plausible answer.
-              label: waitlist.error
-                ? 'Waitlisted'
-                : `Waitlisted (${waitlist.data?.length ?? 0})`,
+              label: waitlist.isSuccess
+                ? `Waitlisted (${waitlist.data.length})`
+                : 'Waitlisted',
             },
-            { key: 'past', label: `Past (${past.length})` },
+            {
+              key: 'past',
+              label: bookings.isSuccess ? `Past (${past.length})` : 'Past',
+            },
           ]}
           active={tab}
           onSelect={setTab}
