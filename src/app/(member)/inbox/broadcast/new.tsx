@@ -21,7 +21,7 @@ type Session = {
   starts_at: string;
   duration_minutes: number;
   class_types: { name: string; color: string } | null;
-  bookings: { count: number }[] | null;
+  booked: number | null;
 };
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -58,15 +58,32 @@ export default function NewClassBroadcast() {
       const cutoffIso = new Date(Date.now() + SEVEN_DAYS_MS).toISOString();
       const { data, error: err } = await supabase
         .from('class_sessions')
-        .select(
-          'id, starts_at, duration_minutes, class_types(name, color), bookings:class_bookings(count)',
-        )
+        .select('id, starts_at, duration_minutes, class_types(name, color)')
         .eq('gym_id', membership!.gymId)
         .gte('starts_at', nowIso)
         .lte('starts_at', cutoffIso)
         .order('starts_at', { ascending: true });
       if (err) throw err;
-      return (data ?? []) as unknown as Session[];
+      const rows = (data ?? []) as unknown as Omit<Session, 'booked'>[];
+      if (rows.length === 0) return [];
+      // Counting class_bookings from the client only worked because every
+      // role that reaches this screen can also read the rows; 0266 made
+      // that a coincidence rather than a rule, and the definer is the rule.
+      const { data: counts, error: countErr } = await supabase.rpc(
+        'class_session_spot_counts',
+        { p_session_ids: rows.map((r) => r.id) },
+      );
+      if (countErr) throw countErr;
+      const taken = new Map(
+        (counts ?? []).map((c) => {
+          const row = c as unknown as {
+            class_session_id: string;
+            taken: number | null;
+          };
+          return [row.class_session_id, row.taken];
+        }),
+      );
+      return rows.map((r) => ({ ...r, booked: taken.get(r.id) ?? null }));
     },
   });
 
@@ -130,7 +147,7 @@ export default function NewClassBroadcast() {
             {sessions.data!.map((s) => {
               const selectedNow = selected === s.id;
               const color = s.class_types?.color ?? colors.primary;
-              const bookings = s.bookings?.[0]?.count ?? 0;
+              const bookings = s.booked ?? 0;
               return (
                 <Pressable
                   key={s.id}

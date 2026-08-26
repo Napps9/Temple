@@ -44,22 +44,24 @@ export default function NewDirectMessage() {
     queryKey: ['dm-candidates', membership?.gymId, session?.user.id],
     enabled: !!membership?.gymId && !!session?.user.id,
     queryFn: async (): Promise<Candidate[]> => {
-      const { data, error } = await supabase
-        .from('gym_memberships')
-        .select('profile_id, role, profiles!profile_id(full_name)')
-        .eq('gym_id', membership!.gymId)
-        .is('left_at', null)
-        .neq('profile_id', session!.user.id);
+      // Through the definer since 0277. gym_memberships' tenant select was
+      // dropped in 0002 and never re-widened, so reading the table gave a
+      // member exactly one row — their own — which the caller-exclusion
+      // then removed. The picker came back empty for every member and
+      // correct for every owner, which is why nobody noticed.
+      const { data, error } = await supabase.rpc('gym_directory', {
+        p_gym_id: membership!.gymId,
+      });
       if (error) throw error;
       return (data ?? []).map((r) => {
         const row = r as unknown as {
           profile_id: string;
+          full_name: string | null;
           role: GymRole;
-          profiles: { full_name: string | null } | null;
         };
         return {
           profile_id: row.profile_id,
-          full_name: row.profiles?.full_name ?? null,
+          full_name: row.full_name,
           role: row.role,
         };
       });

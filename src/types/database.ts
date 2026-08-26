@@ -4839,6 +4839,19 @@ export type Database = {
         Args: { p_gym_id: string; p_price_cents?: number };
         Returns: { anchor_at: string; prorated_cents: number }[];
       };
+      gym_directory: {
+        Args: { p_gym_id: string };
+        Returns: {
+          profile_id: string;
+          full_name: string | null;
+          avatar_url: string | null;
+          role: GymRole;
+        }[];
+      };
+      my_waitlist_ranks: {
+        Args: { p_session_ids: string[] };
+        Returns: { class_session_id: string; rank: number }[];
+      };
       set_my_contact_phone: {
         Args: { p_phone: string };
         Returns: void;

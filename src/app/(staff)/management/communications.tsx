@@ -81,8 +81,12 @@ export function CommunicationsHome({ onNew }: { onNew?: () => void }) {
   const stats = useMemo(() => {
     const rows = campaigns.data ?? [];
     const sent = rows.filter((r) => r.status === 'sent');
-    const reached = sent.reduce((acc, r) => acc + r.recipient_count, 0);
-    return { total: rows.length, sent: sent.length, reached };
+    // recipient_count is the size of the audience snapshot taken when the
+    // send was authorised (0194) and is never revised, so it is a count of
+    // people addressed, not of emails that arrived. The per-campaign report
+    // has the delivered figure; this tile says what it actually holds.
+    const recipients = sent.reduce((acc, r) => acc + r.recipient_count, 0);
+    return { total: rows.length, sent: sent.length, recipients };
   }, [campaigns.data]);
 
   return (
@@ -90,7 +94,7 @@ export function CommunicationsHome({ onNew }: { onNew?: () => void }) {
       <View className="flex-row gap-3 flex-wrap">
         <StatTile title="Campaigns" value={stats.total} minWidth={100} />
         <StatTile title="Sent" value={stats.sent} minWidth={100} />
-        <StatTile title="Emails delivered" value={stats.reached} minWidth={100} />
+        <StatTile title="Recipients" value={stats.recipients} minWidth={100} />
       </View>
 
       <CampaignList onNew={onNew} />

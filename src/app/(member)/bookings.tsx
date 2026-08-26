@@ -37,7 +37,7 @@ type Tab = 'upcoming' | 'waitlisted' | 'past';
 type WaitlistRow = {
   id: string;
   class_session_id: string;
-  position: number;
+  rank: number | null;
   class_sessions: {
     starts_at: string;
     duration_minutes: number;
@@ -108,12 +108,31 @@ export default function BookingsScreen() {
       const { data, error } = await supabase
         .from('class_waitlist')
         .select(
-          'id, class_session_id, position, class_sessions!inner(starts_at, duration_minutes, class_types(name, color))',
+          'id, class_session_id, class_sessions!inner(starts_at, duration_minutes, class_types(name, color))',
         )
         .eq('profile_id', session!.user.id)
         .gt('class_sessions.starts_at', nowIso);
       if (error) throw error;
-      return (data ?? []) as unknown as WaitlistRow[];
+      const rows = (data ?? []) as unknown as Omit<WaitlistRow, 'rank'>[];
+      if (rows.length === 0) return [] as WaitlistRow[];
+      // position is insertion order and is never renumbered (0016) — every
+      // departure ahead of you inflated the "#N" this card used to print,
+      // and the class modal, which computes the rank, disagreed with it.
+      const { data: ranks, error: rankErr } = await supabase.rpc(
+        'my_waitlist_ranks',
+        { p_session_ids: rows.map((r) => r.class_session_id) },
+      );
+      if (rankErr) throw rankErr;
+      const bySession = new Map(
+        (ranks ?? []).map((r) => {
+          const row = r as unknown as { class_session_id: string; rank: number };
+          return [row.class_session_id, row.rank];
+        }),
+      );
+      return rows.map((r) => ({
+        ...r,
+        rank: bySession.get(r.class_session_id) ?? null,
+      })) as WaitlistRow[];
     },
   });
 
@@ -403,9 +422,11 @@ function WaitlistCard({
             {fmtDate(start)} · {fmtTime(start)}
           </Text>
           <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-            {row.position === 1
+            {row.rank === 1
               ? "You're next in line"
-              : `#${row.position} on the waitlist`}
+              : row.rank
+                ? `#${row.rank} on the waitlist`
+                : 'On the waitlist'}
           </Text>
         </View>
         <ChipButton

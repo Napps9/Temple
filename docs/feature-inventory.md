@@ -59,7 +59,14 @@ dead-end). It carries:
   read every booking in the gym, names included, straight off the table.
   It now mirrors `class_waitlist`'s own policy, plus `is_guardian_of`,
   because `parent_book_dependent` books a child and a parent who cannot
-  see that booking has lost the family account.
+  see that booking has lost the family account. `class_waitlist` gained
+  the same guardian clause in `0277`.
+- **Your place in the queue** — the waitlisted card on Bookings and the
+  class detail modal both read `my_waitlist_ranks` / `my_waitlist_rank`,
+  computed at read time. `class_waitlist.position` is insertion order and
+  is never renumbered, so displaying it (as Bookings did until `0277`)
+  inflated the number on every departure ahead of you and meant nobody
+  ever saw "You're next in line" once the original #1 left.
 - **Calendar (Day / Week / Month views)** — browse the gym's class
   schedule with class-type colour coding, coach avatars, capacity and
   remaining spots. On a phone, the member Book tab drops straight into
@@ -459,6 +466,21 @@ rental, or a **physical subscription box** shipped every cycle.
   `agent_stop_conversation`, which closes a *lead's* thread: Twilio's
   Advanced Opt-Out would block delivery at the carrier while Temple went on
   queueing texts and believing they arrived.
+- **One refusal, one behaviour** (0277) — turning the SMS switch off in the
+  app (`set_my_sms_opt_in`) and the email blanket unsubscribe on
+  (`set_my_email_blanket_unsub`) now skip queued messages exactly as STOP
+  does, through the shared `_skip_queued_member_messages`. Consent is still
+  decided at enqueue for everything else; what changed is that the two ways
+  of saying no get the same answer.
+- **A dead address is not a choice** (0277) — `_enqueue_member_message`
+  tests `email_suppressions` as well as the unsubscribe, as two separate
+  facts. `send-member-messages` re-picks `failed` rows up to three times, so
+  without it a hard-bounced address was retried three times per message.
+  And `pending_members.unsubscribed`, imported from the gym's old system,
+  becomes a real `email_unsubscribes` row at **import** time via a trigger
+  (with a backfill) rather than at signup: the row is address-keyed and
+  never needed a profile, and between import and signup the refusal existed
+  nowhere the senders look.
 - **A personal best, out loud** (0272) — `record_personal_best` enqueues
   email and SMS alongside the milestone row, using the **frozen body** it
   already writes, so all three channels say the same sentence and a member
@@ -495,7 +517,13 @@ rental, or a **physical subscription box** shipped every cycle.
 
 ### Communication
 - **Direct messages** — 1:1 chats inside the gym; messaging-policy
-  gated (open / coach-only / staff-only).
+  gated (open / coach-only / staff-only). The recipient picker and the
+  thread header read the roster through `gym_directory` (`0277`), a
+  definer gated on `user_belongs_to`: `gym_memberships`' tenant select
+  was dropped in `0002`, so a member reading the table got exactly one
+  row — their own — and the picker came back empty for every member and
+  correct for every owner. Eligibility is still filtered client-side to
+  match `can_dm`, which remains the authority at send.
 - **Class-session broadcasts** — coaches push a message to everyone
   booked into a class; lands in the member's inbox under Classes.
 - **Gym announcements** — gym-wide posts; each opens its own page with

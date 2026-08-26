@@ -458,10 +458,9 @@ client-side under a policy that hands a member only their own row, so a
 queue of three read as one, or none. Staff saw it correctly, which is why
 it passed review.
 
-**Still open:** `class_waitlist_self_or_staff_select` has the same
+**~~Still open:~~** `class_waitlist_self_or_staff_select` had the same
 guardian gap `class_bookings` just had — a parent who waitlists a child
-cannot see the entry. One clause, but it is a different table and wants
-its own change.
+could not see the entry. Closed in `0277`.
 
 ### ~~9b. Average member lifetime~~ (shipped 0267)
 
@@ -704,7 +703,85 @@ neither is harder to start than it was.
    probably never needs to be: the live path is still gated on Temple's UK
    regulatory bundle, so in practice no gym has a number yet.
 
-**And one follow-up this created:** `class_waitlist_self_or_staff_select`
-has the same guardian gap `class_bookings` had before 0266 — a parent who
-waitlists a child cannot see the entry. One clause, but a different table,
-and it wants its own change.
+**And one follow-up this created**, `class_waitlist_self_or_staff_select`'s
+missing guardian clause, is closed in `0277` along with the rest of the
+sweep below.
+
+---
+
+## 10. The three defects, swept as families (shipped 0277)
+
+Three defects were found while building the twelve above, and all three
+were fixed where they were found. What was not done was to ask whether
+each was an instance or a pattern. Restated as rules the codebase should
+hold, they are:
+
+- **A.** A number shown to a member must not be counted client-side over a
+  table whose policy hands them a subset.
+- **B.** A column whose own migration says it is not the displayed value
+  must not be displayed.
+- **C.** A suppression written in one place must be read by every sender.
+
+Sweeping for those found five more, plus one inconsistency. Where there
+were three, there were eight.
+
+**A — the roster a member cannot read.** `gym_memberships`' tenant select
+was dropped in `0002` and never re-widened, so a member reads exactly one
+row: their own. The DM recipient picker read the table, excluded the
+caller, and came back **empty for every member** — and correct for every
+owner, which is why nobody reported it. The thread header read it too, so
+the coach/owner label the code's own comment argues for never appeared.
+Both now go through `gym_directory`, a definer gated on `user_belongs_to`,
+the same move `0258` made for the journal's avatar stack. It exposes
+nothing new: `profiles_gym_member_select` has handed names gym-wide since
+`0006`, and `dm_scope = 'member_coach_only'` cannot work without knowing
+who is a coach. The class-broadcast composer's raw `class_bookings(count)`
+embed was correct today but only via a two-hop argument about which roles
+can reach the screen; it moved to `class_session_spot_counts` on `0266`'s
+own grounds.
+
+**B — a rank that is not a rank.** The waitlist card printed
+`#{position}`, and `0016` says in as many words that position is insertion
+order and is **never** renumbered. So every departure ahead of a member
+inflated their number, and once the original #1 left, nobody ever read
+"You're next in line" again. The class modal computed the rank properly,
+so two screens showed two numbers for one class. `my_waitlist_ranks` is
+the batch sibling of the existing singular, shaped like
+`class_session_spot_counts` because the screen lists several entries.
+
+**B — "Emails delivered" over a pre-send snapshot.** `recipient_count` is
+written once, at send authorisation, as the size of the audience snapshot
+(`0194`) and never revised. `0229` exists to kill exactly this word — *"a
+200 from the API is a promise to try, not an arrival"* — and fixed the
+per-campaign report, but this tile was missed. It says **Recipients**
+now, which is what the number is; the delivered figure is one tap away on
+the campaign's own report.
+
+**C — the one queue that skipped `email_suppressions`.**
+`send-member-messages` had no suppression read, and its drain re-picks
+`failed` rows three times, so a hard-bounced address was retried three
+times per message — the precise harm `_shared/suppression.ts` says it
+exists to convert into one recorded skip. The check went in beside the
+unsubscribe test in `_enqueue_member_message`, because `0271`'s doctrine
+is that consent is decided at enqueue, and as a *separate* test: `0229` is
+right that the member's choice and the address being dead are different
+facts.
+
+**C — an unsubscribe read too late to matter.**
+`pending_members.unsubscribed` is imported from the gym's old system and
+was converted into a real `email_unsubscribes` row only at signup. Between
+import and signup the refusal existed nowhere the senders look, and two of
+them mailed those people. Fixing the two call sites would have left the
+shape wrong, so the row is now written at import time by a trigger, with a
+backfill — it is address-keyed and never needed a profile, so there was no
+reason to wait for one. The join-invite worker consults
+`email_unsubscribes` not at all, so it also reads the flag directly.
+
+**One refusal, one behaviour.** Texting STOP skips messages already
+queued: *"a queued text is a message the member has now refused, and
+sending it because it was written first is the definition of not
+listening."* Turning the same switch off in the app did not. Both
+`set_my_sms_opt_in(false)` and `set_my_email_blanket_unsub(true)` now
+perform the same skip. The enqueue-time doctrine still holds for
+everything else; what changed is that the two ways of saying no get the
+same answer.

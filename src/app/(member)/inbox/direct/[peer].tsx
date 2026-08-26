@@ -43,19 +43,23 @@ export default function DirectThread() {
   });
 
   // Who you are talking to, not just their name — a member DMing "Dani"
-  // should see they have the gym's coach, not another member.
+  // should see they have the gym's coach, not another member. Through
+  // gym_directory since 0277: gym_memberships hands a member their own
+  // row and nothing else, so reading the table here returned null for
+  // every member and the label the comment describes never appeared.
   const peerRole = useQuery({
     queryKey: ['peer-role', membership?.gymId, peer],
     enabled: !!membership?.gymId && !!peer,
     queryFn: async () => {
-      const { data, error: err } = await supabase
-        .from('gym_memberships')
-        .select('role')
-        .eq('gym_id', membership!.gymId)
-        .eq('profile_id', peer!)
-        .limit(1);
+      const { data, error: err } = await supabase.rpc('gym_directory', {
+        p_gym_id: membership!.gymId,
+      });
       if (err) throw err;
-      return (data?.[0]?.role ?? null) as string | null;
+      const row = (data ?? []).find(
+        (r) => (r as unknown as { profile_id: string }).profile_id === peer,
+      );
+      return ((row as unknown as { role: string } | undefined)?.role ??
+        null) as string | null;
     },
   });
 

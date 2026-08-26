@@ -120,11 +120,16 @@ Deno.serve(async (req: Request) => {
 
   const joinUrl = `${origin}/join/${gym.slug}`;
 
+  // 0277 turns the imported flag into a real email_unsubscribes row at
+  // import time, which fixes every reader that consults that table. This
+  // worker consults it not at all, so it reads the flag directly: the
+  // refusal was made to the gym's old system and it still counts.
   let query = service
     .from('pending_members')
     .select('id, email, full_name')
     .eq('gym_id', gymId)
-    .eq('status', 'pending');
+    .eq('status', 'pending')
+    .eq('unsubscribed', false);
   if (Array.isArray(body.pending_member_ids) && body.pending_member_ids.length > 0) {
     query = query.in('id', body.pending_member_ids);
   }
