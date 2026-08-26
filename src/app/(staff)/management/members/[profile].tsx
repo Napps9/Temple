@@ -9,6 +9,7 @@ import { Text } from '@/components/Text';
 import { ActionButton } from '@/components/ActionButton';
 import { Avatar } from '@/components/Avatar';
 import { BackLink } from '@/components/BackLink';
+import { MacroTargetsCard } from '@/components/MacroTargetsCard';
 import { ChipButton } from '@/components/ChipButton';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { RefundDialog } from '@/components/RefundDialog';
@@ -313,6 +314,7 @@ export default function MemberDetailScreen() {
   });
 
   const canProgram = useCan('can_program_members') ?? false;
+  const canSetMacros = useCan('can_set_macro_targets') ?? false;
   // The chase list on Analysis deep-links here, and that list is gated on
   // can_see_money — which an owner can grant without can_manage_tags. Being
   // bounced to /management from your own chase list's only action is a dead
@@ -544,6 +546,16 @@ export default function MemberDetailScreen() {
                 }
               />
             </View>
+          </Section>
+        ) : null}
+
+        {canSetMacros && !isRemoved && membership?.gymId ? (
+          <Section title="Targets">
+            <MacroTargetsCard
+              gymId={membership.gymId}
+              profileId={profileId}
+              canEdit
+            />
           </Section>
         ) : null}
 

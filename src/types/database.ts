@@ -1794,6 +1794,36 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      member_macro_targets: {
+        Row: {
+          gym_id: string;
+          profile_id: string;
+          protein_g: number;
+          carbs_g: number;
+          fat_g: number;
+          set_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          gym_id: string;
+          profile_id: string;
+          protein_g: number;
+          carbs_g: number;
+          fat_g: number;
+          set_by?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          gym_id: string;
+          profile_id: string;
+          protein_g: number;
+          carbs_g: number;
+          fat_g: number;
+          set_by: string | null;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
       member_programming_access: {
         Row: {
           gym_id: string;
@@ -4707,6 +4737,20 @@ export type Database = {
           waiting: number | null;
           is_full: boolean;
         }[];
+      };
+      set_member_macro_targets: {
+        Args: {
+          p_gym_id: string;
+          p_profile_id: string;
+          p_protein_g: number;
+          p_carbs_g: number;
+          p_fat_g: number;
+        };
+        Returns: void;
+      };
+      clear_member_macro_targets: {
+        Args: { p_gym_id: string; p_profile_id: string };
+        Returns: void;
       };
       compute_member_tenure: {
         Args: { p_gym_id: string };

@@ -9,11 +9,12 @@ import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
 import { RecordWorkoutModal } from '@/components/RecordWorkoutModal';
+import { MemberMacroTargets } from '@/components/MacroTargetsCard';
 import { Screen } from '@/components/Screen';
 import { FieldLabel, SectionLabel } from '@/components/SectionLabel';
 import { TileGrid } from '@/components/TileGrid';
 import { WorkoutHeatmap } from '@/components/WorkoutHeatmap';
-import { useSession } from '@/lib/auth';
+import { useGymMembership, useSession } from '@/lib/auth';
 import { HYROX_TILE_META } from '@/lib/hyrox';
 import {
   allGroupsDisciplineFirst,
@@ -43,6 +44,9 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 export default function TrackHome() {
   const colors = useThemeColors();
   const session = useSession();
+  const { data: myMembership } = useGymMembership();
+  const macroGymId = myMembership?.gymId ?? null;
+  const userId = session?.user.id ?? '';
   const discipline = useGymDiscipline();
   const isHyrox = discipline === 'hyrox';
   const queryClient = useQueryClient();
@@ -219,6 +223,14 @@ export default function TrackHome() {
                 Log results
               </Text>
             </Pressable>
+          </View>
+        ) : null}
+
+        {/* Renders nothing until a coach has set them, so a gym that does
+            not coach nutrition never sees an empty card. */}
+        {macroGymId ? (
+          <View className="gap-2">
+            <MemberMacroTargets gymId={macroGymId} profileId={userId} />
           </View>
         ) : null}
 

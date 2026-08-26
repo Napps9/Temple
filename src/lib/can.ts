@@ -41,6 +41,7 @@ export type Capability =
   | 'can_manage_store'
   | 'can_see_store_revenue'
   | 'can_program_members'
+  | 'can_set_macro_targets'
   | 'can_review_ai_calls'
   | 'can_bulk_edit_classes';
 
@@ -85,6 +86,7 @@ const matrix: Record<Capability, Record<GymRole, boolean>> = {
   can_manage_store:       { owner: true, admin: true,  coach: false, staff: false, member: false },
   can_see_store_revenue:  { owner: true, admin: true,  coach: false, staff: false, member: false },
   can_program_members:    { owner: true, admin: true,  coach: true,  staff: false, member: false },
+  can_set_macro_targets:  { owner: true, admin: true,  coach: true,  staff: false, member: false },
   can_review_ai_calls:    { owner: true, admin: true,  coach: false, staff: false, member: false },
   can_bulk_edit_classes:  { owner: true, admin: true,  coach: false, staff: false, member: false },
 };
