@@ -53,6 +53,13 @@ test('the waitlist card and the class modal agree', async ({ page }) => {
   // place before anything is asserted about the number on the card.
   // Counting the cards instead raced the tab's render and skipped the
   // test on a member who was queued first in line.
+  // The pill drops its count when the read fails, so a failure can no
+  // longer arrive disguised as a zero — and this assertion names it
+  // rather than letting the test skip past a broken query.
+  await expect(
+    page.getByText('Could not load your waitlist places'),
+  ).toHaveCount(0);
+
   const pill = page.getByText(/^Waitlisted \(\d+\)$/);
   await expect(pill).toBeVisible({ timeout: 30_000 });
   const queued = Number((await pill.innerText()).match(/\((\d+)\)/)![1]);

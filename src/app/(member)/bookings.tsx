@@ -198,7 +198,13 @@ export default function BookingsScreen() {
             { key: 'upcoming', label: `Upcoming (${upcoming.length})` },
             {
               key: 'waitlisted',
-              label: `Waitlisted (${waitlist.data?.length ?? 0})`,
+              // No count when the query failed. `data?.length ?? 0` told a
+              // member they were on no waitlists whenever the read broke,
+              // which is the same lie as a wrong rank and harder to spot:
+              // zero is a plausible answer.
+              label: waitlist.error
+                ? 'Waitlisted'
+                : `Waitlisted (${waitlist.data?.length ?? 0})`,
             },
             { key: 'past', label: `Past (${past.length})` },
           ]}
@@ -216,6 +222,11 @@ export default function BookingsScreen() {
         ) : null}
         {cancelError ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{cancelError}</Text>
+        ) : null}
+        {waitlist.error ? (
+          <Text className="text-red-500 dark:text-red-400 text-sm">
+            {errorMessage(waitlist.error, 'Could not load your waitlist places')}
+          </Text>
         ) : null}
         {waitlistError ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{waitlistError}</Text>
