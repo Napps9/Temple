@@ -59,6 +59,7 @@ export type Database = {
           currency: string;
           weight_unit: 'kg' | 'lb';
           class_leaderboards_enabled: boolean;
+          show_class_capacity: boolean;
           strength_leaderboards_enabled: boolean;
           dm_scope: 'full_gym' | 'member_coach_only';
           logo_url: string | null;
@@ -111,6 +112,7 @@ export type Database = {
           currency?: string;
           weight_unit?: 'kg' | 'lb';
           class_leaderboards_enabled?: boolean;
+          show_class_capacity?: boolean;
           strength_leaderboards_enabled?: boolean;
           dm_scope?: 'full_gym' | 'member_coach_only';
           logo_url?: string | null;
@@ -154,6 +156,7 @@ export type Database = {
           coach_credit_policy: 'all_scheduled' | 'only_checked_in';
           currency: string;
           class_leaderboards_enabled: boolean;
+          show_class_capacity: boolean;
           strength_leaderboards_enabled: boolean;
           dm_scope: 'full_gym' | 'member_coach_only';
           logo_url: string | null;
@@ -4694,9 +4697,20 @@ export type Database = {
         Args: { p_redemption_id: string; p_booking_id?: string | null };
         Returns: void;
       };
-      class_session_hold_counts: {
+      class_session_spot_counts: {
         Args: { p_session_ids: string[] };
-        Returns: { session_id: string; holds: number }[];
+        Returns: {
+          class_session_id: string;
+          // null when the gym hides capacity from members. is_full is
+          // told either way — see 0266.
+          taken: number | null;
+          waiting: number | null;
+          is_full: boolean;
+        }[];
+      };
+      set_class_capacity_visibility: {
+        Args: { p_gym_id: string; p_value: boolean };
+        Returns: void;
       };
       set_announcement_pin: {
         Args: {

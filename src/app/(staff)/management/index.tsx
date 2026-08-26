@@ -33,6 +33,7 @@ import { BrandingPanel } from '@/components/BrandingPanel';
 import { ClassTypesPanel } from '@/components/ClassTypesPanel';
 import { ClosuresCard } from '@/components/ClosuresCard';
 import { HealthScreeningPanel } from '@/components/HealthScreeningPanel';
+import { ClassVisibilityPanel } from '@/components/ClassVisibilityPanel';
 import { LeaderboardsPanel } from '@/components/LeaderboardsPanel';
 import { OperatingDefaultsPanel } from '@/components/OperatingDefaultsPanel';
 import { Screen } from '@/components/Screen';
@@ -525,6 +526,14 @@ function SettingsTab({ open }: { open: SettingsSectionId | null }) {
       icon: 'trophy',
       visible: canConfigureLeaderboards,
       panel: <LeaderboardsPanel />,
+    },
+    {
+      id: 'class-visibility',
+      title: 'What members see',
+      description: 'Whether the timetable shows how full a class is.',
+      icon: 'eye-outline',
+      visible: isOwner,
+      panel: <ClassVisibilityPanel />,
     },
     {
       id: 'class-types',

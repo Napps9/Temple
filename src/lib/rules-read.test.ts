@@ -23,6 +23,7 @@ const FRESH_GYM: GymRulesRow = {
   dm_scope: 'full_gym',
   class_leaderboards_enabled: true,
   strength_leaderboards_enabled: true,
+  show_class_capacity: true,
   public_signup_enabled: true,
   public_lead_capture_enabled: true,
   members_can_self_checkout: true,

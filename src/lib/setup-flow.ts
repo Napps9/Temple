@@ -111,6 +111,7 @@ export type RuleChoices = {
   weight_unit: 'kg' | 'lb';
   dm_scope: 'full_gym' | 'member_coach_only';
   leaderboards_on: boolean;
+  show_class_capacity: boolean;
   public_signup: boolean;
   public_lead_capture: boolean;
   members_can_self_checkout: boolean;
@@ -133,6 +134,7 @@ export const DEFAULT_RULE_CHOICES: RuleChoices = {
   weight_unit: 'kg',
   dm_scope: 'full_gym',
   leaderboards_on: true,
+  show_class_capacity: true,
   public_signup: true,
   public_lead_capture: true,
   members_can_self_checkout: true,
@@ -194,6 +196,10 @@ export const RULE_FIELD_OPTIONS: Record<RuleField, FieldOption[]> = {
   leaderboards_on: [
     { label: 'on', value: true },
     { label: 'off', value: false },
+  ],
+  show_class_capacity: [
+    { label: 'how full a class is', value: true },
+    { label: 'only whether it is full', value: false },
   ],
   public_signup: [
     { label: 'can join', value: true },
@@ -381,6 +387,7 @@ export function ruleSheet(c: RuleChoices): SheetGroup[] {
         line({ t: 'Under-18s are ' }, { f: 'allow_minors' }),
         line({ t: 'Members can message ' }, { f: 'dm_scope' }),
         line({ t: 'Leaderboards are ' }, { f: 'leaderboards_on' }),
+        line({ t: 'Members see ' }, { f: 'show_class_capacity' }),
         line({ t: 'People ' }, { f: 'public_signup' }, { t: ' from your join link' }),
         line({ t: 'The enquiry form is ' }, { f: 'public_lead_capture' }),
         line({ t: 'Members ' }, { f: 'members_can_self_checkout' }),

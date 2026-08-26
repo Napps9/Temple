@@ -284,6 +284,10 @@ export async function applyRules(
         p_strength_enabled: choices.leaderboards_on,
       },
     ],
+    [
+      'set_class_capacity_visibility',
+      { p_gym_id: gymId, p_value: choices.show_class_capacity },
+    ],
     ['set_gym_public_signup', { p_gym_id: gymId, p_enabled: choices.public_signup }],
     [
       'set_gym_public_lead_capture',

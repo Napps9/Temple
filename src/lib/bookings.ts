@@ -68,7 +68,8 @@ export function invalidateBookingCaches(qc: QueryClient): void {
     ['my-future-bookings-set'],
     ['my-next-booking'],
     ['my-bookings'],
-    ['agenda-booking-counts'],
+    ['agenda-spot-counts'],
+    ['class-spot-counts'],
     ['my-subscriptions'],
     ['recommended-class'],
     // The new-member "Book your first class" step reads this count; without

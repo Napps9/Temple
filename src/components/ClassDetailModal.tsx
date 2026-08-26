@@ -97,6 +97,12 @@ function fmtDateParam(d: Date) {
     .padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
 }
 
+type SpotCount = {
+  taken: number | null;
+  waiting: number | null;
+  isFull: boolean;
+};
+
 export function ClassDetailModal({
   visible,
   sessionId,
@@ -157,6 +163,27 @@ export function ClassDetailModal({
         .single();
       if (error) throw error;
       return data as unknown as SessionDetail;
+    },
+  });
+
+  // The roster select only ever returns the caller's own row for a member
+  // (0266), so how full the class is has to come from the definer count —
+  // reading bookings.length here would tell a member every class is empty
+  // and offer Book on a full one.
+  const spotsQuery = useQuery({
+    queryKey: ['class-spot-counts', sessionId],
+    enabled: !!sessionId && visible,
+    queryFn: async (): Promise<SpotCount | null> => {
+      const { data, error } = await supabase.rpc('class_session_spot_counts', {
+        p_session_ids: [sessionId!],
+      });
+      if (error) throw error;
+      const row = (data ?? [])[0] as
+        | { taken: number | null; waiting: number | null; is_full: boolean }
+        | undefined;
+      return row
+        ? { taken: row.taken, waiting: row.waiting, isFull: row.is_full }
+        : null;
     },
   });
 
@@ -427,7 +454,7 @@ export function ClassDetailModal({
       ? new Date(start.getTime() + detail.duration_minutes * 60 * 1000)
       : null;
   const inPast = start ? start.getTime() < Date.now() : false;
-  const isFull = detail ? bookings.length >= detail.capacity : false;
+  const isFull = spotsQuery.data?.isFull ?? false;
   const lateCancel =
     detail !== null &&
     detail !== undefined &&
@@ -526,15 +553,17 @@ export function ClassDetailModal({
                 </View>
               </View>
 
-              <View className="gap-2">
-                <SectionLabel>
-                  Booked
-                </SectionLabel>
-                <Text className="text-ink dark:text-ink-dk font-medium">
-                  {bookings.length} / {detail.capacity}{' '}
-                  {bookings.length === 1 ? 'spot' : 'spots'} taken
-                </Text>
-              </View>
+              {spotsQuery.data?.taken != null ? (
+                <View className="gap-2">
+                  <SectionLabel>
+                    Booked
+                  </SectionLabel>
+                  <Text className="text-ink dark:text-ink-dk font-medium">
+                    {spotsQuery.data.taken} / {detail.capacity}{' '}
+                    {spotsQuery.data.taken === 1 ? 'spot' : 'spots'} taken
+                  </Text>
+                </View>
+              ) : null}
 
               {detail.notes ? (
                 <View className="gap-2">
@@ -866,6 +895,7 @@ function DependentBookRow({
       });
       if (e) throw e;
       queryClient.invalidateQueries({ queryKey: ['class-bookings', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['class-spot-counts', sessionId] });
       queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
     } catch (e) {
       setError(errorMessage(e, 'Could not book your child'));

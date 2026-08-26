@@ -38,6 +38,23 @@ type CreateRequest = { date?: Date; hour?: number };
 
 // Fallback when the gym defaults query hasn't resolved yet. Matches
 // the SQL default in 0049; the live value comes from gymDefaults.
+// What class_session_spot_counts (0266) answers for one session. taken and
+// waiting are null when the gym has turned capacity off for members;
+// isFull is always true or false, because the Book/Waitlist choice cannot
+// be hidden without offering a booking the server refuses.
+type SpotCount = {
+  taken: number | null;
+  waiting: number | null;
+  isFull: boolean;
+};
+
+type SpotCountRow = {
+  class_session_id: string;
+  taken: number | null;
+  waiting: number | null;
+  is_full: boolean;
+};
+
 const HORIZON_WEEKS_FALLBACK = 12;
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
 const HOUR_HEIGHT = 80;
@@ -1332,50 +1349,27 @@ function AgendaView({
     ? dayClasses.filter((s) => s.class_type_id === activeType)
     : dayClasses;
 
-  // One round trip for the whole day's spot counts (RLS lets a member
-  // read same-gym bookings — class_bookings_tenant_select), tallied into
-  // a per-session map. Confirmed rows only; waitlist sits in its own table.
+  // One definer round trip for the whole day: booked seats, held trial
+  // seats, and the waitlist depth. It has to be a definer — a member can
+  // only select their own rows on either table (0266), so counting them
+  // client-side gave a queue of three as one. taken/waiting come back null
+  // when the gym hides capacity; is_full is told either way, because
+  // hiding it would offer a booking the server then refuses.
   const counts = useQuery({
-    queryKey: ['agenda-booking-counts', gymId, isoDay, dayIds.join(',')],
+    queryKey: ['agenda-spot-counts', gymId, isoDay, dayIds.join(',')],
     enabled: dayIds.length > 0,
-    queryFn: async (): Promise<Map<string, number>> => {
-      const { data, error } = await supabase
-        .from('class_bookings')
-        .select('class_session_id')
-        .in('class_session_id', dayIds);
-      if (error) throw error;
-      const m = new Map<string, number>();
-      for (const r of (data ?? []) as { class_session_id: string }[]) {
-        m.set(r.class_session_id, (m.get(r.class_session_id) ?? 0) + 1);
-      }
-      // A seat claimed from a trial link and not yet taken is spoken
-      // for: _book_class_for counts it, so the number on the card has
-      // to as well, or the last spot is offered to somebody who will
-      // then be refused (0262).
-      const { data: holds } = await supabase.rpc('class_session_hold_counts', {
+    queryFn: async (): Promise<Map<string, SpotCount>> => {
+      const { data, error } = await supabase.rpc('class_session_spot_counts', {
         p_session_ids: dayIds,
       });
-      for (const h of (holds ?? []) as { session_id: string; holds: number }[]) {
-        m.set(h.session_id, (m.get(h.session_id) ?? 0) + h.holds);
-      }
-      return m;
-    },
-  });
-
-  // "Full" alone hides the queue. One count query answers "how many are
-  // waiting" for every full class on the day.
-  const waitlistCounts = useQuery({
-    queryKey: ['agenda-waitlist-counts', gymId, isoDay, dayIds.join(',')],
-    enabled: dayIds.length > 0,
-    queryFn: async (): Promise<Map<string, number>> => {
-      const { data, error } = await supabase
-        .from('class_waitlist')
-        .select('class_session_id')
-        .in('class_session_id', dayIds);
       if (error) throw error;
-      const m = new Map<string, number>();
-      for (const r of (data ?? []) as { class_session_id: string }[]) {
-        m.set(r.class_session_id, (m.get(r.class_session_id) ?? 0) + 1);
+      const m = new Map<string, SpotCount>();
+      for (const r of (data ?? []) as SpotCountRow[]) {
+        m.set(r.class_session_id, {
+          taken: r.taken,
+          waiting: r.waiting,
+          isFull: r.is_full,
+        });
       }
       return m;
     },
@@ -1481,12 +1475,11 @@ function AgendaView({
               <AgendaCard
                 key={s.id}
                 session={s}
-                count={counts.data?.get(s.id) ?? 0}
+                spots={counts.data?.get(s.id)}
                 bookedByMe={bookedSet.has(s.id)}
                 recommended={recommendedSessionId === s.id}
                 onPress={() => onSessionPress(s.id)}
                 dimPast={dimPast}
-                waitingCount={waitlistCounts.data?.get(s.id) ?? 0}
                 bookState={rowBook?.sessionId === s.id ? rowBook.state : null}
                 onBook={onBook ? () => onBook(s) : undefined}
                 onUndoBook={onUndoBook ? () => onUndoBook(s.id) : undefined}
@@ -1502,24 +1495,22 @@ function AgendaView({
 
 function AgendaCard({
   session,
-  count,
+  spots,
   bookedByMe,
   recommended,
   onPress,
   dimPast,
-  waitingCount = 0,
   bookState,
   onBook,
   onUndoBook,
   undoPending,
 }: {
   session: ClassSession;
-  count: number;
+  spots: SpotCount | undefined;
   bookedByMe: boolean;
   recommended?: boolean;
   onPress: () => void;
   dimPast?: boolean;
-  waitingCount?: number;
   bookState?: 'booking' | 'booked' | null;
   onBook?: () => void;
   onUndoBook?: () => void;
@@ -1529,8 +1520,12 @@ function AgendaCard({
   const start = new Date(session.starts_at);
   const end = new Date(start.getTime() + session.duration_minutes * 60 * 1000);
   const isPast = dimPast === true && end.getTime() <= Date.now();
-  const spotsLeft = Math.max(0, session.capacity - count);
-  const full = spotsLeft <= 0;
+  // taken is null when the gym hides capacity — then the card says
+  // whether you can book and nothing more.
+  const taken = spots?.taken ?? null;
+  const waiting = spots?.waiting ?? null;
+  const spotsLeft = taken === null ? null : Math.max(0, session.capacity - taken);
+  const full = spots?.isFull ?? false;
   const color = sessionColor(session, colors.primary);
   const me = useSession();
   const coachName =
@@ -1541,15 +1536,17 @@ function AgendaCard({
   const statusText = bookedByMe
     ? 'Booked in'
     : full
-      ? waitingCount > 0
-        ? `Full — ${waitingCount} waiting`
+      ? waiting !== null && waiting > 0
+        ? `Full — ${waiting} waiting`
         : 'Full'
-      : `${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left`;
+      : spotsLeft === null
+        ? 'Open'
+        : `${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left`;
   const statusClass = bookedByMe
     ? 'text-emerald-600 dark:text-emerald-400'
     : full
       ? 'text-ink-3 dark:text-ink-3-dk'
-      : spotsLeft <= 3
+      : spotsLeft !== null && spotsLeft <= 3
         ? 'text-amber-600 dark:text-amber-400'
         : 'text-emerald-600 dark:text-emerald-400';
 

@@ -892,7 +892,7 @@ export const moveClass: ActionSpec<Move> = {
     'my-upcoming-sessions',
     'my-future-bookings',
     'my-bookings',
-    'agenda-booking-counts',
+    'agenda-spot-counts',
     'class-change-notifications',
   ],
   sanitise: (raw) => {
