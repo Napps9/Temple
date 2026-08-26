@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, Switch, View } from 'react-native';
 import { Text } from './Text';
 
 import { Button } from './Button';
@@ -39,6 +39,9 @@ type SectionDraft = {
 type ProgrammingRow = {
   id: string;
   sections: Section[];
+  // Null on a draft the coach has written ahead. Only class programming
+  // carries one — an individual programme is already gated per member.
+  publishedAt?: string | null;
 };
 
 // The editor writes either a class type's day (the whiteboard) or one
@@ -98,6 +101,9 @@ export function ProgrammingModal({
   const { data: membership } = useGymMembership();
   const queryClient = useQueryClient();
   const [drafts, setDrafts] = useState<SectionDraft[]>([]);
+  // Members see it as soon as it is saved unless the coach says
+  // otherwise. Writing ahead is the deliberate act, not publishing.
+  const [publishNow, setPublishNow] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saved, markSaved] = useSavedFlag();
   const [pickerOpenFor, setPickerOpenFor] = useState<
@@ -129,14 +135,18 @@ export function ProgrammingModal({
               .maybeSingle()
           : supabase
               .from('class_programming')
-              .select('id, sections')
+              .select('id, sections, published_at')
               .eq('class_type_id', target!.classType.id)
               .eq('date', dateStr!)
               .maybeSingle();
       const { data, error } = await query;
       if (error) throw error;
       if (!data) return null;
-      return { id: data.id, sections: parseSections(data.sections) };
+      return {
+        id: data.id,
+        sections: parseSections(data.sections),
+        publishedAt: (data as { published_at?: string | null }).published_at ?? null,
+      };
     },
   });
 
@@ -145,6 +155,12 @@ export function ProgrammingModal({
     if (programming.isLoading) return;
     const loaded = programming.data?.sections ?? [];
     setDrafts(loaded.length > 0 ? loaded.map(sectionToDraft) : [emptyDraft()]);
+    // A day already saved keeps whatever the coach chose last time; a
+    // blank day starts published, because writing ahead is the deliberate
+    // act and forgetting to publish would hide today's session.
+    setPublishNow(
+      programming.data ? programming.data.publishedAt !== null : true,
+    );
     setError(null);
     setPickerOpenFor(null);
   }, [visible, programming.isLoading, programming.data]);
@@ -216,25 +232,18 @@ export function ProgrammingModal({
           );
           if (error) throw error;
         }
-      } else if (cleaned.length === 0) {
-        const { error } = await supabase
-          .from('class_programming')
-          .delete()
-          .eq('class_type_id', target.classType.id)
-          .eq('date', dateStr);
-        if (error) throw error;
       } else {
-        const { error } = await supabase.from('class_programming').upsert(
-          {
-            gym_id: membership.gymId,
-            class_type_id: target.classType.id,
-            date: dateStr,
-            sections: cleaned,
-            author_id: session.user.id,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'class_type_id,date' },
-        );
+        // Through the RPC since 0273: a draft is a state members must not
+        // be able to reach, and clearing every section still deletes the
+        // row rather than leaving an empty one. Null published_at means
+        // the coach is writing ahead.
+        const { error } = await supabase.rpc('save_class_programming', {
+          p_gym_id: membership.gymId,
+          p_class_type_id: target.classType.id,
+          p_date: dateStr,
+          p_sections: cleaned,
+          p_published_at: publishNow ? new Date().toISOString() : null,
+        });
         if (error) throw error;
       }
     },
@@ -344,6 +353,28 @@ export function ProgrammingModal({
         ) : undefined
       }>
       <View className="gap-5 pb-1">
+          {/* Class programming only. An individual programme is already
+              gated per member (0123), so a second embargo there would be
+              a switch that governs nothing. */}
+          {target?.kind === 'classType' && date ? (
+            <View className="flex-row items-center gap-3 bg-raised dark:bg-raised-dk rounded-ctl px-3 py-2.5">
+              <View className="flex-1">
+                <Text className="text-ink dark:text-ink-dk text-sm font-medium">
+                  {publishNow ? 'Members can see this' : 'Only coaches can see this'}
+                </Text>
+                <Text className="text-ink-2 dark:text-ink-2-dk text-xs mt-0.5">
+                  {publishNow
+                    ? 'Saving puts it on the members\u2019 calendar.'
+                    : 'Write ahead now, release it when you\u2019re ready.'}
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel="Members can see this"
+                value={publishNow}
+                onValueChange={setPublishNow}
+              />
+            </View>
+          ) : null}
           {!target || !date ? (
             <View className="py-6 items-center">
               <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>

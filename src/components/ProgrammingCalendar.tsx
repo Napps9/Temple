@@ -62,6 +62,9 @@ type ProgrammingRow = {
   date: string;
   sections: Section[];
   author_name: string | null;
+  // Null on a draft, future on a scheduled release (0273). Staff only —
+  // a member is never handed a row that is not already live.
+  published_at: string | null;
 };
 
 type DayClassType = {
@@ -218,7 +221,7 @@ export function ProgrammingCalendar({
       const { data, error } = await supabase
         .from('class_programming')
         .select(
-          'id, class_type_id, date, sections, author:profiles!author_id(full_name)',
+          'id, class_type_id, date, sections, published_at, author:profiles!author_id(full_name)',
         )
         .gte('date', start)
         .lt('date', end);
@@ -306,13 +309,23 @@ export function ProgrammingCalendar({
   const dateStr = fmtDateLocal(date);
   const programmingByTypeId = new Map<
     string,
-    { id: string; sections: Section[]; authorName: string | null }
+    {
+      id: string;
+      sections: Section[];
+      authorName: string | null;
+      publishedAt: string | null;
+    }
   >(
     (programmingMonthQuery.data ?? [])
       .filter((p) => p.date === dateStr)
       .map((p) => [
         p.class_type_id,
-        { id: p.id, sections: p.sections, authorName: p.author_name },
+        {
+          id: p.id,
+          sections: p.sections,
+          authorName: p.author_name,
+          publishedAt: p.published_at ?? null,
+        },
       ]),
   );
 
@@ -516,6 +529,7 @@ export function ProgrammingCalendar({
                       sections={prog?.sections ?? []}
                       mode={mode}
                       writtenBy={prog?.authorName ?? null}
+                      publishedAt={prog ? prog.publishedAt : undefined}
                       repMaxLookup={showMyPercentages ? repMaxLookup : undefined}
                       onEdit={() =>
                         setOpenFor({
@@ -570,6 +584,7 @@ function ClassTypeCard({
   mode,
   onEdit,
   writtenBy,
+  publishedAt,
   repMaxLookup,
 }: {
   classType: DayClassType;
@@ -578,11 +593,21 @@ function ClassTypeCard({
   mode: 'manage' | 'view';
   onEdit: () => void;
   writtenBy?: string | null;
+  publishedAt?: string | null;
   repMaxLookup?: RepMaxLookup;
 }) {
   const [leaderboardOpenFor, setLeaderboardOpenFor] = useState<
     { sectionIndex: number; sectionTitle: string } | null
   >(null);
+  // Null is a draft; a future timestamp is written and waiting. Both read
+  // as "members cannot see this yet", which is the only thing the coach
+  // needs to know at a glance.
+  const embargo =
+    publishedAt === null
+      ? 'Draft'
+      : publishedAt && new Date(publishedAt) > new Date()
+        ? 'Scheduled'
+        : null;
   const header = (
     <View className="flex-row items-center gap-3">
       <View
@@ -592,6 +617,15 @@ function ClassTypeCard({
       <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
         {classType.name}
       </Text>
+      {/* Only ever seen in manage mode, and not because it is hidden in
+          view mode: a member is not handed the row at all (0273). */}
+      {mode === 'manage' && sections.length > 0 && embargo ? (
+        <View className="rounded-full bg-amber-500/15 px-2 py-0.5">
+          <Text className="text-amber-700 dark:text-amber-400 text-[10px] font-semibold uppercase tracking-wider">
+            {embargo}
+          </Text>
+        </View>
+      ) : null}
       {mode === 'manage' ? (
         <ChipButton
           label={sections.length === 0 ? 'Add' : 'Edit'}

@@ -829,23 +829,30 @@ export const copyWeek: ActionSpec<CopyWeek> = {
     const rows = source
       .filter((d) => d.sections.length > 0)
       .map((d) => ({
-        gym_id: ctx.gymId,
-        class_type_id: d.classTypeId,
+        classTypeId: d.classTypeId,
         date: shiftDays(toMonday, dayOffset(fromMonday, d.date)),
         sections: d.sections as unknown as Json,
-        author_id: ctx.userId,
-        updated_at: new Date().toISOString(),
       }));
 
-    const { error } = await ctx.supabase
-      .from('class_programming')
-      .upsert(rows, { onConflict: 'class_type_id,date' });
-    if (error) throw new ActionError('That did not copy across — try again.');
+    // Through the RPC since 0273 rather than a bulk upsert: a copied week
+    // has to land as a draft. Copying is how a coach writes ahead, and a
+    // bulk upsert that published it would put next week on the members'
+    // calendar the moment they said "copy this week to next".
+    for (const row of rows) {
+      const { error } = await ctx.supabase.rpc('save_class_programming', {
+        p_gym_id: ctx.gymId,
+        p_class_type_id: row.classTypeId,
+        p_date: row.date,
+        p_sections: row.sections,
+        p_published_at: null,
+      });
+      if (error) throw new ActionError('That did not copy across — try again.');
+    }
 
     ctx.offer?.('Open programming', '/programming');
     return rows.length === 1
-      ? `Copied. One session now sits on the week of ${weekLabel(toMonday)}.`
-      : `Copied. ${rows.length} sessions now sit on the week of ${weekLabel(toMonday)}.`;
+      ? `Copied as a draft. One session now sits on the week of ${weekLabel(toMonday)}, for coaches only until you release it.`
+      : `Copied as a draft. ${rows.length} sessions now sit on the week of ${weekLabel(toMonday)}, for coaches only until you release them.`;
   },
 };
 

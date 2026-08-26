@@ -24,7 +24,7 @@ function section(title: string, body = '') {
 function ctxFor(opts: {
   programming?: Row[];
   classTypes?: { id: string; name: string }[];
-  onUpsert?: (rows: unknown[]) => void;
+  onSave?: (args: Record<string, unknown>) => void;
   onDelete?: (filters: Record<string, string>) => void;
 }) {
   const programming = opts.programming ?? [];
@@ -78,10 +78,6 @@ function ctxFor(opts: {
                     }),
                   }),
                 },
-        upsert: async (rows: unknown[]) => {
-          opts.onUpsert?.(rows);
-          return { error: null };
-        },
         delete: () => {
           const filters: Record<string, string> = {};
           const d: Record<string, unknown> = {
@@ -97,6 +93,10 @@ function ctxFor(opts: {
           return d;
         },
       }),
+      rpc: async (fn: string, args: Record<string, unknown>) => {
+        if (fn === 'save_class_programming') opts.onSave?.(args);
+        return { error: null };
+      },
     },
     gymId: 'gym',
     userId: 'coach',
@@ -164,7 +164,7 @@ describe('the card a copy shows before it is agreed to', () => {
 
   it('writes each session onto the same weekday of the target week', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(NOW);
-    const written: unknown[] = [];
+    const written: Record<string, unknown>[] = [];
     const receipt = await copyWeek.apply!(
       { from: -1, to: 1 },
       ctxFor({
@@ -172,13 +172,34 @@ describe('the card a copy shows before it is agreed to', () => {
           // Wednesday 29 July.
           { class_type_id: 'ct-wod', date: '2026-07-29', sections: [section('Fran')] },
         ],
-        onUpsert: (rows) => written.push(...rows),
+        onSave: (args) => written.push(args),
       }),
     );
     // Next week's Wednesday is 12 August.
-    expect((written[0] as { date: string }).date).toBe('2026-08-12');
-    expect((written[0] as { author_id: string }).author_id).toBe('coach');
-    expect(receipt).toBe('Copied. One session now sits on the week of 10 Aug.');
+    expect(written[0].p_date).toBe('2026-08-12');
+    expect(written[0].p_gym_id).toBe('gym');
+    expect(receipt).toBe(
+      'Copied as a draft. One session now sits on the week of 10 Aug, for coaches only until you release it.',
+    );
+    vi.restoreAllMocks();
+  });
+
+  // Copying is how a coach writes ahead. A copy that published would put
+  // next week on the members' calendar the moment they asked for it —
+  // which is the thing the embargo exists to stop (0273).
+  it('lands the copy as a draft, not on the members’ calendar', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(NOW);
+    const written: Record<string, unknown>[] = [];
+    await copyWeek.apply!(
+      { from: -1, to: 1 },
+      ctxFor({
+        programming: [
+          { class_type_id: 'ct-wod', date: '2026-07-29', sections: [section('Fran')] },
+        ],
+        onSave: (args) => written.push(args),
+      }),
+    );
+    expect(written[0].p_published_at).toBeNull();
     vi.restoreAllMocks();
   });
 });

@@ -1752,6 +1752,7 @@ export type Database = {
           sections: Json;
           author_id: string;
           updated_at: string;
+          published_at: string | null;
         };
         Insert: {
           id?: string;
@@ -1770,6 +1771,7 @@ export type Database = {
           sections: Json;
           author_id: string;
           updated_at: string;
+          published_at: string | null;
         }>;
         Relationships: [];
       };
@@ -1782,6 +1784,7 @@ export type Database = {
           sections: Json;
           author_id: string;
           updated_at: string;
+          published_at: string | null;
         };
         Insert: {
           id?: string;
@@ -1800,6 +1803,7 @@ export type Database = {
           sections: Json;
           author_id: string;
           updated_at: string;
+          published_at: string | null;
         }>;
         Relationships: [];
       };
@@ -4749,6 +4753,20 @@ export type Database = {
           waiting: number | null;
           is_full: boolean;
         }[];
+      };
+      save_class_programming: {
+        Args: {
+          p_gym_id: string;
+          p_class_type_id: string;
+          p_date: string;
+          p_sections: unknown;
+          p_published_at?: string | null;
+        };
+        Returns: string | null;
+      };
+      publish_class_programming: {
+        Args: { p_gym_id: string; p_date: string; p_published_at?: string | null };
+        Returns: number;
       };
       set_my_contact_phone: {
         Args: { p_phone: string };
