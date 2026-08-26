@@ -39,6 +39,27 @@ dead-end). It carries:
   carry billing state); the gate itself doesn't change.
 
 ### Bookings & classes
+- **How full a class looks is the gym's choice** (0266) —
+  `gyms.show_class_capacity`, owner-only via
+  `set_class_capacity_visibility` and a sentence in the rule sheet. Off,
+  a member sees "Open" instead of "8 spots left" and no waiting count;
+  **whether a class is full is always shown**, because hiding that would
+  offer a booking `_book_class_for` then refuses and the member learns
+  the count anyway, as a fault. Staff always see the numbers. Counts come
+  from one definer, `class_session_spot_counts` — booked seats, held
+  trial seats (folding in `class_session_hold_counts` from `0262`, so two
+  functions cannot disagree about a spoken-for seat) and waitlist depth
+  in one pass, nulled inside the function rather than in the renderer.
+  It replaced three client round trips **and a wrong number**: "Full — N
+  waiting" was counted from `class_waitlist` client-side, whose policy
+  hands a member only their own row, so a queue of three read as one or
+  none. Staff saw it correctly, which is why it passed review.
+  `class_bookings_tenant_select` was narrowed in the same migration —
+  it had been a bare `user_belongs_to` since `0006`, so any member could
+  read every booking in the gym, names included, straight off the table.
+  It now mirrors `class_waitlist`'s own policy, plus `is_guardian_of`,
+  because `parent_book_dependent` books a child and a parent who cannot
+  see that booking has lost the family account.
 - **Calendar (Day / Week / Month views)** — browse the gym's class
   schedule with class-type colour coding, coach avatars, capacity and
   remaining spots. On a phone, the member Book tab drops straight into
@@ -407,6 +428,31 @@ rental, or a **physical subscription box** shipped every cycle.
   staff alerts.
 - **Injury check-in nudge** — inbox card + Track-tile badge when an
   injury is overdue for its weekly check-in.
+
+### Nutrition
+- **Macro targets** (0268) [`can_set_macro_targets`, owner + admin +
+  coach by default] — a coach sets protein, carbs and fat in grams on the
+  member's profile (`member_macro_targets`, one row per gym x member,
+  written only through `set_member_macro_targets`); the member reads them
+  on Track beside their streak, with each macro's share of the day.
+  **Calories are derived 4/4/9 and never stored** — a kcal column would
+  be a second number that can disagree with the first three — and the
+  coach's card shows the figure moving as they type. Its own capability
+  rather than riding `can_program_members`, so a gym with one nutrition
+  coach can say so without handing out the programming editor; staff read
+  only if they could set, which is `0263`'s rule that a coach browsing
+  everyone's numbers is a different ask.
+  **Numbers only, and no note field — that is the Article 9 decision.** A
+  protein target is a coaching prescription: it says what the coach
+  wants, not what is wrong with anybody, so it is not special-category
+  data and does not ride `_erase_member_health_data` or
+  `log_health_data_access`. A free-text note beside it ("cutting for her
+  wedding", "IBS flare") would be a different thing entirely, and that is
+  the line. If a note is ever wanted it arrives as a health field with
+  the erasure sweep and the audit log attached, not by widening the
+  table. There is deliberately no food log: intake is its own table when
+  it comes, with a `source` column from day one, so an imported day and a
+  typed day stay distinguishable.
 
 ### Communication
 - **Direct messages** — 1:1 chats inside the gym; messaging-policy
@@ -2233,6 +2279,38 @@ The staff area shows up when `can_access_staff_area` is on.
   the other direction. pgTAP:
   `a_pack_that_costs_more_than_a_membership.sql` (14 assertions — five
   refusals, the two plan-choice cases, and both halves of the coupling).
+- **The checkout nobody finished** (0269) — the ninth job, and the
+  second money one. `set_checkout_recovery_job` (owner-only, Roster
+  take-on card) writes a `checkout_recovery_message` authority row +
+  owner-approved template; the hourly `agent-checkout-recovery-tick`
+  (:20) proposes a note to somebody who reached the payment page and
+  stopped.
+  **The row had to exist before a job could see it.** `stripe-checkout`
+  now writes a `checkout_attempts` row before handing back the URL, the
+  webhook stamps `completed_at` in the branch it already runs, and a new
+  `checkout.session.expired` branch stamps `expired_at`. The tick depends
+  on **neither** arriving — abandoned means created more than two hours
+  ago and never completed — so a webhook that is late, retried or lost
+  cannot make a real abandonment invisible. What proves somebody paid is
+  a live `plan_subscriptions` row, not a stamp.
+  **A job rather than an email automation**, because every branch of
+  `enqueue_due_automation_runs` joins `comms_audience_rows` on
+  `all_members` and an abandoner may hold no membership at all — that
+  route needs a new audience kind as well as a new trigger, and still has
+  no proposal card. Building both would mean two systems proposing the
+  same nudge.
+  **Not in the shared ask budget.** `_agent_ask_budget_left` rations the
+  five kinds where the gym is *noticing* something and a day later is the
+  same message; this is neither, which is why `chase_message` has always
+  been exempt too. Its own cap of three a day instead.
+  Four hard rules in SQL: 2–24 hours after the attempt; never somebody
+  now paying; once per member per plan ever, so a rejection is final;
+  three a day. **The message never carries the Stripe URL** — sessions
+  now expire after an hour rather than Stripe's default day (which is
+  what makes the abandonment knowable the same morning), so a link mailed
+  two hours later is dead, and a dead link is worse than silence. The
+  template points at the plans in the app, which mints a fresh session.
+  pgTAP: `the_checkout_nobody_finished.sql`.
 - **The class that is emptying** (0246, roadmap phase 5) — the seventh
   job, and the first that is not about one person. `set_class_return_job`
   (owner-only, Roster take-on card) writes a `class_return_message`
@@ -3028,10 +3106,27 @@ The Manage page presents a tab strip:
     `supabase/tests/revenue_event_kinds.sql` pins them, so the next
     rename fails a test instead of silently zeroing the dashboard.
     Lead/lifecycle metrics live
-    on the **AI Front Desk** tab; the retired Targets editor and
-    Expiring/Expired/Paying/Conversion/Retention tiles remain unsurfaced
-    (`gym_insight_targets` and `compute_insight_summary` still exist
-    server-side).
+    on the **Leads** tab, where New leads / Intro sessions /
+    Conversion to member each carry a "vs previous period" delta and
+    **Members kept** renders `retention_now/retention_base` — the
+    retention rate had been in `compute_insight_summary` since `0102`
+    and was drawn nowhere. `gym_insight_targets` and its `*_target`
+    columns stay unread: the Targets editor was dropped deliberately in
+    `0207` and the columns are 0 for every gym, so drawing them would be
+    drawing a zero and calling it a goal. **Targets is a member word** —
+    macros and a member's own goals; the owner's figures are a
+    comparison.
+  - **Members stay** [`can_see_insights`] — the median completed stay
+    (`compute_member_tenure`, 0267), with how long the people still here
+    have been here beside it. Both halves always, because averaging only
+    the members who left is the survivorship trap: a gym eight months
+    old that has so far lost only the people who were never going to
+    stay reports a six-week "lifetime" and believes it. "—" rather than
+    a median invented from nobody. Built on `membership_episodes`, one
+    row per stay, written by a trigger on `gym_memberships` — the dates
+    looked like they were already on the membership row and were not,
+    because `rejoin_gym` clears `left_at` and was quietly overwriting
+    every completed stay.
   - **Attendance summary** [`can_view_attendance`] — Attended / No-show /
     Unmarked over the same range.
   - **Action CTAs** — compact tiles that keep the member list high on the

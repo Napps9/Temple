@@ -424,3 +424,245 @@ actually receives.
   no account and no card, and a coupon presumes both.
 - Who can create one? New capability key (`can_manage_offers`) or
   fold into owner-only, like plan pricing is today.
+
+---
+
+## 9. Twelve asks from four gyms
+
+Gym-owner feedback, 26 August 2026 — ACE Performance, Zade & Gareth,
+James, plus two we had already put in writing and not built. Five
+shipped in the first pass; the rest are written down here rather than
+left in a chat log.
+
+Two things reframed the list before any of it was built. The session
+started on a checkout five days stale, and against the real tip most of
+the "verified gap" notes were already right — `0260` had shipped
+pro-rata on upgrades and `0263` had made a PB a row, both of which change
+what these items cost. And **"targets" is a member word in Temple**:
+macros and a member's own goals. The owner's intros/conversions/retention
+figures are a dashboard comparison, they do not go on Goals, and they are
+not called targets.
+
+### ~~9a. Hide how full a class is~~ (shipped 0266)
+
+**The job:** ACE open a new slot, the first weeks are thin, and "3 spots
+left" on a class of twelve is both honest and the reason nobody books it.
+
+**What shipped:** `gyms.show_class_capacity`, owner-only. Two things fell
+out of it that were not in the ask. Members could already read every
+booking row in the gym off the table — `class_bookings_tenant_select` had
+been a bare `user_belongs_to` since `0006` and was never narrowed — so
+"who's booked" needed no setting, it needed the leak closing. And
+"Full — N waiting" was a live wrong number: it counted `class_waitlist`
+client-side under a policy that hands a member only their own row, so a
+queue of three read as one, or none. Staff saw it correctly, which is why
+it passed review.
+
+**Still open:** `class_waitlist_self_or_staff_select` has the same
+guardian gap `class_bookings` just had — a parent who waitlists a child
+cannot see the entry. One clause, but it is a different table and wants
+its own change.
+
+### ~~9b. Average member lifetime~~ (shipped 0267)
+
+**The job:** Zade & Gareth want to know what a new member is worth.
+
+**What shipped:** `membership_episodes`, and the number second. The dates
+looked like they were already there and were not — `rejoin_gym` clears
+`left_at`, so every rejoin was silently overwriting the only completed
+stay the gym had. `compute_member_tenure` reports the completed median
+**and** how long the people still here have been here, because averaging
+only the departed is the survivorship trap.
+
+### ~~9c. Abandoned checkout recovery~~ (shipped 0269)
+
+**The job:** somebody reached the payment page and stopped; nobody finds
+out.
+
+**What shipped:** `checkout_attempts` plus a ninth stamped job. Built as
+a job rather than an email automation because every branch of
+`enqueue_due_automation_runs` joins `comms_audience_rows` on
+`all_members`, and an abandoner may hold no membership at all. Checkout
+sessions now expire after an hour rather than Stripe's default day.
+
+### ~~9d. Macro targets per member~~ (shipped 0268)
+
+**The job:** ACE keep protein, carbs and fat in a spreadsheet beside
+Temple.
+
+**What shipped:** `member_macro_targets`, coach-written on the profile,
+member-read on Track. Calories derived 4/4/9, never stored. **Numbers
+only and no note field** — that is the Article 9 line: a protein target
+is a prescription, a note beside it ("cutting for her wedding") is health
+data. If a note is ever wanted it arrives with the erasure sweep and the
+audit log attached, not by widening the table.
+
+### ~~9e. The owner's own numbers~~ (shipped, no migration)
+
+**The job:** Zade & Gareth want the dashboard to measure them.
+
+**What shipped:** the three lifecycle tiles on Leads gained "vs previous
+period", and Members kept is new — `retention_now/retention_base` had
+been in `compute_insight_summary` since `0102` and rendered nowhere.
+`gym_insight_targets` stays unread; its editor was dropped deliberately
+in `0207` and its `*_target` columns are 0 for every gym.
+
+### 9f. Celebrate a PB by email or text — the smallest thing left
+
+**The job:** a member hits a personal best and hears about it even if
+they never open the app.
+
+**What exists:** `0263` did the hard half. `member_milestones` is a real
+row with a frozen body, a prior best to beat, and idempotency per
+profile/track/day, and it already reaches the in-app inbox and the bell.
+The automation engine is five triggers (`0201`) and email-only.
+
+**What's missing:** one widened CHECK, one `elsif` branch in
+`enqueue_due_automation_runs` anchored on `member_milestones.created_at`,
+and four TS surfaces. Use the frozen `body` as a single merge field
+rather than decomposing the numbers — the email then says exactly what
+the in-app card said, and the ESP never handles a training record.
+
+**Open questions:**
+- `topic_id` is optional on the other five triggers. A PB email is a
+  training-data disclosure, so it should be required here — which makes
+  this trigger the odd one out in the editor.
+- One card per PB or one per day? The milestone row is already
+  per-day-idempotent, so per-day falls out for free.
+
+### 9g. Write ahead for coaches only
+
+**The job:** a head coach plans weeks ahead without members reading next
+week's session.
+
+**What exists:** nothing. `class_programming`'s select policy is a plain
+`user_belongs_to(gym_id)` (`0007`, never touched), so a save is a publish
+to the whole gym. `programming_blocks` (`0205`) is already coach-only on
+select and is the precedent.
+
+**What's missing:** `published_at` — null is draft, past is live, future
+is scheduled, and `published_at <= now()` in the member policy is the
+entire release mechanism. No cron, no worker.
+
+**Open questions:**
+- **Backfill in the same migration.** A bare `add column` defaults null
+  and every gym's live programming vanishes on deploy; it wants
+  `published_at = updated_at`.
+- `ProgrammingModal` writes `class_programming` by direct upsert. Draft
+  state is exactly the kind of thing that should go through an RPC.
+- Does `RecordWorkoutModal`'s pre-fill read published rows only? It must.
+- A coach can only author on days that already have a materialised
+  session (~12 weeks by default), so "weeks ahead" has a ceiling that
+  is not this feature's.
+
+### 9h. A common billing date, pro-rated to the 1st
+
+**The job:** ACE want everyone billed on the same day so chasing is one
+job a month.
+
+**What exists:** more than the note claimed. `0260` shipped pro-rata on
+upgrades (`proration_behavior=always_invoice`) and the deferred-change
+idiom for downgrades, and `0264` set the doctrine this should follow:
+*the code is ours, the arithmetic is Stripe's*.
+
+**What's missing:** `gyms.billing_anchor_day`, **nullable and defaulting
+null** so nothing changes for a gym that does not opt in, plus
+`subscription_data[billing_cycle_anchor]` on the session. 1–28 only:
+29/30/31 is a February bug.
+
+**It must be transparent.** The member sees what the first charge is and
+when the next lands, before they pay — and the figure has to come *from*
+Stripe (preview the first invoice) rather than being computed twice.
+Degrade to the shape in words rather than to a number we invented.
+
+**Open questions:**
+- A proration below Stripe's minimum charge is not an error — it rolls
+  onto the customer balance silently, so a member joining on the 30th
+  appears to pay nothing and no `invoice.paid` fires. Below roughly a
+  pound, send `proration_behavior: 'none'` and say so.
+- New joins only. Moving live members needs `trial_end` at the next
+  anchor, and changing what somebody already pays without asking is the
+  worst surprise in the product.
+
+### 9i. WhatsApp as a front-desk channel
+
+**The job:** committed to James. People reach the gym where they already
+talk.
+
+**What exists:** the groundwork is genuinely good. `_shared/lead-agent.ts`
+is channel-agnostic, `agent_conversations` is keyed
+`(gym_id, phone, channel)` — and phone-keyed is exactly right for
+WhatsApp — and Twilio, who already carry the SMS, carry WhatsApp too.
+
+**What's missing:** the CHECK is `('sms','voice')` and has never been
+widened; a cloned `lead-agent-sms`; and the Meta constraints, which are
+the schedule risk rather than the code: business verification per gym,
+and the 24-hour window meaning any agent-initiated outbound needs
+pre-approved templates.
+
+**Open questions:**
+- Store E.164 in `phone`, never the `whatsapp:` prefix — keep it at the
+  wire edge or `agent_stop_conversation` and every `leads.phone` match
+  silently misses.
+- Inbound-only is a real product. Agent-initiated outbound is a
+  different, larger thing, and worth splitting.
+- Every outbound job assumes `agent_outbound_messages.channel in ('email')`.
+  A second channel built before those jobs want it gets built twice.
+
+### 9j. Appointment booking — consults, intros, PT
+
+**The job:** publish bookable one-to-one slots.
+
+**What exists:** classes only, and `0262`'s trial passes changed the
+inputs favourably — the entitlement question is answered (`comp_grants`,
+already preferred by `_select_default_entitlement_unchecked`) and the
+seat-hold pattern exists. `intro_booked` is still a `lead_status` label
+with no time, coach or session attached.
+
+**What's missing:** build on `class_sessions`, not a new table. Capacity
+1 is already legal, and everything an appointment needs — bookings,
+waitlist, notifications, cancellation, entitlements — already hangs off
+that row. Appointments differ in capacity and who picks the time, not in
+kind. So: `class_types.is_appointment`, a `coach_availability` table, and
+an `open_appointment_slot(...)` RPC materialising a capacity-1 session
+under an advisory lock.
+
+**Open questions:**
+- Appointment sessions must be filtered out of `ClassesCalendar` and the
+  public schedule (`0160`), or a 1:1 shows up as a class with one spot.
+- Does an intro appointment link back to its `leads` row? It should —
+  that is the join the enquiry board has never had.
+
+### 9k. MyFitnessPal — a seam, not a build
+
+**The job:** a member's intake appears against their targets.
+
+**Where it stands:** MyFitnessPal's API is partner-gated and access is
+not a given. Before anyone promises ACE a date, a half-day spike answers
+one question: can we get credentials at all? If not, the fallback worth
+costing is Apple Health / Health Connect, which needs no partner and
+reaches the same data on the member's own device.
+
+**The seam, kept open by 9d:** `member_macro_targets` is a pure
+*prescription*. Intake is a different table keyed the same
+`(gym_id, profile_id)` way, with a `source` column from day one so a day
+typed by hand and a day imported stay distinguishable. Not building a
+food log is what keeps that clean; putting intake columns on the targets
+table is what would close it.
+
+### 9l. ClassPass — a decision, not a feature
+
+**The job:** ClassPass bookings appear in Temple.
+
+**Where it stands:** a margin call before it is engineering. ClassPass
+fills classes and takes margin, and that is the owner's decision to make
+once, not per gym.
+
+**The seam:** `_book_class_for` is the single authority on capacity and
+`class_session_spot_counts` (`0266`) is display-only, so an external
+source can be added behind the same gate. The real question is identity:
+`class_bookings.profile_id` is a hard FK to a Temple profile, so an
+external booking has nobody to point at. Either external bookings mint a
+shadow profile, or the table grows a nullable external-party column.
+`used_entitlement_kind` / `used_entitlement_id` already exist to record
+what paid for a seat.
