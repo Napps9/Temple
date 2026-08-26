@@ -20,6 +20,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { requireGymCapability } from '../_shared/caller.ts';
 
 import { escapeHtml, templeEmailHtml } from '../_shared/email-layout.ts';
+import { inQuietHours } from '../_shared/gym-clock.ts';
 import { loadSuppressed, SUPPRESSED_REASON } from '../_shared/suppression.ts';
 
 const cors: Record<string, string> = {
@@ -45,19 +46,6 @@ type Row = {
 };
 
 const MAX_ATTEMPTS = 3;
-
-function gymLocalHour(timezone: string): number {
-  try {
-    const s = new Intl.DateTimeFormat('en-GB', {
-      timeZone: timezone,
-      hour: 'numeric',
-      hour12: false,
-    }).format(new Date());
-    return Number(s);
-  } catch {
-    return new Date().getUTCHours();
-  }
-}
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -93,8 +81,7 @@ Deno.serve(async (req: Request) => {
     .eq('id', gymId)
     .maybeSingle();
 
-  const hour = gymLocalHour(gym?.timezone ?? 'Europe/London');
-  if (hour < 9 || hour >= 20) {
+  if (inQuietHours(gym?.timezone ?? 'Europe/London')) {
     return json({ ok: true, mode: 'quiet_hours', sent: 0 });
   }
 

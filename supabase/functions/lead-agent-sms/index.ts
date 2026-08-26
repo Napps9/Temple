@@ -81,6 +81,16 @@ Deno.serve(async (req: Request) => {
     await service.rpc('agent_stop_conversation', {
       p_conversation_id: conversation.id,
     });
+    // The texter may be a member rather than a lead, and until 0271 that
+    // case suppressed nothing: agent_stop_conversation closes a thread and
+    // clears a LEAD's consent. Twilio's Advanced Opt-Out would then block
+    // delivery at the carrier while Temple went on queueing texts and
+    // believing they arrived — worse than not honouring STOP at all,
+    // because it looks like it worked.
+    await service.rpc('member_stop_texts', {
+      p_gym_id: gym.id,
+      p_phone: From,
+    });
     // Twilio Advanced Opt-Out sends the compliance reply itself.
     return twiml();
   }
