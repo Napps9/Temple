@@ -87,6 +87,7 @@ type ClassSession = {
     name: string;
     color: string;
     archived_at: string | null;
+    is_appointment?: boolean | null;
     cancel_cutoff_minutes_before: number | null;
     cancel_cutoff_mode: 'relative' | 'day_before' | null;
     cancel_cutoff_time: string | null;
@@ -495,10 +496,12 @@ let lastAgendaType: string | null = null;
 export function ClassesCalendar({
   mode,
   topSlot,
+  bottomSlot,
   recommendedSessionId,
 }: {
   mode: 'manage' | 'book';
   topSlot?: React.ReactNode;
+  bottomSlot?: React.ReactNode;
   // The session id the member's "Recommended" card is pointing at (see
   // useRecommendedClass in book.tsx) — the matching agenda row gets a
   // found-by-eye border so the recommendation is visible in the day's list,
@@ -583,7 +586,7 @@ export function ClassesCalendar({
       const { data, error } = await supabase
         .from('class_sessions')
         .select(
-          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color, archived_at, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before), coach_id, coach:profiles!coach_id(full_name, avatar_url)',
+          'id, name, starts_at, duration_minutes, capacity, class_type_id, class_types(name, color, archived_at, is_appointment, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before), coach_id, coach:profiles!coach_id(full_name, avatar_url)',
         )
         .gte('starts_at', start.toISOString())
         .lt('starts_at', end.toISOString())
@@ -597,7 +600,13 @@ export function ClassesCalendar({
       // 0035_archive_class_type_cascades.sql) but filtering here
       // keeps them out of the calendar so the UI doesn't show
       // un-bookable phantoms.
-      return rows.filter((s) => !s.class_types?.archived_at);
+      // Appointments are capacity-1 sessions on the same table (0276).
+      // They are somebody's booked half hour, not a class with one spot
+      // left, and showing them here would put a phantom class in the
+      // timetable, in the type filter chips and in every count.
+      return rows.filter(
+        (s) => !s.class_types?.archived_at && !s.class_types?.is_appointment,
+      );
     },
   });
 
@@ -1124,6 +1133,7 @@ export function ClassesCalendar({
               onSessionPress={openSession}
               dimPast={mode === 'book'}
               topSlot={topSlot}
+              bottomSlot={bottomSlot}
               recommendedSessionId={recommendedSessionId}
               rowBook={rowBook}
               onBook={(s) =>
@@ -1145,6 +1155,7 @@ export function ClassesCalendar({
               bookedSet={bookedSet}
               weekStartsOn={weekStartsOn}
               topSlot={topSlot}
+              bottomSlot={bottomSlot}
               filterBar={filterBar}
             />
           ) : null}
@@ -1161,6 +1172,7 @@ export function ClassesCalendar({
               weekStartsOn={weekStartsOn}
               dimPast={mode === 'book'}
               topSlot={topSlot}
+              bottomSlot={bottomSlot}
               visibleDays={weekVisibleDays}
               filterBar={filterBar}
             />
@@ -1173,6 +1185,7 @@ export function ClassesCalendar({
               sessions={visibleSessions}
               weekStartsOn={weekStartsOn}
               topSlot={topSlot}
+              bottomSlot={bottomSlot}
               filterBar={filterBar}
             />
           ) : null}
@@ -1292,6 +1305,7 @@ function AgendaView({
   onSessionPress,
   dimPast,
   topSlot,
+  bottomSlot,
   recommendedSessionId,
   rowBook,
   onBook,
@@ -1307,6 +1321,7 @@ function AgendaView({
   onSessionPress: (id: string) => void;
   dimPast?: boolean;
   topSlot?: React.ReactNode;
+  bottomSlot?: React.ReactNode;
   recommendedSessionId?: string | null;
   rowBook?: { sessionId: string; state: 'booking' | 'booked' } | null;
   onBook?: (s: ClassSession) => void;
@@ -1488,6 +1503,9 @@ function AgendaView({
             ))
           )}
         </View>
+        {bottomSlot ? (
+          <View className="w-full max-w-5xl mx-auto px-4 pt-5">{bottomSlot}</View>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -1684,6 +1702,7 @@ function DayView({
   bookedSet,
   weekStartsOn,
   topSlot,
+  bottomSlot,
   filterBar,
 }: {
   mode: 'manage' | 'book';
@@ -1696,6 +1715,7 @@ function DayView({
   bookedSet: Set<string>;
   weekStartsOn: 'mon' | 'sun';
   topSlot?: React.ReactNode;
+  bottomSlot?: React.ReactNode;
   filterBar?: React.ReactNode;
 }) {
   const weekStart = startOfWeek(date, weekStartsOn);
@@ -2060,6 +2080,7 @@ function WeekView({
   weekStartsOn,
   dimPast,
   topSlot,
+  bottomSlot,
   visibleDays = 7,
   filterBar,
 }: {
@@ -2074,6 +2095,7 @@ function WeekView({
   weekStartsOn: 'mon' | 'sun';
   dimPast?: boolean;
   topSlot?: React.ReactNode;
+  bottomSlot?: React.ReactNode;
   visibleDays?: number;
   filterBar?: React.ReactNode;
 }) {
@@ -2341,6 +2363,7 @@ function MonthView({
   sessions,
   weekStartsOn,
   topSlot,
+  bottomSlot,
   filterBar,
 }: {
   date: Date;
@@ -2349,6 +2372,7 @@ function MonthView({
   sessions: ClassSession[] | undefined;
   weekStartsOn: 'mon' | 'sun';
   topSlot?: React.ReactNode;
+  bottomSlot?: React.ReactNode;
   filterBar?: React.ReactNode;
 }) {
   const grid = monthGrid(date, weekStartsOn);

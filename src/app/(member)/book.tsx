@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { AIMark } from '@/components/AIMark';
+import { AppointmentBooking } from '@/components/AppointmentBooking';
 import { Text } from '@/components/Text';
 
 import { ChipButton } from '@/components/ChipButton';
@@ -285,6 +286,7 @@ export default function Book() {
           <NextClassCard />
         </View>
       }
+      bottomSlot={<AppointmentBooking />}
     />
   );
 }

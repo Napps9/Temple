@@ -68,6 +68,7 @@ export type SettingsSectionId =
   | 'health-screening'
   | 'leaderboards'
   | 'class-visibility'
+  | 'appointments'
   | 'class-types';
 
 export type BackOfficeEntry = {

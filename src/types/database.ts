@@ -1601,6 +1601,8 @@ export type Database = {
           default_capacity: number | null;
           coach_required: boolean;
           unsupervised_label: string;
+          is_appointment: boolean;
+          appointment_minutes: number | null;
           booking_window_hours_ahead: number | null;
           booking_cutoff_minutes_before: number | null;
           cancel_cutoff_minutes_before: number | null;
@@ -1618,6 +1620,8 @@ export type Database = {
           default_capacity?: number | null;
           coach_required?: boolean;
           unsupervised_label?: string;
+          is_appointment?: boolean;
+          appointment_minutes?: number | null;
           booking_window_hours_ahead?: number | null;
           booking_cutoff_minutes_before?: number | null;
           cancel_cutoff_minutes_before?: number | null;
@@ -1635,6 +1639,8 @@ export type Database = {
           default_capacity: number | null;
           coach_required: boolean;
           unsupervised_label: string;
+          is_appointment: boolean;
+          appointment_minutes: number | null;
           booking_window_hours_ahead: number | null;
           booking_cutoff_minutes_before: number | null;
           cancel_cutoff_minutes_before: number | null;
@@ -1807,6 +1813,42 @@ export type Database = {
           author_id: string;
           updated_at: string;
           published_at: string | null;
+        }>;
+        Relationships: [];
+      };
+      coach_availability: {
+        Row: {
+          id: string;
+          gym_id: string;
+          coach_id: string;
+          class_type_id: string;
+          // 0 = Sunday, matching gym_hours (0003) and class_recurrences
+          // (0005). A third convention would be how a Monday becomes a
+          // Sunday.
+          day_of_week: number;
+          starts_at: string;
+          ends_at: string;
+          active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          coach_id: string;
+          class_type_id: string;
+          day_of_week: number;
+          starts_at: string;
+          ends_at: string;
+          active?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<{
+          coach_id: string;
+          class_type_id: string;
+          day_of_week: number;
+          starts_at: string;
+          ends_at: string;
+          active: boolean;
         }>;
         Relationships: [];
       };
@@ -4770,6 +4812,24 @@ export type Database = {
       publish_class_programming: {
         Args: { p_gym_id: string; p_date: string; p_published_at?: string | null };
         Returns: number;
+      };
+      appointment_slots: {
+        Args: {
+          p_gym_id: string;
+          p_class_type_id: string;
+          p_from: string;
+          p_to: string;
+        };
+        Returns: { starts_at: string; coach_id: string; coach_name: string }[];
+      };
+      book_appointment: {
+        Args: {
+          p_gym_id: string;
+          p_class_type_id: string;
+          p_coach_id: string;
+          p_starts_at: string;
+        };
+        Returns: string;
       };
       set_gym_billing_anchor: {
         Args: { p_gym_id: string; p_day: number | null };

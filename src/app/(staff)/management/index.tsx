@@ -33,6 +33,7 @@ import { BrandingPanel } from '@/components/BrandingPanel';
 import { ClassTypesPanel } from '@/components/ClassTypesPanel';
 import { ClosuresCard } from '@/components/ClosuresCard';
 import { HealthScreeningPanel } from '@/components/HealthScreeningPanel';
+import { AppointmentTypesPanel } from '@/components/AppointmentTypesPanel';
 import { ClassVisibilityPanel } from '@/components/ClassVisibilityPanel';
 import { LeaderboardsPanel } from '@/components/LeaderboardsPanel';
 import { OperatingDefaultsPanel } from '@/components/OperatingDefaultsPanel';
@@ -536,6 +537,14 @@ function SettingsTab({ open }: { open: SettingsSectionId | null }) {
       icon: 'eye-outline',
       visible: isOwner,
       panel: <ClassVisibilityPanel />,
+    },
+    {
+      id: 'appointments',
+      title: 'One-to-one time',
+      description: 'Intros, consults and PT — and when each coach is free for them.',
+      icon: 'person-outline',
+      visible: canEditClasses,
+      panel: <AppointmentTypesPanel />,
     },
     {
       id: 'class-types',
