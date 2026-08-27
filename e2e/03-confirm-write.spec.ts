@@ -26,10 +26,13 @@ test('confirming a card lands the write, and its inverse undoes it', async ({ pa
   // sayAndConfirm, not a page-wide `.last()`: before the parser returns,
   // the only Yes buttons belong to the standing agent questions, and
   // confirming one of those executes a real action.
-  await sayAndConfirm(page, 'Close the gym on 25 December');
+  await sayAndConfirm(page, 'Close the gym on 25 December', /Yes, close it/);
 
   // Receipt: the card resolves into a done state rather than an error.
-  await expect(page.getByText(/closed|done|cancelled/i).first()).toBeVisible({
+  // `.last()`, not `.first()`: the close card's own body says "cancelled"
+  // before anything has happened, so the first match was satisfied by the
+  // question rather than by the answer.
+  await expect(page.getByText(/closed|done|cancelled/i).last()).toBeVisible({
     timeout: 30_000,
   });
 

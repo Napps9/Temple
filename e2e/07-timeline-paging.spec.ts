@@ -17,7 +17,10 @@ test('the Timeline pages back a day and comes home', async ({ page }) => {
   const back = page.getByLabel('Previous day');
   await expect(back).toBeEnabled({ timeout: 30_000 });
   await back.click();
-  await expect(page.getByText('Yesterday').first()).toBeVisible({
+  // Assert on the date picker's own label rather than loose page text: a
+  // mismatch then reports the day it actually landed on, which "element
+  // not found" never did.
+  await expect(page.getByLabel('Pick a date')).toHaveText('Yesterday', {
     timeout: 15_000,
   });
   // Past days are the record; the pen stays on today.

@@ -57,27 +57,32 @@ export async function say(page: Page, sentence: string): Promise<void> {
   await page.getByLabel('Send', { exact: true }).click();
 }
 
-// Say something, then confirm the card it produced — never one that was
-// already on screen.
+// Say something, then confirm the card it produced — by the label only
+// that card carries.
 //
-// `getByRole('button', {name: /Yes,/}).last()` is page-wide. The
-// conversation renders below the "Waiting on you" block
-// (timeline/index.tsx:1050 vs :1126), so the last Yes is the new card
-// ONCE it exists — but before the parser returns, the only Yes buttons
-// belong to the standing agent questions. The locator resolved to one of
-// those, passed its visibility check instantly, and confirmed it:
-// executing a real action and eating a card journey 1 asserts on.
+// Counting Yes buttons was not enough. The standing "Waiting on you"
+// cards load asynchronously too, so the count rising meant "something
+// appeared", not "my card appeared" — and `.last()` then confirmed a
+// real agent question while the preview was still in flight. The proof
+// was a run where the close card sat unclicked, the reopen reported
+// nothing was closed, and Waiting on you had dropped from three to two.
 //
-// Waiting for the COUNT to rise past what was already there is what makes
-// that impossible. Same shape as journey 6's tabindex poll.
-export async function sayAndConfirm(page: Page, sentence: string): Promise<void> {
-  const yes = page.getByRole('button', { name: /Yes,/ });
-  const before = await yes.count();
+// The confirm labels come from the action itself ('Yes, close it',
+// 'Yes, open it back up' — src/lib/actions/gym.ts) and no standing card
+// shares one, so matching the label cannot pick the wrong card however
+// slow the parser is. The count check stays as a second lock.
+export async function sayAndConfirm(
+  page: Page,
+  sentence: string,
+  confirmLabel: RegExp,
+): Promise<void> {
+  const confirm = page.getByRole('button', { name: confirmLabel });
+  const before = await confirm.count();
   await say(page, sentence);
   await expect
-    .poll(() => yes.count(), { timeout: 30_000 })
+    .poll(() => confirm.count(), { timeout: 30_000 })
     .toBeGreaterThan(before);
-  await yes.last().click();
+  await confirm.last().click();
 }
 
 // Reopen every closure the journey (or a previous run of it) left on a
@@ -103,7 +108,13 @@ export async function reopenUntilClear(
 ): Promise<void> {
   const yes = page.getByRole('button', { name: /Yes,/ });
   const ambiguous = page.getByText('Which closure is ending?');
-  const clear = page.getByText(/Nothing is closed on/);
+  // Two different sentences mean the same thing: "Nothing is closed on
+  // <date>." when other closures exist, and "The gym is not closed for
+  // anything at the moment." when none do (src/lib/actions/gym.ts). The
+  // drain hung for a whole run on only knowing the first.
+  const clear = page.getByText(
+    /Nothing is closed on|not closed for anything at the moment/,
+  );
 
   for (let pass = 0; pass < 4; pass += 1) {
     const before = {
