@@ -9,7 +9,14 @@ import { OWNER_EMAIL, signIn, TALK_BAR_PLACEHOLDER } from './helpers';
 test('the Timeline pages back a day and comes home', async ({ page }) => {
   await signIn(page, OWNER_EMAIL);
 
-  await page.getByLabel('Previous day').click();
+  // Wait for the arrow to mean something. The pager's bounds come from a
+  // query for the gym's created_at, and while that is in flight
+  // timeline/index.tsx falls back to { floor: today, ceiling: today } —
+  // so the arrow renders disabled and an immediate click is swallowed
+  // with no error. Enabled is the signal that the floor is known.
+  const back = page.getByLabel('Previous day');
+  await expect(back).toBeEnabled({ timeout: 30_000 });
+  await back.click();
   await expect(page.getByText('Yesterday').first()).toBeVisible({
     timeout: 15_000,
   });

@@ -112,15 +112,24 @@ export async function reopenUntilClear(
       clear: await clear.count(),
     };
     await say(page, sentence);
-    await expect
-      .poll(
-        async () =>
-          (await yes.count()) > before.yes ||
-          (await ambiguous.count()) > before.ambiguous ||
-          (await clear.count()) > before.clear,
-        { timeout: 30_000 },
-      )
-      .toBe(true);
+    // Report what the gym actually said when none of the three expected
+    // answers arrives. A bare poll timeout says only "false", which cost
+    // a whole run to learn nothing from.
+    const moved = async () =>
+      (await yes.count()) > before.yes ||
+      (await ambiguous.count()) > before.ambiguous ||
+      (await clear.count()) > before.clear;
+    const deadline = Date.now() + 30_000;
+    while (!(await moved())) {
+      if (Date.now() > deadline) {
+        const shown = (await page.locator('body').innerText()).slice(-700);
+        throw new Error(
+          `"${sentence}" produced no confirm, no choice list and no ` +
+            `"nothing is closed". The end of the page read:\n${shown}`,
+        );
+      }
+      await page.waitForTimeout(500);
+    }
 
     if ((await clear.count()) > before.clear) return;
 
