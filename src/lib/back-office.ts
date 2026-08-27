@@ -1,7 +1,7 @@
 // Every management surface, as data.
 //
 // The Manage screen has been a Back Office index since it was built — a
-// tile per surface, grouped into eight categories, gated by capability.
+// tile per surface, grouped into seven categories, gated by capability.
 // What it has not been is *countable*. The catalogue lived inline in a
 // 1,600-line screen, entangled with the panels that render underneath it,
 // which is why "routes retired" — one of the roadmap's two public
@@ -18,7 +18,7 @@
 //     become unreachable — which had already happened three times when
 //     this was written: health screening, Goals and the Roster.
 //   * The index can be searched, because there is something to search.
-//     Twenty-five tiles behind eight category pills is findable only by
+//     Twenty-eight tiles behind seven category pills is findable only by
 //     somebody who knows which pill owns what.
 //   * RETIRED_ROUTES gives the burndown a numerator. A route that goes is
 //     recorded here rather than deleted silently, so "routes retired" is a

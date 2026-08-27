@@ -74,7 +74,7 @@ and apply, so a new verb is a file entry rather than a branch in a screen.
 Questions draw their numbers through one answer vocabulary — a figure, a
 short series, a ranked list — so a new question needs no new renderer.
 
-### Seven jobs that act
+### Nine jobs that act
 
 Each runs on a rope the owner controls: **reserved** (off), **approval**
 (a question with exactly two choices and its evidence behind "see the

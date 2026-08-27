@@ -896,7 +896,7 @@ The staff area shows up when `can_access_staff_area` is on.
   `membership_plans.stripe_price_id` caches a Stripe Price minted at the
   first checkout, and nothing cleared it when the price changed — so an
   owner who put Unlimited up to £60 kept *selling* it at £50, with the
-  plans screen, the website and Checkout all disagreeing and no surface
+  plans screen and Checkout disagreeing and no surface
   saying so. A `before update` trigger clears the cache when
   `monthly_price_cents` moves and leaves it alone when the caller sets
   both (that write is the checkout filling it in). Same migration makes
@@ -915,8 +915,8 @@ The staff area shows up when `can_access_staff_area` is on.
   off-peak membership"). The card's whole job is the sentence "archive"
   does not say: the people on the plan keep their membership, their
   price and their access, and what changes is that it stops being
-  offered — the join page, the website's plan block and the staff plan
-  picker all filter `archived_at is null`. Naming a plan that is already
+  offered — the join page and the staff plan picker both filter
+  `archived_at is null`. Naming a plan that is already
   off sale says so rather than "no such plan", and restore only ever
   looks at retired plans, so the two verbs cannot be confused by a name
   that exists on both sides. Hard delete stays on the plans screen: it
@@ -3483,7 +3483,8 @@ The Manage page presents a tab strip:
     colours. **Removed.** Temple's chrome is Temple's — the action fill is ink
     `#14161A` light / paper `#F4F5F6` dark — and a gym is identified by
     its name. The `gyms` colour and logo columns are kept, not dropped, so
-    an already-published gym website still renders from its snapshot.
+    an already-published gym website still rendered from its snapshot. The
+    builder itself left in 0259.
   - **Health screening** [`can_manage_parq`] — upload a waiver PDF for
     members to sign (primary), and/or build a question-by-question
     PAR-Q (optional extra); publish new versions of either. One is
@@ -3888,8 +3889,8 @@ provisioning checklist (client-side only — `provision-front-desk` has no
 real progress signal to instrument) instead of a bare spinner, "your
 progress was saved" copy on a failed-retry so resuming doesn't read as
 starting over, and a brand-coloured "You're live" moment with the number,
-a copy button, and an "Add to your website" chip linking to the website
-builder, before returning to Leads. The former single
+a copy button, and — until 0259 took the website builder out — an "Add
+to your website" chip, before returning to Leads. The former single
 "Automation" page is split across two owner-only tabs in the Leads
 section's left sidebar (`LeadsShell`/`LeadsNav`), ordered Leads → AI
 Agent → Conversations → Settings (non-owners with `can_assign_plan` see
@@ -3929,8 +3930,7 @@ the front desk is fully live — copy the number for emails/social bios,
 into their Google Business Profile by hand (no API/OAuth — Google
 requires per-listing owner consent to automate this, not worth
 building until number churn makes manual upkeep a real problem),
-"Open builder" to add the website's Call & text block, and "Copy embed
-code" — a self-contained, inline-styled HTML snippet with tel:/sms:
+and "Copy embed code" — a self-contained, inline-styled HTML snippet with tel:/sms:
 links for a gym hosting its site off-platform, built by
 `buildCallWidgetSnippet`), and Knowledge & Coaching (agent notes,
 coaching rules), with the destructive "turn off & release number" card
@@ -4655,7 +4655,7 @@ surround:
 - **Demo gym seeder** — `npm run seed:demo` creates a fully-populated
   demo tenant with real signable-in accounts (timetable + attendance
   history, progressing PRs, Hyrox races, injuries, leads, campaign
-  draft, store, published website), deterministic per `--seed`, with
+  draft, store), deterministic per `--seed`, with
   a guarded `--teardown`. Runbook: `docs/demo-gym.md`.
   **And the gym's jobs** (`scripts/demo-gym/jobs.ts`) — the seeder wrote
   no `agent_authority` rows, and no job can propose anything without one,

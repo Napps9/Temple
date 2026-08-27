@@ -189,7 +189,7 @@ Stop thinking in features. Think in employees. A teammate is a named agent
 with a job description (owner jobs), authority (capability grants), a
 manager (the owner), and a performance review (its numbers, plus a coaching
 surface). This is not a metaphor in Temple: authorisation already resolves
-through a 42-key capability matrix — `effective_can(gym, capability)`,
+through a 43-key capability matrix — `effective_can(gym, capability)`,
 owner override, then per-person, then per-role, then defaults. Add one new
 actor, `gym_agent`, and the same machinery that decides whether a human
 coach may comp a class decides whether the Revenue teammate may. An AI
