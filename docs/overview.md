@@ -225,5 +225,6 @@ fixed; two are documented with the reasoning for leaving them.
 - **Nothing measures the second measure.** "Routes retired" is asserted by
   a test. "Owner interventions per member per month" is a sentence in a
   document — every job aims at it and none is scored against it.
-- **No gyms yet.** All of the above is scaffolding until one real gym runs
-  a week through it.
+- **One gym.** CrossFit Stags & Does moved off Zen Planner and runs on
+  Temple. All of the above was scaffolding until a real gym ran a week
+  through it; one has now, and one is still one.

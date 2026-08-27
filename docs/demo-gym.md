@@ -170,5 +170,9 @@ its own slug, never `demo-ironworks`/`demo-hyrox`:
   flows still need a connected test-mode account.
 - No waivers or PAR-Q questionnaires are seeded: publish one in-app to
   demo the booking gates (that flow is worth seeing from scratch).
-- Campaign sends stay simulated until `RESEND_API_KEY` is configured,
-  so the draft campaign is safe to "send" in a demo.
+- **Campaign sends are real.** `RESEND_API_KEY` is configured in hosted,
+  so sending the seeded draft campaign calls Resend for real — against 39
+  `@<slug>.temple.test` addresses that cannot route, which hard-bounce
+  against the sending domain's reputation. Show the builder; do not send.
+  The same applies to team and member invites, whose address field is
+  free text, and to approving a Timeline question.

@@ -18,8 +18,12 @@ mail until these are done.
 > and an FK block). No real accounts existed yet, so nothing was lost.
 > The "Dolly Box" test gym used to verify Stripe/auth earlier no longer
 > exists — the verification itself still stands, but don't go looking
-> for that data. The platform is a genuine blank slate for the demo-gym
+> for that data. The platform was a genuine blank slate for the demo-gym
 > work below.
+>
+> **No longer a blank slate (as of 2026-08-27):** CrossFit Stags & Does
+> moved off Zen Planner and runs on Temple. Docs that still describe the
+> platform as gym-less are describing July, not today.
 
 ---
 

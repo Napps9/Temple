@@ -1391,7 +1391,7 @@ The staff area shows up when `can_access_staff_area` is on.
   `gym_route_usage`: what gets opened, ranked, and which surfaces with a
   route of their own have never been. It says two things out loud that a
   bare list would let a reader get wrong — that **nothing recorded is not
-  zero**, since counting only started at 0233 and there are no gyms yet,
+  zero**, since counting only started at 0233 and one gym is not a sample,
   and that the folded Settings sections are **not** in the answer at all,
   because they all record as `/management`, so their absence is not
   silence.

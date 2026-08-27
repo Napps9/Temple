@@ -619,11 +619,12 @@ something.
 
 **The evidence clause is dormant, and saying so matters.** `route_opens`
 counts which staff screens get opened per gym per day, with no identifier
-of any person in the table. But there are no gyms on the platform, so
-every screen reads zero and silence proves nothing — "nobody has opened
-this in ninety days" is not yet a fact anybody can establish. Until a gym
-lands, a screen goes only when something demonstrably does its job, which
-is the bar all seven actually met. The reasoning for collecting it at all
+of any person in the table. But one gym is not a sample: every screen
+reads near-zero and silence still proves nothing — "nobody has opened this
+in ninety days" is not yet a fact anybody can establish off a single
+tenant. Until there are enough gyms to read, a screen goes only when
+something demonstrably does its job, which is the bar all seven actually
+met. The reasoning for collecting it at all
 is in the lawful-basis register, item 6.
 
 **The baseline is in the repository now.** `src/lib/back-office.ts` holds

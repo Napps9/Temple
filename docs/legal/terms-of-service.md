@@ -1,6 +1,6 @@
 # Temple — Terms of Service
 
-**Last updated: 10 July 2026**
+**Last updated: 27 August 2026**
 
 These Terms of Service ("Terms") govern access to and use of the Temple
 platform ("Temple", "we", "us"). They apply to two kinds of user:
@@ -104,8 +104,8 @@ terms. The Gym is responsible for the tax treatment of its revenue, refunds,
 chargebacks, and disputes with its members.
 
 ### 5.2 What you pay Temple
-Fees for a Temple subscription and any paid add-ons (for example the website
-builder) are as agreed at sign-up or by separate invoice. Unless stated
+Fees for a Temple subscription and any paid add-ons are as agreed at
+sign-up or by separate invoice. Unless stated
 otherwise, fees are exclusive of VAT. We invoice you directly for these
 fees — we do not charge them through the platform or hold your card
 details for this purpose — and each invoice is payable within **7 days**
