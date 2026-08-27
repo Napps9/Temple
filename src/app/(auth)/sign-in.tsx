@@ -22,10 +22,23 @@ import { errorMessage } from '@/lib/errors';
 // panel lives in the Manage screen's Settings tab now. The marketing site
 // is a separate repo on its own deploy cadence, so the key stays what it
 // already sends and the value is where that actually lands today.
+//
+// Drift here is silent, and it had already happened: the marketing site's
+// scheduling, marketing and operations feature previews were sending
+// /book, /management/communications and /management, none of which were
+// in this map, so all three landed on / — a miss falls back rather than
+// erroring. If you retire a screen, keep its key and repoint the value:
+// never drop the row.
 const DEMO_REDIRECTS = new Map([
+  ['/book', '/book'],
   ['/track', '/track'],
   ['/programming', '/programming'],
+  ['/timeline', '/timeline'],
+  ['/management', '/management'],
+  ['/management/leads', '/management/leads'],
+  ['/management/plans', '/management/plans'],
   ['/management/billing', '/management/billing'],
+  ['/management/communications', '/management/communications'],
   ['/management/branding', '/management?section=branding'],
 ]);
 
