@@ -932,5 +932,7 @@ writes a `Pressable`'s `disabled` prop that way, so the assertion passes
 instantly against a dead control, the click goes nowhere, and the failure
 surfaces somewhere else entirely — journey 7 spent two runs looking like
 "the pager will not move" when it had simply been clicked too early. Wait
-on the attribute (`.poll(() => el.getAttribute('aria-disabled')).toBe('false')`)
-wherever a control's readiness matters.
+on the attribute wherever a control's readiness matters — and assert it
+is **not `"true"`** rather than that it is `"false"`: react-native-web
+writes aria-disabled only while the control is disabled and drops it
+otherwise, so an enabled control has no attribute at all.

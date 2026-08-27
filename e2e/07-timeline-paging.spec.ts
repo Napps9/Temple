@@ -22,9 +22,13 @@ test('the Timeline pages back a day and comes home', async ({ page }) => {
   // back to today, which makes atFloor true. "false" is the signal that
   // the floor is real.
   const back = page.getByLabel('Previous day');
+  // Absent, not "false": react-native-web writes aria-disabled only while
+  // the control IS disabled and drops the attribute otherwise, so
+  // getAttribute returns null once the arrow is live. Polling for 'false'
+  // waited thirty seconds for a string that never appears.
   await expect
     .poll(() => back.getAttribute('aria-disabled'), { timeout: 30_000 })
-    .toBe('false');
+    .not.toBe('true');
 
   const picker = page.getByLabel('Pick a date');
   const startedOn = (await picker.innerText()).trim();
