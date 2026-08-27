@@ -96,8 +96,16 @@ export async function sayAndConfirm(
 // another closure and none could ever reopen — the journey had locked
 // itself out of the gym permanently.
 //
-// The feed is append-only, so each pass compares counts rather than
-// looking for presence: an earlier pass's text never scrolls away.
+// Presence, never counts. The count of /Yes,/ buttons is not monotonic:
+// the close card is still holding its own confirm when a pass samples
+// "before", then resolves into a receipt and takes that button away. The
+// count fell by one, the reopen card put it back, and `3 > 3` was false
+// forever — with the right card sitting on screen the whole time.
+//
+// So each answer is identified by something only it says. That is the
+// rule this screen keeps teaching: cards arrive and resolve
+// asynchronously, so counts, `.first()` and `.last()` are all defeated,
+// and only a label that belongs to one card is safe.
 export async function reopenUntilClear(
   page: Page,
   sentence: string,
@@ -106,33 +114,38 @@ export async function reopenUntilClear(
   // never click some unrelated button that happens to carry a digit.
   choiceLabel: RegExp,
 ): Promise<void> {
-  const yes = page.getByRole('button', { name: /Yes,/ });
+  // 'Yes, open it back up' is the reopen action's own confirm
+  // (src/lib/actions/gym.ts) and no other card on the Timeline carries
+  // it — not the standing agent questions, not the close card.
+  const confirm = page.getByRole('button', { name: /Yes, open it back up/ });
   const ambiguous = page.getByText('Which closure is ending?');
-  // Two different sentences mean the same thing: "Nothing is closed on
-  // <date>." when other closures exist, and "The gym is not closed for
-  // anything at the moment." when none do (src/lib/actions/gym.ts). The
-  // drain hung for a whole run on only knowing the first.
+  // Two sentences mean the same thing: "Nothing is closed on <date>."
+  // when other closures exist, and "The gym is not closed for anything at
+  // the moment." when none do. The drain hung for a whole run on only
+  // knowing the first.
   const clear = page.getByText(
     /Nothing is closed on|not closed for anything at the moment/,
   );
 
   for (let pass = 0; pass < 4; pass += 1) {
-    const before = {
-      yes: await yes.count(),
-      ambiguous: await ambiguous.count(),
-      clear: await clear.count(),
-    };
     await say(page, sentence);
-    // Report what the gym actually said when none of the three expected
-    // answers arrives. A bare poll timeout says only "false", which cost
-    // a whole run to learn nothing from.
-    const moved = async () =>
-      (await yes.count()) > before.yes ||
-      (await ambiguous.count()) > before.ambiguous ||
-      (await clear.count()) > before.clear;
+
     const deadline = Date.now() + 30_000;
-    while (!(await moved())) {
+    for (;;) {
+      if (await clear.last().isVisible()) return;
+      if (await confirm.last().isVisible()) break;
+      if (await ambiguous.last().isVisible()) {
+        await page
+          .getByRole('button')
+          .filter({ hasText: choiceLabel })
+          .last()
+          .click();
+        await expect(confirm.last()).toBeVisible({ timeout: 30_000 });
+        break;
+      }
       if (Date.now() > deadline) {
+        // Say what the gym actually replied. A bare timeout cost a whole
+        // run to learn nothing from.
         const shown = (await page.locator('body').innerText()).slice(-700);
         throw new Error(
           `"${sentence}" produced no confirm, no choice list and no ` +
@@ -142,19 +155,7 @@ export async function reopenUntilClear(
       await page.waitForTimeout(500);
     }
 
-    if ((await clear.count()) > before.clear) return;
-
-    if ((await ambiguous.count()) > before.ambiguous) {
-      // Pick the first closure it offered; that resolves to a single
-      // match and the confirm appears.
-      const yesBefore = await yes.count();
-      await page.getByRole('button').filter({ hasText: choiceLabel }).last().click();
-      await expect
-        .poll(() => yes.count(), { timeout: 30_000 })
-        .toBeGreaterThan(yesBefore);
-    }
-
-    await yes.last().click();
+    await confirm.last().click();
     await expect(page.getByText(/reopened|back on|done/i).last()).toBeVisible({
       timeout: 30_000,
     });

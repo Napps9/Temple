@@ -9,20 +9,33 @@ import { OWNER_EMAIL, signIn, TALK_BAR_PLACEHOLDER } from './helpers';
 test('the Timeline pages back a day and comes home', async ({ page }) => {
   await signIn(page, OWNER_EMAIL);
 
-  // Wait for the arrow to mean something. The pager's bounds come from a
-  // query for the gym's created_at, and while that is in flight
-  // timeline/index.tsx falls back to { floor: today, ceiling: today } —
-  // so the arrow renders disabled and an immediate click is swallowed
-  // with no error. Enabled is the signal that the floor is known.
+  // The arrow reports enabled and the pager does not move. Two things
+  // could do that and the run cannot yet tell them apart: bounds falls
+  // back to { floor: today } while the gym's created_at is unknown, which
+  // makes atFloor true and the arrow disabled in effect — react-native-web
+  // writes that as aria-disabled, which Playwright's toBeEnabled does not
+  // treat the same as the disabled attribute — or the click lands and
+  // shiftDay clamps straight back to a floor of today. Read the attribute
+  // and say which, rather than guessing a fourth time.
   const back = page.getByLabel('Previous day');
   await expect(back).toBeEnabled({ timeout: 30_000 });
+  const picker = page.getByLabel('Pick a date');
+  const startedOn = (await picker.innerText()).trim();
+  const ariaDisabled = await back.getAttribute('aria-disabled');
   await back.click();
-  // Assert on the date picker's own label rather than loose page text: a
-  // mismatch then reports the day it actually landed on, which "element
-  // not found" never did.
-  await expect(page.getByLabel('Pick a date')).toHaveText('Yesterday', {
-    timeout: 15_000,
-  });
+
+  // Changed, not equal to "Yesterday": if the pager moved at all the
+  // click is landing and only the destination is wrong, which is a
+  // different fault from not moving.
+  await expect(async () => {
+    const now = (await picker.innerText()).trim();
+    expect(
+      now,
+      `pager did not move from "${startedOn}" — Previous day had ` +
+        `aria-disabled="${ariaDisabled}"`,
+    ).not.toBe(startedOn);
+  }).toPass({ timeout: 15_000 });
+  await expect(picker).toHaveText('Yesterday');
   // Past days are the record; the pen stays on today.
   await expect(page.getByPlaceholder(TALK_BAR_PLACEHOLDER)).toHaveCount(0);
 

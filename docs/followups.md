@@ -887,3 +887,41 @@ slow the parser is.
 default — an always-on reseed destroys the demo gym under whoever is
 mid-demo on it. Teardown first, because the seeder refuses to write over
 a gym that already exists, so "seed" alone was never a reset.
+
+### Identify a card by something only that card says
+
+Three rounds of e2e fixes on the Timeline all failed the same way, and
+the rule is worth stating once rather than rediscovering a fourth time.
+
+Cards on that screen arrive and resolve **asynchronously and
+independently**: the standing "Waiting on you" questions load on their
+own schedule, the conversation's preview card arrives when the parser
+returns, and a confirmed card resolves into a receipt and takes its
+buttons away. Every positional or quantitative way of finding a card is
+defeated by that.
+
+- `.last()` on a page-wide `/Yes,/` looked right because the conversation
+  renders below the waiting block — but before the parser returns, the
+  only Yes buttons on the page belong to standing agent questions. It
+  confirmed one, executing a real action.
+- Counting and waiting for the count to **rise** looked like the fix, and
+  is not, because the count is not monotonic. The close card was holding
+  its own confirm when the count was sampled, then resolved and gave that
+  button back. The count fell by one, the reopen card restored it, and
+  `3 > 3` stayed false while the right card sat on screen.
+- `.first()` on a receipt regex was satisfied by the **question**: the
+  close card's own body says "everyone booked is refunded their credit
+  and told" and "is cancelled" before anything has happened.
+
+What works is matching a label that belongs to exactly one card. The
+confirm labels come from the action itself — `'Yes, close it'`,
+`'Yes, open it back up'` (`src/lib/actions/gym.ts`) — and no standing
+card shares one, so the wrong card cannot be reached however slow the
+parser is.
+
+The corollary for the app: an action that can reply in more than one
+shape needs all of its shapes known to whatever waits on it. The reopen
+has four — a confirm, a "which one?" list, "Nothing is closed on
+<date>." and "The gym is not closed for anything at the moment." — and a
+drain that knew three of them hung for thirty seconds on a perfectly good
+answer.
