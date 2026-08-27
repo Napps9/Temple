@@ -198,6 +198,14 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   // --- gym ------------------------------------------------------------------
   const gym: T<'gyms'> = {
     id: gymId,
+    // A year back, because the gym has to predate its own history. The
+    // memberships below are backdated up to 300 days and the sessions
+    // four weeks, but the row itself defaulted to now() — so the demo gym
+    // had members who joined before it existed, and pagerBounds
+    // (src/lib/timeline-day.ts) floors the Timeline's day pager at
+    // gyms.created_at. That floor landed on today: the Previous-day arrow
+    // rendered disabled and none of the seeded history could be reached.
+    created_at: iso(daysFrom(config.now, -365)),
     name: config.gymName,
     slug: config.slug,
     timezone: config.tz,

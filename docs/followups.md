@@ -836,3 +836,54 @@ wrong parameter name typechecks perfectly. `e2e/08-member-surfaces.spec.ts`
 is the only thing in the repo that would catch it; it runs against the
 deployed app, which this container's network policy cannot reach, so it
 has to run in CI or from a machine that can.
+
+### The three journeys that were never flake
+
+Journeys 1, 3 and 7 failed across five e2e runs and looked like flake —
+journey 1 passed at both widths, then one, then neither. All three had
+root causes readable in the code, and two were self-perpetuating, which
+is why re-running never helped. None was a product defect for a real gym:
+they were the demo fixture and the specs disagreeing about state.
+
+**Journey 7 could never have passed.** `pagerBounds` floors the Timeline's
+day pager at `gyms.created_at`, and the seeder built its gym row without
+one, so Postgres defaulted it to `now()`. The floor landed on today, the
+Previous-day arrow rendered `disabled`, and "Yesterday" was unreachable.
+The fixture was inconsistent on its own terms too: memberships are
+backdated up to 300 days and sessions four weeks, so the demo gym had
+members who joined ten months before it existed. The gym row now claims a
+year of history, which makes the invariant `pagerBounds` documents true
+rather than something the seeder quietly violated. The pager was right;
+it was the data that was wrong.
+
+**Journey 3 locked itself out of the gym.** The reopen preview asks
+"Which closure is ending?" — and offers no confirm — when more than one
+closure matches a date. The journey closes 25 December every run and
+reopens it, which is fine until a run dies in between. Then the next run
+closes 25 December again, two closures match, the reopen can never render
+a confirm, and that run also leaves a closure behind. Permanent, and
+worse every time. It drains now: reopen until the gym says nothing is
+closed, picking from the list when it asks. A journey whose undo can fail
+has to drain rather than assume — that is the reusable part.
+
+**Journey 1 was collateral.** Its three seeded questions cannot expire on
+their own: `agent_actions` reaches `expired` through a closed case, a
+seven-day sweep, or the money job being switched off, and the seeder
+writes no `agent_cases` at all (so `case_id` is null and the first can
+never match) while `proposed_at` is seeded today (so the second cannot
+fire). They can only vanish by being answered — and journey 3 was
+answering them. Its confirm was `getByRole('button', {name: /Yes,/})
+.last()`, page-wide. The conversation renders below the "Waiting on you"
+block, so that is the right card once the preview exists; before the
+parser returns, the only Yes buttons on the page belong to the standing
+agent questions. The locator resolved to one, passed its visibility check
+instantly, and confirmed it — executing a real action and eating a card
+journey 1 asserts on. `sayAndConfirm` waits for the count to rise past
+what was already there, so it cannot reach a standing question however
+slow the parser is.
+
+**And the suite now has a reset it can reach.** `run-the-gym` takes a
+`reseed` input that tears down and re-seeds before the journeys, off by
+default — an always-on reseed destroys the demo gym under whoever is
+mid-demo on it. Teardown first, because the seeder refuses to write over
+a gym that already exists, so "seed" alone was never a reset.

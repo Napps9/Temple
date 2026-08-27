@@ -38,6 +38,14 @@ on:
       seed:
         description: Sim seed — same seed, same month (sim only)
         default: "2026"
+      reseed:
+        description: >-
+          Tear down and re-seed the gym before the journeys (e2e only).
+          Off by default: it destroys whatever is on the demo gym, which
+          is not something to do to somebody mid-demo. On when you want
+          the journeys run against a gym no previous run has touched.
+        type: boolean
+        default: false
       member_email:
         description: >-
           Member the waitlist journey signs in as (e2e only; blank =
@@ -90,6 +98,11 @@ jobs:
       (needs.sim.result == 'success' || needs.sim.result == 'skipped')
     runs-on: ubuntu-latest
     needs: [sim]
+    # Shares the seeder's group so a reseed here never races the Demo gym
+    # workflow or a sim.
+    concurrency:
+      group: demo-gym
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -99,6 +112,18 @@ jobs:
       - run: npm ci --no-audit --no-fund
         env:
           HUSKY: "0"
+      # Teardown first: the seeder refuses to write over a gym that is
+      # already there, so "seed" alone is not a reset.
+      - name: Reseed the demo gym
+        if: inputs.reseed
+        env:
+          SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SLUG: ${{ inputs.slug }}
+        run: |
+          npx tsx scripts/seed-demo-gym.ts --teardown --slug "$SLUG" --yes
+          npx tsx scripts/seed-demo-gym.ts --slug "$SLUG" --members 40 \
+            --discipline crossfit --yes
       - run: npx playwright install --with-deps chromium
       - name: The journeys, two widths
         env:

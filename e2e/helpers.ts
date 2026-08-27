@@ -57,6 +57,94 @@ export async function say(page: Page, sentence: string): Promise<void> {
   await page.getByLabel('Send', { exact: true }).click();
 }
 
+// Say something, then confirm the card it produced — never one that was
+// already on screen.
+//
+// `getByRole('button', {name: /Yes,/}).last()` is page-wide. The
+// conversation renders below the "Waiting on you" block
+// (timeline/index.tsx:1050 vs :1126), so the last Yes is the new card
+// ONCE it exists — but before the parser returns, the only Yes buttons
+// belong to the standing agent questions. The locator resolved to one of
+// those, passed its visibility check instantly, and confirmed it:
+// executing a real action and eating a card journey 1 asserts on.
+//
+// Waiting for the COUNT to rise past what was already there is what makes
+// that impossible. Same shape as journey 6's tabindex poll.
+export async function sayAndConfirm(page: Page, sentence: string): Promise<void> {
+  const yes = page.getByRole('button', { name: /Yes,/ });
+  const before = await yes.count();
+  await say(page, sentence);
+  await expect
+    .poll(() => yes.count(), { timeout: 30_000 })
+    .toBeGreaterThan(before);
+  await yes.last().click();
+}
+
+// Reopen every closure the journey (or a previous run of it) left on a
+// date, until the gym says there is nothing left to reopen.
+//
+// Draining rather than reopening once, because the undo is not
+// guaranteed to run: any run that dies between the close and the reopen
+// leaves a closure behind, and TWO closures matching one date make the
+// reopen preview ask "Which closure is ending?" instead of offering a
+// confirm (src/lib/actions/gym.ts). At that point every later run added
+// another closure and none could ever reopen — the journey had locked
+// itself out of the gym permanently.
+//
+// The feed is append-only, so each pass compares counts rather than
+// looking for presence: an earlier pass's text never scrolls away.
+export async function reopenUntilClear(
+  page: Page,
+  sentence: string,
+  // Matches the closure's own label in the "which one?" list — the date
+  // the sentence named. Passed in rather than guessed, so the helper can
+  // never click some unrelated button that happens to carry a digit.
+  choiceLabel: RegExp,
+): Promise<void> {
+  const yes = page.getByRole('button', { name: /Yes,/ });
+  const ambiguous = page.getByText('Which closure is ending?');
+  const clear = page.getByText(/Nothing is closed on/);
+
+  for (let pass = 0; pass < 4; pass += 1) {
+    const before = {
+      yes: await yes.count(),
+      ambiguous: await ambiguous.count(),
+      clear: await clear.count(),
+    };
+    await say(page, sentence);
+    await expect
+      .poll(
+        async () =>
+          (await yes.count()) > before.yes ||
+          (await ambiguous.count()) > before.ambiguous ||
+          (await clear.count()) > before.clear,
+        { timeout: 30_000 },
+      )
+      .toBe(true);
+
+    if ((await clear.count()) > before.clear) return;
+
+    if ((await ambiguous.count()) > before.ambiguous) {
+      // Pick the first closure it offered; that resolves to a single
+      // match and the confirm appears.
+      const yesBefore = await yes.count();
+      await page.getByRole('button').filter({ hasText: choiceLabel }).last().click();
+      await expect
+        .poll(() => yes.count(), { timeout: 30_000 })
+        .toBeGreaterThan(yesBefore);
+    }
+
+    await yes.last().click();
+    await expect(page.getByText(/reopened|back on|done/i).last()).toBeVisible({
+      timeout: 30_000,
+    });
+  }
+
+  throw new Error(
+    `Still closed after four reopen passes — "${sentence}" is not draining`,
+  );
+}
+
 // Members do not land on the Timeline — src/app/index.tsx redirects them
 // to /book — so signIn's wait can never pass for one.
 // `||`, not `??`: run-the-gym passes this through from an optional
