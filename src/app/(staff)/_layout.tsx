@@ -7,10 +7,12 @@ import { SideNav, useRailCollapsed } from '@/components/SideNav';
 import { TopNav, type NavSection } from '@/components/TopNav';
 import { LG, MD } from '@/lib/breakpoint';
 import { useGymMembership, useSession } from '@/lib/auth';
+import { useDemoViews } from '@/lib/demo-visit';
 import { shouldRecord } from '@/lib/route-usage';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
+import { useGymBrand } from '@/lib/useGymBrand';
 
 const STAFF_SECTIONS: NavSection[] = [
   {
@@ -62,7 +64,12 @@ export default function StaffLayout() {
   const { width } = useWindowDimensions();
   const canAccessStaff = useCan('can_access_staff_area');
   const { data: membership } = useGymMembership();
+  const { isDemo } = useGymBrand();
   useRouteOpens(membership?.gymId);
+  // Separate from useRouteOpens on purpose: that one counts staff screens
+  // for every gym and can never name anybody, this one records a demo
+  // visitor's path and never touches a real tenant (0279).
+  useDemoViews(membership?.gymId, isDemo);
 
   if (session === null) return <Redirect href="/sign-in" />;
   if (canAccessStaff === false) {

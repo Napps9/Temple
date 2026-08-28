@@ -3947,6 +3947,39 @@ export type Database = {
         Relationships: [];
       };
       // A gym, a route, a day, a number — and deliberately nothing else.
+      // The marketing funnel (0279). Two layers: site_events is a rollup
+      // that identifies nobody and needs no consent, site_visits is a
+      // timeline written only for a visitor who accepted the banner.
+      // Neither has a foreign key to gyms — the demo tenants they record
+      // are torn down and reseeded nightly, so they hold the slug.
+      site_events: {
+        Row: {
+          event: string;
+          day: string;
+          page: string;
+          source: string;
+          device: 'mobile' | 'desktop' | 'app';
+          detail: string;
+          count: number;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      site_visits: {
+        Row: {
+          visitor: string;
+          event: string;
+          occurred_at: string;
+          page: string;
+          source: string;
+          device: 'mobile' | 'desktop' | 'app';
+          detail: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       // Written only by record_route_open; read by admins for their own
       // gym; purged at ninety days (0233).
       route_opens: {
@@ -5996,6 +6029,15 @@ export type Database = {
       // family — it is a measure, not an audit trail.
       record_route_open: {
         Args: { p_gym_id: string; p_route: string };
+        Returns: void;
+      };
+      record_demo_event: {
+        Args: {
+          p_gym_id: string;
+          p_event: string;
+          p_page: string;
+          p_visitor?: string | null;
+        };
         Returns: void;
       };
       gym_route_usage: {

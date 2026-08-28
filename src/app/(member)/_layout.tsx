@@ -5,8 +5,10 @@ import { BottomDock, DOCK_CLEARANCE } from '@/components/BottomDock';
 import { MD } from '@/lib/breakpoint';
 import { PinnedNotice } from '@/components/PinnedNotice';
 import { TopNav, type NavSection } from '@/components/TopNav';
-import { useSession } from '@/lib/auth';
+import { useGymMembership, useSession } from '@/lib/auth';
+import { useDemoViews } from '@/lib/demo-visit';
 import { useThemeColors } from '@/lib/theme';
+import { useGymBrand } from '@/lib/useGymBrand';
 
 // Bookings intentionally isn't a top-level section — it lives on the
 // Book page ("My bookings" card) where members actually look for it.
@@ -29,6 +31,12 @@ export default function MemberLayout() {
   const session = useSession();
   const colors = useThemeColors();
   const { width } = useWindowDimensions();
+  const { data: membership } = useGymMembership();
+  const { isDemo } = useGymBrand();
+  // /book and /track are two of the ten screens the marketing site can
+  // land a demo visitor on, and route_opens covers staff surfaces only —
+  // so without this two of the five tour stops would be invisible (0279).
+  useDemoViews(membership?.gymId, isDemo);
   if (session === null) return <Redirect href="/sign-in" />;
   const docked = width < MD;
 

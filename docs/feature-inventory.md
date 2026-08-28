@@ -4652,6 +4652,26 @@ surround:
   `/track/movement/:movement`, `/track/group/:group`,
   `/track/workout/:id`, `/inbox/direct/:peer`,
   `/management/members/:profile`.
+- **The marketing funnel is measured** (`0279`) — two layers, and the line
+  between them is whether a person is named. `site_events` is a rollup
+  (event, day, page, source, device, count) written for every visitor, with
+  no identifier and nothing left on any device, so it needs no consent
+  banner — the same posture `route_opens` took in 0233. `site_visits`
+  attaches a random visitor uuid so one person's path can be followed from
+  pricing to a booking, and is written **only** when the cookie banner was
+  accepted, which is the first caller `hasAnalyticsConsent()` has ever had.
+  The demo half of the funnel is recorded by the app after sign-in
+  (`record_demo_event`, which refuses any gym that is not `is_demo` and
+  files rows under the gym's slug so they outlive the nightly reseed), and
+  the visitor id crosses the origin boundary in the existing
+  `temple-demo-autofill` postMessage. `book_demo_submitted` is recorded
+  server-side in the site's own `/api/demo` route, because a conversion
+  counted from a browser is one an ad blocker can lose. Twelve event names,
+  mirrored between `lib/analytics.ts` and `public.is_site_event`, with
+  `scripts/check-ia.mjs` asserting nothing fires outside the list and
+  `scripts/events.mjs` asserting the mirror itself has not gone stale.
+  `demo_tour_completed` is deliberately not an event: the site cannot see
+  inside the demo iframe, so it is a query for three or more distinct stops.
 - **Demo tenants cannot reach anybody** (`0278`) — `gyms.is_demo`, forced
   true for any `demo-` slug by a trigger and unclearable, is read by every
   edge function before it calls a vendor. Email and SMS take the existing

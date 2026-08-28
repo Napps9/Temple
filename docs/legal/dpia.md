@@ -52,6 +52,20 @@ before starting.
   `health_data_access_log` or `agent_recording_access_log`, which are
   per-person audit trails serving a different purpose.
 
+- **Marketing-site measurement (0279):** two layers, and the line between
+  them is whether a person is named. `site_events` counts an event, a day, a
+  page, a source, a device and a count — no identifier, nothing written to
+  any device, so not cookie/PECR processing and not behind the banner,
+  retained 90 days, legitimate interests (register item 7). `site_visits`
+  attaches a random visitor uuid so the same person's path can be followed
+  from a pricing page to a booking; that id lives in `localStorage`, so PECR
+  **is** engaged and it is written **only on consent** (register item 8).
+  The demo half is confined to demo tenants — `record_demo_event` refuses
+  any gym that is not `is_demo` (0278) — so neither table can become a
+  record of which screens a real gym's staff opened, which is the property
+  `route_opens` was built to guarantee and this deliberately does not
+  weaken.
+
 ## 4. Risks to individuals & mitigations already in place
 
 Scoring: likelihood × severity, each Low/Medium/High, giving a residual

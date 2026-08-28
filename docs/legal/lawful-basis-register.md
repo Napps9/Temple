@@ -56,6 +56,35 @@
   right gate — gating it there would have measured consent rate rather than
   usage; purged at 90 days by `purge_expired_route_opens` → **legitimate
   interests appropriate.**
+- **Item 7 — how many people reached each step of the marketing site.**
+  *Interest:* find out whether jointemple.io actually converts, instead of
+  reasoning about page structure. *Necessity:* the question is "how many
+  reached pricing, opened the demo, looked at Billing, booked a call"; the
+  minimum that answers it is an event name, a day, a page, where they came
+  from, mobile or desktop, and a count — which is exactly what `site_events`
+  holds. **There is no identifier of any person in it**, and it is a rollup
+  rather than a log precisely because a row per event carrying a timestamp
+  alongside source, device and page would be a fingerprint where a count is
+  not. Ids in a path are collapsed to `[id]` by the same three rules
+  `record_route_open` uses, and a `utm_source` somebody else wrote is
+  flattened before it is stored. *Balance:* nothing is written to any
+  device, so PECR's consent-for-storage rule is not engaged and the cookie
+  banner is not the right gate — the same reasoning as item 6, and gating it
+  there would have measured consent rate rather than reach; purged at 90
+  days by `purge_expired_site_events` → **legitimate interests
+  appropriate.**
+- **Item 8 — whether the person who explored the demo went on to book.**
+  *Basis:* **consent**, not legitimate interests, and this is the
+  distinction item 7 turns on. Answering it needs the same visitor
+  recognised across pages and across the hop into the demo, which means a
+  random id in `localStorage` — non-essential storage on the visitor's
+  device, so PECR is engaged and the banner is the gate. `site_visits` rows
+  are written only when `hasAnalyticsConsent()` is true; a visitor who
+  rejected or has not answered is counted by item 7 and named by nothing.
+  The id is a random uuid tied to no account, no email and no gym.
+  *Retention:* 90 days, same sweep. The demo half is limited to demo tenants
+  by `record_demo_event`, which refuses any gym that is not `is_demo`, so
+  this can never become a record of what a real gym's staff looked at.
 - **Item 5 — marketing to gyms.** *Interest:* reach prospective business
   customers. *Necessity:* B2B outreach to named business contacts is the
   direct means. *Balance:* business (not member/health) contacts, easy opt-out
@@ -87,6 +116,8 @@ DPA). Recorded here for completeness:
 - Health data: erased on leaving; swept 3 months after membership ends.
 - Waiver signatures: 6 years after membership ends, then deleted.
 - Staff screen-usage counts: 90 days, then deleted (`route_opens`).
+- Marketing-site funnel counts and consented visit trails: 90 days, then
+  deleted (`site_events`, `site_visits`).
 
 ## C2. Access to training history when a subscription lapses (0237)
 

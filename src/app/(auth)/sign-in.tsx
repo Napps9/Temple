@@ -10,6 +10,7 @@ import { Screen } from '@/components/Screen';
 import { TempleLockup } from '@/components/TempleMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { resendConfirmation, signIn } from '@/lib/auth';
+import { recordDemoAuthentication, setDemoVisitor } from '@/lib/demo-visit';
 import { errorMessage } from '@/lib/errors';
 
 // Keep the keys in sync with FEATURE_DEMO_TARGETS in the marketing site
@@ -78,7 +79,13 @@ export default function SignInScreen() {
         return;
       }
       const data = event.data as
-        | { type?: string; email?: string; password?: string; redirect?: string }
+        | {
+            type?: string;
+            email?: string;
+            password?: string;
+            redirect?: string;
+            visitor?: string;
+          }
         | undefined;
       if (data?.type !== 'temple-demo-autofill') return;
       if (typeof data.email === 'string') setEmail(data.email);
@@ -86,6 +93,12 @@ export default function SignInScreen() {
       if (typeof data.redirect === 'string') {
         demoRedirectRef.current = DEMO_REDIRECTS.get(data.redirect) ?? null;
       }
+      // Only present when the visitor accepted the marketing site's cookie
+      // banner; without it the demo half of the funnel is still counted,
+      // just not joined to the visit that started it (0279). Validated as a
+      // uuid on the way in — the sender is checked by origin above, but the
+      // value still goes into a query.
+      setDemoVisitor(data.visitor);
     }
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
@@ -98,6 +111,12 @@ export default function SignInScreen() {
     setLoading(true);
     try {
       await signIn(email, password);
+      // Only for a sign-in the marketing site set up, so an ordinary one
+      // pays nothing for it. record_demo_event refuses a gym that is not a
+      // demo tenant, so a stale ref cannot make this record a real gym.
+      if (demoRedirectRef.current) {
+        void recordDemoAuthentication(demoRedirectRef.current);
+      }
       // Navigate explicitly — the (auth) layout redirect only fires for
       // users WITH a membership, so a gymless account would otherwise sit
       // here. Root index routes by role / membership. A demo redirect
