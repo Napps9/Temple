@@ -163,7 +163,7 @@ Deno.serve(async (req: Request) => {
 
   const [{ data: settings }, { data: gym }, { data: sendingDomain }] = await Promise.all([
     service.from('gym_comms_settings').select('*').eq('gym_id', campaign.gym_id).maybeSingle(),
-    service.from('gyms').select('name').eq('id', campaign.gym_id).single(),
+    service.from('gyms').select('name, is_demo').eq('id', campaign.gym_id).single(),
     service
       .from('gym_sending_domains')
       .select('domain, from_local, status')
@@ -191,7 +191,12 @@ Deno.serve(async (req: Request) => {
   if (rErr) return json({ error: rErr.message }, 500);
 
   const trackBase = `${SUPABASE_URL}/functions/v1/track`;
-  const live = Boolean(RESEND_API_KEY && fromAddress);
+  // A demo gym is another reason not to send (0278). It takes the route
+  // the no-ESP case has always taken: the row is written 'simulated' and
+  // the report counts it, so the product still shows what it did. Read as
+  // `=== false` rather than `!== true` on purpose — a gym row we cannot
+  // read is not a gym we will send mail on behalf of.
+  const live = Boolean(RESEND_API_KEY && fromAddress) && gym?.is_demo === false;
   let sent = 0;
   let failed = 0;
   let simulated = 0;

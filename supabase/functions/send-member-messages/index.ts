@@ -78,7 +78,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: gym } = await service
     .from('gyms')
-    .select('name, timezone')
+    .select('name, timezone, is_demo')
     .eq('id', gymId)
     .maybeSingle();
 
@@ -139,8 +139,15 @@ Deno.serve(async (req: Request) => {
     if (address) emailFor.set(id, address);
   }
 
-  const emailLive = !!RESEND_API_KEY && !!RESEND_FROM;
-  const smsLive = !!TWILIO_SID && !!TWILIO_TOKEN && !!agent?.phone_number;
+  // A demo gym is another reason not to send (0278) — both channels, and
+  // the SMS one especially: a text reaches a handset somebody is holding.
+  // The row is written 'simulated' either way, which is the same route the
+  // no-credentials case has always taken. `=== false` on purpose: a gym row
+  // we cannot read is not a gym we will send on behalf of.
+  const realGym = gym?.is_demo === false;
+  const emailLive = !!RESEND_API_KEY && !!RESEND_FROM && realGym;
+  const smsLive =
+    !!TWILIO_SID && !!TWILIO_TOKEN && !!agent?.phone_number && realGym;
   const gymName = gym?.name ?? 'your gym';
   const nowIso = new Date().toISOString();
 

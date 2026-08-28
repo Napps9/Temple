@@ -10,6 +10,7 @@ type GymRow = {
   name: string;
   slug: string;
   public_signup_enabled: boolean;
+  is_demo: boolean;
 };
 
 // Who the signed-in member's gym is. This used to resolve a whole brand
@@ -29,7 +30,7 @@ export function useGymBrand(): GymIdentity {
     queryFn: async (): Promise<GymRow> => {
       const { data, error } = await supabase
         .from('gyms')
-        .select('id, name, slug, public_signup_enabled')
+        .select('id, name, slug, public_signup_enabled, is_demo')
         .eq('id', membership!.gymId)
         .single();
       if (error) throw error;
@@ -45,6 +46,7 @@ export function useGymBrand(): GymIdentity {
       gymName: row.name,
       slug: row.slug,
       publicSignupEnabled: row.public_signup_enabled,
+      isDemo: row.is_demo,
     };
   }, [query.data]);
 }

@@ -1,21 +1,33 @@
-name: Demo marketing rotate
+name: Demo tenant rotate
 
-# Nightly teardown + reseed of the PUBLIC marketing demo tenant
-# (demo-launchpad, embedded on jointemple.io's "Launch your gym"
-# section). Deliberately NOT the same job as demo-gym.yml: that
-# workflow takes an arbitrary slug input for internal QA use
-# (demo-ironworks/demo-hyrox); this one hardcodes its slug as an env
-# var with no workflow input at all, so there is no path — accidental
-# or otherwise — from a run of THIS workflow to any other tenant.
+# Nightly teardown + reseed of every long-lived demo tenant — the one
+# embedded on jointemple.io's "Launch your gym" section, and the two used
+# for demos given by a person.
 #
-# Why reseed rather than just rotate the password: this tenant is
-# embedded read-write on a public homepage (the iframed site has a
-# live lead-capture form; the owner/member logins can book, cancel,
-# DM, edit copy). The real risk is visitor-driven data mutation, not
-# just credential exposure — a password swap alone wouldn't clear
-# spam left in a DM thread or the lead form. Reseeding fixes both in
-# one job, reusing already-tested seeder code rather than new
-# one-off logic. See docs/demo-gym.md and scripts/seed-demo-gym.ts.
+# The list is not in this file. It comes from scripts/demo-gym/tenants.ts,
+# printed as TSV, so the workflow and the constant cannot drift apart. That
+# indirection is the point of the change: demo-good-life and
+# demo-redline-hyrox previously existed only in the hosted database, with a
+# documented static password and nothing that ever reset them.
+#
+# Deliberately still NOT the same job as demo-gym.yml: that workflow takes
+# an arbitrary slug input for internal QA use (demo-ironworks/demo-hyrox);
+# this one takes no input at all, so there is no path — accidental or
+# otherwise — from a run of THIS workflow to a tenant that is not on the
+# list. tenants.ts refuses a slug that does not match demo-[a-z0-9-]+, and
+# the seeder refuses one again.
+#
+# Why reseed rather than just rotate the password: these tenants are signed
+# into read-write by strangers. The owner and member logins can book,
+# cancel, DM, and edit. The real risk is visitor-driven data mutation, not
+# just credential exposure — a password swap alone would not clear spam left
+# in a DM thread or the lead form. Reseeding fixes both in one job, reusing
+# already-tested seeder code rather than new one-off logic.
+#
+# A run destroys whatever is on a tenant, including a demo somebody is in
+# the middle of. 03:00 UTC is the quietest window we have; there is no
+# activity check, and adding one would mean a tenant that never resets
+# because somebody left a tab open.
 #
 # Needs the same SUPABASE_SERVICE_ROLE_KEY + SUPABASE_PROJECT_REF repo
 # secrets as demo-gym.yml — no new secret provisioning.
@@ -27,8 +39,6 @@ on:
 
 env:
   DO_NOT_TRACK: '1'
-  SLUG: demo-launchpad
-  GYM_NAME: Launchpad CrossFit
 
 jobs:
   demo-marketing-rotate:
@@ -45,7 +55,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
         env:
           HUSKY: '0'
-      - name: Rotate demo-launchpad
+      - name: Rotate every demo tenant
         env:
           SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -55,12 +65,42 @@ jobs:
             exit 1
           fi
 
-          NEW_PASSWORD="$(node -e "
-            const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-            const bytes = require('crypto').randomBytes(16);
-            console.log(Array.from(bytes, b => chars[b % chars.length]).join(''));
-          ")"
+          # A tenant that fails must not stop the ones after it: leaving two
+          # un-reseeded because the first one broke is the state this job
+          # exists to prevent. Tally and fail at the end.
+          failed=""
 
-          npx tsx scripts/seed-demo-gym.ts --teardown --slug "$SLUG" --yes
-          npx tsx scripts/seed-demo-gym.ts --slug "$SLUG" --name "$GYM_NAME" --discipline crossfit --password "$NEW_PASSWORD" --yes
-          npx tsx scripts/publish-demo-credentials.ts --slug "$SLUG" --gym-name "$GYM_NAME" --password "$NEW_PASSWORD"
+          # Process substitution, not a pipe: a piped `while` runs in a subshell
+          # and $failed would be empty again by the time it is read.
+          while IFS=$'\t' read -r SLUG NAME DISCIPLINE PUBLISHED; do
+            echo "::group::$SLUG"
+
+            NEW_PASSWORD="$(node -e "
+              const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+              const bytes = require('crypto').randomBytes(16);
+              console.log(Array.from(bytes, b => chars[b % chars.length]).join(''));
+            ")"
+
+            if npx tsx scripts/seed-demo-gym.ts --teardown --slug "$SLUG" --yes \
+              && npx tsx scripts/seed-demo-gym.ts --slug "$SLUG" --name "$NAME" \
+                   --discipline "$DISCIPLINE" --password "$NEW_PASSWORD" --yes; then
+              if [ "$PUBLISHED" = "1" ]; then
+                npx tsx scripts/publish-demo-credentials.ts \
+                  --slug "$SLUG" --gym-name "$NAME" --password "$NEW_PASSWORD"
+              else
+                # Not published to demo_marketing_credentials, so this log line
+                # is where whoever is giving the demo reads the new password.
+                echo "$SLUG owner: owner@$SLUG.temple.test / $NEW_PASSWORD"
+              fi
+            else
+              echo "::error::$SLUG failed to rotate"
+              failed="$failed $SLUG"
+            fi
+
+            echo "::endgroup::"
+          done < <(npx tsx scripts/demo-gym/tenants.ts)
+
+          if [ -n "$failed" ]; then
+            echo "::error::demo tenants failed to rotate:$failed"
+            exit 1
+          fi

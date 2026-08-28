@@ -18,6 +18,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { DEMO_NO_MONEY, gymIsDemo } from '../_shared/demo.ts';
+
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -146,6 +148,12 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     const account = acctRow?.stripe_account_id as string | undefined;
     if (!account) return json({ error: 'This gym has not connected Stripe yet' }, 409);
+    // Reads of a connected account are fine; writes are not. A demo gym
+    // keeps its Stripe connection so Billing still looks like a live gym,
+    // and this is the line that stops a visitor moving money on it (0278).
+    if (await gymIsDemo(service, order.gym_id)) {
+      return json({ error: DEMO_NO_MONEY }, 409);
+    }
 
     const cents = refundCents(body.custom_cents, order.total_cents);
     if (cents <= 0) return json({ error: 'There is nothing to refund' }, 409);

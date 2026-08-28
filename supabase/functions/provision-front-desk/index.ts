@@ -21,6 +21,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { gymIsDemo } from '../_shared/demo.ts';
+
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -74,6 +76,14 @@ Deno.serve(async (req: Request) => {
   }
 
   const service = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  // Buying a Twilio number and creating a Vapi assistant are both real,
+  // billable, externally-visible acts — a number somebody could ring. The
+  // demo gym's front desk is seeded, so there is nothing here a visitor
+  // needs to press for the feature to be visible (0278).
+  if (await gymIsDemo(service, gymId)) {
+    return json({ error: 'This is a demo gym — Temple won’t buy it a phone number' }, 409);
+  }
   const { data: row } = await service
     .from('gym_agent_settings')
     .select(

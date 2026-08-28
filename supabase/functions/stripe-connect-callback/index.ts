@@ -9,6 +9,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { gymIsDemo } from '../_shared/demo.ts';
+
 const FALLBACK_ORIGIN = 'https://app.jointemple.io';
 
 function redirect(
@@ -61,6 +63,15 @@ Deno.serve(async (req: Request) => {
   };
 
   if (oauthError || !code || !stateRow || !STRIPE_SECRET_KEY) {
+    await burnState();
+    return redirect(appOrigin, 'error', appReturnPath);
+  }
+
+  // Unreachable in practice — stripe-connect-start refuses a demo gym, so no
+  // state row can exist for one. Here anyway, because this half of the pair
+  // is what actually attaches an account, and an unreachable guard costs one
+  // query while a missing one costs somebody's Stripe (0278).
+  if (await gymIsDemo(service, stateRow.gym_id)) {
     await burnState();
     return redirect(appOrigin, 'error', appReturnPath);
   }

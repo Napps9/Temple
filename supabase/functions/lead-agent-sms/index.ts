@@ -252,6 +252,7 @@ async function reply(
     wire(gym.settings.phone_number),
     wire(conversation.phone),
     text,
+    gym.isDemo,
   );
   if (sent.sid) {
     await appendMessage(service, conversation, 'agent', text, sent.sid);

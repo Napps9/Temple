@@ -94,7 +94,7 @@ Deno.serve(async (req: Request) => {
 
   const [{ data: gym }, { data: settings }, { data: sendingDomain }] =
     await Promise.all([
-      service.from('gyms').select('name, slug').eq('id', gymId).single(),
+      service.from('gyms').select('name, slug, is_demo').eq('id', gymId).single(),
       service
         .from('gym_comms_settings')
         .select('from_name, reply_to')
@@ -162,7 +162,14 @@ Deno.serve(async (req: Request) => {
   let failed = 0;
   let skipped = 0;
   for (const row of targets as { id: string; email: string; full_name: string | null }[]) {
-    if (suppressed.has(gymId, row.email) || unsubscribed.has(row.email.trim().toLowerCase())) {
+    // A demo gym rides the suppression path rather than a branch of its own
+    // (0278): every row counts as skipped, the caller gets its tally, and no
+    // address a visitor typed receives anything.
+    if (
+      gym.is_demo ||
+      suppressed.has(gymId, row.email) ||
+      unsubscribed.has(row.email.trim().toLowerCase())
+    ) {
       skipped += 1;
       continue;
     }

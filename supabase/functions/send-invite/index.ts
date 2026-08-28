@@ -92,7 +92,7 @@ Deno.serve(async (req: Request) => {
 
   const [{ data: gym }, { data: settings }, { data: sendingDomain }] =
     await Promise.all([
-      service.from('gyms').select('name').eq('id', gymId).single(),
+      service.from('gyms').select('name, is_demo').eq('id', gymId).single(),
       service
         .from('gym_comms_settings')
         .select('from_name, reply_to')
@@ -118,10 +118,18 @@ Deno.serve(async (req: Request) => {
   // The code is already created — if email isn't configured or fails, we
   // still hand it back so the owner can share it manually. Say what's
   // missing so the owner knows it's a setup gap, not a transient error.
-  if (!RESEND_API_KEY || !fromAddress) {
-    const missing = !RESEND_API_KEY
-      ? 'email sending isn’t set up yet'
-      : 'no verified sending domain or default from-address is set';
+  // A demo gym joins the same branch (0278). This is the best-shaped guard
+  // on the list: the code is already created and handed back, the UI already
+  // says "share this code manually", and the visitor sees the whole invite
+  // flow work — while an address they typed gets no mail. Sending it is the
+  // sharpest single risk in the product, because the recipient is whoever
+  // they say it is.
+  if (!RESEND_API_KEY || !fromAddress || gym?.is_demo !== false) {
+    const missing = gym?.is_demo !== false
+      ? 'this is a demo gym, so Temple doesn’t email its invites — the code above still works'
+      : !RESEND_API_KEY
+        ? 'email sending isn’t set up yet'
+        : 'no verified sending domain or default from-address is set';
     return json({ ok: true, sent: false, code: inviteCode, error: missing });
   }
 

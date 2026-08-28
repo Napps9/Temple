@@ -33,6 +33,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { gymIsDemo } from '../_shared/demo.ts';
+
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -184,6 +186,15 @@ Deno.serve(async (req: Request) => {
       p_capability: 'can_review_ai_calls',
     });
     if (aErr || allowed !== true) return json({ error: 'Not authorised' }, 403);
+
+    // /start rings a real phone, at a number the caller typed. /browser-start
+    // below does the same interview with no telephony at all, so a demo
+    // visitor loses nothing worth seeing — they still talk to the agent and
+    // still get the draft brief out of it (0278). This is also the only
+    // endpoint on this function that could dial a stranger.
+    if (await gymIsDemo(service, gymId)) {
+      return json({ started: false, reason: 'demo_gym' });
+    }
 
     const VAPI_KEY = Deno.env.get('VAPI_API_KEY');
     const VAPI_SECRET = Deno.env.get('VAPI_WEBHOOK_SECRET');

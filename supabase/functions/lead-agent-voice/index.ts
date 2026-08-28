@@ -162,6 +162,7 @@ Deno.serve(async (req: Request) => {
           gym.settings.phone_number,
           from,
           opener,
+          gym.isDemo,
         );
         if (sent.sid) {
           await appendMessage(service, conversation, 'agent', opener, sent.sid);

@@ -103,6 +103,7 @@ export type Database = {
           store_shipping_fee_cents: number;
           discipline: 'crossfit' | 'hyrox';
           onboarding_dismissed_at: string | null;
+          is_demo: boolean;
         };
         Insert: {
           id?: string;
@@ -149,6 +150,7 @@ export type Database = {
           cover_warning_hours?: number;
           discipline?: 'crossfit' | 'hyrox';
           onboarding_dismissed_at?: string | null;
+          is_demo?: boolean;
         };
         Update: Partial<{
           id: string;
@@ -194,6 +196,7 @@ export type Database = {
           cover_warning_hours: number;
           discipline: 'crossfit' | 'hyrox';
           onboarding_dismissed_at: string | null;
+          is_demo: boolean;
         }>;
         Relationships: [];
       };

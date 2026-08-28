@@ -30,6 +30,7 @@ import {
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
+import { useGymBrand } from '@/lib/useGymBrand';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
 function fmtMonthYear(iso: string): string {
@@ -44,6 +45,7 @@ export function AccountScreen() {
   const session = useSession();
   const role = useRole();
   const { data: membership } = useGymMembership();
+  const { isDemo } = useGymBrand();
   const { data: profile } = useMyProfile();
   const signOut = useSignOut();
   const queryClient = useQueryClient();
@@ -204,6 +206,17 @@ export function AccountScreen() {
         if (error) throw error;
       }
       if (emailChanged) {
+        // The one send no server guard of ours can reach: Supabase Auth
+        // mails the address, not any code in this repo, and config.toml sets
+        // double_confirm_changes so it mails the old one too. On a shared
+        // demo tenant a confirmed change would also move the owner's login
+        // out from under the published credentials (0278). The field stays
+        // editable and says why rather than disappearing.
+        if (isDemo) {
+          throw new Error(
+            'This is a demo gym, so Temple won’t email a confirmation to change the address.',
+          );
+        }
         const { error } = await supabase.auth.updateUser({ email: nextEmail });
         if (error) throw error;
       }
@@ -474,14 +487,18 @@ export function AccountScreen() {
                 label="Resend confirmation"
                 icon="mail-outline"
                 onPress={() =>
-                  supabase.auth
-                    .updateUser({ email: pendingEmail })
-                    .then(() => {
-                      setDetailsMessage('Confirmation email re-sent.');
-                    })
-                    .catch((e: unknown) =>
-                      setDetailsError(errorMessage(e, 'Could not resend')),
-                    )
+                  isDemo
+                    ? setDetailsError(
+                        'This is a demo gym, so Temple won’t send the confirmation.',
+                      )
+                    : supabase.auth
+                        .updateUser({ email: pendingEmail })
+                        .then(() => {
+                          setDetailsMessage('Confirmation email re-sent.');
+                        })
+                        .catch((e: unknown) =>
+                          setDetailsError(errorMessage(e, 'Could not resend')),
+                        )
                 }
               />
             </View>

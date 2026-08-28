@@ -260,7 +260,7 @@ Deno.serve(async (req: Request) => {
     await Promise.all([
       service
         .from('gyms')
-        .select('name, timezone, cover_warning_hours')
+        .select('name, timezone, cover_warning_hours, is_demo')
         .eq('id', gymId ?? '')
         .maybeSingle(),
       service
@@ -285,7 +285,12 @@ Deno.serve(async (req: Request) => {
       ? `${sendingDomain.from_local}@${sendingDomain.domain}`
       : RESEND_FROM;
 
-  const live = Boolean(RESEND_API_KEY && fromAddress);
+  // A demo gym is another reason not to send (0278). It takes the route
+  // the no-ESP case has always taken: the row is written 'simulated' and
+  // the report counts it, so the product still shows what it did. Read as
+  // `=== false` rather than `!== true` on purpose — a gym row we cannot
+  // read is not a gym we will send mail on behalf of.
+  const live = Boolean(RESEND_API_KEY && fromAddress) && gym?.is_demo === false;
   const link = `${origin}/management/cover`;
 
   // One lookup per distinct request / offer rather than per row: a

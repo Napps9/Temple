@@ -23,6 +23,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { gymIsDemo } from '../_shared/demo.ts';
+
 const RESEND_BASE = 'https://api.resend.com/domains';
 
 // Create gym sending domains in the EU (Ireland) — matches the platform
@@ -155,6 +157,20 @@ Deno.serve(async (req: Request) => {
     p_capability: 'can_manage_comms',
   });
   if (aErr || allowed !== true) return json({ error: 'Not authorised' }, 403);
+
+  // connect / verify / disconnect all register or delete a real domain on
+  // Temple's Resend account. update_from_local touches nothing outside the
+  // database, so it keeps working — a visitor on a demo gym can still change
+  // the sender name and watch the card update (0278).
+  if (action !== 'update_from_local' && (await gymIsDemo(service, gymId))) {
+    return json(
+      {
+        error:
+          'This is a demo gym — Temple doesn’t register a sending domain on its behalf',
+      },
+      409,
+    );
+  }
 
   const { data: existing } = await service
     .from('gym_sending_domains')

@@ -4652,6 +4652,26 @@ surround:
   `/track/movement/:movement`, `/track/group/:group`,
   `/track/workout/:id`, `/inbox/direct/:peer`,
   `/management/members/:profile`.
+- **Demo tenants cannot reach anybody** (`0278`) — `gyms.is_demo`, forced
+  true for any `demo-` slug by a trigger and unclearable, is read by every
+  edge function before it calls a vendor. Email and SMS take the existing
+  `simulated` route (recorded, counted, reported, never sent); invites hand
+  back their code with "share this manually"; every Stripe write refuses
+  while reads still work, so Billing still demos as a live gym; no phone
+  number is bought or released and no voice assistant is changed. Anthropic
+  and ElevenLabs stay allowed — they cost tokens and nobody outside Temple
+  observes them, and they are what the demo is for. `security-alert` stays
+  live because it mails Temple, not the gym. `src/lib/edge-egress.test.ts`
+  holds the inventory and fails CI when a new edge function calls a vendor
+  without deciding which it is.
+- **The three long-lived demo tenants are named in the repo**
+  (`scripts/demo-gym/tenants.ts`) — `demo-launchpad` (embedded on
+  jointemple.io), `demo-good-life` and `demo-redline-hyrox` (demos given by
+  a person). The last two previously existed only in the hosted database
+  with a static documented password and nothing that ever reset them. All
+  three are now torn down, reseeded and given a fresh password nightly by
+  `demo-marketing-rotate.yml`, which reads the list rather than holding its
+  own copy.
 - **Demo gym seeder** — `npm run seed:demo` creates a fully-populated
   demo tenant with real signable-in accounts (timetable + attendance
   history, progressing PRs, Hyrox races, injuries, leads, campaign

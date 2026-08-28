@@ -226,7 +226,11 @@ Left for you (policy/config, not code):
 ## Tier 3 — sales & demo readiness
 
 - [x] **Stand up hosted demo gyms** — both seeded (production was reset
-      clean first, see the note above).
+      clean first, see the note above). **The passwords below are no longer
+      current**: since `scripts/demo-gym/tenants.ts` both tenants are
+      reseeded nightly with a fresh password, printed in the
+      `Demo tenant rotate` job's log under a group named for the slug. Read
+      it there, not here.
   - [x] **Good Life Crossfit** — slug `demo-good-life`, owner
         `owner@demo-good-life.temple.test` / `TempleDemo1!`. 43 accounts,
         850 bookings, 352 tracked workouts.
@@ -261,9 +265,15 @@ Left for you (policy/config, not code):
         live-proof ran through), because the platform is on live keys so
         Connect OAuth only offers live accounts — test-mode connect isn't
         available through the app anymore. So both demo gyms share that
-        one live Stripe account, and a completed demo checkout is real
-        money (show the flow, don't complete a real charge unless you'll
-        refund it).
+        one live Stripe account. **Since 0278 a completed demo checkout
+        is no longer real money**: `gyms.is_demo` is set for every
+        `demo-` slug and every Stripe write refuses before it reaches the
+        API, while reads still work so the billing screen looks like the
+        live gym it is. The connection stays deliberately — it is what
+        makes that screen worth showing. Both tenants are also now named
+        in `scripts/demo-gym/tenants.ts` and reseeded nightly, rather
+        than existing only in the hosted database with a static
+        password.
 - [x] **Decide Temple's pricing** — **£299/month +VAT, all-inclusive**,
       matching what the marketing site's stat strip and pricing page
       already commit to.

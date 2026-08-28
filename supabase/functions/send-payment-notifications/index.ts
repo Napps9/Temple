@@ -139,7 +139,7 @@ Deno.serve(async (req: Request) => {
 
   const [{ data: gym }, { data: settings }, { data: sendingDomain }, { data: links }] =
     await Promise.all([
-      service.from('gyms').select('name').eq('id', gymId).maybeSingle(),
+      service.from('gyms').select('name, is_demo').eq('id', gymId).maybeSingle(),
       service
         .from('gym_comms_settings')
         .select('from_name, reply_to')
@@ -185,7 +185,12 @@ Deno.serve(async (req: Request) => {
       ? `${sendingDomain.from_local}@${sendingDomain.domain}`
       : RESEND_FROM;
 
-  const live = Boolean(RESEND_API_KEY && fromAddress);
+  // A demo gym is another reason not to send (0278). It takes the route
+  // the no-ESP case has always taken: the row is written 'simulated' and
+  // the report counts it, so the product still shows what it did. Read as
+  // `=== false` rather than `!== true` on purpose — a gym row we cannot
+  // read is not a gym we will send mail on behalf of.
+  const live = Boolean(RESEND_API_KEY && fromAddress) && gym?.is_demo === false;
   const appUrl = `${origin}/membership`;
   const suppressed = await loadSuppressed(service, [gymId]);
 

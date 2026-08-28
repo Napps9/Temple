@@ -12,6 +12,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { gymIsDemo } from '../_shared/demo.ts';
+
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -55,6 +57,13 @@ Deno.serve(async (req: Request) => {
   if (aErr || allowed !== true) return json({ error: 'Not authorised' }, 403);
 
   const service = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  // The mirror of provisioning: this releases a real number and deletes a
+  // real assistant. On a shared demo tenant it would take the AI front desk
+  // apart for every visitor after this one (0278).
+  if (await gymIsDemo(service, gymId)) {
+    return json({ error: 'This is a demo gym — its front desk stays where it is' }, 409);
+  }
   const { data: row } = await service
     .from('gym_agent_settings')
     .select('twilio_number_sid, vapi_assistant_id, vapi_phone_number_id')

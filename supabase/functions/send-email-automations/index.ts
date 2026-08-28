@@ -166,12 +166,17 @@ Deno.serve(async (req: Request) => {
   const gymIds = [...new Set(runs.map((r) => r.gym_id))];
   const senderByGym = new Map<
     string,
-    { fromName: string; fromAddress: string | undefined; replyTo: string | undefined }
+    {
+      fromName: string;
+      fromAddress: string | undefined;
+      replyTo: string | undefined;
+      isDemo: boolean;
+    }
   >();
   await Promise.all(
     gymIds.map(async (gid) => {
       const [{ data: gym }, { data: settings }, { data: domain }] = await Promise.all([
-        service.from('gyms').select('name').eq('id', gid).maybeSingle(),
+        service.from('gyms').select('name, is_demo').eq('id', gid).maybeSingle(),
         service.from('gym_comms_settings').select('from_name, reply_to').eq('gym_id', gid).maybeSingle(),
         service
           .from('gym_sending_domains')
@@ -187,6 +192,10 @@ Deno.serve(async (req: Request) => {
             ? `${domain.from_local}@${domain.domain}`
             : RESEND_FROM,
         replyTo: settings?.reply_to || undefined,
+        // `!== false` reads the other way round from the senders because
+        // this is the demo half of the pair: a gym row we could not read
+        // is treated as a demo gym, so the run simulates rather than sends.
+        isDemo: gym?.is_demo !== false,
       });
     }),
   );
@@ -227,7 +236,10 @@ Deno.serve(async (req: Request) => {
     const unsubUrl = `${unsubBase}?run=${r.id}`;
     const bodyHtml = compiled.split(UNSUB_PLACEHOLDER).join(unsubUrl);
     const bodyText = (content.compiled_text ?? '').split(UNSUB_PLACEHOLDER).join(unsubUrl);
-    const live = Boolean(RESEND_API_KEY && sender?.fromAddress);
+    // A demo gym is another reason not to send (0278). Below, !live already
+    // marks the run sent-without-sending; this just adds a reason.
+    const live =
+      Boolean(RESEND_API_KEY && sender?.fromAddress) && sender?.isDemo === false;
 
     if (!live) {
       await service

@@ -8,6 +8,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { DEMO_NO_MONEY, gymIsDemo } from '../_shared/demo.ts';
+
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -69,6 +71,13 @@ Deno.serve(async (req: Request) => {
   });
   if (oErr || isOwner !== true) {
     return json({ error: 'Only an owner can connect Stripe' }, 403);
+  }
+
+  // A demo gym already has a connection; what this would do is hand a visitor
+  // an OAuth link that attaches somebody's REAL Stripe account to a tenant the
+  // next visitor also signs into (0278).
+  if (await gymIsDemo(service, gymId)) {
+    return json({ error: DEMO_NO_MONEY }, 409);
   }
   const { data: userData } = await caller.auth.getUser();
 

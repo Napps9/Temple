@@ -11,6 +11,19 @@ export type GymIdentity = {
   gymName: string;
   slug: string | null;
   publicSignupEnabled: boolean;
+  // 0278 — a public demo tenant. The guards that matter live server-side,
+  // at the point each edge function calls a vendor. This exists for the one
+  // path no server guard of ours can reach: changing an account's email,
+  // where Supabase Auth sends the mail and no code in this repo makes the
+  // call. On a shared demo tenant a confirmed change would also move the
+  // owner's login out from under the published credentials.
+  //
+  // Deliberately NOT used for the magic link on a gym's public join page,
+  // or for the password reset on the sign-in screen. Those are self-service
+  // auth flows any stranger can use for any address from anywhere; the gym
+  // in the URL does not cause them, so a demo gym is not what makes them
+  // reachable.
+  isDemo: boolean;
 };
 
 export const FALLBACK_GYM: GymIdentity = {
@@ -18,6 +31,10 @@ export const FALLBACK_GYM: GymIdentity = {
   gymName: 'Temple',
   slug: null,
   publicSignupEnabled: true,
+  // Not-yet-loaded is not a demo gym: this fallback is what every signed-in
+  // member sees for a moment on first paint, and refusing their email change
+  // for that moment would be a bug in every real gym.
+  isDemo: false,
 };
 
 // Normalise a hex input the user typed into the colour fields:

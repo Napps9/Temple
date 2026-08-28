@@ -4,6 +4,7 @@
 //
 // Plans and schedule are read directly with the service client.
 
+import { demoVendorId } from './demo.ts';
 import { escapeHtml, templeEmailHtml } from './email-layout.ts';
 
 // deno-lint-ignore no-explicit-any
@@ -16,6 +17,10 @@ export type AgentGym = {
   currency: string;
   timezone: string;
   public_signup_enabled: boolean;
+  // 0278 — a demo tenant. Nothing this agent decides to do may reach a
+  // handset or an inbox; it is still recorded on the conversation, so the
+  // visitor watching the thread sees the agent work.
+  isDemo: boolean;
   settings: {
     enabled: boolean;
     phone_number: string;
@@ -38,7 +43,7 @@ export type Conversation = {
 };
 
 const AGENT_SETTINGS_SELECT =
-  'gym_id, enabled, phone_number, voice_enabled, vapi_assistant_id, context, call_recording_enabled, recording_notice_at, daily_message_cap, gyms!gym_id(id, name, slug, currency, timezone, public_signup_enabled)';
+  'gym_id, enabled, phone_number, voice_enabled, vapi_assistant_id, context, call_recording_enabled, recording_notice_at, daily_message_cap, gyms!gym_id(id, name, slug, currency, timezone, public_signup_enabled, is_demo)';
 
 // deno-lint-ignore no-explicit-any
 function toAgentGym(data: any): AgentGym | null {
@@ -51,6 +56,7 @@ function toAgentGym(data: any): AgentGym | null {
     currency: g.currency ?? 'GBP',
     timezone: g.timezone ?? 'Europe/London',
     public_signup_enabled: !!g.public_signup_enabled,
+    isDemo: g.is_demo !== false,
     settings: {
       enabled: !!data.enabled,
       phone_number: data.phone_number,
@@ -550,6 +556,7 @@ async function textProspect(ctx: ToolContext, message: string): Promise<boolean>
     ctx.gym.settings.phone_number,
     ctx.conversation.phone,
     message,
+    ctx.gym.isDemo,
   );
   if (!sent.sid) return false;
   await appendMessage(ctx.service, conv, 'agent', message, sent.sid);
@@ -707,7 +714,7 @@ export async function executeTool(
     const link = `${ctx.appOrigin}/join/${ctx.gym.slug}?${params.toString()}`;
     const emailed =
       (await emailSendAllowed(ctx, email)) &&
-      (await sendOnboardingEmail(ctx.gym.name, email, link));
+      (await sendOnboardingEmail(ctx.gym.name, email, link, ctx.gym.isDemo));
 
     if (ctx.channel === 'voice') {
       const texted = await textProspect(
@@ -797,7 +804,12 @@ export async function executeTool(
       return 'Could not create their sign-in link — hand them to a coach to finish joining.';
     }
 
-    const emailed = await sendMagicLinkEmail(ctx.gym.name, email, actionLink);
+    const emailed = await sendMagicLinkEmail(
+      ctx.gym.name,
+      email,
+      actionLink,
+      ctx.gym.isDemo,
+    );
     if (!emailed) {
       // Transient send failure and their auth user now exists, so the plain
       // signup form would reject the address. NEVER text the sign-in link
@@ -945,7 +957,16 @@ export async function sendTwilioSms(
   from: string,
   to: string,
   body: string,
+  isDemo: boolean,
 ): Promise<{ sid: string | null; error: string | null }> {
+  // isDemo is required rather than optional on purpose: every caller has to
+  // decide, and the next one written cannot forget by omission (0278). A
+  // demo gym gets a sid shaped like a success so the message is still
+  // appended to the conversation the visitor is reading — it simply never
+  // reaches a handset.
+  if (isDemo) {
+    return { sid: demoVendorId('sms', `${to}:${body}`), error: null };
+  }
   try {
     const res = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
@@ -970,10 +991,14 @@ async function sendOnboardingEmail(
   gymName: string,
   toEmail: string,
   link: string,
+  isDemo: boolean,
 ): Promise<boolean> {
   const key = Deno.env.get('RESEND_API_KEY');
   const from = Deno.env.get('RESEND_FROM_EMAIL');
   if (!key || !from) return false;
+  // Reported as sent, because that is what the agent's own transcript should
+  // say and what the visitor should see happen. Nothing is mailed (0278).
+  if (isDemo) return true;
   const html = templeEmailHtml({
     title: `Join ${gymName}`,
     preheader: `Finish joining ${gymName} — about two minutes.`,
@@ -1007,10 +1032,12 @@ async function sendMagicLinkEmail(
   gymName: string,
   toEmail: string,
   link: string,
+  isDemo: boolean,
 ): Promise<boolean> {
   const key = Deno.env.get('RESEND_API_KEY');
   const from = Deno.env.get('RESEND_FROM_EMAIL');
   if (!key || !from) return false;
+  if (isDemo) return true;
   const html = templeEmailHtml({
     title: `Finish joining ${gymName}`,
     preheader: `Your one-time link to join ${gymName}.`,

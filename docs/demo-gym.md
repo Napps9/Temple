@@ -134,28 +134,46 @@ upsert; recovery from any failed state is teardown + re-seed.
 | `--teardown` | | Remove the gym and its demo accounts |
 | `--yes` | | Required for any non-local target |
 
-## Public marketing demo (`demo-launchpad`)
+## The long-lived demo tenants
 
-A third, separate tenant — `demo-launchpad` — backs the "Launch your gym"
-section on the marketing site (jointemple.io), which iframes its real,
-published site and offers sign-in CTAs into the real app. Deliberately
-its own slug, never `demo-ironworks`/`demo-hyrox`:
+Three tenants exist in the hosted database that strangers sign into. They
+are listed in **`scripts/demo-gym/tenants.ts`**, which is the source of
+truth — `.github/workflows/demo-marketing-rotate.yml` reads it rather than
+holding its own copy.
 
-- Those two are internal QA fixtures with a stable, documented password
-  (`TempleDemo1!`) engineers rely on. Public homepage traffic and the
-  rotation job below must never touch them, and vice versa.
-- It's reseeded nightly by `.github/workflows/demo-marketing-rotate.yml`
-  (`workflow_dispatch` with **no slug input** — the slug is hardcoded —
-  so this job structurally cannot touch any other tenant). Reseeding
-  rather than just rotating the password: the tenant is embedded
-  read-write on a public page (a live lead-capture form, sign-in-able
-  owner/member accounts that can book, DM, edit copy), so the real risk
-  is visitor-driven data mutation, not just credential exposure.
-- Its current login is published to `demo_marketing_credentials`
-  (migration `0122_demo_marketing_credentials.sql`) via
-  `scripts/publish-demo-credentials.ts`, and served read-only to the
-  marketing site by `api/demo-credentials.ts`.
-- One-time bootstrap (same as any other hosted seed):
+| Slug | Gym | Discipline | Used for |
+|---|---|---|---|
+| `demo-launchpad` | Launchpad CrossFit | crossfit | Embedded on jointemple.io; password published to anyone who loads the page |
+| `demo-good-life` | Good Life Crossfit | crossfit | Demos given by a person |
+| `demo-redline-hyrox` | Redline Hyrox | hyrox | Demos given by a person, Hyrox side |
+
+The last two spent months existing **only** in the hosted database — no
+migration, no seed file, no script default, no constant, a documented
+static password and nothing that ever reset them. That is what `tenants.ts`
+fixes, and it is worth not undoing.
+
+Deliberately none of these is `demo-ironworks`/`demo-hyrox`: those two are
+internal QA fixtures with a stable password (`TempleDemo1!`) engineers rely
+on, and the rotation job must never touch them.
+
+- **All three are reseeded nightly** at 03:00 UTC by
+  `demo-marketing-rotate.yml` (`workflow_dispatch` with **no inputs** — the
+  list comes from `tenants.ts`, which refuses a slug that is not
+  `demo-…`, and the seeder refuses one again). Reseeding rather than just
+  rotating the password: these tenants are signed into read-write by
+  strangers, so the real risk is visitor-driven data mutation, not just
+  credential exposure. A run destroys whatever is on a tenant, **including
+  a demo somebody is in the middle of**.
+- **Where to get the new password.** `demo-launchpad`'s goes to
+  `demo_marketing_credentials` (migration
+  `0122_demo_marketing_credentials.sql`) via
+  `scripts/publish-demo-credentials.ts`, and is served read-only to the
+  marketing site by `api/demo-credentials.ts`. The other two are printed in
+  the rotation job's log, under a group named for the slug — that is where
+  whoever is giving the demo reads them. Only one tenant may be published,
+  because the RPC behind that table takes no arguments and returns the most
+  recently rotated row.
+- One-time bootstrap for a new tenant (same as any other hosted seed):
   ```bash
   npx tsx scripts/seed-demo-gym.ts --slug demo-launchpad --name "Launchpad CrossFit" --discipline crossfit --yes
   npx tsx scripts/publish-demo-credentials.ts --slug demo-launchpad --gym-name "Launchpad CrossFit" --password TempleDemo1!
@@ -164,15 +182,44 @@ its own slug, never `demo-ironworks`/`demo-hyrox`:
   `publish-demo-credentials.ts` once by hand — the nightly rotation
   takes over from there.)
 
+## What a demo tenant cannot do (0278)
+
+**Nothing a visitor presses on a demo gym reaches the outside world.**
+`gyms.is_demo` is set for every `demo-` slug and cannot be cleared, and
+every edge function that calls a vendor reads it before doing so.
+
+- **Email and SMS** take the route the no-ESP case has always taken: the
+  recipient row is written `simulated`, the campaign report counts it, the
+  timeline records it. The builder, the audience, the send and the report
+  all work; nothing arrives. This replaces the old standing warning that
+  campaign sends were real and hard-bounced 39 unroutable addresses against
+  the sending domain's reputation.
+- **Invites** still create their code and still list as sent — the screen
+  says "share this code manually", which is the branch a gym with no email
+  configured already takes. The address a visitor typed gets no mail.
+- **Money** stops before Stripe. Reads of the connected account still work,
+  so `/management/billing` looks like the live gym it is; checkouts,
+  refunds, subscription changes and Connect all refuse with a stated
+  reason.
+- **Phone numbers and voice assistants** are not bought, changed or
+  released, and `agent-interview`'s outbound call does not ring. The
+  browser interview at `/browser-start` still works — no telephony.
+- **Still allowed on purpose:** Anthropic and ElevenLabs. They cost tokens,
+  nobody outside Temple observes them, and they are the demo — the front
+  desk answering, the setup parser reading a timetable, a voice playing.
+  `security-alert` also stays live: it mails Temple, not the gym.
+
+`src/lib/edge-egress.test.ts` holds the whole inventory and fails CI if a
+new edge function calls a vendor without deciding which of those it is.
+`supabase/tests/a_demo_gym_cannot_reach_anybody.sql` covers the flag.
+
+The one send no server guard can reach is Supabase Auth's own mail, which
+Supabase sends rather than any code here. Changing an account's email is
+refused in `AccountScreen` for a demo gym, with the reason on screen.
+
 ## Known limits
 
 - No Stripe objects are seeded — checkout, Connect and store payment
   flows still need a connected test-mode account.
 - No waivers or PAR-Q questionnaires are seeded: publish one in-app to
   demo the booking gates (that flow is worth seeing from scratch).
-- **Campaign sends are real.** `RESEND_API_KEY` is configured in hosted,
-  so sending the seeded draft campaign calls Resend for real — against 39
-  `@<slug>.temple.test` addresses that cannot route, which hard-bounce
-  against the sending domain's reputation. Show the builder; do not send.
-  The same applies to team and member invites, whose address field is
-  free text, and to approving a Timeline question.

@@ -19,6 +19,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { DEMO_NO_MONEY, gymIsDemo } from '../_shared/demo.ts';
+
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
@@ -86,6 +88,9 @@ Deno.serve(async (req: Request) => {
     // Best-effort: revoke the OAuth grant on Stripe. A failure here (e.g.
     // the grant is already gone, or the key can't see the account) must
     // never block clearing the local row — otherwise the gym stays stuck.
+    if (await gymIsDemo(service, gymId)) {
+      return json({ error: DEMO_NO_MONEY }, 409);
+    }
     if (accountId && CLIENT_ID) {
       try {
         await fetch('https://connect.stripe.com/oauth/deauthorize', {
@@ -103,6 +108,10 @@ Deno.serve(async (req: Request) => {
         // ignore — clear locally regardless
       }
     }
+    // The 'status' action below is a plain read of the connected account and
+    // stays available — it is what keeps /management/billing, a tour stop,
+    // looking like a live gym. This one deauthorises the account at Stripe,
+    // which would take the demo's own billing apart (0278).
     const { error: dErr } = await service
       .from('gym_stripe_accounts')
       .delete()

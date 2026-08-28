@@ -12,6 +12,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
+import { gymIsDemo } from '../_shared/demo.ts';
 import { appendMessage, sendTwilioSms } from '../_shared/lead-agent.ts';
 
 const cors: Record<string, string> = {
@@ -117,6 +118,7 @@ Deno.serve(async (req: Request) => {
     settings.phone_number,
     conversation.phone,
     text,
+    await gymIsDemo(service, conversation.gym_id),
   );
   if (!sent.sid) return json({ error: sent.error ?? 'Send failed' }, 502);
 

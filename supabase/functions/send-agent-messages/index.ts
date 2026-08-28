@@ -77,7 +77,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: gym } = await service
     .from('gyms')
-    .select('name, timezone')
+    .select('name, timezone, is_demo')
     .eq('id', gymId)
     .maybeSingle();
 
@@ -129,7 +129,12 @@ Deno.serve(async (req: Request) => {
       ? `${sendingDomain.from_local}@${sendingDomain.domain}`
       : RESEND_FROM;
 
-  const live = Boolean(RESEND_API_KEY && fromAddress);
+  // A demo gym is another reason not to send (0278). It takes the route
+  // the no-ESP case has always taken: the row is written 'simulated' and
+  // the report counts it, so the product still shows what it did. Read as
+  // `=== false` rather than `!== true` on purpose — a gym row we cannot
+  // read is not a gym we will send mail on behalf of.
+  const live = Boolean(RESEND_API_KEY && fromAddress) && gym?.is_demo === false;
   // The sixth place this has to be honoured, and the one that was
   // missed. 0229's comment names the transactional senders — class
   // changes, cover, payment notices, automations — and the jobs' own

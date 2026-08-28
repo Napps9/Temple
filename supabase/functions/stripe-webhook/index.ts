@@ -113,7 +113,7 @@ async function sendStoreReceipt(
         .from('store_order_items')
         .select('id, name_snapshot, kind_snapshot, quantity, line_total_cents')
         .eq('order_id', args.orderId),
-      service.from('gyms').select('name').eq('id', args.gymId).single(),
+      service.from('gyms').select('name, is_demo').eq('id', args.gymId).single(),
       service
         .from('gym_comms_settings')
         .select('from_name, reply_to')
@@ -126,6 +126,10 @@ async function sendStoreReceipt(
         .maybeSingle(),
     ]);
   if (!order) return;
+  // A demo gym's receipt is written to the order and shown in the app, but
+  // never mailed (0278). Belt and braces: a demo gym cannot reach Stripe
+  // either, so in practice there is no payment for this to follow.
+  if (gym?.is_demo !== false) return;
 
   const fromAddress =
     domain?.status === 'verified' && domain.domain
