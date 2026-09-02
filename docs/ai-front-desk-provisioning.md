@@ -29,10 +29,16 @@ gym owner only ever sees Temple's UI.
 2. **Temple owns the numbers.** Temple's Twilio account holds the UK
    regulatory bundle; every gym's number is bought under it and used on
    the gym's behalf (standard SaaS). Not per-gym Twilio KYC.
-3. **Voice-first (option A).** Phase 1 provisions a UK **local** number
-   for voice only. SMS (which needs a mobile number or a shared
-   messaging service) is a later phase; until then the SMS agent stays
-   dark for auto-provisioned gyms.
+3. **Mobile when we can, local when we can't.** A UK **local** number is
+   voice-only; a UK **mobile** carries voice and SMS. A Twilio regulatory
+   bundle is approved against one regulation (country + number type +
+   end-user type), so a bundle approved for local numbers cannot buy a
+   mobile — Twilio refuses the purchase with a 400 (error 21649). Which
+   types Temple can buy is therefore whatever bundles it holds:
+   provisioning reads each configured bundle's regulation from the
+   Numbers API, asks for a mobile if a mobile bundle is approved, and
+   otherwise (or if Twilio still refuses) buys a local voice-only
+   number. `sms_capable` records what was actually bought (0270).
 
 ## Data model (0152)
 
@@ -58,8 +64,14 @@ ever needs to request.
 2. Guard: entitled? not already live? env configured? Idempotent — a
    gym already `live` returns its number.
 3. `provision_status = 'provisioning'`.
-4. **Twilio**: find an available GB local voice number, buy it with the
-   regulatory `BundleSid` + emergency `AddressSid`; store
+4. **Twilio**: resolve which number types the configured bundles cover
+   (`GET /v2/RegulatoryCompliance/Bundles/{sid}` → status +
+   `regulation_sid`; `GET .../Regulations/{sid}` → `number_type`), skipping
+   any bundle that isn't `twilio-approved` / `provisionally-approved`
+   (none usable → reason `bundle_not_approved`). Then, mobile first and
+   local second, find an available GB number of that type and buy it with
+   the matching `BundleSid` + emergency `AddressSid`; a refused purchase
+   moves on to the next type rather than failing. Store
    `twilio_number_sid` and `phone_number` together immediately so a later
    failure is recoverable and a retry never buys a second number.
 5. **Vapi**: create the gym's assistant (`POST /assistant`); import the
@@ -75,8 +87,11 @@ Each of steps 4-5 is skipped and its stored provider id reused if the row
 already has it — retrying a `failed` run resumes from the first
 incomplete step rather than re-buying a number or re-creating an
 assistant. On any step's failure: `provision_status = 'failed'`, keep
-whatever provider IDs were captured, return a typed reason. Deprovision
-can then clean up the partial state, or the owner can just retry.
+whatever provider IDs were captured, return a typed reason plus the
+provider's own message as `detail` — the wizard shows it, because the
+function log is the only other place it lands and the owner can't read
+that. Deprovision can then clean up the partial state, or the owner can
+just retry.
 
 ## UI
 
@@ -118,16 +133,26 @@ Already set: `VAPI_API_KEY`, `VAPI_WEBHOOK_SECRET`, `TWILIO_ACCOUNT_SID`,
 **New, and the critical path:**
 - A **UK regulatory bundle** approved on Temple's Twilio account
   (business docs — multi-day approval). Its SID → `TWILIO_UK_BUNDLE_SID`.
+  This one was approved for **local** numbers, so on its own it buys
+  voice-only numbers.
+- A second bundle approved for **mobile** numbers (same business docs,
+  submitted against the GB / mobile / business regulation). Its SID →
+  `TWILIO_UK_MOBILE_BUNDLE_SID`. Optional: without it, provisioning
+  simply never asks for a mobile. With it, every new gym gets a number
+  that can text.
 - An **emergency address** on the account. Its SID →
   `TWILIO_UK_ADDRESS_SID`.
 
-Nothing can buy a UK number until the bundle is approved, so that
-approval gates the first real end-to-end test.
+Nothing can buy a UK number until a bundle is approved, so that approval
+gates the first real end-to-end test. Provisioning doesn't trust the env
+to say which type a bundle covers — it asks Twilio — so a bundle set in
+the "wrong" variable still buys the type it was approved for.
 
 ## Not in phase 1
 
-- **SMS** for auto-provisioned gyms (phase 3) — the number bought here is
-  voice-only per the option-A decision; texts stay dark until then.
+- **SMS** for gyms provisioned without a mobile bundle — their number is
+  voice-only and `sms_capable` says so; texts stay dark for them until
+  they take a number that can text.
 - **Platform billing** that flips the entitlement flag automatically.
 - Recovery UI for a `provisioning` status stuck mid-run (e.g. the owner
   closed the tab mid-request) — today the same "Set up my number" /

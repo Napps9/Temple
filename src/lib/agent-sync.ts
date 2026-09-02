@@ -16,7 +16,10 @@ export async function syncVapiAssistant(gymId: string): Promise<void> {
 // provision-front-desk's failure reasons, mapped to owner-facing copy. Falls
 // back to a generic message for anything not listed (network blips, a
 // Twilio/Vapi status code we haven't seen).
-export function provisionErrorMessage(reason: string | undefined): string {
+export function provisionErrorMessage(
+  reason: string | undefined,
+  detail?: string | null,
+): string {
   if (!reason) return "Couldn't set up your number. It's safe to try again.";
   if (reason === 'not_entitled') {
     return "Phone & text isn't on your plan yet — contact Temple to turn it on.";
@@ -27,7 +30,11 @@ export function provisionErrorMessage(reason: string | undefined): string {
   if (reason === 'not_configured') {
     return "Number provisioning isn't set up on Temple's side yet — contact Temple.";
   }
-  return "Something went wrong setting up your number. No number was bought twice — it's safe to try again.";
+  if (reason === 'bundle_not_approved') {
+    return "Temple's UK number paperwork with Twilio isn't approved yet — contact Temple.";
+  }
+  const said = detail ? ` The provider said: "${detail.replace(/\.$/, '')}".` : '';
+  return `Something went wrong setting up your number.${said} No number was bought twice — it's safe to try again.`;
 }
 
 // Unlike syncVapiAssistant, this DOES throw — the caller needs to know
@@ -37,7 +44,7 @@ export async function provisionFrontDesk(gymId: string): Promise<{ number: strin
     body: { gym_id: gymId },
   });
   if (error) throw error;
-  if (!data?.provisioned) throw new Error(provisionErrorMessage(data?.reason));
+  if (!data?.provisioned) throw new Error(provisionErrorMessage(data?.reason, data?.detail));
   return { number: data.number as string };
 }
 

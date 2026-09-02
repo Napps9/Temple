@@ -214,7 +214,7 @@ export function AgentSettings() {
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
     },
-    onError: (e) => setError(errorMessage(e, "Couldn't set up your number")),
+    // No setError: the card renders provision.error next to its button.
   });
 
   const turnOff = useMutation({

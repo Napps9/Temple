@@ -17,7 +17,9 @@
 //
 // Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY,
 //   VAPI_API_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN,
-//   TWILIO_UK_BUNDLE_SID, TWILIO_UK_ADDRESS_SID
+//   TWILIO_UK_BUNDLE_SID, TWILIO_UK_ADDRESS_SID,
+//   TWILIO_UK_MOBILE_BUNDLE_SID (optional — a second bundle approved for
+//   mobile numbers; without one, only voice-only local numbers can be bought)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
@@ -71,6 +73,7 @@ Deno.serve(async (req: Request) => {
   const TW_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
   const TW_BUNDLE = Deno.env.get('TWILIO_UK_BUNDLE_SID');
   const TW_ADDRESS = Deno.env.get('TWILIO_UK_ADDRESS_SID');
+  const TW_MOBILE_BUNDLE = Deno.env.get('TWILIO_UK_MOBILE_BUNDLE_SID');
   if (!VAPI_KEY || !TW_SID || !TW_TOKEN || !TW_BUNDLE || !TW_ADDRESS) {
     return json({ provisioned: false, reason: 'not_configured' });
   }
@@ -131,12 +134,27 @@ Deno.serve(async (req: Request) => {
     'content-type': 'application/json',
   };
 
-  const fail = async (reason: string, patch: Record<string, unknown> = {}) => {
+  // `detail` is the provider's own words, shown to the owner. Without it a
+  // Twilio 400 and a Vapi 400 both read as "something went wrong", and the
+  // only copy of the reason is a function log the owner can't see.
+  const fail = async (reason: string, detail: string | null = null) => {
+    console.error('provision failed', gymId, reason, detail ?? '');
     await service
       .from('gym_agent_settings')
-      .update({ provision_status: 'failed', updated_at: new Date().toISOString(), ...patch })
+      .update({ provision_status: 'failed', updated_at: new Date().toISOString() })
       .eq('gym_id', gymId);
-    return json({ provisioned: false, reason });
+    return json({ provisioned: false, reason, detail });
+  };
+  const providerMessage = (text: string): string => {
+    try {
+      const parsed = JSON.parse(text);
+      const msg = parsed?.message ?? parsed?.error?.message ?? parsed?.error;
+      if (typeof msg === 'string') return msg.slice(0, 200);
+      if (Array.isArray(parsed?.message)) return parsed.message.join('; ').slice(0, 200);
+    } catch {
+      // not JSON
+    }
+    return text.slice(0, 200);
   };
 
   await service
@@ -168,70 +186,140 @@ Deno.serve(async (req: Request) => {
       return await fail(`twilio_unreachable: ${String(e).slice(0, 100)}`);
     }
   } else {
-    // A UK *local* number cannot carry SMS, which is what kept texts dark
-    // (the "option A, voice-first" decision). Ask for a mobile that does
-    // both first, and only fall back to a local voice-only number if none
-    // is available — a gym with a voice number is still a working front
-    // desk, it just cannot text. What we bought is recorded below rather
-    // than assumed from which branch we took.
-    let candidate: string;
-    try {
-      const search = async (kind: 'Mobile' | 'Local', sms: boolean) => {
-        const params = new URLSearchParams({ VoiceEnabled: 'true', PageSize: '5' });
-        if (sms) params.set('SmsEnabled', 'true');
-        const res = await fetch(
-          `${twBase}/AvailablePhoneNumbers/GB/${kind}.json?${params}`,
+    // A UK *local* number cannot carry SMS, so the gym wants a mobile that
+    // does both. But a Twilio regulatory bundle is approved against one
+    // regulation — country + number type + end-user type — and a bundle
+    // approved for local numbers cannot buy a mobile: Twilio refuses the
+    // purchase with a 400 (21649, "requires a bundle valid for the phone
+    // number"). Which number types Temple can buy is therefore a property
+    // of the bundles it holds, read from Twilio rather than assumed, and
+    // the purchase walks the types in preference order — mobile, then a
+    // voice-only local — trying the next when one is refused. A gym with
+    // a voice number is still a working front desk, it just cannot text.
+    // What was bought is recorded below rather than assumed from which
+    // branch bought it.
+    type Kind = 'Mobile' | 'Local';
+    const bundles = new Map<Kind, string>();
+    const bundleProblems: string[] = [];
+    const configured: Array<{ sid: string; assumed: Kind }> = [
+      ...(TW_MOBILE_BUNDLE ? [{ sid: TW_MOBILE_BUNDLE, assumed: 'Mobile' as Kind }] : []),
+      { sid: TW_BUNDLE, assumed: 'Local' as Kind },
+    ];
+    for (const { sid, assumed } of configured) {
+      if ([...bundles.values()].includes(sid)) continue;
+      try {
+        const bres = await fetch(
+          `https://numbers.twilio.com/v2/RegulatoryCompliance/Bundles/${sid}`,
           { headers: { Authorization: twAuth } },
         );
-        if (!res.ok) return null;
-        const data = await res.json();
-        return data?.available_phone_numbers?.[0]?.phone_number ?? null;
-      };
-      candidate = (await search('Mobile', true)) ?? (await search('Local', false)) ?? '';
-      if (!candidate) return await fail('no_numbers_available');
-    } catch (e) {
-      return await fail(`twilio_unreachable: ${String(e).slice(0, 100)}`);
-    }
-
-    try {
-      const form = new URLSearchParams({
-        PhoneNumber: candidate,
-        BundleSid: TW_BUNDLE,
-        AddressSid: TW_ADDRESS,
-        FriendlyName: `Temple — ${gymName}`,
-        SmsUrl: `${SUPABASE_URL}/functions/v1/lead-agent-sms`,
-        SmsMethod: 'POST',
-      });
-      const res = await fetch(`${twBase}/IncomingPhoneNumbers.json`, {
-        method: 'POST',
-        headers: { Authorization: twAuth, 'content-type': 'application/x-www-form-urlencoded' },
-        body: form.toString(),
-      });
-      if (!res.ok) {
-        console.error('twilio buy failed', res.status, (await res.text()).slice(0, 300));
-        return await fail(`twilio_buy_${res.status}`);
+        if (!bres.ok) {
+          // The bundle can't be inspected (a typo'd SID, a Numbers API
+          // hiccup). Twilio still decides at purchase time, so keep the
+          // documented assumption and let the buy below say no if it must.
+          console.error('bundle lookup failed', sid, bres.status);
+          if (!bundles.has(assumed)) bundles.set(assumed, sid);
+          continue;
+        }
+        const bundle = await bres.json();
+        const approved =
+          bundle?.status === 'twilio-approved' || bundle?.status === 'provisionally-approved';
+        if (!approved) {
+          bundleProblems.push(`bundle ${sid} is ${bundle?.status ?? 'unknown'}`);
+          continue;
+        }
+        const rres = await fetch(
+          `https://numbers.twilio.com/v2/RegulatoryCompliance/Regulations/${bundle.regulation_sid}`,
+          { headers: { Authorization: twAuth } },
+        );
+        const numberType = rres.ok ? (await rres.json())?.number_type : null;
+        const kind: Kind | null =
+          numberType === 'mobile'
+            ? 'Mobile'
+            : numberType === 'local' || numberType === 'national'
+              ? 'Local'
+              : numberType
+                ? null
+                : assumed;
+        if (!kind) {
+          bundleProblems.push(`bundle ${sid} covers ${numberType} numbers`);
+          continue;
+        }
+        if (!bundles.has(kind)) bundles.set(kind, sid);
+      } catch (e) {
+        return await fail(`twilio_unreachable: ${String(e).slice(0, 100)}`);
       }
-      const data = await res.json();
-      number = data.phone_number;
-      // Read the capability off the number we actually bought rather than
-      // off which search matched: a fallback, a Twilio change, or a
-      // reserved number would all make our intent a lie, and a gym whose
-      // switch says it can text but cannot is worse than one that admits it.
-      const smsCapable = data?.capabilities?.sms === true;
-      // Persist the SID and the number together — never one without the
-      // other, or a resume can't tell "bought" from "half-bought".
-      await service
-        .from('gym_agent_settings')
-        .update({
-          twilio_number_sid: data.sid,
-          phone_number: number,
-          sms_capable: smsCapable,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('gym_id', gymId);
-    } catch (e) {
-      return await fail(`twilio_unreachable: ${String(e).slice(0, 100)}`);
     }
+    if (bundles.size === 0) {
+      return await fail('bundle_not_approved', bundleProblems.join('; ') || null);
+    }
+    console.log('bundles', Object.fromEntries(bundles));
+
+    const search = async (kind: Kind) => {
+      const params = new URLSearchParams({ VoiceEnabled: 'true', PageSize: '5' });
+      if (kind === 'Mobile') params.set('SmsEnabled', 'true');
+      const res = await fetch(`${twBase}/AvailablePhoneNumbers/GB/${kind}.json?${params}`, {
+        headers: { Authorization: twAuth },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data?.available_phone_numbers?.[0]?.phone_number ?? null;
+    };
+
+    let bought: { sid: string; phone_number: string; capabilities?: { sms?: boolean } } | null =
+      null;
+    let lastReason = 'no_numbers_available';
+    let lastDetail: string | null = null;
+    for (const kind of ['Mobile', 'Local'] as Kind[]) {
+      const bundleSid = bundles.get(kind);
+      if (!bundleSid) continue;
+      try {
+        const candidate = await search(kind);
+        if (!candidate) continue;
+        const form = new URLSearchParams({
+          PhoneNumber: candidate,
+          BundleSid: bundleSid,
+          AddressSid: TW_ADDRESS,
+          FriendlyName: `Temple — ${gymName}`,
+          SmsUrl: `${SUPABASE_URL}/functions/v1/lead-agent-sms`,
+          SmsMethod: 'POST',
+        });
+        const res = await fetch(`${twBase}/IncomingPhoneNumbers.json`, {
+          method: 'POST',
+          headers: { Authorization: twAuth, 'content-type': 'application/x-www-form-urlencoded' },
+          body: form.toString(),
+        });
+        if (!res.ok) {
+          const text = (await res.text()).slice(0, 300);
+          console.error('twilio buy failed', kind, candidate, res.status, text);
+          lastReason = `twilio_buy_${res.status}`;
+          lastDetail = providerMessage(text);
+          continue;
+        }
+        bought = await res.json();
+        break;
+      } catch (e) {
+        return await fail(`twilio_unreachable: ${String(e).slice(0, 100)}`);
+      }
+    }
+    if (!bought) return await fail(lastReason, lastDetail);
+
+    number = bought.phone_number;
+    // Read the capability off the number we actually bought rather than
+    // off which search matched: a fallback, a Twilio change, or a
+    // reserved number would all make our intent a lie, and a gym whose
+    // switch says it can text but cannot is worse than one that admits it.
+    const smsCapable = bought.capabilities?.sms === true;
+    // Persist the SID and the number together — never one without the
+    // other, or a resume can't tell "bought" from "half-bought".
+    await service
+      .from('gym_agent_settings')
+      .update({
+        twilio_number_sid: bought.sid,
+        phone_number: number,
+        sms_capable: smsCapable,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('gym_id', gymId);
   }
 
   // 3. Create the gym's Vapi assistant (placeholder config; sync fills it).
@@ -255,8 +343,7 @@ Deno.serve(async (req: Request) => {
         }),
       });
       if (!res.ok) {
-        console.error('vapi assistant create failed', res.status, (await res.text()).slice(0, 300));
-        return await fail(`vapi_assistant_${res.status}`);
+        return await fail(`vapi_assistant_${res.status}`, providerMessage(await res.text()));
       }
       assistantId = (await res.json()).id;
       await service
@@ -284,8 +371,7 @@ Deno.serve(async (req: Request) => {
         }),
       });
       if (!res.ok) {
-        console.error('vapi number import failed', res.status, (await res.text()).slice(0, 300));
-        return await fail(`vapi_import_${res.status}`);
+        return await fail(`vapi_import_${res.status}`, providerMessage(await res.text()));
       }
       const vapiNumberId = (await res.json()).id;
       await service

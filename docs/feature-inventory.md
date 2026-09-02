@@ -3845,10 +3845,13 @@ provisions per gym on demand. `front_desk_entitled` defaults to `true`
 no billing reason to gate this); `set_gym_front_desk_entitled`
 (service-role only) is a manual off-switch for a specific gym, not
 something a gym has to be granted. `provision-front-desk` buys a GB
-local voice number under Temple's
-regulatory bundle, creates the gym's Vapi assistant, imports the number
+number under Temple's regulatory bundles — a mobile (voice + SMS) when
+Temple holds a bundle approved for mobile numbers, else a voice-only
+local, since a Twilio bundle only buys the number type it was approved
+for — creates the gym's Vapi assistant, imports the number
 onto it, and syncs prompt/tools/voice — resumable step-by-step, so
-retrying a `failed` run never buys a second number or assistant.
+retrying a `failed` run never buys a second number or assistant. A
+failed step returns the provider's own message and the wizard shows it.
 `deprovision-front-desk` tears it down (churn or the owner turning it
 off). Entry points: the setup wizard's go-live step and the AI Agent tab's
 "AI front desk" card both show a "Set up my number" button when

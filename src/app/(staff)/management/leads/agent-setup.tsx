@@ -228,7 +228,8 @@ export default function AgentSetupWizard() {
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['agent-settings', membership?.gymId] });
     },
-    onError: (e) => setError(errorMessage(e, "Couldn't set up your number")),
+    // No setError: the go-live card renders provision.error itself, next
+    // to the button that caused it.
     onSettled: () => {
       if (provisionTimer.current) {
         clearInterval(provisionTimer.current);
