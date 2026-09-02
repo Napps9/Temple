@@ -75,9 +75,11 @@ ever needs to request.
    `twilio_number_sid` and `phone_number` together immediately so a later
    failure is recoverable and a retry never buys a second number.
 5. **Vapi**: create the gym's assistant (`POST /assistant`); import the
-   Twilio number bound to it (`POST /phone-numbers/import`, Twilio creds)
-   so Vapi owns inbound voice; store `vapi_assistant_id` +
-   `vapi_phone_number_id`.
+   Twilio number bound to it (`POST /phone-number` with `provider:
+   'twilio'` + Twilio creds, `smsEnabled: false` so Vapi leaves our SMS
+   webhook alone) so Vapi owns inbound voice; store `vapi_assistant_id` +
+   `vapi_phone_number_id`. Vapi's resource paths are singular — the old
+   `/phone-numbers/import` answers 404.
 6. Populate the assistant by calling the existing `sync-vapi-assistant`
    (prompt + tools + voice) with the owner's auth.
 7. Persist `provision_status = 'live'`, `voice_enabled`, `enabled`;

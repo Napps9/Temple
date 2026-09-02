@@ -356,18 +356,24 @@ Deno.serve(async (req: Request) => {
   }
 
   // 4. Import the Twilio number onto the assistant so Vapi owns inbound voice.
-  //    Skipped on resume if already imported.
+  //    Skipped on resume if already imported. Vapi's resources are singular
+  //    (/assistant, /call, /phone-number); the old /phone-numbers/import
+  //    route is gone and answers "Cannot POST". smsEnabled false keeps Vapi
+  //    from overwriting the SmsUrl set at purchase — texts are ours, not
+  //    Vapi's.
   if (!settings.vapi_phone_number_id) {
     try {
-      const res = await fetch('https://api.vapi.ai/phone-numbers/import', {
+      const res = await fetch('https://api.vapi.ai/phone-number', {
         method: 'POST',
         headers: vapiHeaders,
         body: JSON.stringify({
-          twilioPhoneNumber: number,
+          provider: 'twilio',
+          number,
           twilioAccountSid: TW_SID,
           twilioAuthToken: TW_TOKEN,
           assistantId,
           name: `${gymName} — front desk`,
+          smsEnabled: false,
         }),
       });
       if (!res.ok) {
