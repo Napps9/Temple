@@ -83,6 +83,20 @@ select is(
 );
 
 -- Still the superuser here on purpose: cron_run_log has no client read.
+-- The log is shared with the real scheduled job: on CI's local stack
+-- pg_cron fires dispatch-plan-changes on its own minute, and a run
+-- landing while this file was executing made the row count two. So the
+-- count is of rows this call wrote, above the high-water mark taken
+-- just before it, not of every row the job has ever logged.
+select set_config(
+  'test.log_before',
+  coalesce(
+    (select max(id) from public.cron_run_log where job_name = 'dispatch-plan-changes'),
+    0
+  )::text,
+  true
+);
+
 select is(
   public.dispatch_plan_changes(),
   0,
@@ -91,7 +105,8 @@ select is(
 
 select is(
   (select count(*)::int from public.cron_run_log
-    where job_name = 'dispatch-plan-changes'),
+    where job_name = 'dispatch-plan-changes'
+      and id > current_setting('test.log_before')::bigint),
   1,
   'and still writes its cron_run_log row — zero found is not zero looked'
 );
