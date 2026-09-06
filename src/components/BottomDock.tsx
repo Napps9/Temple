@@ -5,7 +5,7 @@ import { Animated, Platform, Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ManageNavSheet } from './ManageNavSheet';
+import { ManageNavMenu } from './ManageNavMenu';
 import { NavAccountMenu } from './NavAccountMenu';
 import type { NavSection } from './TopNav';
 import { setDockExpanded, useDockExpanded } from '@/lib/dock';
@@ -23,9 +23,10 @@ import { BRAND, useThemeColors } from '@/lib/theme';
 //
 // Glyphs only, by the owner's call: the label lives in the
 // accessibilityLabel so screen readers still name the section. The
-// active pill is the brand tint, and the Manage pill opens the sheet
-// rather than navigating — on these widths there is no rail, so the
-// gym's destinations would otherwise all route through the hub. The
+// active pill is the brand tint, and the Manage pill opens a menu of
+// the gym's destinations (the same popover as the avatar) rather than
+// navigating — on these widths there is no rail, so they would
+// otherwise all route through the hub. The
 // avatar closes the row: on a phone the account menu lives here rather
 // than in a top bar, and it carries the staff/member switch.
 //
@@ -135,7 +136,7 @@ export function BottomDock({
       </View>
 
       {variant === 'staff' ? (
-        <ManageNavSheet visible={manageOpen} onClose={() => setManageOpen(false)} />
+        <ManageNavMenu visible={manageOpen} onClose={() => setManageOpen(false)} />
       ) : null}
     </>
   );
