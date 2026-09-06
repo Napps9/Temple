@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import { EmptyState } from '@/components/EmptyState';
 import { PageScroll } from '@/components/PageScroll';
 import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
@@ -671,10 +672,14 @@ function MyMovementsCard({
             )}
           </TileGrid>
         ) : (
-          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-            Nothing pinned yet. Star movements or groups in the Library to pin
-            them here.
-          </Text>
+          <EmptyState
+            icon="star-outline"
+            title="Nothing pinned yet"
+            description="Star movements or groups in the Library to pin them here."
+            actionLabel="Open the Library"
+            actionIcon="search-outline"
+            onAction={() => router.push('/track/movements' as never)}
+          />
         )}
       </View>
     </View>

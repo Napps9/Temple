@@ -1732,7 +1732,11 @@ function DayView({
         <View className="w-full max-w-5xl mx-auto px-4">
           {mode === 'book' ? (
             dayClasses.length === 0 ? (
-              <EmptyState icon="calendar-clear-outline" title="No classes scheduled today" />
+              <EmptyState
+                icon="calendar-clear-outline"
+                title="No classes on this day"
+                description="Pick another day on the strip. The week ahead is there."
+              />
             ) : (
               // Wide-screen book mode (the phone width goes to the Agenda
               // list instead) — a compact stacked list, not the hourly

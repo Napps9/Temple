@@ -10,6 +10,7 @@ import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ClassLeaderboardModal } from '@/components/ClassLeaderboardModal';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
+import { EmptyState } from '@/components/EmptyState';
 import { PageTopRow } from '@/components/PageTopRow';
 import { WeekStrip } from '@/components/WeekStrip';
 import { PercentPrescriptionRow } from '@/components/PercentPrescriptionRow';
@@ -639,11 +640,15 @@ function ClassTypeCard({
 
   const body =
     sections.length === 0 ? (
-      <Text className="text-ink-3 dark:text-ink-3-dk text-sm">
-        {mode === 'manage'
-          ? 'No programming yet — tap to add.'
-          : 'No programming yet.'}
-      </Text>
+      <EmptyState
+        icon="barbell-outline"
+        title="Nothing programmed"
+        description={
+          mode === 'manage'
+            ? 'Tap Add to write the day. Members see it once it is published.'
+            : 'Check back once your coach has posted it.'
+        }
+      />
     ) : (
       <View className="gap-3">
         {sections.map((s, idx) => (
@@ -764,11 +769,15 @@ function PersonalCard({
 
   const body =
     sections.length === 0 ? (
-      <Text className="text-ink-3 dark:text-ink-3-dk text-sm">
-        {mode === 'manage'
-          ? 'No programming yet — tap to add.'
-          : 'Nothing programmed for this day.'}
-      </Text>
+      <EmptyState
+        icon="barbell-outline"
+        title="Nothing programmed"
+        description={
+          mode === 'manage'
+            ? 'Tap Add to write the day.'
+            : 'Nothing programmed for this day.'
+        }
+      />
     ) : (
       <View className="gap-3">
         {sections.map((s, idx) => (

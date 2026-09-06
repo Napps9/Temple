@@ -1228,6 +1228,24 @@ export default function Timeline() {
               </View>
             </View>
           </View>
+        ) : isOwner ? (
+          // The pen stays on today: local cards render inside today's
+          // thread and the sentences anchor their dates to it. Without
+          // this line the composer simply vanished on paging, and the
+          // Today press is the same jump the header's button makes.
+          <View className="px-4 pb-3 pt-1 md:max-w-2xl md:mx-auto md:w-full">
+            <View className="flex-row items-center gap-3 rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk px-4 py-3">
+              <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">
+                {page.isPast ? 'Past days are the record.' : 'Days ahead are the plan.'}{' '}
+                Jump to today to ask Temple something.
+              </Text>
+              <ChipButton
+                label="Today"
+                icon="locate-outline"
+                onPress={() => setDayKey(todayKey)}
+              />
+            </View>
+          </View>
         ) : null}
       </KeyboardAvoidingView>
 

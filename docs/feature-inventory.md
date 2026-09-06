@@ -4384,7 +4384,8 @@ until then automations enqueue and simulate.
   sees there's something open without visiting the Inbox first.
 - **Cover inbox tab** [`can_request_cover` / `can_claim_cover`] — cover
   requested / claimed / still-uncovered cards, the last in amber, each
-  linking through to the Cover screen. Opening the tab marks them read.
+  opening the Timeline, where the claim card lives (the Cover screen
+  retired in 0243). Opening the tab marks them read.
   See Cover notifications under Classes & scheduling.
 
 ### Messaging (coach side)

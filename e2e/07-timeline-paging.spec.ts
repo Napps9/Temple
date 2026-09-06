@@ -39,8 +39,10 @@ test('the Timeline pages back a day and comes home', async ({ page }) => {
     expect(now, `pager did not move from "${startedOn}"`).not.toBe(startedOn);
   }).toPass({ timeout: 15_000 });
   await expect(picker).toHaveText('Yesterday');
-  // Past days are the record; the pen stays on today.
+  // Past days are the record; the pen stays on today, and the composer's
+  // place says so rather than standing empty.
   await expect(page.getByPlaceholder(TALK_BAR_PLACEHOLDER)).toHaveCount(0);
+  await expect(page.getByText('Jump to today to ask Temple something')).toBeVisible();
 
   await page.getByLabel('Jump to today').click();
   await expect(page.getByPlaceholder(TALK_BAR_PLACEHOLDER)).toBeVisible({
