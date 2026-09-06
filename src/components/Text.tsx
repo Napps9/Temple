@@ -1,4 +1,9 @@
-import { Text as RNText, TextInput as RNTextInput } from 'react-native';
+import {
+  Platform,
+  Text as RNText,
+  TextInput as RNTextInput,
+  type TextStyle,
+} from 'react-native';
 import type { ComponentProps } from 'react';
 
 // The product's typeface, applied.
@@ -34,9 +39,24 @@ export function Text({ className, ...rest }: ComponentProps<typeof RNText>) {
 
 // Same, for the fields. A form whose label is Geist and whose value is San
 // Francisco is worse than one that is consistently either.
+// On web the browser draws its own focus rectangle around a focused
+// input: a sharp blue box inside whatever rounded control the input
+// sits in. Every input here is already framed by its control (the
+// bordered field, the search pill, the composer card), so the ring only
+// ever clashed with it.
+const NO_OUTLINE =
+  Platform.OS === 'web' ? ({ outlineStyle: 'none' } as unknown as TextStyle) : null;
+
 export function TextInput({
   className,
+  style,
   ...rest
 }: ComponentProps<typeof RNTextInput>) {
-  return <RNTextInput className={fontClass(className)} {...rest} />;
+  return (
+    <RNTextInput
+      className={fontClass(className)}
+      style={NO_OUTLINE ? [NO_OUTLINE, style] : style}
+      {...rest}
+    />
+  );
 }
