@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Platform, Pressable, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ManageNavSheet } from './ManageNavSheet';
 import { NavAccountMenu } from './NavAccountMenu';
 import type { NavSection } from './TopNav';
+import { setDockExpanded, useDockExpanded } from '@/lib/dock';
 import { haptic } from '@/lib/haptic';
 import { BRAND, useThemeColors } from '@/lib/theme';
 
@@ -26,7 +28,16 @@ import { BRAND, useThemeColors } from '@/lib/theme';
 // gym's destinations would otherwise all route through the hub. The
 // avatar closes the row: on a phone the account menu lives here rather
 // than in a top bar, and it carries the staff/member switch.
+//
+// Two sizes (lib/dock): full at the top of a page, compact once the
+// reader scrolls down into it, full again on a scroll up or a section
+// press. A drag on the pill sets it by hand — up for full, down for
+// compact — the way a browser's toolbar can be pulled back. The change
+// is a scale about the pill's bottom edge, so the compact dock hugs the
+// same baseline and the clearance the pages keep is for the full size.
 export const DOCK_CLEARANCE = 84;
+const COMPACT_SCALE = 0.8;
+const DOCK_HEIGHT = 56;
 
 export function BottomDock({
   sections,
@@ -39,9 +50,46 @@ export function BottomDock({
   const pathname = usePathname();
   const colors = useThemeColors();
   const [manageOpen, setManageOpen] = useState(false);
+  const expanded = useDockExpanded();
+  const size = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.spring(size, {
+      toValue: expanded ? 1 : 0,
+      useNativeDriver: Platform.OS !== 'web',
+      damping: 18,
+      stiffness: 220,
+      mass: 0.8,
+    }).start();
+  }, [expanded, size]);
+
+  const scale = size.interpolate({
+    inputRange: [0, 1],
+    outputRange: [COMPACT_SCALE, 1],
+  });
+  // A scale is about the centre; this keeps the bottom edge where it is.
+  const translateY = size.interpolate({
+    inputRange: [0, 1],
+    outputRange: [((1 - COMPACT_SCALE) * DOCK_HEIGHT) / 2, 0],
+  });
+
+  const drag = Gesture.Pan()
+    .runOnJS(true)
+    .activeOffsetY([-12, 12])
+    .failOffsetX([-16, 16])
+    .onEnd((e) => {
+      if (e.translationY < -12) {
+        haptic.selection();
+        setDockExpanded(true);
+      } else if (e.translationY > 12) {
+        haptic.selection();
+        setDockExpanded(false);
+      }
+    });
 
   const onPressSection = (s: NavSection) => {
     haptic.selection();
+    setDockExpanded(true);
     if (s.name === 'management') {
       setManageOpen(true);
       return;
@@ -55,7 +103,10 @@ export function BottomDock({
         pointerEvents="box-none"
         className="md:hidden absolute left-0 right-0 items-center"
         style={{ bottom: Math.max(insets.bottom, 10) + 6 }}>
-        <View className="flex-row gap-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full px-4 py-1.5 shadow-float">
+        <GestureDetector gesture={drag}>
+        <Animated.View
+          style={{ transform: [{ translateY }, { scale }] }}
+          className="flex-row gap-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full px-4 py-1.5 shadow-float">
           {sections.map((s) => {
             const active = pathname.startsWith(s.href);
             return (
@@ -77,7 +128,8 @@ export function BottomDock({
           <View className="justify-center pl-1 pr-0.5">
             <NavAccountMenu variant={variant} anchor="bottom-right" />
           </View>
-        </View>
+        </Animated.View>
+        </GestureDetector>
       </View>
 
       {variant === 'staff' ? (

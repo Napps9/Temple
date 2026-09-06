@@ -43,6 +43,7 @@ import type { Capability } from '@/lib/can';
 import { chainStopLine, leftoverLine, travelTogether } from '@/lib/chain';
 import { recentTurns, toWireTurns, type Turn } from '@/lib/chat-memory';
 import { formatDate } from '@/lib/format-date';
+import { reportDockScroll } from '@/lib/dock';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
 import { nextStepLine, splitWaitingByChase } from '@/lib/payment-story';
 import {
@@ -458,6 +459,7 @@ export default function Timeline() {
   // content lays out, released the moment the reader scrolls up into
   // history, re-pinned when they come back to the bottom.
   const pinnedToEnd = useRef(true);
+  const lastStreamY = useRef(0);
   const onStreamScroll = (e: {
     nativeEvent: {
       contentOffset: { y: number };
@@ -465,6 +467,9 @@ export default function Timeline() {
       layoutMeasurement: { height: number };
     };
   }) => {
+    const y = e.nativeEvent.contentOffset.y;
+    reportDockScroll(y, y - lastStreamY.current);
+    lastStreamY.current = y;
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
     pinnedToEnd.current =
       contentOffset.y + layoutMeasurement.height >= contentSize.height - 120;
@@ -986,7 +991,7 @@ export default function Timeline() {
           className="flex-1"
           contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full"
           onScroll={onStreamScroll}
-          scrollEventThrottle={100}
+          scrollEventThrottle={16}
           onContentSizeChange={() => {
             if (pinnedToEnd.current) {
               scrollRef.current?.scrollToEnd({ animated: false });
