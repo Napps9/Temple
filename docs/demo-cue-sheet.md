@@ -4,11 +4,27 @@ The showcase runs on the seeded tenant `demo-crossfit-good-life` at
 app.jointemple.io. It is a demo gym (migration 0278): every email and
 SMS is simulated, invites show their code on screen, Stripe writes are
 refused, and the assistant is live. Nothing here can reach a real
-person. The seed was taken on Sun 6 Sep 2026; the timetable runs to
+person. The current seed was taken on Sun 6 Sep 2026 at 20:29 BST
+(a reseed after the day's rehearsal traffic); the timetable runs to
 Sun 20 Sep. Reseed the evening before the showcase (Actions, "Demo
 gym", `mode=teardown` then `mode=seed`, slug `demo-crossfit-good-life`,
 name `CrossFit Good Life`) and the dates below move with it: the full
 class is always the first CrossFit after the reseed.
+
+## Before the showcase
+
+- [ ] Device pass on the iPhone in Safari and on the laptop: sign in
+      as each of the four sessions below, walk every screen the four
+      jobs touch, and note anything that wraps, clips or lags.
+- [ ] Rehearsal one, the whole cue sheet, timed. Fix or cut what ran
+      long.
+- [ ] Rehearsal two, from the fixed sheet, with the phone on mobile
+      data rather than Wi-Fi.
+- [ ] The evening before: reseed (teardown, then seed), open the four
+      sessions, reject the cookie banner in each, leave them signed in.
+- [ ] Morning of: charge the phone, laptop on the Timeline, check the
+      full Monday 06:00 CrossFit still shows 14 of 14 with three
+      waitlisted.
 
 ## Logins
 
