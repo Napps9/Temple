@@ -141,6 +141,16 @@ export async function refreshMembership(queryClient: QueryClient): Promise<void>
   await queryClient.refetchQueries({ queryKey: ['gym-membership'] });
 }
 
+// A membership just minted is the one the device looks at next (0283):
+// somebody who joined, founded or took a trial at a gym expects to see
+// it, not the oldest gym they belong to. Best effort, like the choice.
+async function lookAt(gymId: string | null | undefined): Promise<void> {
+  if (!gymId) return;
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user.id;
+  if (userId) await writeSelectedGym(userId, gymId);
+}
+
 // Look at another of the account's gyms (0283). The whole cache goes,
 // as it does on sign-out: every tenant query is keyed on the gym, but a
 // handful are keyed on the user alone and would otherwise carry the old
@@ -295,8 +305,11 @@ export async function acceptInvite(
   });
   if (signInErr) throw signInErr;
 
-  const { error: rpcError } = await supabase.rpc('accept_invite', { invite_code: code });
+  const { data: joined, error: rpcError } = await supabase.rpc('accept_invite', {
+    invite_code: code,
+  });
   if (rpcError) throw rpcError;
+  await lookAt(joined?.[0]?.gym_id);
   await clearPendingInviteMetadata();
   return { status: 'accepted' };
 }
@@ -304,8 +317,9 @@ export async function acceptInvite(
 // Accept an invite from an already-authenticated session (a member who
 // opens an invite link while signed in — one tap, no signup).
 export async function joinGymByInvite(code: string): Promise<void> {
-  const { error } = await supabase.rpc('accept_invite', { invite_code: code });
+  const { data, error } = await supabase.rpc('accept_invite', { invite_code: code });
   if (error) throw error;
+  await lookAt(data?.[0]?.gym_id);
 }
 
 export function useSignOut() {
@@ -366,6 +380,7 @@ async function createGym(args: { name: string; slug: string }): Promise<string> 
     p_slug: args.slug,
   });
   if (error) throw error;
+  await lookAt(gymId as unknown as string);
   return gymId as unknown as string;
 }
 
@@ -486,6 +501,7 @@ export async function joinGymBySlug(slug: string): Promise<{ gymId: string }> {
     p_slug: slug,
   });
   if (error) throw error;
+  await lookAt(data as unknown as string);
   return { gymId: data as unknown as string };
 }
 
@@ -574,6 +590,7 @@ export async function completePendingTrial(args: {
   });
   if (error) throw error;
   const claim = (data ?? {}) as { gym_id?: string; session_id?: string | null };
+  await lookAt(claim.gym_id);
   await clearPendingTrialMetadata();
   return {
     status: 'claimed',

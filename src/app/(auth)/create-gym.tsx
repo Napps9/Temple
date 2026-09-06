@@ -18,6 +18,7 @@ import {
 } from '@/lib/auth';
 import { slugify } from '@/lib/brand';
 import { errorMessage } from '@/lib/errors';
+import { writeSelectedGym } from '@/lib/selected-gym';
 import { supabase } from '@/lib/supabase';
 
 type Step = 'account' | 'gym' | 'check_email';
@@ -109,6 +110,7 @@ export default function CreateGymScreen() {
           p_slug: effectiveSlug,
         });
         if (rpcError) throw rpcError;
+        await writeSelectedGym(session.user.id, data as unknown as string);
         await refreshMembership(queryClient);
         queryClient.invalidateQueries({ queryKey: ['gym-brand'] });
         router.replace('/' as never);
