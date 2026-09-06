@@ -5,17 +5,20 @@ import { Pressable, useWindowDimensions, View } from 'react-native';
 import { Avatar } from './Avatar';
 import { DockMenu, MenuDivider, MenuRow, type DockMenuAnchor } from './DockMenu';
 import { Text } from './Text';
-import { useGymMembership, useMyProfile, useSession } from '@/lib/auth';
+import { useGymMembership, useMyProfile, useSession, useSwitchGym } from '@/lib/auth';
 import { haptic } from '@/lib/haptic';
 import { useInboxUnreadCount, useNotificationCount } from '@/lib/notifications';
 import { useGymStoreConfig } from '@/lib/store';
 import { CURRENT_SUB_STATUSES, useGymPlans, useMySubscriptions } from '@/lib/subscriptions';
 import { MD } from '@/lib/breakpoint';
+import { useMyGyms } from '@/lib/useMyGyms';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
 import { useCan } from '@/lib/useCan';
 
 // Messages, theme, account, membership and store — the things that are
-// neither a section nor the page, folded behind the avatar.
+// neither a section nor the page, folded behind the avatar. And, for an
+// account that belongs to more than one gym (0283), the other gyms: one
+// row each, one tap to look at that gym instead.
 //
 // It lives here rather than inside TopNav because there are two navs now
 // and they must not drift: a menu that gained an item in the top bar and
@@ -73,6 +76,12 @@ export function NavAccountMenu({
   const accountHref = variant === 'staff' ? '/management/account' : '/account';
   const displayName = profile?.full_name?.trim() || session?.user.email || '';
 
+  const myGyms = useMyGyms();
+  const switchGym = useSwitchGym();
+  const activeGyms = (myGyms.data ?? []).filter((g) => !g.left_at);
+  const otherGyms = activeGyms.filter((g) => g.gym_id !== membership?.gymId);
+  const showGyms = activeGyms.length > 1 && !!membership;
+
   function go(href: string) {
     haptic.tap();
     setOpen(false);
@@ -112,11 +121,18 @@ export function NavAccountMenu({
       <DockMenu visible={open} onClose={() => setOpen(false)} anchor={anchor}>
         <View className="px-3 py-2 flex-row items-center gap-3">
           <Avatar name={displayName} avatarUrl={profile?.avatar_url} size={34} />
-          <Text
-            className="flex-1 text-ink dark:text-ink-dk font-semibold text-base"
-            numberOfLines={1}>
-            {displayName}
-          </Text>
+          <View className="flex-1">
+            <Text
+              className="text-ink dark:text-ink-dk font-semibold text-base"
+              numberOfLines={1}>
+              {displayName}
+            </Text>
+            {showGyms ? (
+              <Text className="text-ink-3 dark:text-ink-3-dk text-xs" numberOfLines={1}>
+                {membership.gymName} · {roleLabel(membership.role)}
+              </Text>
+            ) : null}
+          </View>
         </View>
 
         <MenuDivider />
@@ -172,7 +188,29 @@ export function NavAccountMenu({
             onPress={() => go('/store')}
           />
         ) : null}
+        {showGyms ? <MenuDivider /> : null}
+        {showGyms
+          ? otherGyms.map((g) => (
+              <MenuRow
+                key={g.gym_id}
+                icon="business-outline"
+                label={g.gym_name}
+                subtitle={`Switch · ${roleLabel(g.role)}`}
+                iconColor={colors.ink}
+                onPress={() => {
+                  if (switchGym.isPending) return;
+                  haptic.selection();
+                  setOpen(false);
+                  switchGym.mutate(g.gym_id);
+                }}
+              />
+            ))
+          : null}
       </DockMenu>
     </>
   );
+}
+
+function roleLabel(role: string): string {
+  return role.charAt(0).toUpperCase() + role.slice(1);
 }

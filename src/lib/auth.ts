@@ -5,6 +5,7 @@ import {
   useQueryClient,
   type QueryClient,
 } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useSyncExternalStore } from 'react';
 
 import {
@@ -12,6 +13,7 @@ import {
   type GymMembership,
   type MembershipRowInput,
 } from './membership';
+import { readSelectedGym, writeSelectedGym } from './selected-gym';
 import { supabase } from './supabase';
 import type { GymRole } from '@/types/database';
 
@@ -97,26 +99,29 @@ export function useGymMembership() {
     refetchOnReconnect: false,
     queryFn: async (): Promise<GymMembership | null> => {
       if (!session) return null;
-      // Oldest active membership wins. .maybeSingle() here once turned a
-      // double-membership (a data bug the RPCs now prevent) into a thrown
-      // error, which routed the user to /welcome — whose only CTA mints
-      // yet another gym. limit(1) degrades gracefully instead.
+      // The device's chosen gym when it is one the account still belongs
+      // to, else the oldest active membership (0283). The choice is read
+      // here rather than held in the key so a switch is one explicit
+      // refetch and a cold start never flashes the wrong gym.
       // gyms!gym_id pins the embed to the direct gym_id FK. Without the
       // hint PostgREST throws "more than one relationship was found for
       // 'gym_memberships' and 'gyms'" — the composite (gym_id, profile_id)
       // FKs that newer tables point at gym_memberships gave it a second
       // candidate join path, and an ambiguous embed is an ERROR, which
       // broke sign-in routing everywhere (prod + local) at once.
-      const { data, error } = await supabase
-        .from('gym_memberships')
-        .select('gym_id, role, gyms!gym_id ( name )')
-        .eq('profile_id', session.user.id)
-        .is('left_at', null)
-        .order('created_at', { ascending: true })
-        .limit(1);
+      const [{ data, error }, chosen] = await Promise.all([
+        supabase
+          .from('gym_memberships')
+          .select('gym_id, role, gyms!gym_id ( name )')
+          .eq('profile_id', session.user.id)
+          .is('left_at', null)
+          .order('created_at', { ascending: true }),
+        readSelectedGym(session.user.id),
+      ]);
       if (error) throw error;
-      const row = (data ?? [])[0] ?? null;
-      return parseMembershipRow(row as MembershipRowInput | null);
+      const rows = (data ?? []) as MembershipRowInput[];
+      const row = rows.find((r) => r.gym_id === chosen) ?? rows[0] ?? null;
+      return parseMembershipRow(row);
     },
   });
 }
@@ -134,6 +139,27 @@ export function useRole(): GymRole | null {
 // reading the stale row (the /welcome bounce loop).
 export async function refreshMembership(queryClient: QueryClient): Promise<void> {
   await queryClient.refetchQueries({ queryKey: ['gym-membership'] });
+}
+
+// Look at another of the account's gyms (0283). The whole cache goes,
+// as it does on sign-out: every tenant query is keyed on the gym, but a
+// handful are keyed on the user alone and would otherwise carry the old
+// gym's answer across. Then the one refetch the redirect can trust, and
+// the root index re-forks by the new gym's role and setup state.
+export function useSwitchGym() {
+  const queryClient = useQueryClient();
+  const session = useSession();
+  return useMutation({
+    mutationFn: async (gymId: string) => {
+      if (!session) return;
+      await writeSelectedGym(session.user.id, gymId);
+      queryClient.clear();
+      await refreshMembership(queryClient);
+    },
+    onSuccess: () => {
+      router.replace('/');
+    },
+  });
 }
 
 export function useMyProfile() {

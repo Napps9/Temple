@@ -27,11 +27,13 @@ import {
   useRole,
   useSession,
   useSignOut,
+  useSwitchGym,
 } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
 import { useGymBrand } from '@/lib/useGymBrand';
+import { useMyGyms } from '@/lib/useMyGyms';
 import { useSavedFlag } from '@/lib/useSavedFlag';
 
 function fmtMonthYear(iso: string): string {
@@ -52,24 +54,8 @@ export function AccountScreen() {
   const queryClient = useQueryClient();
   const themePref = useThemePreference();
 
-  // Every membership this account has held, left gyms included — the
-  // plain gyms embed refuses a left gym's name, so this is the definer
-  // RPC from 0255.
-  const myGyms = useQuery({
-    queryKey: ['my-gyms', session?.user.id],
-    enabled: !!session?.user.id,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('my_gyms');
-      if (error) throw error;
-      return (data ?? []) as {
-        gym_id: string;
-        gym_name: string;
-        role: string;
-        joined_at: string;
-        left_at: string | null;
-      }[];
-    },
-  });
+  const myGyms = useMyGyms();
+  const switchGym = useSwitchGym();
 
   const exportData = useMutation({
     mutationFn: async () => {
@@ -361,36 +347,47 @@ export function AccountScreen() {
           <View className="gap-2">
             <SectionLabel>Your gyms</SectionLabel>
             <RuledList>
-              {myGyms.data!.map((g, i) => (
-                <ListRow
-                  key={g.gym_id}
-                  ruled
-                  first={i === 0}
-                  title={g.gym_name}
-                  subtitle={
-                    g.left_at
-                      ? `Left ${fmtMonthYear(g.left_at)} \u00B7 history kept`
-                      : `Joined ${fmtMonthYear(g.joined_at)}`
-                  }
-                  chip={
-                    <View
-                      className={`rounded-full px-2 py-0.5 ${
-                        g.left_at
-                          ? 'bg-raised dark:bg-raised-dk'
-                          : 'bg-emerald-500/10'
-                      }`}>
-                      <Text
-                        className={`text-[10px] font-semibold ${
-                          g.left_at
-                            ? 'text-ink-2 dark:text-ink-2-dk'
-                            : 'text-emerald-700 dark:text-emerald-300'
+              {myGyms.data!.map((g, i) => {
+                const current = !g.left_at && g.gym_id === membership?.gymId;
+                const switchable = !g.left_at && !current;
+                return (
+                  <ListRow
+                    key={g.gym_id}
+                    ruled
+                    first={i === 0}
+                    title={g.gym_name}
+                    subtitle={
+                      g.left_at
+                        ? `Left ${fmtMonthYear(g.left_at)} \u00B7 history kept`
+                        : switchable
+                          ? `Joined ${fmtMonthYear(g.joined_at)} \u00B7 tap to switch`
+                          : `Joined ${fmtMonthYear(g.joined_at)}`
+                    }
+                    onPress={
+                      switchable
+                        ? () => {
+                            if (!switchGym.isPending) switchGym.mutate(g.gym_id);
+                          }
+                        : undefined
+                    }
+                    chip={
+                      <View
+                        className={`rounded-full px-2 py-0.5 ${
+                          current ? 'bg-emerald-500/10' : 'bg-raised dark:bg-raised-dk'
                         }`}>
-                        {g.left_at ? 'Past' : 'Current'}
-                      </Text>
-                    </View>
-                  }
-                />
-              ))}
+                        <Text
+                          className={`text-[10px] font-semibold ${
+                            current
+                              ? 'text-emerald-700 dark:text-emerald-300'
+                              : 'text-ink-2 dark:text-ink-2-dk'
+                          }`}>
+                          {g.left_at ? 'Past' : current ? 'Current' : 'Active'}
+                        </Text>
+                      </View>
+                    }
+                  />
+                );
+              })}
             </RuledList>
           </View>
         ) : null}

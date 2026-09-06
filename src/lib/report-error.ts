@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
+import { readSelectedGym } from '@/lib/selected-gym';
 import { supabase } from '@/lib/supabase';
 
 // The transport behind the crash screen. Until 0281 a crash was a
@@ -12,6 +13,18 @@ import { supabase } from '@/lib/supabase';
 
 let last: { message: string; at: number } | null = null;
 let installed = false;
+
+// The gym whose screen broke, when the device has chosen one (0283).
+// The server falls back to the oldest membership either way.
+async function selectedGym(): Promise<string | null> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const userId = data.session?.user.id;
+    return userId ? await readSelectedGym(userId) : null;
+  } catch {
+    return null;
+  }
+}
 
 function describe(error: unknown): { message: string; stack: string | null } {
   if (error instanceof Error) {
@@ -45,15 +58,18 @@ export function reportClientError({
       (Platform.OS === 'web' && typeof window !== 'undefined'
         ? window.location.pathname
         : null);
-    void supabase
-      .rpc('report_client_error', {
-        p_route: path,
-        p_message: message,
-        p_stack: stack,
-        p_component_stack: componentStack ?? null,
-        p_platform: Platform.OS,
-        p_app_version: Constants.expoConfig?.version ?? null,
-      })
+    void selectedGym()
+      .then((gymId) =>
+        supabase.rpc('report_client_error', {
+          p_route: path,
+          p_message: message,
+          p_stack: stack,
+          p_component_stack: componentStack ?? null,
+          p_platform: Platform.OS,
+          p_app_version: Constants.expoConfig?.version ?? null,
+          p_gym_id: gymId,
+        }),
+      )
       .then(
         () => undefined,
         () => undefined,

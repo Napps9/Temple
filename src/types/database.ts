@@ -5601,6 +5601,7 @@ export type Database = {
           p_component_stack: string | null;
           p_platform: string;
           p_app_version: string | null;
+          p_gym_id?: string | null;
         };
         Returns: undefined;
       };

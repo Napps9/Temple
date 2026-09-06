@@ -14,9 +14,17 @@ export default function AuthLayout() {
   // otherwise get redirected straight past the "choose a new password"
   // form by this same check before they ever see it.
   const isResettingPassword = pathname === '/reset-password';
+  // Since 0283 an account can belong to more than one gym, so a member
+  // opening another gym's join link, invite or trial pass has to reach
+  // that screen; each of them already handles the signed-in case itself.
+  const isTakingAnotherGym =
+    pathname.startsWith('/join/') ||
+    pathname === '/accept-invite' ||
+    pathname.startsWith('/trial/');
 
   if (
     !isResettingPassword &&
+    !isTakingAnotherGym &&
     session &&
     !isLoading &&
     membership &&

@@ -33,9 +33,8 @@ select is(
   'slug is lowercased and stripped'
 );
 
--- Slug validation, exercised by a FRESH user each time — since 0033
--- the founder already belongs to a gym, so re-calling create_gym as
--- them trips the one-gym-per-account guard before slug checks run.
+-- Slug validation, exercised by a fresh user each time so a refusal is
+-- about the slug and nothing else.
 do $$
 begin
   execute 'reset role';  -- back to postgres so mk_user may write auth.users

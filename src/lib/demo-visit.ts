@@ -2,6 +2,7 @@ import { usePathname } from 'expo-router';
 import { useEffect, useRef } from 'react';
 
 import { normaliseRoute } from './route-usage';
+import { readSelectedGym } from './selected-gym';
 import { supabase } from './supabase';
 
 // The second half of the marketing funnel (0279).
@@ -63,13 +64,20 @@ export function recordDemoEvent(
  */
 export async function recordDemoAuthentication(page: string): Promise<void> {
   try {
-    const { data } = await supabase
-      .from('gym_memberships')
-      .select('gym_id')
-      .is('left_at', null)
-      .order('created_at', { ascending: true })
-      .limit(1);
-    const gymId = (data ?? [])[0]?.gym_id;
+    const { data: auth } = await supabase.auth.getUser();
+    const userId = auth.user?.id;
+    if (!userId) return;
+    const [{ data }, chosen] = await Promise.all([
+      supabase
+        .from('gym_memberships')
+        .select('gym_id')
+        .eq('profile_id', userId)
+        .is('left_at', null)
+        .order('created_at', { ascending: true }),
+      readSelectedGym(userId),
+    ]);
+    const rows = data ?? [];
+    const gymId = (rows.find((r) => r.gym_id === chosen) ?? rows[0])?.gym_id;
     if (gymId) recordDemoEvent(gymId, 'demo_authenticated', page);
   } catch {
     // A counter must never be the reason a sign-in appears to fail.

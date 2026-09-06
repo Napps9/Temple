@@ -110,22 +110,20 @@ select lives_ok(
 );
 
 -- ---------------------------------------------------------------------------
--- One gym per account, on this path too
+-- Already somewhere else (0283: no longer a refusal)
 -- ---------------------------------------------------------------------------
 
 select _test_act_as(current_setting('test.other')::uuid);
-select throws_ok(
+select lives_ok(
   $$ select public.accept_invite('TAKENALREADY') $$,
-  'You already belong to a gym — one gym per account for now',
-  'an invite cannot mint a second active membership'
+  'an invite adds a second active membership to an account'
 );
 
--- The refusal has to roll back before the code is consumed, or the gym has
--- to issue a new one after the member leaves the gym they were in.
 select is(
-  (select used_at from public.invite_codes where code = 'TAKENALREADY'),
-  null,
-  'and the refused invite is still unused'
+  (select count(*)::int from public.gym_memberships
+    where profile_id = current_setting('test.other')::uuid and left_at is null),
+  2,
+  'and the first one is still there'
 );
 
 -- ---------------------------------------------------------------------------

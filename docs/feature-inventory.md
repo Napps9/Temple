@@ -164,7 +164,24 @@ dead-end). It carries:
 - **Your gyms** — every membership the account has held, left gyms
   included with their names ("Left Jun 2025 · history kept"), via the
   `my_gyms()` definer (0255 — a plain `gyms` select refuses a left
-  gym's name since 0237).
+  gym's name since 0237). Since 0283 an account can hold more than one
+  active membership: the current one carries a Current chip and any
+  other active gym is a tap to switch.
+- **More than one gym per account** (0283) — the v1 rule that
+  `create_gym`, `join_gym_by_slug`, `accept_invite` and
+  `redeem_trial_pass` refused an account already active elsewhere is
+  gone; an owner can be a member of another gym, a coach can work two
+  locations, a member can take a second gym's link (the auth layout lets
+  a signed-in member reach join, invite and trial screens). Which gym
+  the app shows is a per-device choice (`lib/selected-gym.ts`, keyed on
+  the user) that `useGymMembership` honours, falling back to the oldest
+  active membership; the account menu lists the other gyms below a rule
+  with one tap to switch (`useSwitchGym`: write the choice, clear the
+  query cache as sign-out does, refetch, land on the root index so the
+  new gym's role and setup state route the user). Nothing server-side
+  holds a current gym; every RPC takes the gym it acts on. Crash reports
+  now name the gym whose screen broke (`report_client_error` takes
+  `p_gym_id` and checks the caller is in it). `more_than_one_gym.sql`.
 - **Download everything** — `export_my_account_data()` (0255) hands the
   member one JSON document: profile, contact details, gyms, bookings,
   messages in both directions, purchases, plan history, PAR-Q answers

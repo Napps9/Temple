@@ -254,9 +254,11 @@ needing a separate generic Temple app alongside their own gym's branded
 app for admin work — not a blocker, since white-labeling would rebuild
 the *same* codebase (same role-gated UI serving both staff and member
 views from one binary) under a different bundle ID/icon, exactly like
-today. The multi-gym-person edge case above is a known, unresolved
-constraint worth remembering if this gets picked up later, not something
-that's been designed around yet.
+today. The multi-gym-person case is now real in the product (0283: one
+account, several active memberships, a per-device switch in the account
+menu), which sharpens the native-install constraint above rather than
+resolving it: on the web one install re-skins per gym, on a store binary
+it would still be one install per gym.
 
 **Revisit when:** a real sales conversation surfaces this as a blocker
 (per Plan Three's original discovery-spike recommendation), and the
