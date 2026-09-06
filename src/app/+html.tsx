@@ -5,10 +5,11 @@ import type { PropsWithChildren } from 'react';
 // that React Native can't reach — specifically, the OS chrome colour
 // (Safari notch tint, Android URL bar) that sits outside the React tree.
 //
-// The two theme-color metas key off the OS preference for first paint /
-// pre-React rendering. After mount, src/app/_layout.tsx replaces them with a
-// single tag tracking the in-app dark-mode toggle (which can override the OS
-// preference via the NavModal).
+// The theme-color meta and the html background are the light first paint.
+// After mount, src/app/_layout.tsx keeps both, and the document's
+// color-scheme, tracking the in-app theme — Safari paints the status-bar
+// strip from whichever of them it decides to use, and a dark page over a
+// light html background showed up as a white bar above the app.
 //
 // Hex values mirror src/lib/theme.ts (screenBg) and tailwind.config.js
 // (the ramp's `ground`). Single-sourcing is a small follow-up; not worth
@@ -19,9 +20,12 @@ export default function Root({ children }: PropsWithChildren) {
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+        {/* viewport-fit=cover lets the page run under the iPhone status
+            bar so the app's own ground paints there; the layouts pay the
+            inset back through react-native-safe-area-context. */}
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, shrink-to-fit=no"
+          content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"
         />
         {/* First paint is always light — Temple defaults to light mode
             for new visitors regardless of OS preference. The runtime

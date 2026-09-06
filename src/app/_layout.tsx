@@ -162,10 +162,13 @@ function ThemedShell() {
   }, [scheme]);
 
   // Keep the browser's OS-chrome colour (Safari notch tint, Android URL bar)
-  // in sync with the in-app theme. +html.tsx ships two prefers-color-scheme
-  // variants for first paint; this replaces them with a single dynamic tag
-  // so a manual dark-mode toggle that overrides the OS preference doesn't
-  // leave a seam between the body and the chrome.
+  // in sync with the in-app theme. +html.tsx ships a light theme-color and
+  // html background for first paint; this replaces the tag and repaints
+  // the document so a manual dark-mode toggle that overrides the OS
+  // preference doesn't leave a seam between the body and the chrome.
+  // Safari does not always take the tag, and then paints the status-bar
+  // strip from the html background instead, which is why that moves too;
+  // color-scheme tells it which way to tint its own controls.
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     document
@@ -175,7 +178,10 @@ function ThemedShell() {
     meta.name = 'theme-color';
     meta.content = colors.screenBg;
     document.head.appendChild(meta);
-  }, [colors.screenBg]);
+    document.documentElement.style.backgroundColor = colors.screenBg;
+    document.body.style.backgroundColor = colors.screenBg;
+    document.documentElement.style.colorScheme = scheme;
+  }, [colors.screenBg, scheme]);
 
   return (
     <View style={themeVars} className="flex-1">
