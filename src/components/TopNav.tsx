@@ -33,9 +33,8 @@ export type NavSection = {
 // One row at every width. The Temple mark used to hold the top-left;
 // it went (the owner's call) so a phone gets its vertical space back —
 // the pills join the bar as icon-over-label instead of renting a second
-// row. Every pill carries its visible label at every width: a bare
-// glyph row failed first-time users, who could not tell the dumbbell
-// from the calendar until a section was already active. The
+// row. The pills here carry their visible label; below md they move to
+// the BottomDock, which is glyph-only by the owner's call. The
 // day/week/month switcher lives with the calendar itself, not here.
 export function TopNav({
   sections,

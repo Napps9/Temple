@@ -5,7 +5,6 @@ import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ManageNavSheet } from './ManageNavSheet';
-import { Text } from './Text';
 import type { NavSection } from './TopNav';
 import { haptic } from '@/lib/haptic';
 import { BRAND, useThemeColors } from '@/lib/theme';
@@ -17,11 +16,11 @@ import { BRAND, useThemeColors } from '@/lib/theme';
 // full-height container), so it floats over every screen; the layouts pad
 // the scene's bottom to keep the last rows reachable underneath it.
 //
-// Same rules as the bar it replaces: every pill carries its visible
-// label (a bare glyph row failed first-time users), the active pill is
-// the brand tint, and the Manage pill opens the sheet rather than
-// navigating — on these widths there is no rail, so the gym's
-// destinations would otherwise all route through the hub.
+// Glyphs only, by the owner's call: the label lives in the
+// accessibilityLabel so screen readers still name the section. The
+// active pill is the brand tint, and the Manage pill opens the sheet
+// rather than navigating — on these widths there is no rail, so the
+// gym's destinations would otherwise all route through the hub.
 export const DOCK_CLEARANCE = 84;
 
 export function BottomDock({
@@ -51,7 +50,7 @@ export function BottomDock({
         pointerEvents="box-none"
         className="md:hidden absolute left-0 right-0 items-center"
         style={{ bottom: Math.max(insets.bottom, 10) + 6 }}>
-        <View className="flex-row gap-0.5 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full px-4 py-1.5 shadow-float">
+        <View className="flex-row gap-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full px-4 py-1.5 shadow-float">
           {sections.map((s) => {
             const active = pathname.startsWith(s.href);
             return (
@@ -62,18 +61,10 @@ export function BottomDock({
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={s.label}
-                className={`flex-col items-center gap-0.5 px-3.5 py-1.5 rounded-full active:opacity-70 ${
+                className={`items-center justify-center px-4 py-2.5 rounded-full active:opacity-70 ${
                   active ? 'bg-brand/10' : ''
                 }`}>
-                <Ionicons name={s.icon} size={19} color={active ? BRAND : colors.ink3} />
-                <Text
-                  className={`text-[11px] ${
-                    active
-                      ? 'text-ink dark:text-ink-dk font-semibold'
-                      : 'text-ink-3 dark:text-ink-3-dk font-medium'
-                  }`}>
-                  {s.label}
-                </Text>
+                <Ionicons name={s.icon} size={22} color={active ? BRAND : colors.ink3} />
               </Pressable>
             );
           })}

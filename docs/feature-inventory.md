@@ -4515,7 +4515,9 @@ without reading them.
   three outcomes — obvious to a first-time user, navigable without prior
   knowledge, key actions in three taps or fewer, driven by a tap-by-tap
   audit of 19 member and staff journeys. What shipped: visible labels on
-  every nav pill at phone width; doors for Tasks, Coach pay and Invite
+  every nav pill at phone width (since reversed: the floating dock is
+  glyph-only on both sides, labels kept for screen readers); doors for
+  Tasks, Coach pay and Invite
   plus four lost surfaces added to the Manage search; timeline lead
   lines open their conversation (migration 0252); one-tap booking from
   the class row with an undo (cutoff-aware); Record pre-fills from
