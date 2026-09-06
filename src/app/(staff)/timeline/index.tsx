@@ -1011,7 +1011,7 @@ export default function Timeline() {
           ) : feedEmpty && local.length === 0 ? (
             <View className="px-4 py-4">
               <EmptyState
-                icon="chatbubbles-outline"
+                icon="newspaper-outline"
                 title="Nothing here yet"
                 description="As things happen — someone joins, asks about their membership, needs looking after — it shows up here."
               />

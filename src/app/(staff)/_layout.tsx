@@ -19,7 +19,7 @@ const STAFF_SECTIONS: NavSection[] = [
     name: 'timeline',
     href: '/timeline',
     label: 'Timeline',
-    icon: 'chatbubbles-outline',
+    icon: 'newspaper-outline',
   },
   // Programming exists under both (staff) and (member) at the same
   // '/programming' URL — the group-qualified navigateTo pins this pill to
