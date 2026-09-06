@@ -1156,25 +1156,14 @@ export default function Timeline() {
         </GestureDetector>
 
         {isOwner && page.isToday ? (
-          <View className="px-4 pb-4 pt-1 gap-2 md:max-w-2xl md:mx-auto md:w-full">
-            <View className="flex-row gap-2">
-              <BarChip
-                icon="document-text-outline"
-                label="Your rules"
-                onPress={showRulesSheet}
-              />
-              <BarChip
-                icon="people-outline"
-                label="The team"
-                onPress={() => router.push('/management/roster' as never)}
-              />
-              <BarChip
-                icon="flag-outline"
-                label="Goals"
-                onPress={() => router.push('/management/goals' as never)}
-              />
-            </View>
-            <View className="flex-row items-center gap-2 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full pl-4 pr-1.5 py-1.5">
+          <View className="px-4 pb-3 pt-1 md:max-w-2xl md:mx-auto md:w-full">
+            {/* One card, the shape a chat assistant's composer has settled
+                into: the text on top with room to grow, the tools along
+                the bottom edge and the send button at their right. The
+                chips are the assistant's own doors (its rules, the team it
+                can act on, the goals it works to), so they live inside the
+                card rather than floating above it. */}
+            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card shadow-float px-4 pt-3 pb-2 gap-2">
               <TextInput
                 value={input}
                 onChangeText={setInput}
@@ -1182,16 +1171,38 @@ export default function Timeline() {
                 placeholder="Show me a member, change a class, send a newsletter…"
                 placeholderTextColor={colors.ink3}
                 multiline
-                className="flex-1 text-ink dark:text-ink-dk text-[15px] max-h-24 py-1.5"
+                className="text-ink dark:text-ink-dk text-[16px] leading-[22px] min-h-[24px] max-h-32 py-0.5"
                 onSubmitEditing={send}
               />
-              <Pressable
-                onPress={send}
-                disabled={busy || !input.trim()}
-                accessibilityLabel="Send"
-                className={`w-9 h-9 rounded-full items-center justify-center ${busy || !input.trim() ? 'bg-sunken dark:bg-raised-dk' : 'bg-primary'}`}>
-                <Ionicons name="arrow-up" size={18} color={colors.onPrimary} />
-              </Pressable>
+              <View className="flex-row items-center gap-1">
+                <BarChip
+                  icon="document-text-outline"
+                  label="Your rules"
+                  onPress={showRulesSheet}
+                />
+                <BarChip
+                  icon="people-outline"
+                  label="The team"
+                  onPress={() => router.push('/management/roster' as never)}
+                />
+                <BarChip
+                  icon="flag-outline"
+                  label="Goals"
+                  onPress={() => router.push('/management/goals' as never)}
+                />
+                <View className="flex-1" />
+                <Pressable
+                  onPress={send}
+                  disabled={busy || !input.trim()}
+                  accessibilityLabel="Send"
+                  className={`w-8 h-8 rounded-full items-center justify-center ${busy || !input.trim() ? 'bg-sunken dark:bg-raised-dk' : 'bg-primary active:bg-primary-dark'}`}>
+                  <Ionicons
+                    name="arrow-up"
+                    size={17}
+                    color={busy || !input.trim() ? colors.ink3 : colors.onPrimary}
+                  />
+                </Pressable>
+              </View>
             </View>
           </View>
         ) : null}
@@ -1224,12 +1235,13 @@ function BarChip({
   onPress: () => void;
 }) {
   const colors = useThemeColors();
+  // Ghost, not bordered: these sit on the composer card's bottom edge.
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface dark:bg-surface-dk border border-line dark:border-line-dk active:opacity-70">
+      className="flex-row items-center gap-1 px-2 py-1.5 rounded-full hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk">
       <Ionicons name={icon} size={14} color={colors.ink2} />
-      <Text className="text-ink-2 dark:text-ink-2-dk text-[13px] font-semibold">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-[12.5px] font-semibold" numberOfLines={1}>
         {label}
       </Text>
     </Pressable>
