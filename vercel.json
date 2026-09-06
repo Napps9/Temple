@@ -5,18 +5,68 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/join/:slug", "destination": "/join/[slug]" },
-    { "source": "/lead/:slug", "destination": "/lead/[slug]" },
-    { "source": "/track/movement/:movement", "destination": "/track/movement/[movement]" },
-    { "source": "/athlete/movement/:movement", "destination": "/athlete/movement/[movement]" },
-    { "source": "/track/group/:group", "destination": "/track/group/[group]" },
-    { "source": "/track/workout/:id", "destination": "/track/workout/[id]" },
-    { "source": "/timeline/:action", "destination": "/timeline/[action]" },
-    { "source": "/inbox/direct/:peer", "destination": "/inbox/direct/[peer]" },
-    { "source": "/management/members/:profile", "destination": "/management/members/[profile]" },
-    { "source": "/management/members/imported/:id", "destination": "/management/members/imported/[id]" },
-    { "source": "/management/communications/:id", "destination": "/management/communications/[id]" },
-    { "source": "/management/communications/automations/:id", "destination": "/management/communications/automations/[id]" },
-    { "source": "/management/leads/conversation/:id", "destination": "/management/leads/conversation/[id]" }
+    {
+      "source": "/join/:slug",
+      "destination": "/join/[slug]"
+    },
+    {
+      "source": "/lead/:slug",
+      "destination": "/lead/[slug]"
+    },
+    {
+      "source": "/track/movement/:movement",
+      "destination": "/track/movement/[movement]"
+    },
+    {
+      "source": "/athlete/movement/:movement",
+      "destination": "/athlete/movement/[movement]"
+    },
+    {
+      "source": "/track/group/:group",
+      "destination": "/track/group/[group]"
+    },
+    {
+      "source": "/track/workout/:id",
+      "destination": "/track/workout/[id]"
+    },
+    {
+      "source": "/timeline/:action",
+      "destination": "/timeline/[action]"
+    },
+    {
+      "source": "/inbox/direct/:peer",
+      "destination": "/inbox/direct/[peer]"
+    },
+    {
+      "source": "/management/members/:profile",
+      "destination": "/management/members/[profile]"
+    },
+    {
+      "source": "/management/members/imported/:id",
+      "destination": "/management/members/imported/[id]"
+    },
+    {
+      "source": "/management/communications/:id",
+      "destination": "/management/communications/[id]"
+    },
+    {
+      "source": "/management/communications/automations/:id",
+      "destination": "/management/communications/automations/[id]"
+    },
+    {
+      "source": "/management/leads/conversation/:id",
+      "destination": "/management/leads/conversation/[id]"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/demo-targets.json",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://jointemple.io"
+        }
+      ]
+    }
   ]
 }

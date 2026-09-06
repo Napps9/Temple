@@ -104,11 +104,11 @@ describe('nothing is built and then lost', () => {
   // a retired route in a string.
   //
   // Two files legitimately do. back-office.ts is the record itself, and
-  // sign-in.tsx keys the marketing site's demo redirect on the old path
-  // because that repo deploys separately and still sends it — the value
-  // beside it is where it actually goes.
+  // demo-targets.ts keys the marketing site's demo redirect on the old
+  // path because that repo deploys separately and still sends it — the
+  // href beside it is where it actually goes.
   it('never sends anybody to a retired route', () => {
-    const allowed = ['back-office.ts', 'sign-in.tsx'];
+    const allowed = ['back-office.ts', 'demo-targets.ts'];
     const files = sourceFiles('src').filter(
       (f) => !allowed.some((a) => f.endsWith(a)) && !f.endsWith('.test.ts'),
     );

@@ -4711,6 +4711,14 @@ surround:
   `scripts/events.mjs` asserting the mirror itself has not gone stale.
   `demo_tour_completed` is deliberately not an event: the site cannot see
   inside the demo iframe, so it is a query for three or more distinct stops.
+  The screens the site can land a visitor on are one list,
+  `src/lib/demo-targets.ts`, published as `public/demo-targets.json` (CORS
+  for jointemple.io in `vercel.json`) for the marketing repo to fetch or
+  vendor; `scripts/demo-targets.ts` regenerates the file and
+  `demo-targets.test.ts` fails CI when the two differ. A key the app does
+  not know still lands on `/` but is now counted as
+  `demo_authenticated` on page `unknown:<key>`, so drift shows in the
+  funnel report instead of vanishing into the home screen.
 - **Demo tenants cannot reach anybody** (`0278`) — `gyms.is_demo`, forced
   true for any `demo-` slug by a trigger and unclearable, is read by every
   edge function before it calls a vendor. Email and SMS take the existing

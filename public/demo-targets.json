@@ -1,0 +1,44 @@
+{
+  "targets": [
+    {
+      "key": "/book",
+      "href": "/book"
+    },
+    {
+      "key": "/track",
+      "href": "/track"
+    },
+    {
+      "key": "/programming",
+      "href": "/programming"
+    },
+    {
+      "key": "/timeline",
+      "href": "/timeline"
+    },
+    {
+      "key": "/management",
+      "href": "/management"
+    },
+    {
+      "key": "/management/leads",
+      "href": "/management/leads"
+    },
+    {
+      "key": "/management/plans",
+      "href": "/management/plans"
+    },
+    {
+      "key": "/management/billing",
+      "href": "/management/billing"
+    },
+    {
+      "key": "/management/communications",
+      "href": "/management/communications"
+    },
+    {
+      "key": "/management/branding",
+      "href": "/management?section=branding"
+    }
+  ]
+}

@@ -10,38 +10,9 @@ import { Screen } from '@/components/Screen';
 import { TempleLockup } from '@/components/TempleMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { resendConfirmation, signIn } from '@/lib/auth';
+import { resolveDemoTarget } from '@/lib/demo-targets';
 import { recordDemoAuthentication, setDemoVisitor } from '@/lib/demo-visit';
 import { errorMessage } from '@/lib/errors';
-
-// Keep the keys in sync with FEATURE_DEMO_TARGETS in the marketing site
-// repo. The origin check below is what stops anyone but the marketing site
-// from triggering this at all; this allowlist is defense-in-depth on
-// top of that, so even a sender bug can't redirect a demo sign-in
-// anywhere but a screen we've actually chosen to demo.
-//
-// A map rather than a set because /management/branding is retired — the
-// panel lives in the Manage screen's Settings tab now. The marketing site
-// is a separate repo on its own deploy cadence, so the key stays what it
-// already sends and the value is where that actually lands today.
-//
-// Drift here is silent, and it had already happened: the marketing site's
-// scheduling, marketing and operations feature previews were sending
-// /book, /management/communications and /management, none of which were
-// in this map, so all three landed on / — a miss falls back rather than
-// erroring. If you retire a screen, keep its key and repoint the value:
-// never drop the row.
-const DEMO_REDIRECTS = new Map([
-  ['/book', '/book'],
-  ['/track', '/track'],
-  ['/programming', '/programming'],
-  ['/timeline', '/timeline'],
-  ['/management', '/management'],
-  ['/management/leads', '/management/leads'],
-  ['/management/plans', '/management/plans'],
-  ['/management/billing', '/management/billing'],
-  ['/management/communications', '/management/communications'],
-  ['/management/branding', '/management?section=branding'],
-]);
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -57,8 +28,10 @@ export default function SignInScreen() {
   const [resendNotice, setResendNotice] = useState<string | null>(null);
   // Set by the message listener below when the marketing site names a
   // specific screen (e.g. a feature page's "see it live" link) — read
-  // once, on successful sign-in, in onSubmit.
-  const demoRedirectRef = useRef<string | null>(null);
+  // once, on successful sign-in, in onSubmit. The key is kept beside the
+  // resolved href so a key this build does not know is counted rather
+  // than silently landing on /.
+  const demoRedirectRef = useRef<{ key: string; href: string | null } | null>(null);
 
   // Web only: the marketing site's homepage demo embeds this screen in
   // an iframe and can postMessage a demo account into it so a visitor
@@ -91,7 +64,10 @@ export default function SignInScreen() {
       if (typeof data.email === 'string') setEmail(data.email);
       if (typeof data.password === 'string') setPassword(data.password);
       if (typeof data.redirect === 'string') {
-        demoRedirectRef.current = DEMO_REDIRECTS.get(data.redirect) ?? null;
+        demoRedirectRef.current = {
+          key: data.redirect,
+          href: resolveDemoTarget(data.redirect),
+        };
       }
       // Only present when the visitor accepted the marketing site's cookie
       // banner; without it the demo half of the funnel is still counted,
@@ -114,14 +90,15 @@ export default function SignInScreen() {
       // Only for a sign-in the marketing site set up, so an ordinary one
       // pays nothing for it. record_demo_event refuses a gym that is not a
       // demo tenant, so a stale ref cannot make this record a real gym.
-      if (demoRedirectRef.current) {
-        void recordDemoAuthentication(demoRedirectRef.current);
+      const demo = demoRedirectRef.current;
+      if (demo) {
+        void recordDemoAuthentication(demo.href ?? `unknown:${demo.key}`);
       }
       // Navigate explicitly — the (auth) layout redirect only fires for
       // users WITH a membership, so a gymless account would otherwise sit
       // here. Root index routes by role / membership. A demo redirect
       // (see the message listener above) takes priority when present.
-      router.replace((demoRedirectRef.current ?? '/') as never);
+      router.replace((demo?.href ?? '/') as never);
     } catch (e) {
       const msg = errorMessage(e, 'Sign-in failed');
       setError(msg);
