@@ -1,12 +1,12 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
-import { Text } from '@/components/Text';
+import { View } from 'react-native';
 
 import { ChipButton } from '@/components/ChipButton';
 import { PageTopRow } from '@/components/PageTopRow';
 import { ProgrammingCalendar } from '@/components/ProgrammingCalendar';
 import { ProgrammingRoadmap } from '@/components/ProgrammingRoadmap';
+import { Segmented } from '@/components/Segmented';
 import { Screen } from '@/components/Screen';
 import { useGymMembership } from '@/lib/auth';
 import { useCan } from '@/lib/useCan';
@@ -26,27 +26,14 @@ export default function StaffProgramming() {
   };
 
   const toggle = (
-    <View className="flex-row bg-sunken dark:bg-raised-dk rounded-full p-0.5">
-      {(['week', 'year'] as const).map((v) => (
-        <Pressable
-          key={v}
-          onPress={() => setView(v)}
-          accessibilityRole="tab"
-          accessibilityState={{ selected: view === v }}
-          className={`px-3 py-1 rounded-full ${
-            view === v ? 'bg-white dark:bg-sunken-dk' : ''
-          }`}>
-          <Text
-            className={`text-[13px] font-semibold ${
-              view === v
-                ? 'text-ink dark:text-ink-dk'
-                : 'text-ink-2 dark:text-ink-2-dk'
-            }`}>
-            {v === 'week' ? 'Week' : 'Year'}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
+    <Segmented
+      options={[
+        { key: 'week', label: 'Week' },
+        { key: 'year', label: 'Year' },
+      ]}
+      value={view}
+      onChange={setView}
+    />
   );
 
   if (view === 'year') {

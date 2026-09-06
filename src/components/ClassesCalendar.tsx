@@ -18,6 +18,8 @@ import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { CreateClassModal } from '@/components/CreateClassModal';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
 import { PageTopRow } from '@/components/PageTopRow';
+import { Segmented } from '@/components/Segmented';
+import { WeekStrip } from '@/components/WeekStrip';
 import { Screen } from '@/components/Screen';
 import { SectionLabel } from '@/components/SectionLabel';
 import { TodayButton } from '@/components/TodayButton';
@@ -61,10 +63,6 @@ type SpotCountRow = {
 const HORIZON_WEEKS_FALLBACK = 12;
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
 const HOUR_HEIGHT = 80;
-// DAY_LETTERS is indexed by JS day-of-week (0=Sun..6=Sat) and used
-// in the day-strip header where the column header tracks the day's
-// real weekday. It does NOT depend on the gym's week_starts_on.
-const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 // WEEK_LETTERS_MON / WEEK_LETTERS_SUN are the first-column-first
 // orderings the month grid renders. The calendar picks based on the
@@ -364,30 +362,11 @@ function occupiedHourSet(
 
 function ViewSwitcher({ view }: { view: string }) {
   return (
-    <View className="flex-row bg-sunken dark:bg-raised-dk rounded-full p-1">
-      {VIEWS.map((v) => (
-        <Pressable
-          key={v}
-          onPress={() => {
-            haptic.selection();
-            router.setParams({ view: v });
-          }}
-          className={`px-4 py-1.5 rounded-full ${
-            view === v
-              ? 'bg-white dark:bg-sunken-dk'
-              : 'hover:bg-surface/50 dark:hover:bg-sunken-dk/40'
-          }`}>
-          <Text
-            className={`capitalize text-sm font-medium ${
-              view === v
-                ? 'text-ink dark:text-ink-dk'
-                : 'text-ink-2 dark:text-ink-2-dk'
-            }`}>
-            {v}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
+    <Segmented
+      options={VIEWS.map((v) => ({ key: v, label: v[0].toUpperCase() + v.slice(1) }))}
+      value={view as ViewMode}
+      onChange={(v) => router.setParams({ view: v })}
+    />
   );
 }
 
@@ -1398,51 +1377,12 @@ function AgendaView({
   return (
     <View className="flex-1">
       <View className="w-full max-w-5xl mx-auto px-4">
-        <View className="flex-row gap-2 pt-1 pb-4">
-          {weekDays.map((d) => {
-            const selected = isSameDay(d, date);
-            const today = isSameDay(d, new Date());
-            // The month's sessions are already in memory, so each day can
-            // say whether it has classes — the empty state points at
-            // exactly this dot.
-            const hasClasses = (sessions ?? []).some((s) =>
-              isSameDay(new Date(s.starts_at), d),
-            );
-            return (
-              <Pressable
-                key={d.toISOString()}
-                onPress={() => {
-                  haptic.selection();
-                  setDate(startOfDay(d));
-                }}
-                hitSlop={6}
-                className="flex-1 items-center gap-1.5">
-                <Text
-                  className={`text-xs font-semibold uppercase ${
-                    today ? 'text-brand' : 'text-ink-3 dark:text-ink-3-dk'
-                  }`}>
-                  {DAY_LETTERS[d.getDay()]}
-                </Text>
-                <View
-                  className={`w-9 h-9 rounded-full items-center justify-center ${
-                    selected ? 'bg-brand/10 border border-brand' : ''
-                  }`}>
-                  <Text
-                    className={`font-bold text-base ${
-                      today ? 'text-brand' : 'text-ink dark:text-ink-dk'
-                    }`}>
-                    {d.getDate()}
-                  </Text>
-                </View>
-                <View
-                  className={`w-1 h-1 rounded-full ${
-                    hasClasses ? 'bg-ink-3 dark:bg-ink-3-dk' : 'bg-transparent'
-                  }`}
-                />
-              </Pressable>
-            );
-          })}
-        </View>
+        <WeekStrip
+          days={weekDays}
+          selected={date}
+          onSelect={(d) => setDate(startOfDay(d))}
+          hasContent={(d) => (sessions ?? []).some((x) => isSameDay(new Date(x.starts_at), d))}
+        />
 
         {dayTypes.length > 1 ? (
           <View className="flex-row flex-wrap gap-2 pb-3">
@@ -1759,51 +1699,13 @@ function DayView({
   return (
     <View className="flex-1">
       <View className="w-full max-w-5xl mx-auto px-4">
-        <View className="flex-row gap-2 md:gap-3 md:justify-center pt-2 pb-4 md:pb-6">
-          {weekDays.map((d) => {
-            const selected = isSameDay(d, date);
-            const today = isSameDay(d, new Date());
-            // The month's sessions are already in memory, so each day can
-            // say whether it has classes — the empty state points at
-            // exactly this dot.
-            const hasClasses = (sessions ?? []).some((s) =>
-              isSameDay(new Date(s.starts_at), d),
-            );
-            return (
-              <Pressable
-                key={d.toISOString()}
-                onPress={() => {
-                  haptic.selection();
-                  setDate(d);
-                }}
-                hitSlop={6}
-                className="flex-1 md:flex-none md:w-12 items-center gap-1.5">
-                <Text
-                  className={`text-xs font-semibold uppercase ${
-                    today ? 'text-brand' : 'text-ink-3 dark:text-ink-3-dk'
-                  }`}>
-                  {DAY_LETTERS[d.getDay()]}
-                </Text>
-                <View
-                  className={`w-9 h-9 rounded-full items-center justify-center ${
-                    selected ? 'bg-brand/10 border border-brand' : ''
-                  }`}>
-                  <Text
-                    className={`font-bold text-base ${
-                      today ? 'text-brand' : 'text-ink dark:text-ink-dk'
-                    }`}>
-                    {d.getDate()}
-                  </Text>
-                </View>
-                <View
-                  className={`w-1 h-1 rounded-full ${
-                    hasClasses ? 'bg-ink-3 dark:bg-ink-3-dk' : 'bg-transparent'
-                  }`}
-                />
-              </Pressable>
-            );
-          })}
-        </View>
+        <WeekStrip
+          days={weekDays}
+          selected={date}
+          onSelect={setDate}
+          hasContent={(d) => (sessions ?? []).some((x) => isSameDay(new Date(x.starts_at), d))}
+          className="md:pb-6"
+        />
 
         {filterBar}
       </View>

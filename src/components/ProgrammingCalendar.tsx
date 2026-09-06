@@ -11,6 +11,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { ClassLeaderboardModal } from '@/components/ClassLeaderboardModal';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
 import { PageTopRow } from '@/components/PageTopRow';
+import { WeekStrip } from '@/components/WeekStrip';
 import { PercentPrescriptionRow } from '@/components/PercentPrescriptionRow';
 import {
   ProgrammingModal,
@@ -45,7 +46,6 @@ import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { useMyRepMaxes, type RepMaxLookup } from '@/lib/useOneRepMaxes';
 
-const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 type ClassSession = {
   id: string;
@@ -284,6 +284,13 @@ export function ProgrammingCalendar({
 
   const weekStart = startOfWeek(date, weekStartsOn);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  // The month's rows are in memory, so the strip can dot the days that
+  // have programming, the way Classes dots the days with classes.
+  const programmedDays = new Set(
+    [...(programmingMonthQuery.data ?? []), ...(personalMonthQuery.data ?? [])]
+      .filter((r) => r.sections.length > 0)
+      .map((r) => r.date),
+  );
 
   const dayTypes: DayClassType[] = (() => {
     const sessions = sessionsQuery.data ?? [];
@@ -434,40 +441,15 @@ export function ProgrammingCalendar({
           </View>
         ) : null}
 
-        <View className="flex-row gap-2 md:gap-3 md:justify-center pb-4">
-          {weekDays.map((d) => {
-            const selected = isSameDay(d, date);
-            const today = isSameDay(d, new Date());
-            return (
-              <Pressable
-                key={d.toISOString()}
-                onPress={() => setDate(d)}
-                hitSlop={6}
-                className="flex-1 md:flex-none md:w-12 items-center gap-1.5">
-                <Text
-                  className={`text-xs font-semibold uppercase ${
-                    today ? 'text-primary' : 'text-ink-3 dark:text-ink-3-dk'
-                  }`}>
-                  {DAY_LETTERS[d.getDay()]}
-                </Text>
-                <View
-                  className={`w-9 h-9 rounded-full items-center justify-center ${
-                    selected ? 'bg-primary' : ''
-                  }`}>
-                  <Text
-                    className={`font-bold text-base ${
-                      selected
-                        ? 'text-on-primary'
-                        : today
-                          ? 'text-ink dark:text-ink-dk font-semibold'
-                          : 'text-ink dark:text-ink-dk'
-                    }`}>
-                    {d.getDate()}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
+        {/* px-2 brings the strip to the same inset as the Classes one,
+            whose container is px-4 where this one is px-2. */}
+        <View className="px-2">
+          <WeekStrip
+            days={weekDays}
+            selected={date}
+            onSelect={setDate}
+            hasContent={(d) => programmedDays.has(fmtDateLocal(d))}
+          />
         </View>
       </View>
 
