@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { renderIconSlot, type IconSlot } from './icon-slot';
 import { Text } from './Text';
+import { useDockTop } from '@/lib/dock';
 
 // The one popover the navs share: a card hung from a corner of the
 // screen over a scrim, holding MenuRows. The account menu and the
@@ -27,6 +28,7 @@ export function DockMenu({
 }) {
   const insets = useSafeAreaInsets();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+  const dockTop = useDockTop() || Math.max(insets.bottom, 10) + 6 + 56;
 
   const panel =
     anchor === 'top-right'
@@ -38,8 +40,8 @@ export function DockMenu({
         }
       : anchor === 'bottom-right'
         ? {
-            // Clear of the dock: its bottom offset plus its height.
-            bottom: Math.max(insets.bottom, 10) + 6 + 56 + 8,
+            // Clear of the dock's measured top edge.
+            bottom: dockTop + 8,
             right: 12,
             width: Math.min(320, windowWidth - 24),
             maxHeight: windowHeight - insets.top - 160,

@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ManageNavMenu } from './ManageNavMenu';
 import { NavAccountMenu } from './NavAccountMenu';
 import type { NavSection } from './TopNav';
-import { setDockExpanded, useDockExpanded } from '@/lib/dock';
+import { setDockExpanded, setDockTop, useDockExpanded } from '@/lib/dock';
 import { haptic } from '@/lib/haptic';
 import { BRAND, useThemeColors } from '@/lib/theme';
 
@@ -36,6 +36,7 @@ import { BRAND, useThemeColors } from '@/lib/theme';
 // compact — the way a browser's toolbar can be pulled back. The change
 // is a scale about the pill's bottom edge, so the compact dock hugs the
 // same baseline and the clearance the pages keep is for the full size.
+// The pill's measured top edge is published for the popovers (lib/dock).
 export const DOCK_CLEARANCE = 84;
 const COMPACT_SCALE = 0.8;
 const DOCK_HEIGHT = 56;
@@ -53,6 +54,7 @@ export function BottomDock({
   const [manageOpen, setManageOpen] = useState(false);
   const expanded = useDockExpanded();
   const size = useRef(new Animated.Value(1)).current;
+  const bottomOffset = Math.max(insets.bottom, 10) + 6;
 
   useEffect(() => {
     Animated.spring(size, {
@@ -103,7 +105,8 @@ export function BottomDock({
       <View
         pointerEvents="box-none"
         className="md:hidden absolute left-0 right-0 items-center"
-        style={{ bottom: Math.max(insets.bottom, 10) + 6 }}>
+        style={{ bottom: bottomOffset }}
+        onLayout={(e) => setDockTop(bottomOffset + e.nativeEvent.layout.height)}>
         <GestureDetector gesture={drag}>
         {/* The transform sits on its own wrapper: NativeWind does not
             style Animated.View, so the pill's classes stay on a View. */}

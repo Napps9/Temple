@@ -58,12 +58,14 @@ export default function StaffProgramming() {
             <ChipButton
               label="Individuals"
               icon="person-outline"
+              iconOnlyBelow={375}
               onPress={() => router.push('/management/member-programming' as never)}
             />
           ) : null}
           <ChipButton
             label="Analysis"
             icon="analytics-outline"
+            iconOnlyBelow={375}
             onPress={() => router.push('/analysis' as never)}
           />
         </View>

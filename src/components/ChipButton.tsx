@@ -1,4 +1,4 @@
-import { Pressable, View } from 'react-native';
+import { Pressable, useWindowDimensions, View } from 'react-native';
 import { Text } from './Text';
 
 import { renderIconSlot, type IconSlot } from './icon-slot';
@@ -62,6 +62,7 @@ export function ChipButton({
   onPress,
   disabled,
   className,
+  iconOnlyBelow,
 }: {
   label: string;
   icon: IconSlot;
@@ -73,8 +74,14 @@ export function ChipButton({
   onPress?: () => void;
   disabled?: boolean;
   className?: string;
+  // Below this window width the chip is its icon alone, a round button
+  // the height of the controls beside it, with the label kept for the
+  // screen reader. For a header row that has to fit a 360px phone.
+  iconOnlyBelow?: number;
 }) {
   const colors = useThemeColors();
+  const { width } = useWindowDimensions();
+  const iconOnly = iconOnlyBelow !== undefined && width < iconOnlyBelow;
   const s = TONE_STYLES[tone];
   // The label on the accent fill, same token the primary Button uses.
   const filledLabel = colors.onPrimary;
@@ -86,11 +93,13 @@ export function ChipButton({
     filled: filledLabel,
     inverse: colors.surface,
   };
-  const iconEl = renderIconSlot(icon, 13, iconColor[tone]);
-  const containerClass = `flex-row items-center gap-1.5 px-3 py-1.5 rounded-full ${
-    s.container
-  } ${disabled ? 'opacity-50' : ''} ${className ?? ''}`;
-  const content = (
+  const iconEl = renderIconSlot(icon, iconOnly ? 17 : 13, iconColor[tone]);
+  const containerClass = `${
+    iconOnly ? 'w-9 h-9 items-center justify-center' : 'flex-row items-center gap-1.5 px-3 py-1.5'
+  } rounded-full ${s.container} ${disabled ? 'opacity-50' : ''} ${className ?? ''}`;
+  const content = iconOnly ? (
+    iconEl
+  ) : (
     <>
       {iconSide === 'left' ? iconEl : null}
       <Text
@@ -115,6 +124,7 @@ export function ChipButton({
       disabled={disabled}
       hitSlop={6}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
       className={containerClass}>
       {content}

@@ -1026,13 +1026,17 @@ export function ClassesCalendar({
             />
           </View>
           {mode === 'manage' ? (
-            <View className="w-full px-4 flex-row items-center justify-center gap-2 pb-4">
+            // -mx-6 undoes Screen's inset: this is a header row, at the
+            // same 16px the date row sits at, which is also what lets it
+            // fit a 360px phone.
+            <View className="-mx-6 px-4 flex-row items-center justify-center gap-2 pb-4">
               <ViewSwitcher view={view} />
               {canBulkEdit ? (
                 <ChipButton
                   label="Bulk"
                   icon="calendar-outline"
                   tone="neutral"
+                  iconOnlyBelow={375}
                   onPress={() => {
                     setBulkResult(null);
                     setBulkOpen(true);

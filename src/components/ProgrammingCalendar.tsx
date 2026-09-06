@@ -414,7 +414,10 @@ export function ProgrammingCalendar({
         )}
 
         {headerAction ? (
-          <View className="md:hidden flex-row flex-wrap justify-center gap-2 pb-4 -mt-1">
+          // -mx-4 undoes Screen's px-6 and this container's px-2: a header
+          // row at the 16px the date row sits at, so it fits a 360px phone;
+          // wrap stays as the fallback for a long label.
+          <View className="md:hidden -mx-4 flex-row flex-wrap justify-center gap-2 pb-4 -mt-1">
             {headerAction}
           </View>
         ) : null}

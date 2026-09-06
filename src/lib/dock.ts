@@ -36,3 +36,29 @@ export function reportDockScroll(y: number, dy: number) {
   else if (dy > 4) setDockExpanded(false);
   else if (dy < -8) setDockExpanded(true);
 }
+
+// Where the dock's top edge sits, measured up from the bottom of the
+// window, for the popovers that hang above it. Measured rather than
+// summed from constants so a change to the pill's padding cannot leave
+// a menu floating short of it or overlapping it. Zero until the first
+// layout; readers fall back to a constant then.
+let dockTop = 0;
+const dockTopListeners = new Set<(top: number) => void>();
+
+export function setDockTop(top: number) {
+  if (top === dockTop) return;
+  dockTop = top;
+  dockTopListeners.forEach((l) => l(top));
+}
+
+export function useDockTop() {
+  const [value, setValue] = useState(dockTop);
+  useEffect(() => {
+    dockTopListeners.add(setValue);
+    setValue(dockTop);
+    return () => {
+      dockTopListeners.delete(setValue);
+    };
+  }, []);
+  return value;
+}
