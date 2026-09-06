@@ -471,7 +471,7 @@ export function ProgrammingCalendar({
         </View>
       </View>
 
-      <PageScroll top={!!topBar} className="flex-1" contentContainerClassName="pb-10">
+      <PageScroll className="flex-1" contentContainerClassName="pb-10">
         <View className="w-full max-w-5xl mx-auto px-2 gap-3">
           {memberScope ? (
             <PersonalCard

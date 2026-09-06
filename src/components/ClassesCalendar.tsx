@@ -1472,7 +1472,7 @@ function AgendaView({
         ) : null}
       </View>
 
-      <PageScroll top={false} className="flex-1" contentContainerClassName="pb-10">
+      <PageScroll className="flex-1" contentContainerClassName="pb-10">
         {topSlot ? (
           <View className="w-full max-w-5xl mx-auto px-4 pt-1 pb-2">{topSlot}</View>
         ) : null}
@@ -1808,7 +1808,7 @@ function DayView({
         {filterBar}
       </View>
 
-      <PageScroll top={false}
+      <PageScroll
         ref={scrollRef}
         className="flex-1"
         contentContainerClassName="pb-10">
@@ -2194,7 +2194,7 @@ function WeekView({
         {filterBar}
       </View>
 
-      <PageScroll top={false}
+      <PageScroll
         ref={scrollRef}
         className="flex-1"
         contentContainerClassName="pb-10">
@@ -2400,7 +2400,7 @@ function MonthView({
         {filterBar}
       </View>
 
-      <PageScroll top={false} className="flex-1" contentContainerClassName="pb-10">
+      <PageScroll className="flex-1" contentContainerClassName="pb-10">
         {topSlot ? (
           <View className="w-full max-w-5xl mx-auto px-2 pt-4 pb-2">{topSlot}</View>
         ) : null}

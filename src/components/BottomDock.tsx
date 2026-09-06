@@ -5,6 +5,7 @@ import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ManageNavSheet } from './ManageNavSheet';
+import { NavAccountMenu } from './NavAccountMenu';
 import type { NavSection } from './TopNav';
 import { haptic } from '@/lib/haptic';
 import { BRAND, useThemeColors } from '@/lib/theme';
@@ -22,7 +23,9 @@ import { BRAND, useThemeColors } from '@/lib/theme';
 // accessibilityLabel so screen readers still name the section. The
 // active pill is the brand tint, and the Manage pill opens the sheet
 // rather than navigating — on these widths there is no rail, so the
-// gym's destinations would otherwise all route through the hub.
+// gym's destinations would otherwise all route through the hub. The
+// avatar closes the row: on a phone the account menu lives here rather
+// than in a top bar, and it carries the staff/member switch.
 export const DOCK_CLEARANCE = 84;
 
 export function BottomDock({
@@ -70,6 +73,10 @@ export function BottomDock({
               </Pressable>
             );
           })}
+          <View className="w-px h-6 self-center mx-1 bg-line dark:bg-line-dk" />
+          <View className="justify-center pl-1 pr-0.5">
+            <NavAccountMenu variant={variant} anchor="bottom-right" />
+          </View>
         </View>
       </View>
 

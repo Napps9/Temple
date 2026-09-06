@@ -56,7 +56,7 @@ export function TimelinePastDay({
   );
 
   return (
-    <PageScroll top={false}
+    <PageScroll
       className="flex-1"
       contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full"
       refreshControl={

@@ -6,10 +6,11 @@ import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ManageNavSheet } from './ManageNavSheet';
-import { TopBarCluster, useTopBarOwned } from './PageTopRow';
+import { NavAccountMenu } from './NavAccountMenu';
 import { MD } from '@/lib/breakpoint';
 import { haptic } from '@/lib/haptic';
 import { BRAND, useThemeColors } from '@/lib/theme';
+import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
@@ -48,7 +49,6 @@ export function TopNav({
   const brand = useGymBrand();
   const colors = useThemeColors();
   const { width } = useWindowDimensions();
-  const owned = useTopBarOwned();
   const [manageOpen, setManageOpen] = useState(false);
 
   const gymName = brand.gymName;
@@ -110,26 +110,12 @@ export function TopNav({
     </View>
   );
 
-  // Below md the bar pays only the status-bar inset in flow, so the
-  // pinned notice and the page start below it, and the cluster floats
-  // over the page (zIndex lifts it above the scene rendered after it)
-  // so content scrolls under the buttons the way it does under the
-  // dock. A focused page can take the row over instead (PageTopRow) and
-  // draws the cluster itself.
+  // Below md there is no bar: the sections and the avatar live in the
+  // dock, the page starts under the status bar, and a page's own top row
+  // (PageTopRow) carries whatever controls it needs. Only the inset is
+  // paid here, so the pinned notice and the page sit below the clock.
   if (width < MD) {
-    return (
-      <>
-        <View style={{ height: insets.top }} className="bg-ground dark:bg-ground-dk" />
-        {owned ? null : (
-          <View
-            pointerEvents="box-none"
-            className="absolute right-4 flex-row items-center gap-1.5"
-            style={{ top: insets.top + 10, zIndex: 10 }}>
-            <TopBarCluster variant={variant} />
-          </View>
-        )}
-      </>
-    );
+    return <View style={{ height: insets.top }} className="bg-ground dark:bg-ground-dk" />;
   }
 
   return (
@@ -172,5 +158,45 @@ export function TopNav({
         <ManageNavSheet visible={manageOpen} onClose={() => setManageOpen(false)} />
       ) : null}
     </View>
+  );
+}
+
+// The bar's right cluster: which side you are on, and the account menu.
+function TopBarCluster({ variant }: { variant: 'staff' | 'member' }) {
+  const canAccessStaff = useCan('can_access_staff_area') ?? false;
+  const showCrossLink = variant === 'staff' || canAccessStaff;
+  const crossHref = variant === 'staff' ? '/book' : '/classes';
+  // States the CURRENT context ("Viewing Staff"), not the destination —
+  // the old "Member view" label read as where-you-are to half of users
+  // and where-you're-going to the rest.
+  const crossLabel = variant === 'staff' ? 'Viewing Staff' : 'Viewing Member';
+
+  // staff = blue, member = green: the switch doubles as a "which side
+  // am I on" indicator, so the tint must change with the variant.
+  const crossTint = variant === 'staff' ? '#3B82F6' : '#10B981';
+  const crossClasses =
+    variant === 'staff'
+      ? 'border-blue-500/40 bg-blue-500/10'
+      : 'border-emerald-500/40 bg-emerald-500/10';
+  const crossTextClass =
+    variant === 'staff' ? 'text-blue-500' : 'text-emerald-500';
+
+  return (
+    <>
+      {showCrossLink ? (
+        <Pressable
+          onPress={() => {
+            haptic.selection();
+            router.replace(crossHref as never);
+          }}
+          hitSlop={4}
+          accessibilityLabel={crossLabel}
+          className={`h-9 px-3 rounded-full border flex-row items-center justify-center gap-1.5 hover:opacity-80 active:opacity-70 ${crossClasses}`}>
+          <Ionicons name="swap-horizontal-outline" size={16} color={crossTint} />
+          <Text className={`text-xs font-semibold ${crossTextClass}`}>{crossLabel}</Text>
+        </Pressable>
+      ) : null}
+      <NavAccountMenu variant={variant} anchor="top-right" />
+    </>
   );
 }

@@ -82,7 +82,7 @@ export function ProgrammingRoadmap({
     });
 
   return (
-    <PageScroll top={false} className="flex-1" contentContainerClassName="pb-10">
+    <PageScroll className="flex-1" contentContainerClassName="pb-10">
       <View className="w-full max-w-5xl mx-auto px-2 gap-4">
         <View className="flex-row items-center justify-center gap-0.5 pt-1">
           <Pressable

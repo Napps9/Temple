@@ -2,7 +2,6 @@ import { Redirect, Tabs } from 'expo-router';
 import { View } from 'react-native';
 
 import { BottomDock } from '@/components/BottomDock';
-import { TopBarProvider } from '@/components/PageTopRow';
 import { PinnedNotice } from '@/components/PinnedNotice';
 import { TopNav, type NavSection } from '@/components/TopNav';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -39,7 +38,6 @@ export default function MemberLayout() {
   if (session === null) return <Redirect href="/sign-in" />;
 
   return (
-    <TopBarProvider>
     <View className="flex-1 bg-ground dark:bg-ground-dk">
       <TopNav sections={MEMBER_SECTIONS} variant="member" />
       {/* The gym's live pinned notice sits under the bar rather than on
@@ -76,6 +74,5 @@ export default function MemberLayout() {
       </Tabs>
       <BottomDock sections={MEMBER_SECTIONS} variant="member" />
     </View>
-    </TopBarProvider>
   );
 }

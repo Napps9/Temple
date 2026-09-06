@@ -17,7 +17,9 @@ import { haptic } from '@/lib/haptic';
 import { useInboxUnreadCount, useNotificationCount } from '@/lib/notifications';
 import { useGymStoreConfig } from '@/lib/store';
 import { CURRENT_SUB_STATUSES, useGymPlans, useMySubscriptions } from '@/lib/subscriptions';
+import { MD } from '@/lib/breakpoint';
 import { useThemeColors, useThemePreference } from '@/lib/theme';
+import { useCan } from '@/lib/useCan';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -28,16 +30,17 @@ type IoniconName = keyof typeof Ionicons.glyphMap;
 // and they must not drift: a menu that gained an item in the top bar and
 // not the sidebar would be a feature that exists only on a phone.
 //
-// `anchor` is the only thing the two callers differ on. The top bar hangs
-// it from the top-right corner; the sidebar opens it upward from the
-// bottom of the rail, where the avatar sits.
+// `anchor` is the only thing the callers differ on. The top bar hangs it
+// from the top-right corner; the sidebar opens it upward from the bottom
+// of the rail, where the avatar sits; the phone's dock opens it upward
+// from its right end.
 export function NavAccountMenu({
   variant,
   anchor,
   showLabel,
 }: {
   variant: 'staff' | 'member';
-  anchor: 'top-right' | 'bottom-left';
+  anchor: 'top-right' | 'bottom-left' | 'bottom-right';
   // The rail has room for the name beside the avatar; the top bar does not.
   showLabel?: boolean;
 }) {
@@ -51,6 +54,15 @@ export function NavAccountMenu({
   const inboxCount = useInboxUnreadCount();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const [open, setOpen] = useState(false);
+  const canAccessStaff = useCan('can_access_staff_area') ?? false;
+  // Below md the bar that carried the "Viewing Staff" switch is gone and
+  // the avatar lives in the dock, so the switch lives here instead. Above
+  // md the bar still has the button.
+  const showSideSwitch =
+    windowWidth < MD && (variant === 'staff' || canAccessStaff);
+  const switchHref = variant === 'staff' ? '/book' : '/classes';
+  const switchLabel =
+    variant === 'staff' ? 'Switch to member view' : 'Switch to staff view';
 
   // Membership + store are member-only concepts — only query them for the
   // member nav so the staff one doesn't pay for unused fetches.
@@ -88,12 +100,20 @@ export function NavAccountMenu({
           width: Math.min(320, windowWidth - 24),
           maxHeight: windowHeight - insets.top - 80,
         }
-      : {
-          bottom: insets.bottom + 64,
-          left: 12,
-          width: Math.min(300, windowWidth - 24),
-          maxHeight: windowHeight - 140,
-        };
+      : anchor === 'bottom-right'
+        ? {
+            // Clear of the dock: its bottom offset plus its height.
+            bottom: Math.max(insets.bottom, 10) + 6 + 56 + 8,
+            right: 12,
+            width: Math.min(320, windowWidth - 24),
+            maxHeight: windowHeight - insets.top - 160,
+          }
+        : {
+            bottom: insets.bottom + 64,
+            left: 12,
+            width: Math.min(300, windowWidth - 24),
+            maxHeight: windowHeight - 140,
+          };
 
   return (
     <>
@@ -151,6 +171,18 @@ export function NavAccountMenu({
 
             <View className="h-px bg-line dark:bg-line-dk my-1.5" />
 
+            {showSideSwitch ? (
+              <MenuRow
+                icon="swap-horizontal-outline"
+                label={switchLabel}
+                iconColor={variant === 'staff' ? '#10B981' : '#3B82F6'}
+                onPress={() => {
+                  haptic.selection();
+                  setOpen(false);
+                  router.replace(switchHref as never);
+                }}
+              />
+            ) : null}
             <MenuRow
               icon="chatbubble-ellipses-outline"
               label="Messages"
