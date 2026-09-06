@@ -343,45 +343,39 @@ export function ProgrammingCalendar({
     !personalLocked &&
     ((personalDay?.sections.length ?? 0) > 0 || personalFiles.length > 0);
 
-  const dateRow = (
-    <>
-      <View className="flex-1 flex-row justify-start">
-        <TodayButton onPress={() => setDate(startOfDay(new Date()))} />
-      </View>
-      <View className="flex-row items-center gap-0.5">
-        <Pressable
-          onPress={() => setDate(addDays(date, -1))}
-          hitSlop={8}
-          accessibilityLabel="Previous day"
-          className="w-8 h-8 items-center justify-center">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-lg">‹</Text>
-        </Pressable>
-        <Pressable
-          onPress={openPicker}
-          hitSlop={6}
-          accessibilityRole="button"
-          accessibilityLabel="Pick a date"
-          className="px-1.5 py-1 items-center justify-center active:opacity-70">
-          <Text className="text-ink dark:text-ink-dk text-base font-semibold">
-            {fmtDayShort(date)}
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setDate(addDays(date, 1))}
-          hitSlop={8}
-          accessibilityLabel="Next day"
-          className="w-8 h-8 items-center justify-center">
-          <Text className="text-ink-3 dark:text-ink-3-dk text-lg">›</Text>
-        </Pressable>
-      </View>
-      <View className="flex-1 flex-row justify-end">
-        {/* Beside the date on md+; a two-chip headerAction has no room
-            here on phone widths, so it moves to its own row below. */}
-        <View className="hidden md:flex md:flex-row md:gap-2">
-          {headerAction ?? null}
-        </View>
-      </View>
-    </>
+  const today = <TodayButton onPress={() => setDate(startOfDay(new Date()))} />;
+  const dateControl = (
+    <View className="flex-row items-center gap-0.5">
+      <Pressable
+        onPress={() => setDate(addDays(date, -1))}
+        hitSlop={8}
+        accessibilityLabel="Previous day"
+        className="w-8 h-8 items-center justify-center">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-lg">‹</Text>
+      </Pressable>
+      <Pressable
+        onPress={openPicker}
+        hitSlop={6}
+        accessibilityRole="button"
+        accessibilityLabel="Pick a date"
+        className="px-1.5 py-1 items-center justify-center active:opacity-70">
+        <Text className="text-ink dark:text-ink-dk text-base font-semibold">
+          {fmtDayShort(date)}
+        </Text>
+      </Pressable>
+      <Pressable
+        onPress={() => setDate(addDays(date, 1))}
+        hitSlop={8}
+        accessibilityLabel="Next day"
+        className="w-8 h-8 items-center justify-center">
+        <Text className="text-ink-3 dark:text-ink-3-dk text-lg">›</Text>
+      </Pressable>
+    </View>
+  );
+  // Beside the date on md+; a two-chip headerAction has no room there
+  // on phone widths, so it moves to its own row below.
+  const wideAction = (
+    <View className="hidden md:flex md:flex-row md:gap-2">{headerAction ?? null}</View>
   );
 
   return (
@@ -395,10 +389,19 @@ export function ProgrammingCalendar({
             bar stays and this is an ordinary row. -mx-8 undoes Screen's
             px-6 and this container's px-2 so the row spans the width. */}
         {topBar ? (
-          <View className="flex-row items-center pt-3 pb-4">{dateRow}</View>
+          <View className="flex-row items-center pt-3 pb-4">
+            <View className="flex-1 flex-row justify-start">{today}</View>
+            {dateControl}
+            <View className="flex-1 flex-row justify-end">{wideAction}</View>
+          </View>
         ) : (
           <View className="-mx-8 md:mx-0">
-            <PageTopRow className="pt-3 pb-4">{dateRow}</PageTopRow>
+            <PageTopRow
+              className="pt-3 pb-4"
+              left={today}
+              center={dateControl}
+              right={wideAction}
+            />
           </View>
         )}
 

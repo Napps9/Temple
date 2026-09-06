@@ -53,9 +53,7 @@ export default function StaffProgramming() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <View className="-mx-6 md:mx-auto md:w-full md:max-w-5xl md:px-2">
-          <PageTopRow className="pt-3 pb-1 md:justify-center">
-            <View className="flex-1 items-start md:flex-none">{toggle}</View>
-          </PageTopRow>
+          <PageTopRow className="pt-3 pb-1" left={toggle} />
         </View>
         <ProgrammingRoadmap gymId={membership?.gymId} canEdit={canEdit} />
       </Screen>

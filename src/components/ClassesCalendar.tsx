@@ -1004,44 +1004,46 @@ export function ClassesCalendar({
         <>
           {/* Phone: the date row is the screen's top row (PageTopRow) —
               arrows step the current view, tapping the label opens a
-              month grid to jump further. Equal side zones keep it
-              centred. -mx-6 undoes Screen's inset so the row spans the
-              width like the bar it stands in for. */}
+              month grid to jump further. -mx-6 undoes Screen's inset so
+              the row spans the width like the bar it stands in for. */}
           <View className="-mx-6">
-            <PageTopRow className="pb-3">
-              <View className="flex-1 flex-row justify-start">
-                <TodayButton onPress={goToToday} />
-              </View>
-              <View className="flex-row items-center gap-0.5">
-                <Pressable
-                  onPress={() => shiftDate(-1)}
-                  hitSlop={8}
-                  accessibilityLabel="Previous"
-                  className="w-8 h-8 items-center justify-center">
-                  <Text className="text-ink-3 dark:text-ink-3-dk text-lg">‹</Text>
-                </Pressable>
-                <Pressable
-                  onPress={openPicker}
-                  hitSlop={6}
-                  accessibilityRole="button"
-                  accessibilityLabel="Pick a date"
-                  className="px-1.5 py-1 items-center justify-center active:opacity-70">
-                  <Text className="text-ink dark:text-ink-dk text-base font-semibold">
-                    {headerLabel}
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => shiftDate(1)}
-                  hitSlop={8}
-                  accessibilityLabel="Next"
-                  className="w-8 h-8 items-center justify-center">
-                  <Text className="text-ink-3 dark:text-ink-3-dk text-lg">›</Text>
-                </Pressable>
-              </View>
-              <View className="flex-1 flex-row items-center justify-end">
-                {compactBook ? <ViewIconToggle view={view} /> : null}
-              </View>
-            </PageTopRow>
+            <PageTopRow
+              className="pb-3"
+              left={
+                <>
+                  <TodayButton onPress={goToToday} />
+                  {compactBook ? <ViewIconToggle view={view} /> : null}
+                </>
+              }
+              center={
+                <View className="flex-row items-center gap-0.5">
+                  <Pressable
+                    onPress={() => shiftDate(-1)}
+                    hitSlop={8}
+                    accessibilityLabel="Previous"
+                    className="w-8 h-8 items-center justify-center">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-lg">‹</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={openPicker}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityLabel="Pick a date"
+                    className="px-1.5 py-1 items-center justify-center active:opacity-70">
+                    <Text className="text-ink dark:text-ink-dk text-base font-semibold">
+                      {headerLabel}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => shiftDate(1)}
+                    hitSlop={8}
+                    accessibilityLabel="Next"
+                    className="w-8 h-8 items-center justify-center">
+                    <Text className="text-ink-3 dark:text-ink-3-dk text-lg">›</Text>
+                  </Pressable>
+                </View>
+              }
+            />
           </View>
           {mode === 'manage' ? (
             <View className="w-full px-4 flex-row items-center justify-center gap-2 pb-4">

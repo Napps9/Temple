@@ -933,48 +933,46 @@ export default function Timeline() {
             arrows, tap-to-open month grid — the same header the Classes
             and Programming calendars carry, so days read as days
             everywhere; on a phone it is the screen's top row. */}
-        <PageTopRow className="pt-3 pb-1 px-4 md:max-w-2xl md:mx-auto md:w-full">
-          <View className="flex-1 flex-row justify-start">
-            {!page.isToday ? (
-              <TodayButton onPress={() => setDayKey(todayKey)} />
-            ) : null}
-          </View>
-          <View className="flex-row items-center gap-0.5">
-            <Pressable
-              onPress={() => shiftDay(-1)}
-              disabled={atFloor}
-              hitSlop={8}
-              accessibilityLabel="Previous day"
-              className="w-8 h-8 items-center justify-center">
-              <Text
-                className={`text-lg ${atFloor ? 'text-ink-3 dark:text-ink-2' : 'text-ink-3 dark:text-ink-3-dk'}`}>
-                ‹
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={openPicker}
-              hitSlop={6}
-              accessibilityRole="button"
-              accessibilityLabel="Pick a date"
-              className="px-1.5 py-1 items-center justify-center active:opacity-70">
-              <Text className="text-ink dark:text-ink-dk text-base font-semibold">
-                {dayLabel(dayKey, new Date())}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => shiftDay(1)}
-              disabled={atCeiling}
-              hitSlop={8}
-              accessibilityLabel="Next day"
-              className="w-8 h-8 items-center justify-center">
-              <Text
-                className={`text-lg ${atCeiling ? 'text-ink-3 dark:text-ink-2' : 'text-ink-3 dark:text-ink-3-dk'}`}>
-                ›
-              </Text>
-            </Pressable>
-          </View>
-          <View className="flex-1" />
-        </PageTopRow>
+        <PageTopRow
+          className="pt-3 pb-1 px-4 md:max-w-2xl md:mx-auto md:w-full"
+          left={!page.isToday ? <TodayButton onPress={() => setDayKey(todayKey)} /> : null}
+          center={
+            <View className="flex-row items-center gap-0.5">
+              <Pressable
+                onPress={() => shiftDay(-1)}
+                disabled={atFloor}
+                hitSlop={8}
+                accessibilityLabel="Previous day"
+                className="w-8 h-8 items-center justify-center">
+                <Text
+                  className={`text-lg ${atFloor ? 'text-ink-3 dark:text-ink-2' : 'text-ink-3 dark:text-ink-3-dk'}`}>
+                  ‹
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={openPicker}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel="Pick a date"
+                className="px-1.5 py-1 items-center justify-center active:opacity-70">
+                <Text className="text-ink dark:text-ink-dk text-base font-semibold">
+                  {dayLabel(dayKey, new Date())}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => shiftDay(1)}
+                disabled={atCeiling}
+                hitSlop={8}
+                accessibilityLabel="Next day"
+                className="w-8 h-8 items-center justify-center">
+                <Text
+                  className={`text-lg ${atCeiling ? 'text-ink-3 dark:text-ink-2' : 'text-ink-3 dark:text-ink-3-dk'}`}>
+                  ›
+                </Text>
+              </Pressable>
+            </View>
+          }
+        />
 
         <GestureDetector gesture={swipe}>
           <View className="flex-1">

@@ -85,10 +85,20 @@ export function TopBarCluster({ variant }: { variant: 'staff' | 'member' }) {
 }
 
 export function PageTopRow({
-  children,
+  left,
+  center,
+  right,
   className,
 }: {
-  children: ReactNode;
+  left?: ReactNode;
+  // Centred on the screen, not between the sides: on a phone the cluster
+  // makes the right side the wider one, and a date that sat midway
+  // between a 36px button and an 86px cluster read as off-centre against
+  // the week strip below it. The sides stay in flow so they never
+  // overlap each other; the centre floats over the row and only wins
+  // touches on its own content.
+  center?: ReactNode;
+  right?: ReactNode;
   className?: string;
 }) {
   const { setOwned } = useContext(TopBarContext);
@@ -104,15 +114,33 @@ export function PageTopRow({
     }, [setOwned]),
   );
 
+  if (!phone) {
+    return (
+      <View className={`flex-row items-center ${className ?? ''}`}>
+        <View className="flex-1 flex-row items-center justify-start">{left}</View>
+        {center}
+        <View className="flex-1 flex-row items-center justify-end">{right}</View>
+      </View>
+    );
+  }
+
   return (
     <View
       className={`flex-row items-center ${className ?? ''}`}
       // The bar's own insets, so the cluster lands where the bar drew it.
-      style={phone ? { paddingTop: 10, paddingHorizontal: 16 } : undefined}>
-      {children}
-      {phone ? (
+      style={{ paddingTop: 10, paddingHorizontal: 16 }}>
+      <View className="flex-1 flex-row items-center justify-start gap-2">{left}</View>
+      <View className="flex-1 flex-row items-center justify-end gap-2">
+        {right}
         <View className="flex-row items-center gap-1.5 pl-2">
           <TopBarCluster variant={variant} />
+        </View>
+      </View>
+      {center ? (
+        <View
+          pointerEvents="box-none"
+          className="absolute left-0 right-0 top-0 bottom-0 items-center justify-center">
+          {center}
         </View>
       ) : null}
     </View>
