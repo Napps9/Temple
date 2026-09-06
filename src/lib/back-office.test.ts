@@ -394,6 +394,8 @@ describe('the burndown has a baseline', () => {
       // menu — and are now in the search index too.
       'Attendance report',
       'Coach earnings',
+      // Crash reports (0281): a table an owner reads, never a sentence.
+      'Diagnostics',
       'Goals',
       'Health screening',
       'Individual programming',

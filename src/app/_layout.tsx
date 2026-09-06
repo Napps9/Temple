@@ -22,6 +22,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { CookieBanner } from '@/components/CookieBanner';
 import { hexToRgbTriplet } from '@/lib/brand';
+import { installGlobalErrorReporting, reportClientError } from '@/lib/report-error';
 import { ACCENT, useThemeColors, useThemePreference, BRAND } from '@/lib/theme';
 
 const queryClient = new QueryClient({
@@ -47,10 +48,13 @@ class CrashScreen extends Component<
     return { error };
   }
 
-  componentDidCatch(_error: Error, info: { componentStack?: string | null }) {
+  componentDidCatch(error: Error, info: { componentStack?: string | null }) {
     // The component stack names the actual component that looped/threw —
     // far more useful than the minified JS stack on production builds.
     this.setState({ componentStack: info?.componentStack ?? null });
+    // The screen is still the bug report; since 0281 it is also a row
+    // the gym's owner can read without anybody taking a screenshot.
+    reportClientError({ error, componentStack: info?.componentStack ?? null });
   }
 
   render() {
@@ -127,6 +131,10 @@ export default function RootLayout() {
 function ThemedShell() {
   const { scheme } = useThemePreference();
   const colors = useThemeColors();
+
+  useEffect(() => {
+    installGlobalErrorReporting();
+  }, []);
 
   // Push Temple's accent into Tailwind's `primary` token. vars() writes
   // both the web CSS variables (consumed by tailwind's `rgb(var(...) /

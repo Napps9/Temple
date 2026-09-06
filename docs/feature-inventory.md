@@ -4669,6 +4669,18 @@ surround:
 
 - **Auth** — Supabase email/password with a consent gate + annual
   PAR-Q gate; invite codes for onboarding.
+- **Crash reports** (0281) — the crash screen and the global error
+  handlers (web `error` and `unhandledrejection`, native `ErrorUtils`)
+  call `report_client_error`, a definer RPC that stores the route, the
+  message, the stacks, the platform and the app version, stamped with
+  the caller and their gym when signed in. A caller is capped at twenty
+  an hour and anonymous reports at a hundred; the client also drops a
+  repeat of the last message inside a minute. The gym's owner reads the
+  last fifty on Manage, Diagnostics (`can_manage_staff`); nobody writes
+  the table directly; `purge-old-client-errors` trims it after thirty
+  days and logs its run. No vendor, no secret, no cookie:
+  `lib/report-error.ts`, `management/diagnostics.tsx`,
+  `what_broke_on_whose_screen.sql`.
 - **RLS everywhere** — every table is gated, every dangerous write
   is funnelled through a `security definer` RPC with explicit
   authorisation.

@@ -541,6 +541,18 @@ export const BACK_OFFICE: BackOfficeEntry[] = [
     status: 'back-office',
   },
   {
+    href: '/management/diagnostics',
+    title: 'Diagnostics',
+    blurb: 'What broke on whose screen: crashes reported from the app.',
+    keywords: ['errors', 'error', 'crash', 'crashes', 'diagnostics', 'bugs', 'broken'],
+    category: 'settings',
+    // The same key the table's read policy checks, so a search result
+    // never opens an empty page.
+    capabilities: ['can_manage_staff'],
+    ends: 'keeps',
+    status: 'back-office',
+  },
+  {
     href: '/management',
     section: 'closures',
     title: 'Closures',

@@ -1173,6 +1173,24 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      client_errors: {
+        Row: {
+          id: number;
+          gym_id: string | null;
+          profile_id: string | null;
+          route: string | null;
+          message: string;
+          stack: string | null;
+          component_stack: string | null;
+          platform: string | null;
+          app_version: string | null;
+          user_agent: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       staff_alerts: {
         Row: {
           id: string;
@@ -5573,6 +5591,21 @@ export type Database = {
       };
       apply_tag_rules: {
         Args: { p_gym_id: string };
+        Returns: number;
+      };
+      report_client_error: {
+        Args: {
+          p_route: string | null;
+          p_message: string;
+          p_stack: string | null;
+          p_component_stack: string | null;
+          p_platform: string;
+          p_app_version: string | null;
+        };
+        Returns: undefined;
+      };
+      purge_old_client_errors: {
+        Args: Record<string, never>;
         Returns: number;
       };
       request_cover: {

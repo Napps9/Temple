@@ -163,3 +163,12 @@ invoices gym subscriptions directly, not via Stripe (Stripe was never
 accurate here; it only processes the separate gym-to-member payments under
 Connect). No change to the underlying lawful basis (Contract) or to any
 other item. Re-affirmed by: Nick — Director, Temple Software Ltd.
+
+**Addition, 2026-09-06:** Crash reports. When the app fails on a device it
+records the route, the error message and stack, the platform and app
+version, and, for a signed-in user, their profile id and gym, in
+`client_errors` (migration 0281). Basis: legitimate interest (Art. 6(1)(f))
+in keeping the service working; no special-category data is collected and
+no cookie or device identifier is set, so no consent is sought. Retention
+thirty days, purged by a logged sweep. Readable only by the gym's owner for
+their own gym. Added by: Nick — Director, Temple Software Ltd.
