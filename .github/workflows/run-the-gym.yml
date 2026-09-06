@@ -56,6 +56,11 @@ on:
           queued — journey 8 skips its rank assertion for a member who
           holds no entry.
         default: ""
+      spec:
+        description: >-
+          Run only the journeys whose file name contains this (e2e only;
+          blank = all of them), e.g. "10-switch".
+        default: ""
 
 env:
   DO_NOT_TRACK: "1"
@@ -132,7 +137,8 @@ jobs:
         env:
           E2E_SLUG: ${{ inputs.slug }}
           E2E_MEMBER_EMAIL: ${{ inputs.member_email }}
-        run: npm run e2e
+          SPEC: ${{ inputs.spec }}
+        run: npm run e2e -- $SPEC
       - uses: actions/upload-artifact@v4
         if: always()
         with:
