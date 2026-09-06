@@ -33,6 +33,8 @@ import {
   useStartCheckout,
   type GymPlan,
 } from '@/lib/subscriptions';
+import { canOfferCover } from '@/lib/cover-offer';
+import { drainCoverEmails } from '@/lib/cover-notifications';
 import { useCan } from '@/lib/useCan';
 import { useDependents } from '@/lib/useDependents';
 import { useGymCurrency } from '@/lib/useGymCurrency';
@@ -58,6 +60,9 @@ type SessionDetail = {
     cancel_cutoff_days_before: number | null;
   } | null;
   coach: { full_name: string | null; avatar_url: string | null } | null;
+  // Manage mode only: the open cover offer on this class, if any. A
+  // member's select never asks for it.
+  cover_request_sessions?: { claimed_by: string | null }[] | null;
 };
 
 type Booking = {
@@ -123,6 +128,8 @@ export function ClassDetailModal({
   const canSeeHealthFlag = useCan('can_see_health_flag') ?? false;
   const canAssignPlan = useCan('can_assign_plan') ?? false;
   const canBroadcastClass = useCan('can_broadcast_to_class') ?? false;
+  const canRequestCover = useCan('can_request_cover') ?? false;
+  const [coverStep, setCoverStep] = useState<null | 'confirm' | 'sent'>(null);
   const { data: gymDefaults } = useGymOperatingDefaults();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState<null | 'book' | 'cancel'>(null);
@@ -157,7 +164,8 @@ export function ClassDetailModal({
       const { data, error } = await supabase
         .from('class_sessions')
         .select(
-          'id, name, starts_at, duration_minutes, capacity, notes, gym_id, coach_id, recurrence_id, class_types(name, color, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before), coach:profiles!coach_id(full_name, avatar_url)',
+          'id, name, starts_at, duration_minutes, capacity, notes, gym_id, coach_id, recurrence_id, class_types(name, color, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before), coach:profiles!coach_id(full_name, avatar_url)' +
+            (mode === 'manage' ? ', cover_request_sessions(claimed_by)' : ''),
         )
         .eq('id', sessionId!)
         .single();
@@ -441,6 +449,36 @@ export function ClassDetailModal({
     onClose();
   }
 
+  // The coach's own way to hand a class over. request_cover refuses
+  // anyone but the class's coach, so the chip is gated the same way
+  // (canOfferCover) and the press can only succeed. The drain is the
+  // same best-effort nudge the composer makes so the other coaches hear
+  // now rather than at the next quarter-hour.
+  const requestCover = useMutation({
+    mutationFn: async () => {
+      const sess = sessionQuery.data;
+      if (!sessionId || !sess) throw new Error('Missing context');
+      const { error: e } = await supabase.rpc('request_cover', {
+        p_session_ids: [sessionId],
+        p_notes: null,
+      });
+      if (e) throw e;
+      await drainCoverEmails(sess.gym_id);
+    },
+    onSuccess: () => {
+      setCoverStep('sent');
+      for (const key of [
+        'timeline-feed',
+        'cover-offers',
+        'my-upcoming-sessions',
+        'unread-cover-notifications',
+      ]) {
+        queryClient.invalidateQueries({ queryKey: [key] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['class-session-detail', sessionId] });
+    },
+  });
+
   const detail = sessionQuery.data;
   const bookings = bookingsQuery.data ?? [];
   const myBooking =
@@ -454,6 +492,16 @@ export function ClassDetailModal({
       ? new Date(start.getTime() + detail.duration_minutes * 60 * 1000)
       : null;
   const inPast = start ? start.getTime() < Date.now() : false;
+  const openCoverOffer = (detail?.cover_request_sessions ?? []).some(
+    (r) => r.claimed_by === null,
+  );
+  const offerCover = canOfferCover({
+    can: canRequestCover,
+    viewerId: session?.user.id,
+    coachId: detail?.coach_id,
+    inPast,
+    openOffer: openCoverOffer,
+  });
   const isFull = spotsQuery.data?.isFull ?? false;
   const lateCancel =
     detail !== null &&
@@ -601,8 +649,62 @@ export function ClassDetailModal({
                           onPress={() => setStaffSheet({ mode: 'add' })}
                         />
                       ) : null}
+                      {offerCover ? (
+                        <ChipButton
+                          label="Request cover"
+                          icon="swap-horizontal-outline"
+                          tone="neutral"
+                          onPress={() => setCoverStep('confirm')}
+                        />
+                      ) : null}
+                      {openCoverOffer && !inPast ? (
+                        <ChipButton
+                          label="Cover requested"
+                          icon="swap-horizontal-outline"
+                          tone="neutral"
+                        />
+                      ) : null}
                     </View>
                   </View>
+                  {coverStep === 'confirm' ? (
+                    <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-2">
+                      <Text className="text-ink dark:text-ink-dk font-medium">
+                        Ask the other coaches to take this class?
+                      </Text>
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
+                        Every qualified coach gets the offer at once, and the first to
+                        claim it takes it.
+                      </Text>
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
+                        The class is not moved or cancelled. It stays exactly as it is
+                        until somebody picks it up.
+                      </Text>
+                      {requestCover.error ? (
+                        <Text className="text-red-600 dark:text-red-400 text-sm">
+                          {errorMessage(requestCover.error, 'Could not ask the coaches')}
+                        </Text>
+                      ) : null}
+                      <View className="flex-row gap-3">
+                        <View className="flex-1">
+                          <Button variant="secondary" onPress={() => setCoverStep(null)}>
+                            Not now
+                          </Button>
+                        </View>
+                        <View className="flex-1">
+                          <Button
+                            onPress={() => requestCover.mutate()}
+                            loading={requestCover.isPending}>
+                            Yes, ask them
+                          </Button>
+                        </View>
+                      </View>
+                    </View>
+                  ) : null}
+                  {coverStep === 'sent' ? (
+                    <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+                      Asked the coaches.
+                    </Text>
+                  ) : null}
                   {composing ? (
                     <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-2">
                       <TextInput

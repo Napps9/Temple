@@ -2813,9 +2813,12 @@ The staff area shows up when `can_access_staff_area` is on.
   and waitlist promotion handled correctly on cancellation. **Claims
   are gated on class-type qualification** — a coach explicitly
   disqualified for that class type can't claim it (enforced in the
-  `claim_cover` RPC and surfaced as a disabled state in the UI). Two
-  ways in: **pick individual classes**, or **pick dates**
-  (`request_cover_range`) for "cover me from 22 Dec to 3 Jan". A date
+  `claim_cover` RPC and surfaced as a disabled state in the UI). The
+  coach's own way in is the **Request cover** chip on the class sheet
+  (`ClassDetailModal`, shown only on a class they coach that has not
+  started and has no open offer), which lodges a single-class request
+  with the same confirm the composer uses. The composer adds **pick
+  dates** (`request_cover_range`) for "cover me from 22 Dec to 3 Jan". A date
   range is a **standing window** — the requested dates live on the
   request, so classes scheduled into the window *after* it was lodged
   are offered automatically, and a window with nothing in it yet is a
@@ -4359,9 +4362,10 @@ until then automations enqueue and simulate.
 - **Coach Earnings summary** [`can_set_coach_pay` for the owner] —
   per-class-type pay rates + total earnings for a date range, plus a
   per-coach breakdown card with a "Show breakdown" expander.
-- **Cover** [`can_request_cover`, `can_claim_cover`] — request cover by
-  picking classes or a date range, claim other coaches' open offers
-  (qualified-only), and a **Cover inbox tab** for the notifications.
+- **Cover** [`can_request_cover`, `can_claim_cover`] — request cover from
+  a class's own sheet (the Request cover chip) or, through the Timeline
+  composer, for a date range; claim other coaches' open offers
+  (qualified-only); and a **Cover inbox tab** for the notifications.
   Full detail under Classes & scheduling.
 - **Tasks** [`can_manage_tasks`] — assign, reassign, complete, reopen.
 - **SOPs** [`can_manage_sops` to write, `can_view_sops` to read] —
