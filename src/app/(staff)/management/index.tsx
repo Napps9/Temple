@@ -100,7 +100,6 @@ function ManagementCard({
   description,
   href,
   onPress,
-  comingSoon,
   saidInstead,
 }: {
   title: string;
@@ -112,7 +111,6 @@ function ManagementCard({
   // screen already keeps which tab is showing in state rather than in the
   // URL, so a section belongs in state too.
   onPress?: () => void;
-  comingSoon?: boolean;
   // The sentence that does the same job in the bar. Somebody reading a
   // tile is somebody who came looking for a screen — the one moment worth
   // telling them they need not have.
@@ -123,17 +121,8 @@ function ManagementCard({
       wrap
       title={title}
       subtitle={description}
-      href={comingSoon ? undefined : href}
-      onPress={comingSoon ? undefined : onPress}
-      // Replaces the chevron rather than sitting beside it: there is
-      // nothing to open yet, so an affordance saying otherwise would lie.
-      trailing={
-        comingSoon ? (
-          <Text className="text-ink-3 dark:text-ink-3-dk text-[11px] font-semibold uppercase tracking-[1px] pt-1">
-            Coming soon
-          </Text>
-        ) : undefined
-      }
+      href={href}
+      onPress={onPress}
       foot={
         saidInstead ? (
           <Text className="text-ink-3 dark:text-ink-3-dk text-[12px] pt-0.5">

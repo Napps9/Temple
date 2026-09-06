@@ -28,7 +28,7 @@ import { TimelinePastDay } from '@/components/TimelinePastDay';
 import { OfferChip, ReceiptLine, SoftLine } from '@/components/TimelineLines';
 import { TodayButton } from '@/components/TodayButton';
 import { WeekStrip } from '@/components/WeekStrip';
-import { REQUIRED_SETUP_KEYS } from '../setup';
+import { REQUIRED_SETUP_KEYS } from '@/lib/setup-steps';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import {
   ActionError,

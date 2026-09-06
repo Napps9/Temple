@@ -12,17 +12,11 @@ import {
   useSession,
 } from '@/lib/auth';
 import { useConsentState } from '@/lib/consent';
+import { REQUIRED_SETUP_KEYS } from '@/lib/setup-steps';
 import { supabase } from '@/lib/supabase';
 import { useCan } from '@/lib/useCan';
 
-// Required setup keys mirror the non-optional STEPS in /onboarding.
-const REQUIRED_SETUP_KEYS = new Set([
-  'settings',
-  'class_type_and_schedule',
-  'parq',
-  'stripe',
-  'plan',
-]);
+const REQUIRED_SETUP = new Set<string>(REQUIRED_SETUP_KEYS);
 
 type SetupRow = { step_key: string; done: boolean };
 
@@ -172,7 +166,7 @@ export default function Index() {
       if (setupProgress.isLoading || onboardingDismissed.isLoading) return <Loading />;
       const rows = setupProgress.data ?? [];
       const requiredPending = rows.some(
-        (r) => REQUIRED_SETUP_KEYS.has(r.step_key) && !r.done,
+        (r) => REQUIRED_SETUP.has(r.step_key) && !r.done,
       );
       if (requiredPending && !onboardingDismissed.data) {
         // Conversational setup is the front door; /onboarding survives as

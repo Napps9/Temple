@@ -985,6 +985,17 @@ The staff area shows up when `can_access_staff_area` is on.
   the thirteen fields the imported-member screen actually edits. pgTAP
   `tenancy_and_entitlement_checks.sql` (plan(12)) covers all four, and
   `client_writes_match_code.sql` grew the standing privilege assertions.
+- **A class type or a plan leaves only through its RPC** (0280). 0245
+  made `delete_class_type` and `delete_plan` check `can_hard_delete` and
+  refuse rows with dependents, but both tables kept a row-level delete
+  policy from before that work, so a client with `can_manage_classes` or
+  `can_manage_plans` could send a plain DELETE through PostgREST and skip
+  both checks. The policies and the grant beneath them are gone;
+  `the_only_door_is_the_rpc.sql` proves the RPC path still works for the
+  owner and that a coach can neither use it nor go round it. While here,
+  the roadmap note claiming `can_issue_override` and `can_issue_comp_grant`
+  governed nothing was stale: both are enforced server-side (0211, 0213,
+  0262) and `comp_grants` is written only by `grant_member_comp`.
 - **Refunds are recorded in the currency they were taken in** — the
   refund edge function wrote `currency: 'GBP'` on every `billing_events`
   row it created and formatted the member's email with a hard-coded pound
@@ -4747,16 +4758,6 @@ Items the conversation has flagged but not implemented yet:
   read from the SQL editor; there is no screen. `select job_name, ran_at,
   result from cron_run_log order by ran_at desc limit 40;` is the whole
   interface today.
-
-- **Two capability toggles do nothing.** `can_issue_override` and
-  `can_issue_comp_grant` are in the capability matrix and in the Team
-  screen's editor (`team.tsx:69-70`), so an owner can grant and revoke
-  them — but nothing reads either one, because neither action exists.
-  `comp_grants` is read in four places (`MembersList`,
-  `RemoveMemberDialog`, the member detail screen, `insights.ts`) and
-  written by nothing at all: no client insert, no RPC, no migration.
-  Either build the grant flow or take the toggles out; showing a switch
-  that governs nothing is the worse of the two.
 
 - **Some capabilities are enforced at the surface, not in RLS.** 105 of
   the 287 policies check `effective_can`; 45 still say

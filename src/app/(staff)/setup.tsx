@@ -12,6 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { Button } from '@/components/Button';
 import { Appear, TypingIndicator, useStagedReveal } from '@/components/ChatReveal';
+import { REQUIRED_SETUP_KEYS } from '@/lib/setup-steps';
 import { joinUrl } from '@/lib/brand';
 import {
   autoDetect as memberAutoDetect,
@@ -117,16 +118,6 @@ type Msg =
   | { kind: 'rule-question'; q: number; open: boolean }
   | { kind: 'rules-gate'; open: boolean }
   | { kind: 'rules-summary'; choices: RuleChoices; open: boolean };
-
-// The checklist's required list, in the checklist's order, so the
-// progress bar counts exactly what /onboarding counts.
-export const REQUIRED_SETUP_KEYS = [
-  'settings',
-  'class_type_and_schedule',
-  'parq',
-  'stripe',
-  'plan',
-] as const;
 
 // Each step wears the checklist's own icon, label and time estimate, so
 // a step opening in the chat and a row in the checklist read as the
