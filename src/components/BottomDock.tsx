@@ -104,9 +104,10 @@ export function BottomDock({
         className="md:hidden absolute left-0 right-0 items-center"
         style={{ bottom: Math.max(insets.bottom, 10) + 6 }}>
         <GestureDetector gesture={drag}>
-        <Animated.View
-          style={{ transform: [{ translateY }, { scale }] }}
-          className="flex-row gap-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full px-4 py-1.5 shadow-float">
+        {/* The transform sits on its own wrapper: NativeWind does not
+            style Animated.View, so the pill's classes stay on a View. */}
+        <Animated.View style={{ transform: [{ translateY }, { scale }] }}>
+        <View className="flex-row gap-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full px-4 py-1.5 shadow-float">
           {sections.map((s) => {
             const active = pathname.startsWith(s.href);
             return (
@@ -128,6 +129,7 @@ export function BottomDock({
           <View className="justify-center pl-1 pr-0.5">
             <NavAccountMenu variant={variant} anchor="bottom-right" />
           </View>
+        </View>
         </Animated.View>
         </GestureDetector>
       </View>
