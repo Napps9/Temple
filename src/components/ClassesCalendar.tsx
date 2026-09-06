@@ -378,10 +378,9 @@ function parseView(v: string | undefined): ViewMode {
 // is the default; the 2-day grid stays available for a time-of-day
 // overview. Month is dropped on the phone entirely.
 // Phone Book: one round button showing the view you would switch to
-// (grid while on the list, list while on the grid). The two-segment
-// control it replaced was 80px, and with the account cluster sharing the
-// date row it no longer fit a 375-wide phone beside the date and the
-// Today jump.
+// (grid while on the list, list while on the grid), at the right end of
+// the date row opposite the Today jump, the way the staff rows put the
+// view control opposite it.
 function ViewIconToggle({ view }: { view: string }) {
   const colors = useThemeColors();
   const other: { key: string; icon: keyof typeof Ionicons.glyphMap; label: string } =
@@ -989,12 +988,8 @@ export function ClassesCalendar({
           <View className="-mx-6">
             <PageTopRow
               className="pb-3"
-              left={
-                <>
-                  <TodayButton onPress={goToToday} />
-                  {compactBook ? <ViewIconToggle view={view} /> : null}
-                </>
-              }
+              left={<TodayButton onPress={goToToday} />}
+              right={compactBook ? <ViewIconToggle view={view} /> : null}
               center={
                 <View className="flex-row items-center gap-0.5">
                   <Pressable
