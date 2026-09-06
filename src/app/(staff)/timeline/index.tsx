@@ -27,6 +27,7 @@ import { TimelineFutureDay } from '@/components/TimelineFutureDay';
 import { TimelinePastDay } from '@/components/TimelinePastDay';
 import { OfferChip, ReceiptLine, SoftLine } from '@/components/TimelineLines';
 import { TodayButton } from '@/components/TodayButton';
+import { WeekStrip } from '@/components/WeekStrip';
 import { REQUIRED_SETUP_KEYS } from '../setup';
 import { useGymMembership, useRole, useSession } from '@/lib/auth';
 import {
@@ -67,7 +68,6 @@ import { useCanFn } from '@/lib/useCan';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import {
-  dayLabel,
   dedupeClosures,
   formatClock,
   formatTimelineLine,
@@ -889,6 +889,14 @@ export default function Timeline() {
     );
     haptic.selection();
   };
+  // The week under the header, the strip Book, Classes and Programming
+  // carry; stepped by key so a DST change cannot shift a day.
+  const weekStartsOn = defaults.data?.week_starts_on ?? 'mon';
+  const selectedDow = dayStart(dayKey).getDay();
+  const daysBack = weekStartsOn === 'sun' ? selectedDow : (selectedDow + 6) % 7;
+  const weekDays = Array.from({ length: 7 }, (_, i) =>
+    dayStart(shiftDayKey(dayKey, i - daysBack)),
+  );
   // Same thresholds the Classes calendar ships with: only horizontal
   // motion past 30px claims the gesture, and 15px of vertical motion
   // bails out so the thread keeps scrolling underneath.
@@ -939,8 +947,8 @@ export default function Timeline() {
             and Programming calendars carry, so days read as days
             everywhere; on a phone it is the screen's top row. */}
         <PageTopRow
-          className="pt-3 pb-1 px-4 md:max-w-2xl md:mx-auto md:w-full"
-          left={!page.isToday ? <TodayButton onPress={() => setDayKey(todayKey)} /> : null}
+          className="pt-3 pb-3 px-4 md:max-w-2xl md:mx-auto md:w-full"
+          left={<TodayButton onPress={() => setDayKey(todayKey)} />}
           center={
             <View className="flex-row items-center gap-0.5">
               <Pressable
@@ -961,7 +969,11 @@ export default function Timeline() {
                 accessibilityLabel="Pick a date"
                 className="px-1.5 py-1 items-center justify-center active:opacity-70">
                 <Text className="text-ink dark:text-ink-dk text-base font-semibold">
-                  {dayLabel(dayKey, new Date())}
+                  {dayStart(dayKey).toLocaleDateString(undefined, {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                  })}
                 </Text>
               </Pressable>
               <Pressable
@@ -978,6 +990,17 @@ export default function Timeline() {
             </View>
           }
         />
+        {/* px-10 puts the strip at the inset the Classes and Programming
+            strips sit at, so the days line up from one tab to the next. */}
+        <View className="px-10 md:px-4 md:max-w-2xl md:mx-auto md:w-full">
+          <WeekStrip
+            days={weekDays}
+            selected={dayStart(dayKey)}
+            onSelect={(d) =>
+              setDayKey(clampDayKey(dayKeyOf(d), bounds.floor, bounds.ceiling))
+            }
+          />
+        </View>
 
         <GestureDetector gesture={swipe}>
           <View className="flex-1">
