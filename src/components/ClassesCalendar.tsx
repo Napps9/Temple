@@ -16,6 +16,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { CreateClassModal } from '@/components/CreateClassModal';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
+import { PageTopRow } from '@/components/PageTopRow';
 import { Screen } from '@/components/Screen';
 import { SectionLabel } from '@/components/SectionLabel';
 import { TodayButton } from '@/components/TodayButton';
@@ -30,6 +31,7 @@ import { useCan } from '@/lib/useCan';
 import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
 import { useClassRecurrences } from '@/lib/useClassCatalog';
+import { MD } from '@/lib/breakpoint';
 import { useGymOperatingDefaults } from '@/lib/useGymOperatingDefaults';
 import { DAWN, useThemeColors } from '@/lib/theme';
 import { labelOn } from '@/lib/contrast';
@@ -395,38 +397,50 @@ function parseView(v: string | undefined): ViewMode {
 // Compact List/Grid toggle for the phone Book calendar. The agenda list
 // is the default; the 2-day grid stays available for a time-of-day
 // overview. Month is dropped on the phone entirely.
+// Phone Book: one round button showing the view you would switch to
+// (grid while on the list, list while on the grid). The two-segment
+// control it replaced was 80px, and with the account cluster sharing the
+// date row it no longer fit a 375-wide phone beside the date and the
+// Today jump.
 function ViewIconToggle({ view }: { view: string }) {
   const colors = useThemeColors();
-  const options: { key: string; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
-    { key: 'list', icon: 'list-outline', label: 'List view' },
-    { key: 'week', icon: 'grid-outline', label: 'Grid view' },
-  ];
+  const other: { key: string; icon: keyof typeof Ionicons.glyphMap; label: string } =
+    view === 'week'
+      ? { key: 'list', icon: 'list-outline', label: 'Switch to list view' }
+      : { key: 'week', icon: 'grid-outline', label: 'Switch to grid view' };
   return (
-    <View className="flex-row bg-sunken dark:bg-raised-dk rounded-full p-1">
-      {options.map((o) => {
-        const active = view === o.key;
-        return (
-          <Pressable
-            key={o.key}
-            onPress={() => {
-              haptic.selection();
-              router.setParams({ view: o.key });
-            }}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: active }}
-            accessibilityLabel={o.label}
-            className={`w-9 h-8 rounded-full items-center justify-center ${
-              active ? 'bg-white dark:bg-sunken-dk' : ''
-            }`}>
-            <Ionicons
-              name={o.icon}
-              size={16}
-              color={active ? colors.ink : colors.ink2}
-            />
-          </Pressable>
-        );
-      })}
-    </View>
+    <Pressable
+      onPress={() => {
+        haptic.selection();
+        router.setParams({ view: other.key });
+      }}
+      hitSlop={6}
+      accessibilityRole="button"
+      accessibilityLabel={other.label}
+      className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center active:bg-raised dark:active:bg-raised-dk">
+      <Ionicons name={other.icon} size={18} color={colors.ink2} />
+    </Pressable>
+  );
+}
+
+function AddClassButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Add class"
+      className="rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 overflow-hidden hover:opacity-90 active:opacity-80 shadow-float">
+      <LinearGradient
+        colors={[...DAWN.light]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+      />
+      <Ionicons name="add" size={16} color="#FFFFFF" />
+      <Text className="hidden md:flex text-sm font-semibold" style={{ color: '#FFFFFF' }}>
+        Add class
+      </Text>
+    </Pressable>
   );
 }
 
@@ -514,8 +528,11 @@ export function ClassesCalendar({
   // On a phone the member Book calendar drops Month entirely and shows an
   // Apple-style 2-day week instead of cramming seven columns in. Staff
   // Manage and any wide screen keep the full Day/Week/Month calendar.
-  const compactBook = mode === 'book' && width < 768;
+  const compactBook = mode === 'book' && width < MD;
   const weekVisibleDays = compactBook ? 2 : 7;
+  // Below md both modes carry the one-row date header (see PageTopRow);
+  // staff keep Day/Week/Month, Bulk and Add on a row under it.
+  const compactHeader = width < MD;
   const rawView = parseView(params.view);
   // Phone Book lands on an agenda list (a card per class) and keeps the
   // 2-day grid behind a toggle. Wide screens / staff keep day/week/month.
@@ -560,12 +577,18 @@ export function ClassesCalendar({
     setDate(startOfDay(new Date()));
   };
 
-  // Header date label for the phone calendar: the 2-day range in week
-  // view, the single day in day view. Tapping it opens the month grid.
+  // Header date label for the phone calendar: the month in month view,
+  // the visible range in week view (the 2-day window from the selected
+  // day on phone Book, the gym's week otherwise), the single day in day
+  // and list view. Tapping it opens the month grid.
+  const weekStart =
+    weekVisibleDays === 7 ? startOfWeek(date, weekStartsOn) : startOfDay(date);
   const headerLabel =
-    view === 'week'
-      ? fmtWeekRange(startOfDay(date), addDays(date, weekVisibleDays - 1))
-      : fmtDayShort(date);
+    view === 'month'
+      ? fmtMonthYear(date)
+      : view === 'week'
+        ? fmtWeekRange(weekStart, addDays(weekStart, weekVisibleDays - 1))
+        : fmtDayShort(date);
 
   const openPicker = () => {
     haptic.selection();
@@ -977,50 +1000,52 @@ export function ClassesCalendar({
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      {compactBook ? (
-        <View className="w-full max-w-5xl mx-auto px-4">
-          {/* Phone Book: the date sits where the month used to — arrows
-              step the current view (a day, or the 2-day week), and tapping
-              the label opens a month grid to jump further. Equal side
-              zones keep it centred. */}
-          <View className="flex-row items-center pt-5 pb-3">
-            <View className="flex-1 flex-row justify-start">
-              <Pressable
-                onPress={goToToday}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Jump to today"
-                className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center active:bg-raised dark:active:bg-raised-dk">
-                <Ionicons name="locate-outline" size={18} color={colors.ink2} />
-              </Pressable>
-            </View>
-            <View className="flex-row items-center gap-0.5">
-              <Pressable
-                onPress={() => shiftDate(-1)}
-                hitSlop={8}
-                accessibilityLabel="Previous"
-                className="w-8 h-8 items-center justify-center">
-                <Text className="text-ink-3 dark:text-ink-3-dk text-lg">‹</Text>
-              </Pressable>
-              <Pressable
-                onPress={openPicker}
-                hitSlop={6}
-                accessibilityRole="button"
-                accessibilityLabel="Pick a date"
-                className="px-1.5 py-1 items-center justify-center active:opacity-70">
-                <Text className="text-ink dark:text-ink-dk text-base font-semibold">
-                  {headerLabel}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => shiftDate(1)}
-                hitSlop={8}
-                accessibilityLabel="Next"
-                className="w-8 h-8 items-center justify-center">
-                <Text className="text-ink-3 dark:text-ink-3-dk text-lg">›</Text>
-              </Pressable>
-            </View>
-            <View className="flex-1 flex-row items-center justify-end gap-2">
+      {compactHeader ? (
+        <>
+          {/* Phone: the date row is the screen's top row (PageTopRow) —
+              arrows step the current view, tapping the label opens a
+              month grid to jump further. Equal side zones keep it
+              centred. -mx-6 undoes Screen's inset so the row spans the
+              width like the bar it stands in for. */}
+          <View className="-mx-6">
+            <PageTopRow className="pb-3">
+              <View className="flex-1 flex-row justify-start">
+                <TodayButton onPress={goToToday} />
+              </View>
+              <View className="flex-row items-center gap-0.5">
+                <Pressable
+                  onPress={() => shiftDate(-1)}
+                  hitSlop={8}
+                  accessibilityLabel="Previous"
+                  className="w-8 h-8 items-center justify-center">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-lg">‹</Text>
+                </Pressable>
+                <Pressable
+                  onPress={openPicker}
+                  hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityLabel="Pick a date"
+                  className="px-1.5 py-1 items-center justify-center active:opacity-70">
+                  <Text className="text-ink dark:text-ink-dk text-base font-semibold">
+                    {headerLabel}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => shiftDate(1)}
+                  hitSlop={8}
+                  accessibilityLabel="Next"
+                  className="w-8 h-8 items-center justify-center">
+                  <Text className="text-ink-3 dark:text-ink-3-dk text-lg">›</Text>
+                </Pressable>
+              </View>
+              <View className="flex-1 flex-row items-center justify-end">
+                {compactBook ? <ViewIconToggle view={view} /> : null}
+              </View>
+            </PageTopRow>
+          </View>
+          {mode === 'manage' ? (
+            <View className="w-full px-4 flex-row items-center justify-center gap-2 pb-4">
+              <ViewSwitcher view={view} />
               {canBulkEdit ? (
                 <ChipButton
                   label="Bulk"
@@ -1032,18 +1057,16 @@ export function ClassesCalendar({
                   }}
                 />
               ) : null}
-              <ViewIconToggle view={view} />
+              {canCreate ? <AddClassButton onPress={() => setCreateAt({ date })} /> : null}
             </View>
-          </View>
-        </View>
+          ) : null}
+        </>
       ) : (
         <View className="w-full max-w-5xl mx-auto px-4">
           <View className="relative flex-row items-center justify-center gap-4 pt-6 pb-6">
-            {/* View switcher sits left of the month header on md+,
-                mirroring the Add-class CTA on the right. On small screens
-                the absolute slot collides with the month title, so it
-                renders as its own row below instead. */}
-            <View className="absolute left-0 top-6 hidden md:flex md:flex-row md:items-center gap-2">
+            {/* View switcher sits left of the month header, mirroring
+                the Add-class CTA on the right. */}
+            <View className="absolute left-0 top-6 flex-row items-center gap-2">
               <ViewSwitcher view={view} />
               <TodayButton onPress={goToToday} />
             </View>
@@ -1081,30 +1104,9 @@ export function ClassesCalendar({
                     }}
                   />
                 ) : null}
-                {canCreate ? (
-                  <Pressable
-                    onPress={() => setCreateAt({ date })}
-                    accessibilityRole="button"
-                    accessibilityLabel="Add class"
-                    className="rounded-full p-2 md:pl-3 md:pr-4 md:py-2 flex-row items-center gap-1.5 overflow-hidden hover:opacity-90 active:opacity-80 shadow-float">
-                    <LinearGradient
-                      colors={[...DAWN.light]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                    />
-                    <Ionicons name="add" size={16} color="#FFFFFF" />
-                    <Text className="hidden md:flex text-sm font-semibold" style={{ color: '#FFFFFF' }}>
-                      Add class
-                    </Text>
-                  </Pressable>
-                ) : null}
+                {canCreate ? <AddClassButton onPress={() => setCreateAt({ date })} /> : null}
               </View>
             ) : null}
-          </View>
-          <View className="md:hidden flex-row items-center justify-center gap-2 pb-4 -mt-1">
-            <ViewSwitcher view={view} />
-            <TodayButton onPress={goToToday} />
           </View>
         </View>
       )}

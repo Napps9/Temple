@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 import { Text } from '@/components/Text';
 
 import { ChipButton } from '@/components/ChipButton';
+import { PageTopRow } from '@/components/PageTopRow';
 import { ProgrammingCalendar } from '@/components/ProgrammingCalendar';
 import { ProgrammingRoadmap } from '@/components/ProgrammingRoadmap';
 import { Screen } from '@/components/Screen';
@@ -51,8 +52,10 @@ export default function StaffProgramming() {
   if (view === 'year') {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
-        <View className="w-full max-w-5xl mx-auto px-2 pt-3 pb-1 items-center">
-          {toggle}
+        <View className="-mx-6 md:mx-auto md:w-full md:max-w-5xl md:px-2">
+          <PageTopRow className="pt-3 pb-1 md:justify-center">
+            <View className="flex-1 items-start md:flex-none">{toggle}</View>
+          </PageTopRow>
         </View>
         <ProgrammingRoadmap gymId={membership?.gymId} canEdit={canEdit} />
       </Screen>

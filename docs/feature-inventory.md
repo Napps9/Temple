@@ -4516,7 +4516,10 @@ without reading them.
   knowledge, key actions in three taps or fewer, driven by a tap-by-tap
   audit of 19 member and staff journeys. What shipped: visible labels on
   every nav pill at phone width (since reversed: the floating dock is
-  glyph-only on both sides, labels kept for screen readers); doors for
+  glyph-only on both sides, labels kept for screen readers, and on a
+  phone the date row of Book, Classes, Programming and Timeline is the
+  screen's top row, carrying the view-switch and avatar at its right
+  end in place of the bar — `PageTopRow`); doors for
   Tasks, Coach pay and Invite
   plus four lost surfaces added to the Manage search; timeline lead
   lines open their conversation (migration 0252); one-tap booking from

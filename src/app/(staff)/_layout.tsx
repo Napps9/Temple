@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 
 import { BottomDock, DOCK_CLEARANCE } from '@/components/BottomDock';
+import { TopBarProvider } from '@/components/PageTopRow';
 import { SideNav, useRailCollapsed } from '@/components/SideNav';
 import { TopNav, type NavSection } from '@/components/TopNav';
 import { LG, MD } from '@/lib/breakpoint';
@@ -116,24 +117,30 @@ export default function StaffLayout() {
     </>
   );
 
+  // The provider is the root of both shapes so a window resized across
+  // LG keeps the page's claim on the top row.
   if (rail) {
     return (
-      <View className="flex-1 flex-row bg-ground dark:bg-ground-dk">
-        <SideNav
-          sections={STAFF_SECTIONS}
-          collapsed={railCollapsed}
-          onToggleCollapsed={toggleRailCollapsed}
-        />
-        <View className="flex-1 min-w-0">{tabs}</View>
-      </View>
+      <TopBarProvider>
+        <View className="flex-1 flex-row bg-ground dark:bg-ground-dk">
+          <SideNav
+            sections={STAFF_SECTIONS}
+            collapsed={railCollapsed}
+            onToggleCollapsed={toggleRailCollapsed}
+          />
+          <View className="flex-1 min-w-0">{tabs}</View>
+        </View>
+      </TopBarProvider>
     );
   }
 
   return (
-    <View className="flex-1 bg-ground dark:bg-ground-dk">
-      <TopNav sections={STAFF_SECTIONS} variant="staff" />
-      {tabs}
-      <BottomDock sections={STAFF_SECTIONS} variant="staff" />
-    </View>
+    <TopBarProvider>
+      <View className="flex-1 bg-ground dark:bg-ground-dk">
+        <TopNav sections={STAFF_SECTIONS} variant="staff" />
+        {tabs}
+        <BottomDock sections={STAFF_SECTIONS} variant="staff" />
+      </View>
+    </TopBarProvider>
   );
 }

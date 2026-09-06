@@ -3,6 +3,7 @@ import { View, useWindowDimensions } from 'react-native';
 
 import { BottomDock, DOCK_CLEARANCE } from '@/components/BottomDock';
 import { MD } from '@/lib/breakpoint';
+import { TopBarProvider } from '@/components/PageTopRow';
 import { PinnedNotice } from '@/components/PinnedNotice';
 import { TopNav, type NavSection } from '@/components/TopNav';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -41,6 +42,7 @@ export default function MemberLayout() {
   const docked = width < MD;
 
   return (
+    <TopBarProvider>
     <View className="flex-1 bg-ground dark:bg-ground-dk">
       <TopNav sections={MEMBER_SECTIONS} variant="member" />
       {/* The gym's live pinned notice sits under the bar rather than on
@@ -79,5 +81,6 @@ export default function MemberLayout() {
       </Tabs>
       <BottomDock sections={MEMBER_SECTIONS} variant="member" />
     </View>
+    </TopBarProvider>
   );
 }

@@ -1,15 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, useWindowDimensions, View } from 'react-native';
 import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ManageNavSheet } from './ManageNavSheet';
-import { NavAccountMenu } from './NavAccountMenu';
+import { TopBarCluster, useTopBarOwned } from './PageTopRow';
+import { MD } from '@/lib/breakpoint';
 import { haptic } from '@/lib/haptic';
 import { BRAND, useThemeColors } from '@/lib/theme';
-import { useCan } from '@/lib/useCan';
 import { useGymBrand } from '@/lib/useGymBrand';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
@@ -47,28 +47,13 @@ export function TopNav({
   const pathname = usePathname();
   const brand = useGymBrand();
   const colors = useThemeColors();
-  const canAccessStaff = useCan('can_access_staff_area') ?? false;
+  const { width } = useWindowDimensions();
+  const owned = useTopBarOwned();
   const [manageOpen, setManageOpen] = useState(false);
 
   const gymName = brand.gymName;
 
   const homeHref = variant === 'staff' ? '/timeline' : '/book';
-  const showCrossLink = variant === 'staff' || canAccessStaff;
-  const crossHref = variant === 'staff' ? '/book' : '/classes';
-  // States the CURRENT context ("Viewing Staff"), not the destination —
-  // the old "Member view" label read as where-you-are to half of users
-  // and where-you're-going to the rest.
-  const crossLabel = variant === 'staff' ? 'Viewing Staff' : 'Viewing Member';
-
-  // staff = blue, member = green: the switch doubles as a "which side
-  // am I on" indicator, so the tint must change with the variant.
-  const crossTint = variant === 'staff' ? '#3B82F6' : '#10B981';
-  const crossClasses =
-    variant === 'staff'
-      ? 'border-blue-500/40 bg-blue-500/10'
-      : 'border-emerald-500/40 bg-emerald-500/10';
-  const crossTextClass =
-    variant === 'staff' ? 'text-blue-500' : 'text-emerald-500';
 
   // Selected is a soft tint, not a fill. The track it used to sit in has
   // gone: a filled slate rail around three pills was the loudest thing on
@@ -125,10 +110,17 @@ export function TopNav({
     </View>
   );
 
+  // A focused page below md can take this row over (PageTopRow); the
+  // bar then only pays the status-bar inset, so the pinned notice and
+  // the page still start below it.
+  if (owned && width < MD) {
+    return <View style={{ height: insets.top }} className="bg-ground dark:bg-ground-dk" />;
+  }
+
   return (
     <View
       style={{ paddingTop: insets.top + 10 }}
-      className="bg-ground dark:bg-ground-dk px-3 md:px-6 pb-3 gap-2">
+      className="bg-ground dark:bg-ground-dk px-4 md:px-6 pb-3 gap-2">
       <View className="flex-row items-center gap-2 md:gap-3">
         {/* Three zones (flex-1 left/right) keep the pills on the bar's
             true centre at md+. Below md the left zone disappears
@@ -157,23 +149,7 @@ export function TopNav({
         <View className="flex-1 md:hidden" />
 
         <View className="flex-none md:flex-1 flex-row items-center justify-end gap-1.5 md:gap-2">
-        {showCrossLink ? (
-          <Pressable
-            onPress={() => {
-              haptic.selection();
-              router.replace(crossHref as never);
-            }}
-            hitSlop={4}
-            accessibilityLabel={crossLabel}
-            className={`h-9 w-9 md:w-auto md:px-3 rounded-full border flex-row items-center justify-center gap-1.5 hover:opacity-80 active:opacity-70 ${crossClasses}`}>
-            <Ionicons name="swap-horizontal-outline" size={16} color={crossTint} />
-            <Text className={`text-xs font-semibold hidden md:flex ${crossTextClass}`}>
-              {crossLabel}
-            </Text>
-          </Pressable>
-        ) : null}
-
-        <NavAccountMenu variant={variant} anchor="top-right" />
+          <TopBarCluster variant={variant} />
         </View>
       </View>
 

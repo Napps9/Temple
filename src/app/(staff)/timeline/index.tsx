@@ -20,6 +20,7 @@ import { HtmlPreview } from '@/components/email/HtmlPreview';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { MoneyJobCard } from '@/components/MoneyJobCard';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
+import { PageTopRow } from '@/components/PageTopRow';
 import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
 import { TimelineFutureDay } from '@/components/TimelineFutureDay';
@@ -931,8 +932,8 @@ export default function Timeline() {
         {/* The day header: Today jump, the visible day with stepping
             arrows, tap-to-open month grid — the same header the Classes
             and Programming calendars carry, so days read as days
-            everywhere. */}
-        <View className="flex-row items-center pt-3 pb-1 px-4 md:max-w-2xl md:mx-auto md:w-full">
+            everywhere; on a phone it is the screen's top row. */}
+        <PageTopRow className="pt-3 pb-1 px-4 md:max-w-2xl md:mx-auto md:w-full">
           <View className="flex-1 flex-row justify-start">
             {!page.isToday ? (
               <TodayButton onPress={() => setDayKey(todayKey)} />
@@ -973,7 +974,7 @@ export default function Timeline() {
             </Pressable>
           </View>
           <View className="flex-1" />
-        </View>
+        </PageTopRow>
 
         <GestureDetector gesture={swipe}>
           <View className="flex-1">
