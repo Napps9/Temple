@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -58,7 +59,7 @@ export default function FamilyScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/account" />
 
         <PageHead
@@ -121,7 +122,7 @@ export default function FamilyScreen() {
             ))
           )}
         </View>
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Linking, Platform, Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Check } from '@/components/Check';
 import { Text } from '@/components/Text';
 
@@ -110,7 +111,7 @@ export default function WaiverForm() {
   if (!active.data) {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
-        <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
+        <PageScroll contentContainerClassName="gap-4 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
           <PageHead
             title="No waiver yet"
             subtitle="Your gym hasn't published a waiver to sign. You can keep using the app normally."
@@ -118,14 +119,14 @@ export default function WaiverForm() {
           <Button onPress={() => router.replace('/book' as never)}>
             Continue
           </Button>
-        </ScrollView>
+        </PageScroll>
       </Screen>
     );
   }
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
+      <PageScroll contentContainerClassName="gap-5 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
         <BackLink />
         <PageHead
           title={active.data.title}
@@ -181,7 +182,7 @@ export default function WaiverForm() {
           Your signed waiver is kept on record as a legal document, even if
           you later leave the gym.
         </Text>
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

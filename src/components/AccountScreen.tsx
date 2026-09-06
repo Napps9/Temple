@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Platform, Pressable, Switch, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { PageHead } from './PageHead';
 import { Text } from './Text';
 
@@ -278,7 +279,7 @@ export function AccountScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-3xl lg:max-w-5xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-6 py-6 px-4 md:max-w-3xl lg:max-w-5xl md:mx-auto md:w-full">
         <BackLink />
         <PageHead title="Account" subtitle="Manage your name, email, and password." />
 
@@ -650,7 +651,7 @@ export function AccountScreen() {
             </Pressable>
           </Link>
         </View>
-      </ScrollView>
+      </PageScroll>
 
       {membership && session ? (
         <LeaveGymDialog

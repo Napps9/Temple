@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -279,7 +280,7 @@ export default function ImportStripeScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/plans" />
         <PageHead
           title="Import from Stripe"
@@ -508,7 +509,7 @@ export default function ImportStripeScreen() {
             </Button>
           </>
         )}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

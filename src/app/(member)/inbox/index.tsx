@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { Pressable, Switch, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { EmptyState } from '@/components/EmptyState';
 import { SectionLabel } from '@/components/SectionLabel';
 import { Text } from '@/components/Text';
@@ -500,7 +501,7 @@ export default function Inbox() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <PageHead
           title="Inbox"
           subtitle="Messages from coaches and the gym."
@@ -546,7 +547,7 @@ export default function Inbox() {
             )}
           </>
         )}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

@@ -3,7 +3,8 @@ import { useThemeColors } from '@/lib/theme';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
@@ -124,7 +125,7 @@ export default function ConsentForm() {
 
   return (
     <Screen edges={['top', 'bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-xl md:mx-auto md:w-full">
         <PageHead
           title="Welcome — let's get you set up"
           subtitle="A couple of details and your consent, then you're in."
@@ -257,7 +258,7 @@ export default function ConsentForm() {
             ) : null}
           </>
         )}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

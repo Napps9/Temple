@@ -130,7 +130,7 @@ export default function DirectThread() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <View className="flex-1 px-4 md:max-w-2xl md:mx-auto md:w-full py-6">
+      <View className="flex-1 px-4 md:max-w-2xl md:mx-auto md:w-full pt-6 pb-dock md:pb-6">
         <View className="pb-3">
           <PageHead
             lead={<BackLink inline fallbackHref="/inbox" />}

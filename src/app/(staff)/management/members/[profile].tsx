@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Linking, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Linking, Pressable, Switch, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { PageHead } from '@/components/PageHead';
 import { Spinner } from '@/components/EmptyState';
 import { Text } from '@/components/Text';
@@ -344,7 +345,7 @@ export default function MemberDetailScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/members" />
 
         <PageHead
@@ -650,7 +651,7 @@ export default function MemberDetailScreen() {
             />
           </View>
         ) : null}
-      </ScrollView>
+      </PageScroll>
 
       {membership && profileId ? (
         <RemoveMemberDialog

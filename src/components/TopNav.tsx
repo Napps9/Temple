@@ -110,11 +110,26 @@ export function TopNav({
     </View>
   );
 
-  // A focused page below md can take this row over (PageTopRow); the
-  // bar then only pays the status-bar inset, so the pinned notice and
-  // the page still start below it.
-  if (owned && width < MD) {
-    return <View style={{ height: insets.top }} className="bg-ground dark:bg-ground-dk" />;
+  // Below md the bar pays only the status-bar inset in flow, so the
+  // pinned notice and the page start below it, and the cluster floats
+  // over the page (zIndex lifts it above the scene rendered after it)
+  // so content scrolls under the buttons the way it does under the
+  // dock. A focused page can take the row over instead (PageTopRow) and
+  // draws the cluster itself.
+  if (width < MD) {
+    return (
+      <>
+        <View style={{ height: insets.top }} className="bg-ground dark:bg-ground-dk" />
+        {owned ? null : (
+          <View
+            pointerEvents="box-none"
+            className="absolute right-4 flex-row items-center gap-1.5"
+            style={{ top: insets.top + 10, zIndex: 10 }}>
+            <TopBarCluster variant={variant} />
+          </View>
+        )}
+      </>
+    );
   }
 
   return (

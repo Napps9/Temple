@@ -287,7 +287,7 @@ export default function PaymentStory() {
     <Screen edges={['bottom', 'left', 'right']} className="px-0">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1">
+        className="flex-1 pb-dock md:pb-0">
         <ScrollView
           ref={scrollRef}
           className="flex-1"

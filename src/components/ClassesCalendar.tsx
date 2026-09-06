@@ -10,6 +10,7 @@ import { Text } from './Text';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 
+import { PageScroll } from '@/components/PageScroll';
 import { Avatar } from '@/components/Avatar';
 import { BulkClassEditModal } from '@/components/BulkClassEditModal';
 import { ChipButton } from '@/components/ChipButton';
@@ -1471,7 +1472,7 @@ function AgendaView({
         ) : null}
       </View>
 
-      <ScrollView className="flex-1" contentContainerClassName="pb-10">
+      <PageScroll top={false} className="flex-1" contentContainerClassName="pb-10">
         {topSlot ? (
           <View className="w-full max-w-5xl mx-auto px-4 pt-1 pb-2">{topSlot}</View>
         ) : null}
@@ -1510,7 +1511,7 @@ function AgendaView({
         {bottomSlot ? (
           <View className="w-full max-w-5xl mx-auto px-4 pt-5">{bottomSlot}</View>
         ) : null}
-      </ScrollView>
+      </PageScroll>
     </View>
   );
 }
@@ -1807,7 +1808,7 @@ function DayView({
         {filterBar}
       </View>
 
-      <ScrollView
+      <PageScroll top={false}
         ref={scrollRef}
         className="flex-1"
         contentContainerClassName="pb-10">
@@ -1861,7 +1862,7 @@ function DayView({
             />
           )}
         </View>
-      </ScrollView>
+      </PageScroll>
     </View>
   );
 }
@@ -2193,7 +2194,7 @@ function WeekView({
         {filterBar}
       </View>
 
-      <ScrollView
+      <PageScroll top={false}
         ref={scrollRef}
         className="flex-1"
         contentContainerClassName="pb-10">
@@ -2224,7 +2225,7 @@ function WeekView({
             dimPast={dimPast}
           />
         </View>
-      </ScrollView>
+      </PageScroll>
     </View>
   );
 }
@@ -2399,7 +2400,7 @@ function MonthView({
         {filterBar}
       </View>
 
-      <ScrollView className="flex-1" contentContainerClassName="pb-10">
+      <PageScroll top={false} className="flex-1" contentContainerClassName="pb-10">
         {topSlot ? (
           <View className="w-full max-w-5xl mx-auto px-2 pt-4 pb-2">{topSlot}</View>
         ) : null}
@@ -2463,7 +2464,7 @@ function MonthView({
             </View>
           ))}
         </View>
-      </ScrollView>
+      </PageScroll>
     </View>
   );
 }

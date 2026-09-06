@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -124,7 +125,7 @@ export default function Goals() {
 
   return (
     <Screen className="px-0">
-      <ScrollView
+      <PageScroll
         className="flex-1"
         contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" coveredByNav />
@@ -208,7 +209,7 @@ export default function Goals() {
             </View>
           </View>
         ) : null}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

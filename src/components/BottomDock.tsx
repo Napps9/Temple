@@ -13,8 +13,10 @@ import { BRAND, useThemeColors } from '@/lib/theme';
 // call over the old top strip — the sections sit where thumbs are, and
 // the top of the screen goes back to the page. Rendered by the layouts
 // below md as a sibling of the tab content (absolute within the layout's
-// full-height container), so it floats over every screen; the layouts pad
-// the scene's bottom to keep the last rows reachable underneath it.
+// full-height container), so it floats over every screen and the page
+// scrolls under it; PageScroll keeps a page's last rows reachable, and a
+// screen with a composer pinned to its bottom pads by `pb-dock`
+// (tailwind.config's twin of DOCK_CLEARANCE) instead.
 //
 // Glyphs only, by the owner's call: the label lives in the
 // accessibilityLabel so screen readers still name the section. The

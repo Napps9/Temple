@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { PageHead } from '@/components/PageHead';
 import { SearchField } from '@/components/SearchField';
 import { SectionLabel } from '@/components/SectionLabel';
@@ -113,7 +114,7 @@ export default function NewDirectMessage() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <PageHead
           lead={<BackLink inline fallbackHref="/inbox" />}
           title="New message"
@@ -167,7 +168,7 @@ export default function NewDirectMessage() {
               </View>
             ))
         )}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

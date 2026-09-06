@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Check } from '@/components/Check';
 import { Text } from '@/components/Text';
 
@@ -152,7 +153,7 @@ export default function TasksScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" coveredByNav />
         <PageHead
           title="Tasks"
@@ -285,7 +286,7 @@ export default function TasksScreen() {
             ))
           )}
         </View>
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

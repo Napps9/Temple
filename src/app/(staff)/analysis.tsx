@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState, useEffect } from 'react';
 import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text } from '@/components/Text';
 
 import { BodyMap } from '@/components/BodyMap';
@@ -298,7 +299,7 @@ export default function AnalysisScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-4xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-4xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/(staff)/programming" coveredByNav />
         <PageHead
           title="Programming analysis"
@@ -516,7 +517,7 @@ export default function AnalysisScreen() {
             {showUntagged ? <UntaggedCard sections={pb.untagged} /> : null}
           </View>
         ) : null}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

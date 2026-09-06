@@ -4,7 +4,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Redirect } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Image, Pressable, Switch, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { PillNav } from '@/components/PillNav';
 import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
@@ -96,7 +97,7 @@ export default function StoreManageScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" coveredByNav />
         <PageHead
           title="Store"
@@ -104,7 +105,7 @@ export default function StoreManageScreen() {
         />
 
         <StoreHome />
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

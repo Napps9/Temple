@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { Image, Pressable, ScrollView, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
@@ -102,7 +103,7 @@ export default function StoreScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/account" />
 
         <PageHead
@@ -216,7 +217,7 @@ export default function StoreScreen() {
             </View>
           </>
         )}
-      </ScrollView>
+      </PageScroll>
 
       <ProductSheet
         product={openProduct}

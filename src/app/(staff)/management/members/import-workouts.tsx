@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -248,7 +249,7 @@ export default function ImportWorkoutsScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" coveredByNav />
         <PageHead
           title="Import workout history"
@@ -681,7 +682,7 @@ export default function ImportWorkoutsScreen() {
             </View>
           </View>
         ) : null}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

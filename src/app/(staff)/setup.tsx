@@ -718,7 +718,7 @@ export default function SetupScreen() {
     <Screen edges={['bottom', 'left', 'right']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1">
+        className="flex-1 pb-dock md:pb-0">
         {/* The checklist's progress header, compacted for a conversation:
             same "N of M done · REQUIRED" line and primary-filled bar, so
             the chat reads as the same piece of software. */}

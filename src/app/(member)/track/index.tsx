@@ -4,7 +4,8 @@ type IoniconName = keyof typeof Ionicons.glyphMap;
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
@@ -170,7 +171,7 @@ export default function TrackHome() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-5xl xl:max-w-7xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-5xl xl:max-w-7xl md:mx-auto md:w-full">
         <PageHead
           title="Track"
           subtitle={
@@ -284,7 +285,7 @@ export default function TrackHome() {
             />
           </View>
         </View>
-      </ScrollView>
+      </PageScroll>
 
       <RecordWorkoutModal
         visible={recording}

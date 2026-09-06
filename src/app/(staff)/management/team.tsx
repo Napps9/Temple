@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { Pressable, Switch, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { ListRow, RuledList } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
@@ -121,7 +122,7 @@ export default function TeamScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" coveredByNav />
         <PageHead
           title="Team"
@@ -135,7 +136,7 @@ export default function TeamScreen() {
         />
         {callerRole === 'owner' ? <RolePermissionsLauncher /> : null}
         {callerRole === 'owner' ? <MemberPermissionsLauncher /> : null}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

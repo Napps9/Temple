@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { SearchField } from '@/components/SearchField';
 import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
@@ -357,7 +358,7 @@ function IndividualsList() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView
+      <PageScroll
         className="flex-1"
         contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/(staff)/programming" />
@@ -452,7 +453,7 @@ function IndividualsList() {
             </Text>
           ) : null}
         </View>
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Spinner } from '@/components/EmptyState';
 import { Text } from '@/components/Text';
 
@@ -77,12 +78,12 @@ export default function CampaignDetailScreen() {
   if (canManageComms === false) {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
-        <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
           <BackLink fallbackHref="/management/communications" />
           <Text className="text-ink-2 dark:text-ink-2-dk">
             You don't have permission to manage communications.
           </Text>
-        </ScrollView>
+        </PageScroll>
       </Screen>
     );
   }
@@ -98,12 +99,12 @@ export default function CampaignDetailScreen() {
   if (campaign.isError || !campaign.data) {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
-        <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
           <BackLink fallbackHref="/management/communications" coveredByNav />
           <Text className="text-red-500 dark:text-red-400">
             {errorMessage(campaign.error, 'Could not load this campaign')}
           </Text>
-        </ScrollView>
+        </PageScroll>
       </Screen>
     );
   }
@@ -415,7 +416,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/communications" coveredByNav />
         <PageHead
           title="Edit campaign"
@@ -650,7 +651,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
             <DeleteCampaignButton campaignId={campaign.id} />
           </View>
         )}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }
@@ -878,7 +879,7 @@ function ReportView({ campaign }: { campaign: Campaign }) {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/communications" coveredByNav />
       <PageHead
         title={campaign.title || 'Campaign'}
@@ -1045,7 +1046,7 @@ function ReportView({ campaign }: { campaign: Campaign }) {
         </SectionLabel>
         <HtmlPreview html={previewHtml} height={420} />
       </View>
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

@@ -2,7 +2,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { IconTile, ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
@@ -118,7 +119,7 @@ export default function CommunicationsScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" coveredByNav />
         <PageHead
           title="Email"
@@ -141,7 +142,7 @@ export default function CommunicationsScreen() {
         ) : (
           <CommunicationsHome onNew={() => create.mutate()} />
         )}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

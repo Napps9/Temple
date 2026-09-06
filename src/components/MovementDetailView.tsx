@@ -2,11 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { type Href, router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { PageHead } from './PageHead';
 import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
 
+import { PageScroll } from '@/components/PageScroll';
 import { BackLink } from '@/components/BackLink';
 import { ChipButton } from '@/components/ChipButton';
 import { RecordHyroxRaceModal } from '@/components/RecordHyroxRaceModal';
@@ -214,7 +215,7 @@ export function MovementDetailView({
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <PageHead
           lead={<BackLink inline fallbackHref={backHref as Href} />}
           title={movement.name}
@@ -423,7 +424,7 @@ export function MovementDetailView({
             )}
           </View>
         )}
-      </ScrollView>
+      </PageScroll>
 
       {isMember ? (
         <RecordMovementResultModal

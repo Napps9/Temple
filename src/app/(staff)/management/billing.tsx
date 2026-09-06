@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Platform, ScrollView, Switch, View } from 'react-native';
+import { Platform, Switch, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -228,19 +229,19 @@ export default function BillingScreen() {
   if (role && role !== 'owner') {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
-        <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
           <BackLink fallbackHref="/management" coveredByNav />
           <Text className="text-ink-2 dark:text-ink-2-dk">
             Only an owner can manage billing.
           </Text>
-        </ScrollView>
+        </PageScroll>
       </Screen>
     );
   }
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" coveredByNav />
 
         <PageHead
@@ -450,7 +451,7 @@ export default function BillingScreen() {
             </Text>
           ) : null}
         </View>
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

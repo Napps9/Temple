@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text } from '@/components/Text';
 
 import { AttendanceChart } from '@/components/AttendanceChart';
@@ -135,7 +136,7 @@ export default function AttendanceScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-6 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" coveredByNav />
         <PageHead
           title="Attendance"
@@ -256,7 +257,7 @@ export default function AttendanceScreen() {
             })
           )}
         </View>
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

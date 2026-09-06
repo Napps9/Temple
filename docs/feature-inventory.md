@@ -4519,7 +4519,10 @@ without reading them.
   glyph-only on both sides, labels kept for screen readers, and on a
   phone the date row of Book, Classes, Programming and Timeline is the
   screen's top row, carrying the view-switch and avatar at its right
-  end in place of the bar — `PageTopRow`); doors for
+  end in place of the bar — `PageTopRow`; everywhere else the phone's
+  chrome floats: the cluster over the top of the page and the dock over
+  the bottom, with the page scrolling under both through `PageScroll`,
+  and screens with a pinned composer padding by `pb-dock`); doors for
   Tasks, Coach pay and Invite
   plus four lost surfaces added to the Manage search; timeline lead
   lines open their conversation (migration 0252); one-tap booking from

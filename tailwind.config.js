@@ -5,6 +5,9 @@ module.exports = {
   darkMode: 'class',
   theme: {
     extend: {
+      // The floating dock's clearance; DOCK_CLEARANCE in BottomDock.tsx
+      // is the same number for code that measures instead of styling.
+      spacing: { dock: '84px' },
       colors: {
         // Runtime-driven so `bg-primary`, `text-primary/30` etc.
         // follow the gym's saved primary_color. Defaults are set in

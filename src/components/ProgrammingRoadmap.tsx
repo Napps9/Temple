@@ -1,8 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
+import { PageScroll } from '@/components/PageScroll';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { DatePicker } from '@/components/DatePicker';
@@ -81,7 +82,7 @@ export function ProgrammingRoadmap({
     });
 
   return (
-    <ScrollView className="flex-1" contentContainerClassName="pb-10">
+    <PageScroll top={false} className="flex-1" contentContainerClassName="pb-10">
       <View className="w-full max-w-5xl mx-auto px-2 gap-4">
         <View className="flex-row items-center justify-center gap-0.5 pt-1">
           <Pressable
@@ -188,7 +189,7 @@ export function ProgrammingRoadmap({
           onClose={() => setDraft(null)}
         />
       ) : null}
-    </ScrollView>
+    </PageScroll>
   );
 }
 

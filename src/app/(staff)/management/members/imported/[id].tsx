@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Platform, ScrollView, Switch, View } from 'react-native';
+import { Platform, Switch, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text } from '@/components/Text';
 
 import { Avatar } from '@/components/Avatar';
@@ -266,7 +267,7 @@ export default function ImportedMemberDetailScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/members" />
 
         {canManageStaff !== true || query.isLoading ? (
@@ -493,7 +494,7 @@ export default function ImportedMemberDetailScreen() {
             </View>
           </>
         )}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

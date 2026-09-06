@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text } from '@/components/Text';
 
 import { Button } from '@/components/Button';
@@ -89,7 +90,7 @@ export default function CommsSettingsScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/communications" coveredByNav />
         <PageHead
           title="Email settings"
@@ -190,7 +191,7 @@ export default function CommsSettingsScreen() {
         <SuppressedAddressesCard />
 
         <TopicsCard />
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

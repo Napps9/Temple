@@ -1,6 +1,7 @@
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { Text } from './Text';
 
+import { PageScroll } from '@/components/PageScroll';
 import { BackLink } from '@/components/BackLink';
 import { Screen } from '@/components/Screen';
 import type { LegalDoc } from '@/lib/legal';
@@ -12,7 +13,7 @@ import type { LegalDoc } from '@/lib/legal';
 export function LegalDocScreen({ doc }: { doc: LegalDoc }) {
   return (
     <Screen>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/" />
 
         <View className="gap-1">
@@ -48,7 +49,7 @@ export function LegalDocScreen({ doc }: { doc: LegalDoc }) {
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm pt-2">
           {doc.contact}
         </Text>
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
+import { PageScroll } from '@/components/PageScroll';
 import { Button } from '@/components/Button';
 import { ChipButton } from '@/components/ChipButton';
 import { ClassLeaderboardModal } from '@/components/ClassLeaderboardModal';
@@ -470,7 +471,7 @@ export function ProgrammingCalendar({
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerClassName="pb-10">
+      <PageScroll top={!!topBar} className="flex-1" contentContainerClassName="pb-10">
         <View className="w-full max-w-5xl mx-auto px-2 gap-3">
           {memberScope ? (
             <PersonalCard
@@ -560,7 +561,7 @@ export function ProgrammingCalendar({
             </>
           )}
         </View>
-      </ScrollView>
+      </PageScroll>
 
       <ProgrammingModal
         visible={openFor !== null}

@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { ListRow } from '@/components/ListRow';
 import { Text, TextInput } from '@/components/Text';
 
@@ -129,7 +130,7 @@ export default function SopsScreen() {
   if (active && !editing) {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
-        <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" coveredByNav />
           <Pressable onPress={() => setActiveId(null)}>
             <Text className="text-primary">← All documents</Text>
@@ -163,7 +164,7 @@ export default function SopsScreen() {
               </View>
             </View>
           ) : null}
-        </ScrollView>
+        </PageScroll>
       </Screen>
     );
   }
@@ -171,7 +172,7 @@ export default function SopsScreen() {
   if (editing) {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
-        <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
           <Pressable
             onPress={() => {
               setEditing(false);
@@ -207,14 +208,14 @@ export default function SopsScreen() {
           <Button onPress={() => save.mutate()} loading={save.isPending}>
             Save
           </Button>
-        </ScrollView>
+        </PageScroll>
       </Screen>
     );
   }
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" coveredByNav />
         <PageHead
           title="SOPs"
@@ -250,7 +251,7 @@ export default function SopsScreen() {
             ))}
           </View>
         )}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

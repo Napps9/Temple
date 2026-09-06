@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { RefreshControl, View } from 'react-native';
 import { EmptyState } from './EmptyState';
 
+import { PageScroll } from '@/components/PageScroll';
 import { SoftLine } from '@/components/TimelineLines';
 import { supabase } from '@/lib/supabase';
 import {
@@ -202,7 +203,7 @@ export function TimelineFutureDay({
   });
 
   return (
-    <ScrollView
+    <PageScroll top={false}
       className="flex-1"
       contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full"
       refreshControl={
@@ -243,6 +244,6 @@ export function TimelineFutureDay({
           />
         ))
       )}
-    </ScrollView>
+    </PageScroll>
   );
 }

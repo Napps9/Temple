@@ -2,7 +2,7 @@ import { Redirect, Tabs, usePathname } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 
-import { BottomDock, DOCK_CLEARANCE } from '@/components/BottomDock';
+import { BottomDock } from '@/components/BottomDock';
 import { TopBarProvider } from '@/components/PageTopRow';
 import { SideNav, useRailCollapsed } from '@/components/SideNav';
 import { TopNav, type NavSection } from '@/components/TopNav';
@@ -102,8 +102,6 @@ export default function StaffLayout() {
           tabBarStyle: { display: 'none' },
           sceneStyle: {
             backgroundColor: colors.screenBg,
-            // Room for the floating dock on the widths that show it.
-            paddingBottom: width < MD ? DOCK_CLEARANCE : 0,
           },
           animation: 'none',
         }}>

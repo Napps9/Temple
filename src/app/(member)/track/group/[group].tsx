@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
@@ -173,7 +174,7 @@ export default function GroupPage() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <PageHead
           lead={<BackLink inline fallbackHref="/track" />}
           title={group.name}
@@ -224,7 +225,7 @@ export default function GroupPage() {
             );
           })}
         </View>
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

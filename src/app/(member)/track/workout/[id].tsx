@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
@@ -74,7 +75,7 @@ export default function WorkoutDetail() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <PageHead
           lead={<BackLink inline fallbackHref="/track/journal" />}
           title={workout.data?.title?.trim() || 'Workout'}
@@ -124,7 +125,7 @@ export default function WorkoutDetail() {
             ) : null}
           </>
         )}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

@@ -928,7 +928,7 @@ export default function Timeline() {
     <Screen edges={['bottom', 'left', 'right']} className="px-0">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1">
+        className="flex-1 pb-dock md:pb-0">
         {/* The day header: Today jump, the visible day with stepping
             arrows, tap-to-open month grid — the same header the Classes
             and Programming calendars carry, so days read as days

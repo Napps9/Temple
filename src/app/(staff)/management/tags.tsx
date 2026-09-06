@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Check } from '@/components/Check';
 import { Text } from '@/components/Text';
 
@@ -127,7 +128,7 @@ function MemberTags({ profileId }: { profileId: string }) {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" />
         <PageHead
           title={profileQuery.data?.full_name ?? 'Member'}
@@ -197,7 +198,7 @@ function MemberTags({ profileId }: { profileId: string }) {
             Add tag
           </Button>
         </View>
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }
@@ -205,11 +206,11 @@ function MemberTags({ profileId }: { profileId: string }) {
 function RulesEditor() {
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management" coveredByNav />
         <PageHead title="Tag rules" />
         <TagRulesPanel />
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { ScrollView, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { MemberSignupLinkCard } from '@/components/MemberSignupLinkCard';
 import { Text } from '@/components/Text';
 
@@ -58,7 +59,7 @@ export default function MembersScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView
+      <PageScroll
         ref={scrollRef}
         contentContainerClassName="gap-4 py-6 px-4 md:max-w-3xl md:mx-auto md:w-full"
         onScroll={(e) => {
@@ -104,7 +105,7 @@ export default function MembersScreen() {
         ) : null}
 
         <MembersList />
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

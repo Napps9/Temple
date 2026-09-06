@@ -3,10 +3,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import type { ComponentProps, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { Pressable, Switch, View } from 'react-native';
 import { CommunicationsHome, useCreateCampaign } from './communications';
 import { PlansPanel } from './plans';
 import { StoreHome } from './store';
+import { PageScroll } from '@/components/PageScroll';
 import { AIMark } from '@/components/AIMark';
 import type { IconSlot } from '@/components/icon-slot';
 import { PillNav } from '@/components/PillNav';
@@ -358,7 +359,7 @@ export default function ManagementHome() {
   return (
     <Screen edges={['bottom', 'left', 'right']} className="px-0">
       <View className="flex-1">
-        <ScrollView
+        <PageScroll
           className="flex-1"
           contentContainerClassName="gap-4 py-6 px-4 lg:px-8 lg:max-w-5xl lg:w-full">
           <PageHead
@@ -459,7 +460,7 @@ export default function ManagementHome() {
             ))}
           </View>
         )}
-        </ScrollView>
+        </PageScroll>
       </View>
     </Screen>
   );

@@ -1,8 +1,7 @@
 import { Redirect, Tabs } from 'expo-router';
-import { View, useWindowDimensions } from 'react-native';
+import { View } from 'react-native';
 
-import { BottomDock, DOCK_CLEARANCE } from '@/components/BottomDock';
-import { MD } from '@/lib/breakpoint';
+import { BottomDock } from '@/components/BottomDock';
 import { TopBarProvider } from '@/components/PageTopRow';
 import { PinnedNotice } from '@/components/PinnedNotice';
 import { TopNav, type NavSection } from '@/components/TopNav';
@@ -31,7 +30,6 @@ const MEMBER_SECTIONS: NavSection[] = [
 export default function MemberLayout() {
   const session = useSession();
   const colors = useThemeColors();
-  const { width } = useWindowDimensions();
   const { data: membership } = useGymMembership();
   const { isDemo } = useGymBrand();
   // /book and /track are two of the ten screens the marketing site can
@@ -39,7 +37,6 @@ export default function MemberLayout() {
   // so without this two of the five tour stops would be invisible (0279).
   useDemoViews(membership?.gymId, isDemo);
   if (session === null) return <Redirect href="/sign-in" />;
-  const docked = width < MD;
 
   return (
     <TopBarProvider>
@@ -60,8 +57,6 @@ export default function MemberLayout() {
           tabBarStyle: { display: 'none' },
           sceneStyle: {
             backgroundColor: colors.screenBg,
-            // Room for the floating dock on the widths that show it.
-            paddingBottom: docked ? DOCK_CLEARANCE : 0,
           },
           animation: 'none',
         }}>

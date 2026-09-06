@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text, TextInput } from '@/components/Text';
 
 import { BodyMap } from '@/components/BodyMap';
@@ -67,7 +68,7 @@ export default function InjuriesScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/track" />
         <PageHead
           title="Injury tracker"
@@ -147,7 +148,7 @@ export default function InjuriesScreen() {
           Injury notes are health data: only you and the coaching team can see
           them, and they are erased if you leave the gym.
         </Text>
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

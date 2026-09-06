@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { PageHead } from '@/components/PageHead';
 import { Text } from '@/components/Text';
 
@@ -124,7 +125,7 @@ export default function NewClassBroadcast() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <PageHead
           lead={<BackLink inline fallbackHref="/inbox" />}
           title="Broadcast to class"
@@ -198,7 +199,7 @@ export default function NewClassBroadcast() {
         <Button onPress={() => send.mutate()} loading={send.isPending}>
           Send broadcast
         </Button>
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

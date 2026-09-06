@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text } from '@/components/Text';
 
 import { AIMark } from '@/components/AIMark';
@@ -506,7 +507,7 @@ export default function AgentConversationScreen() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/leads/conversations" />
         <PageHead
           title={c?.lead?.full_name ?? c?.phone ?? 'Conversation'}
@@ -650,7 +651,7 @@ export default function AgentConversationScreen() {
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
-      </ScrollView>
+      </PageScroll>
 
       <CoachModal
         message={coachFor}

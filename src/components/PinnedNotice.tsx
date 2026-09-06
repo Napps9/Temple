@@ -1,13 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { Pressable, useWindowDimensions, View } from 'react-native';
 
 import { Text } from './Text';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { haptic } from '@/lib/haptic';
 import { isPinnedNow } from '@/lib/inbox-feed';
 import { supabase } from '@/lib/supabase';
+import { MD } from '@/lib/breakpoint';
+import { useTopBarOwned } from './PageTopRow';
 import { useThemeColors } from '@/lib/theme';
 
 type PinnedRow = {
@@ -37,6 +39,8 @@ type PinnedRow = {
 // clears the bell at the same time.
 export function PinnedNotice() {
   const colors = useThemeColors();
+  const { width } = useWindowDimensions();
+  const owned = useTopBarOwned();
   const session = useSession();
   const membership = useGymMembership();
   const queryClient = useQueryClient();
@@ -93,8 +97,14 @@ export function PinnedNotice() {
   const notice = pinned.data;
   if (!notice) return null;
 
+  // Below md the bar's cluster floats over the page (TopNav); the notice
+  // starts under it unless the page draws the cluster in its own row.
+  const underFloatingCluster = width < MD && !owned;
+
   return (
-    <View className="px-3 md:px-6 pb-2">
+    <View
+      className="px-4 md:px-6 pb-2"
+      style={underFloatingCluster ? { paddingTop: 52 } : undefined}>
       <View
         accessibilityRole="alert"
         className="flex-row items-center gap-2 rounded-card border border-line-strong dark:border-line-strong-dk bg-raised dark:bg-raised-dk px-3 py-2">

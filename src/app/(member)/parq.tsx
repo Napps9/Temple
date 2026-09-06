@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text, TextInput } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -155,7 +156,7 @@ export default function ParqForm() {
   if (!active.data) {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
-        <ScrollView contentContainerClassName="gap-4 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
+        <PageScroll contentContainerClassName="gap-4 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
           <EmptyState
             icon="medkit-outline"
             title="No PAR-Q yet"
@@ -164,7 +165,7 @@ export default function ParqForm() {
             actionIcon="arrow-forward"
             onAction={() => router.replace('/book' as never)}
           />
-        </ScrollView>
+        </PageScroll>
       </Screen>
     );
   }
@@ -196,7 +197,7 @@ export default function ParqForm() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView
+      <PageScroll
         className="flex-1"
         contentContainerClassName="gap-5 py-6 md:max-w-xl md:mx-auto md:w-full px-4">
         <BackLink />
@@ -304,7 +305,7 @@ export default function ParqForm() {
         {error ? (
           <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
-      </ScrollView>
+      </PageScroll>
 
       <View className="border-t border-line dark:border-line-dk px-4 py-3 md:max-w-xl md:mx-auto md:w-full flex-row gap-2">
         {current > 0 ? (

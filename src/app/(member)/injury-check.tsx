@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { Text } from '@/components/Text';
 
 import { BackLink } from '@/components/BackLink';
@@ -37,7 +38,7 @@ export default function InjuryCheck() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-6 py-6 px-4 md:max-w-xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-6 py-6 px-4 md:max-w-xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/book" />
 
         <View className="items-center gap-3 pt-2">
@@ -84,7 +85,7 @@ export default function InjuryCheck() {
             </Button>
           </View>
         )}
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }

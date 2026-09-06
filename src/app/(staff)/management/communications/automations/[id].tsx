@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, Switch, View } from 'react-native';
+import { PageScroll } from '@/components/PageScroll';
 import { IconTile, ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
 
@@ -730,7 +731,7 @@ export default function AutomationEditor() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
+      <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
         <BackLink fallbackHref="/management/communications" coveredByNav />
 
         <PageHead
@@ -1050,7 +1051,7 @@ export default function AutomationEditor() {
             </Text>
           ) : null}
         </View>
-      </ScrollView>
+      </PageScroll>
     </Screen>
   );
 }
