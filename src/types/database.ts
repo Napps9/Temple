@@ -5608,6 +5608,15 @@ export type Database = {
         Args: Record<string, never>;
         Returns: number;
       };
+      recent_worker_responses: {
+        Args: { p_limit?: number };
+        Returns: {
+          id: number;
+          created: string;
+          status_code: number | null;
+          content: string | null;
+        }[];
+      };
       request_cover: {
         Args: { p_session_ids: string[]; p_notes: string | null };
         Returns: string;

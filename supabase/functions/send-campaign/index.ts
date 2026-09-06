@@ -129,17 +129,19 @@ Deno.serve(async (req: Request) => {
 
   // Two ways in. A person clicking Send re-authorises as themselves (the
   // service client above bypasses RLS). A scheduled send arrives from
-  // pg_cron with no user at all — dispatch_scheduled_campaigns posts the
-  // service role key from Vault (0186), so that is what this accepts.
+  // pg_cron with no user at all: since 0199 dispatch_scheduled_campaigns
+  // posts the publishable key in `apikey` (for the gateway) and the Vault
+  // worker_shared_secret in `x-automation-secret`, matched here against
+  // AUTOMATION_WORKER_SECRET (docs/resend-setup.md, section 3). The
+  // service-key comparison is kept for a caller that holds it, but the
+  // dispatcher no longer sends it: 0186's Vault copy of the service key
+  // could not be made to byte-match what the gateway expects.
   //
-  // The x-automation-secret variant is kept because send-email-automations
-  // has always had it, but it is NOT the path the dispatcher uses:
-  // AUTOMATION_WORKER_SECRET appears in no runbook and is almost certainly
-  // unset, which makes `!!CRON_SECRET` false and that branch dead.
-  // Depending on it alone would 403 every scheduled send — and because
-  // _send_due_campaign has already moved the campaign to 'sending', which
-  // neither the sweep nor the UI will re-send, the recipients would be
-  // stranded rather than retried.
+  // If the secret is unset or differs, a scheduled send lands here as
+  // anon, fails effective_can and gets a 403 — after _send_due_campaign
+  // has already moved the campaign to 'sending'. The dispatcher's re-poke
+  // pass retries it every fifteen minutes, so the fix is the secret, not
+  // the campaign. scripts/probe-scheduled-send.ts reads that 403 back.
   //
   // The campaign was authorised when it was scheduled, by someone who held
   // the capability then; comms_schedule_campaign is where that is checked.

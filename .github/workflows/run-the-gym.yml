@@ -9,6 +9,9 @@ name: Run the gym
 #         phone and desktop widths
 #   eval  ~55 sentences through the deployed parser, refusal traps
 #         included
+#   scheduled-send
+#         schedule one campaign a minute out on the demo gym and watch
+#         the dispatcher, the gateway and the worker carry it to sent
 #
 # Seed the demo gym first (Demo gym workflow -> seed, slug
 # demo-ironworks). The sim dirties it by design — teardown + re-seed is
@@ -27,7 +30,7 @@ on:
       what:
         description: Which instrument to run
         type: choice
-        options: [all, sim, e2e, eval]
+        options: [all, sim, e2e, eval, scheduled-send]
         default: all
       slug:
         description: Demo gym slug (must start with demo-)
@@ -160,3 +163,33 @@ jobs:
             exit 1
           fi
           npx tsx scripts/run-parser-eval.ts --slug "$SLUG"
+
+  scheduled_send:
+    if: inputs.what == 'scheduled-send'
+    runs-on: ubuntu-latest
+    # The probe writes one campaign to the demo gym; share the seeder's
+    # group so a reseed cannot pull the gym out from under it mid-wait.
+    concurrency:
+      group: demo-gym
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+        env:
+          HUSKY: "0"
+      - name: Schedule a campaign and watch it go
+        env:
+          SUPABASE_URL: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SLUG: ${{ inputs.slug }}
+        run: |
+          if [ -z "$SUPABASE_ANON_KEY" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are both needed."
+            exit 1
+          fi
+          npx tsx scripts/probe-scheduled-send.ts --slug "$SLUG" --yes

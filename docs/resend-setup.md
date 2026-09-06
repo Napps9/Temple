@@ -114,9 +114,11 @@ select status_code, content from net._http_response order by created desc limit 
 
 ## Verify
 
-0. Schedule a campaign a few minutes out and confirm it leaves
-   `scheduled` on its own. This is the only check that covers step 3;
-   everything below passes with the Vault row absent.
+0. Run the **Run the gym** workflow with `what: scheduled-send` against a
+   demo gym. It schedules a campaign a minute out and watches the
+   dispatcher, the gateway's reply and the worker carry it to `sent`,
+   naming the first hop that did not happen. This is the only check that
+   covers step 3; everything below passes with the Vault row absent.
 1. Manage → Comms → draft a campaign, pick a small test audience, send.
 2. Check the campaign's analytics tab — recipients should show
    `delivered` (or `sent`, pending Resend's own status), not

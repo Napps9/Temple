@@ -178,6 +178,17 @@ create or replace function net.http_get(
   url text, params jsonb default '{}', headers jsonb default '{}',
   timeout_milliseconds integer default 5000
 ) returns bigint language sql as $$ select 1::bigint $$;
+-- The replies pg_net records; read by recent_worker_responses (0282).
+create table if not exists net._http_response (
+  id           bigint,
+  status_code  integer,
+  content_type text,
+  headers      jsonb,
+  content      text,
+  timed_out    boolean,
+  error_msg    text,
+  created      timestamptz not null default now()
+);
 
 -- Vault's writer, which several dispatch tests call to mint a one-time secret.
 create or replace function vault.create_secret(
