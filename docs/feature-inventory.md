@@ -4817,15 +4817,21 @@ Items the conversation has flagged but not implemented yet:
   in this bullet is the read-and-surface-only set, where the grant is not
   writable and the gap is cosmetic.
 
-- **The scheduled-send path has never run end to end.** Everything
-  around it is proven — pgTAP covers the dispatcher, the Vault
-  credential, the stall recovery and the snapshot — but no real campaign
-  has gone from `scheduled` through `send-campaign` to a delivered
-  Resend event, because the credential only landed on 2026-07-28.
-  Schedule one to the demo gym a few minutes out and watch
-  `cron_run_log` plus the report. Demo accounts are
-  `@demo-ironworks.temple.test` — IANA-reserved, so nothing can route
-  out of the building.
+- **The scheduled-send path has run end to end** (2026-09-06). pgTAP
+  covers the dispatcher, the Vault credential, the stall recovery and
+  the snapshot, but pg_net is stubbed there, so the dispatcher's POST
+  reaching the worker was unproven until `scripts/probe-scheduled-send.ts`
+  (Run the gym workflow, `what: scheduled-send`) scheduled a campaign a
+  minute out on `demo-crossfit-good-life` and watched it: the `*/15` cron
+  fired, `cron_run_log` said `due 1, dispatched 1`, the gateway replied
+  200 and `send-campaign` accepted the shared secret, and the campaign
+  closed `sent` with 36 simulated recipients. A demo gym simulates by
+  construction (0278), so the probe proves every hop but the Resend
+  call, which is the same code the immediate send runs on live gyms.
+  `recent_worker_responses` (0282) is how the probe reads
+  `net._http_response`, which PostgREST does not expose; only the
+  service role can call it. Rerun the instrument after any change to the
+  dispatcher, the worker's auth or the Vault rows.
 
 - **`profiles` is still one row for everyone in the gym.** `phone` moved
   to `member_contact_details` (0179) and `same_gym_as_caller` now requires
