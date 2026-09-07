@@ -13,9 +13,9 @@ class is always the first CrossFit after the reseed.
 
 ## Before the showcase
 
-- [ ] Device pass on the iPhone in Safari and on the laptop: sign in
-      as each of the four sessions below, walk every screen the four
-      jobs touch, and note anything that wraps, clips or lags.
+- [ ] Device pass on the iPhone in Safari and on the laptop, following
+      `docs/qa-plan-2026-09-08.md`: every screen the four jobs touch and
+      everything that changed this week, findings sent in one batch.
 - [ ] Rehearsal one, the whole cue sheet, timed. Fix or cut what ran
       long.
 - [ ] Rehearsal two, from the fixed sheet, with the phone on mobile
