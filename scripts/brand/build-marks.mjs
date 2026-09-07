@@ -65,9 +65,16 @@ function lockupSvg({ ink = INK } = {}) {
 const ASSETS = [
   // The app icon is the star on ink — the owner's pick over paper.
   ['assets/images/icon.png', starSvg({ pad: 7, bg: INK }), 1024],
-  // Favicons take the ink tile, same as the app icon — owner's call.
-  ['assets/images/favicon.png', starSvg({ pad: 3, bg: INK }), 48],
-  ['assets/images/favicon-32.png', starSvg({ pad: 3, bg: INK }), 32],
+  // Favicons are the bare star on a transparent ground (docs/brand-assets.md):
+  // the magenta reads on a light tab strip and a dark one, where an ink
+  // tile read as a black square on a light one. The SVG is what modern
+  // browsers take; the PNGs are for the rest and for Expo's favicon.ico.
+  ['assets/images/favicon.png', starSvg(), 48],
+  ['assets/images/favicon-32.png', starSvg(), 32],
+  ['public/favicon.svg', starSvg()],
+  // Safari's home-screen and tab-group icon: the app icon's tile, at the
+  // size iOS asks for.
+  ['public/apple-touch-icon.png', starSvg({ pad: 7, bg: INK }), 180],
   ['assets/images/splash-icon.png', starSvg({ pad: 2 }), 192],
   // Android adaptive layers: magenta star on the generated ink background;
   // the monochrome layer is single-colour by platform rule.

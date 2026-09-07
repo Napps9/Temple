@@ -1,6 +1,8 @@
-import type { ReactNode } from 'react';
+import { usePathname } from 'expo-router';
+import { useEffect, type ReactNode } from 'react';
 import { View } from 'react-native';
 import { Text } from './Text';
+import { claimDocumentTitle } from '@/lib/document-title';
 
 // The top of a page: what it is, what it is showing, and at most one
 // action. The action is the only place on the page allowed to carry the
@@ -25,6 +27,11 @@ export function PageHead({
   subtitle?: string;
   action?: ReactNode;
 }) {
+  const pathname = usePathname();
+  useEffect(() => {
+    claimDocumentTitle(pathname, title);
+  }, [pathname, title]);
+
   return (
     <View className="flex-row items-start gap-3">
       {lead}

@@ -37,6 +37,13 @@ export default function Root({ children }: PropsWithChildren) {
             app. This used to be a data-URL manifest written at runtime
             from the gym's logo and colour. */}
         <link rel="manifest" href="/manifest.json" />
+        {/* The tab's icon: the brand star on a transparent ground, so it
+            reads on a light tab strip and a dark one. Expo adds the
+            favicon.ico fallback from app.json; Safari's home-screen and
+            tab-group icon is the app icon's ink tile. All three come out
+            of scripts/brand/build-marks.mjs. */}
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <style
           dangerouslySetInnerHTML={{
             __html: `

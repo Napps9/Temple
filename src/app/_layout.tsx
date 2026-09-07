@@ -11,7 +11,8 @@ import { Geist_700Bold } from '@expo-google-fonts/geist/700Bold';
 import { Fraunces_700Bold } from '@expo-google-fonts/fraunces/700Bold';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
+import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import { vars } from 'nativewind';
 import { Component, useEffect, useMemo, type ReactNode } from 'react';
@@ -23,6 +24,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { CookieBanner } from '@/components/CookieBanner';
 import { hexToRgbTriplet } from '@/lib/brand';
 import { installGlobalErrorReporting, reportClientError } from '@/lib/report-error';
+import { useDocumentTitle } from '@/lib/document-title';
 import { ACCENT, useThemeColors, useThemePreference, BRAND } from '@/lib/theme';
 
 const queryClient = new QueryClient({
@@ -131,6 +133,7 @@ export default function RootLayout() {
 function ThemedShell() {
   const { scheme } = useThemePreference();
   const colors = useThemeColors();
+  const title = useDocumentTitle(usePathname());
 
   useEffect(() => {
     installGlobalErrorReporting();
@@ -193,6 +196,9 @@ function ThemedShell() {
 
   return (
     <View style={themeVars} className="flex-1">
+      <Head>
+        <title>{title}</title>
+      </Head>
       <StatusBar style={colors.statusBar} />
       <Stack
         screenOptions={{

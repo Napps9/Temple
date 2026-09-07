@@ -4698,6 +4698,14 @@ surround:
   days and logs its run. No vendor, no secret, no cookie:
   `lib/report-error.ts`, `management/diagnostics.tsx`,
   `what_broke_on_whose_screen.sql`.
+- **The browser tab is named** — every page carries a `<title>` of the
+  form "Timeline · Temple": the section from the path (`lib/document-title`,
+  rendered through expo-router's Head in the root layout so the static
+  export has it too), refined to the page's own heading wherever
+  `PageHead` renders one. The tab icon is the brand star on a
+  transparent ground (`public/favicon.svg`, `favicon.ico` fallback) and
+  the Safari home-screen icon the app icon's ink tile
+  (`public/apple-touch-icon.png`), all from `scripts/brand/build-marks.mjs`.
 - **RLS everywhere** — every table is gated, every dangerous write
   is funnelled through a `security definer` RPC with explicit
   authorisation.
