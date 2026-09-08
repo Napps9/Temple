@@ -1688,6 +1688,7 @@ export type Database = {
           created_by: string;
           created_at: string;
           location: string | null;
+          coach_id: string | null;
         };
         Insert: {
           id?: string;
@@ -1705,6 +1706,7 @@ export type Database = {
           created_by: string;
           created_at?: string;
           location?: string | null;
+          coach_id?: string | null;
         };
         Update: Partial<{
           id: string;
@@ -1722,6 +1724,7 @@ export type Database = {
           created_by: string;
           created_at: string;
           location: string | null;
+          coach_id: string | null;
         }>;
         Relationships: [];
       };
@@ -5896,6 +5899,30 @@ export type Database = {
       set_session_coach: {
         Args: { p_session_id: string; p_coach_id: string };
         Returns: null;
+      };
+      edit_session_scoped: {
+        Args: {
+          p_session_id: string;
+          p_scope: 'one' | 'from' | 'series';
+          p_starts_at?: string | null;
+          p_duration?: number | null;
+          p_capacity?: number | null;
+          p_class_type_id?: string | null;
+          p_coach_id?: string | null;
+          p_clear_coach?: boolean;
+          p_location?: string | null;
+          p_clear_location?: boolean;
+          p_notes?: string | null;
+          p_clear_notes?: boolean;
+        };
+        Returns: {
+          updated: number;
+          skipped_overbooked: number;
+          skipped_past: number;
+          skipped_conflict: number;
+          notified: number;
+          schedule: 'none' | 'updated' | 'split' | 'unchanged';
+        };
       };
       comms_stop_campaign: {
         Args: { p_campaign_id: string };

@@ -5,6 +5,11 @@ import { Text } from './Text';
 
 import { Button } from '@/components/Button';
 import { Sheet, SheetAction } from '@/components/Sheet';
+import {
+  fmtEnds,
+  fmtPattern,
+  fmtSessionWhen,
+} from '@/lib/class-edit';
 import { errorMessage } from '@/lib/errors';
 import { haptic } from '@/lib/haptic';
 import { supabase } from '@/lib/supabase';
@@ -21,73 +26,6 @@ type Props = {
   onClose: () => void;
   onCancelled: () => void;
 };
-
-// Pattern formatting for recurring-series descriptions in the dialog.
-// e.g. fmtPattern([1,3], ['17:30']) → "Mondays and Wednesdays at 17:30".
-// Kept narrow on purpose — same names PostgreSQL hands back from
-// class_recurrences.days_of_week (0=Sunday).
-const DAY_LABELS = [
-  'Sundays',
-  'Mondays',
-  'Tuesdays',
-  'Wednesdays',
-  'Thursdays',
-  'Fridays',
-  'Saturdays',
-];
-
-function fmtDays(days: number[]): string {
-  if (days.length === 0) return '';
-  if (days.length === 7) return 'Every day';
-  const set = new Set(days);
-  const isWeekdays =
-    days.length === 5 && [1, 2, 3, 4, 5].every((d) => set.has(d));
-  if (isWeekdays) return 'Weekdays';
-  const isWeekends = days.length === 2 && set.has(0) && set.has(6);
-  if (isWeekends) return 'Weekends';
-  const sorted = [...days].sort((a, b) => a - b).map((d) => DAY_LABELS[d]);
-  if (sorted.length === 1) return sorted[0]!;
-  if (sorted.length === 2) return `${sorted[0]} and ${sorted[1]}`;
-  return `${sorted.slice(0, -1).join(', ')} and ${sorted[sorted.length - 1]}`;
-}
-
-function fmtTimes(times: string[]): string {
-  if (times.length === 0) return '';
-  if (times.length === 1) return `at ${times[0]}`;
-  if (times.length === 2) return `at ${times[0]} and ${times[1]}`;
-  return `at ${times.slice(0, -1).join(', ')} and ${times[times.length - 1]}`;
-}
-
-function fmtPattern(days: number[], times: string[]): string {
-  return [fmtDays(days), fmtTimes(times)].filter(Boolean).join(' ');
-}
-
-function fmtEnds(endsOn: string | null): string {
-  if (!endsOn) return '';
-  const d = new Date(endsOn);
-  const label = d.toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-  return ` · ends ${label}`;
-}
-
-function fmtSessionWhen(startsAt: string, durationMinutes: number): string {
-  const start = new Date(startsAt);
-  const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
-  const date = start.toLocaleDateString(undefined, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
-  const t = (d: Date) =>
-    `${d.getHours().toString().padStart(2, '0')}:${d
-      .getMinutes()
-      .toString()
-      .padStart(2, '0')}`;
-  return `${date}, ${t(start)}–${t(end)}`;
-}
 
 export function CancelClassDialog({
   visible,

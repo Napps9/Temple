@@ -14,6 +14,7 @@ import { Sheet, SheetAction } from '@/components/Sheet';
 import { CancelClassDialog } from '@/components/CancelClassDialog';
 import { CheckInButton } from '@/components/CheckInButton';
 import { ChipButton } from '@/components/ChipButton';
+import { EditClassSheet } from '@/components/EditClassSheet';
 import { StaffBookingSheet } from '@/components/StaffBookingSheet';
 import { useSession } from '@/lib/auth';
 import { invalidateBookingCaches, isLateCancel } from '@/lib/bookings';
@@ -51,6 +52,8 @@ type SessionDetail = {
   gym_id: string;
   coach_id: string | null;
   recurrence_id: string | null;
+  class_type_id: string | null;
+  location: string | null;
   class_types: {
     name: string;
     color: string;
@@ -136,6 +139,7 @@ export function ClassDetailModal({
   const [needMembership, setNeedMembership] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCancelClass, setShowCancelClass] = useState(false);
+  const [showEditClass, setShowEditClass] = useState(false);
   const [composing, setComposing] = useState(false);
   const [broadcastBody, setBroadcastBody] = useState('');
   const [broadcastError, setBroadcastError] = useState<string | null>(null);
@@ -164,7 +168,7 @@ export function ClassDetailModal({
       const { data, error } = await supabase
         .from('class_sessions')
         .select(
-          'id, name, starts_at, duration_minutes, capacity, notes, gym_id, coach_id, recurrence_id, class_types(name, color, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before), coach:profiles!coach_id(full_name, avatar_url)' +
+          'id, name, starts_at, duration_minutes, capacity, notes, gym_id, coach_id, recurrence_id, class_type_id, location, class_types(name, color, cancel_cutoff_minutes_before, cancel_cutoff_mode, cancel_cutoff_time, cancel_cutoff_days_before), coach:profiles!coach_id(full_name, avatar_url)' +
             (mode === 'manage' ? ', cover_request_sessions(claimed_by)' : ''),
         )
         .eq('id', sessionId!)
@@ -577,17 +581,26 @@ export function ClassDetailModal({
                 </View>
               </View>
 
-              <ChipButton
-                className="self-start"
-                label="See programming"
-                icon="barbell-outline"
-                tone="neutral"
-                onPress={() => {
-                  if (!start) return;
-                  close();
-                  router.push(`/programming?date=${fmtDateParam(start)}` as never);
-                }}
-              />
+              <View className="flex-row flex-wrap gap-2">
+                <ChipButton
+                  label="See programming"
+                  icon="barbell-outline"
+                  tone="neutral"
+                  onPress={() => {
+                    if (!start) return;
+                    close();
+                    router.push(`/programming?date=${fmtDateParam(start)}` as never);
+                  }}
+                />
+                {mode === 'manage' && canEditClasses && !inPast ? (
+                  <ChipButton
+                    label="Edit class"
+                    icon="create-outline"
+                    tone="neutral"
+                    onPress={() => setShowEditClass(true)}
+                  />
+                ) : null}
+              </View>
 
               <View className="gap-2">
                 <SectionLabel>
@@ -927,6 +940,25 @@ export function ClassDetailModal({
           )}
       </View>
     </Sheet>
+    {detail && sessionId ? (
+      <EditClassSheet
+        visible={showEditClass}
+        sessionId={sessionId}
+        recurrenceId={detail.recurrence_id}
+        startsAt={detail.starts_at}
+        durationMinutes={detail.duration_minutes}
+        capacity={detail.capacity}
+        classTypeId={detail.class_type_id}
+        classTypeName={typeName}
+        coachId={detail.coach_id}
+        location={detail.location}
+        notes={detail.notes}
+        onClose={() => setShowEditClass(false)}
+        onSaved={() => {
+          void sessionQuery.refetch();
+        }}
+      />
+    ) : null}
     {detail && sessionId ? (
       <CancelClassDialog
         visible={showCancelClass}

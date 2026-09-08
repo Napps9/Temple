@@ -98,6 +98,23 @@ select is(
   'five active memberships on one account'
 );
 
+-- Age them the way the story tells it, oldest first. Everything above ran
+-- in one transaction, so created_at defaults to the same now() on all five
+-- and "their oldest gym" below is a tie that report_client_error's
+-- `order by created_at limit 1` breaks arbitrarily — which made this file
+-- pass or fail on whatever order the plan happened to return.
+do $$
+begin
+  update public.gym_memberships
+    set created_at = now() - interval '10 days'
+    where profile_id = current_setting('test.a')::uuid
+      and gym_id = current_setting('test.first')::uuid;
+  update public.gym_memberships
+    set created_at = now() - interval '5 days'
+    where profile_id = current_setting('test.a')::uuid
+      and gym_id <> current_setting('test.first')::uuid;
+end $$;
+
 select is(
   (select count(*)::int from public.my_gyms() where left_at is null),
   5,

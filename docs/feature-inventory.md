@@ -2941,6 +2941,73 @@ The staff area shows up when `can_access_staff_area` is on.
   is eligible via `list_booking_entitlements` against the target member.
 - **Cancel session** — refunds credits, drops waitlist, deletes the
   session.
+- **Changing a class from the class itself** [`can_edit_classes`; the two
+  series scopes also need `can_bulk_edit_classes`] — an **Edit class** chip
+  on the class sheet, beside See programming, opening an editor with the
+  same three scopes Cancel has: **just this one / this and all future / the
+  whole series**. Type, coach, date, start time, length, capacity, room and
+  notes, over one RPC (`edit_session_scoped`, 0288). Before this you could
+  cancel a class from its sheet and nothing else: the only ways to change
+  one were the talk bar and the Bulk button's date window, neither of which
+  is where somebody looking at Wednesday's 06:00 goes.
+  - **A class's name follows its type.** `extend_recurrence` names each
+    session `ct.name` and the pattern holds no name of its own, so a
+    free-text rename would be reverted on the next walk. Changing the type
+    renames every class it applies to.
+  - **Only "just this one" can move a class to another day.** A series' days
+    are the pattern's `days_of_week`, so the two series scopes accept a new
+    time of day and lock the date field, with the reason on screen rather
+    than as a refusal after Save.
+  - **A series' time change is a shift of every time the pattern holds** —
+    a schedule at 06:00 and 17:30 edited to 06:30 becomes 06:30 and 18:00.
+    That is already `bulk_edit_sessions`' meaning and the chat action's, so
+    it is not a new behaviour, but the sheet **names the other times** it
+    will take with it (`otherTimesNote`) instead of letting it be
+    discovered. A shift that would push any of them past midnight is
+    refused client-side and server-side, since it would change which days
+    the pattern fires on.
+  - **The "from" boundary is the day, not the datetime.**
+    `cancel_recurrence_from` filters siblings on the anchor's exact time; an
+    edit cannot, because the pattern splits on a date (`starts_on` /
+    `ends_on`) and a datetime boundary would leave a class inside a window
+    whose pattern claims values it does not have. Both dialogs already say
+    it in days.
+  - **The schedule is reconciled or reported, never quietly wrong.** The
+    whole-series scope rewrites the pattern in place (restoring
+    `materialized_until` in a second statement, so 0078's trigger does not
+    re-walk and manufacture past occurrences at the new times); "this and
+    all future" splits it in two — the original ends the day before, a clone
+    carries the edit to the end of its life, and the classes are reparented.
+    A **partial application** (one class skipped because more members are
+    booked than the new capacity, or its coach is busy) leaves the pattern
+    alone and **says so**, because no pattern describes "all of these except
+    that one" — same rule and reason as 0170.
+  - **Members are told what they'd notice.** A time or length change sends
+    `classes_rescheduled`; a coach change sends `class_coach_changed`
+    (0227's reason: the coach is often why they booked). Both as **one
+    digest per member per change** — `_enqueue_classes_coach_changed` is a
+    sibling of 0169's reschedule digest, because 0227's per-session helper
+    would post forty notifications for a series-wide swap. Capacity, room
+    and notes send nothing: they are invisible to somebody who already
+    holds a place.
+  - Copy and argument-building are pure and unit-tested in
+    `src/lib/class-edit.ts` — including that a save sends **only** the
+    fields that changed, that emptying a room or coach is a `p_clear_*`
+    flag rather than a null the RPC would read as "leave alone", and that
+    the new start resolves in the **gym's** timezone, not the browser's.
+- **A schedule can name its coach, and its room reaches its classes**
+  (0287) — groundwork the edit needed, and a bug it uncovered.
+  `class_recurrences` had no coach column and `extend_recurrence` stamped
+  every session it made with `rec.created_by`, so whoever built a schedule
+  was the coach of every class it would ever produce and a coach change
+  past the materialisation horizon silently reverted. `coach_id` is
+  nullable and falls back to `created_by`, so existing schedules behave
+  exactly as before. Separately, `location` has been on both
+  `class_sessions` and `class_recurrences` since 0049 and
+  `extend_recurrence` never carried it across — a schedule's room was
+  stored and applied to nothing for that entire time. Both now travel onto
+  every class the pattern makes, and through `_clone_recurrence` onto every
+  split.
 - **Bulk class edits across a date range** [`can_bulk_edit_classes`,
   owner/admin] — the **Bulk** button on the Classes calendar. Two modes
   over a From/To window, both previewing the matching classes with
