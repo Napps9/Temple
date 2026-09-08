@@ -49,3 +49,34 @@ test('the talk bar clears the dock', async ({ page }, testInfo) => {
     `the talk bar's last row ends at ${Math.round(sendBox.y + sendBox.height)} and the dock starts at ${Math.round(tabBox.y)}`,
   ).toBeLessThanOrEqual(tabBox.y);
 });
+
+// The Back link on the Timeline's own detail screens. The payment story
+// page passed coveredByNav and so rendered nothing at any width — the flag
+// is for staff pages the nav names, and the nav's Timeline pill lands on
+// the Timeline, a level above this. It was found by hand, not by a test,
+// because nothing here had ever pressed Back anywhere: rendering it and it
+// working are different claims and neither was asserted.
+test('Back on a payment story returns to the Timeline', async ({ page }) => {
+  test.setTimeout(120_000);
+  await signIn(page, OWNER_EMAIL);
+
+  // Into the payment's own page the way the owner does, from the failing
+  // payment's chip on the Timeline.
+  const chase = page.getByRole('button', { name: 'Chase for me' }).first();
+  test.skip(
+    (await chase.count()) === 0,
+    'no failing payment on the Timeline today',
+  );
+  await chase.click();
+  await page.waitForURL(/\/timeline\/payment\//, { timeout: 30_000 });
+
+  const back = page.getByRole('button', { name: 'Back' });
+  await expect(back).toBeVisible({ timeout: 30_000 });
+  await back.click();
+
+  // Back to the Timeline itself, not to a blank route and not stuck.
+  await page.waitForURL(/\/timeline(\?|$)/, { timeout: 30_000 });
+  await expect(page.getByPlaceholder(TALK_BAR_PLACEHOLDER)).toBeVisible({
+    timeout: 30_000,
+  });
+});
