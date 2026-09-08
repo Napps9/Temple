@@ -291,7 +291,12 @@ Deno.serve(async (req: Request) => {
   // `=== false` rather than `!== true` on purpose — a gym row we cannot
   // read is not a gym we will send mail on behalf of.
   const live = Boolean(RESEND_API_KEY && fromAddress) && gym?.is_demo === false;
-  const link = `${origin}/management/cover`;
+  // /management/cover retired in 0243 and is in RETIRED_ROUTES: it is not a
+  // file and not a rewrite, so this link was the platform's white 404 for
+  // every coach who clicked it. Claiming a class arrives as a Timeline card
+  // for exactly the coaches the feed gates on can_claim_cover, which is where
+  // that screen's job went.
+  const link = `${origin}/timeline`;
 
   // One lookup per distinct request / offer rather than per row: a
   // cover_requested fan-out is N rows describing the same request.

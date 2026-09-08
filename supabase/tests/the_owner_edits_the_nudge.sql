@@ -4,7 +4,7 @@
 -- template render exactly as before; whitespace is not an edit.
 
 begin;
-select plan(6);
+select plan(9);
 
 \ir _helpers.psql
 
@@ -94,6 +94,24 @@ select is(
   'and the edited subject, trimmed'
 );
 
+-- The page the owner reloads reads the preview, not the outbound row, and
+-- shows it under "The nudge on its way to Ben". 0284 shipped a preview that
+-- could not see an override, because the send executes in the same statement
+-- that stores it — so this asserts the reload, which is what was broken.
+select is(
+  (select body from public.payment_chase_preview(
+     current_setting('test.gym')::uuid, current_setting('test.sub1')::uuid)),
+  'Hi Ben — no panic. Sort it here and see you Thursday.',
+  'and the preview shows the edit back, so a reload shows what went'
+);
+
+select is(
+  (select subject from public.payment_chase_preview(
+     current_setting('test.gym')::uuid, current_setting('test.sub1')::uuid)),
+  'Ben, about your membership',
+  'subject too'
+);
+
 -- 2. A chase created on the spot, sent as written by the template.
 do $$
 declare v_action uuid;
@@ -116,6 +134,15 @@ select is(
     where m.action_id = current_setting('test.a2')::uuid),
   'About your Edit Nudge Gym membership payment',
   'with the standing subject'
+);
+
+-- The other direction: nothing was edited, so the preview must keep rendering
+-- from the template rather than pinning whatever the send happened to store.
+select is(
+  (select body from public.payment_chase_preview(
+     current_setting('test.gym')::uuid, current_setting('test.sub2')::uuid)),
+  'Hi Ella — Edit Nudge Gym. Your Unlimited payment needs a look.',
+  'an unedited chase still previews as the template render after it has gone'
 );
 
 -- 3. Whitespace is not an edit; a long body is bounded.

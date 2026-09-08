@@ -4733,7 +4733,18 @@ surround:
   the demo. `src/lib/vercel-rewrites.test.ts` now derives the served URL
   of every route file, strips the `(group)` dirs, and fails CI naming the
   exact line to add — in both directions, so a deleted screen cannot
-  leave a rewrite behind either.
+  leave a rewrite behind either. `e2e/11-cold-load-routes.spec.ts` then
+  asks the real host for every URL shape in `vercel.json`, which is the
+  claim the vitest guard cannot make. The build copies
+  `+not-found.html` to `404.html`, so an unmatched URL lands on Temple's
+  own not-found screen — showing the path, so a screenshot is a whole
+  diagnostic — instead of the platform's white page. In the same sweep:
+  every cover email's CTA had pointed at `/management/cover` since that
+  screen retired in 0243, a hard 404 for any coach who clicked it, now
+  `/timeline` where claiming actually lives; the retired-route test that
+  should have caught it read only `src/` and matched only a quoted path,
+  so it now reads `supabase/functions` too and matches a route that
+  follows a `${…}` interpolation.
 - **The marketing funnel is measured** (`0279`) — two layers, and the line
   between them is whether a person is named. `site_events` is a rollup
   (event, day, page, source, device, count) written for every visitor, with

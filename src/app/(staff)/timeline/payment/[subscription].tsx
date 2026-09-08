@@ -410,6 +410,7 @@ export default function PaymentStory() {
                         value={subject}
                         onChangeText={setSubjectEdit}
                         accessibilityLabel="Subject"
+                        maxLength={200}
                         className="border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk text-[14.5px] font-semibold"
                       />
                       <TextInput
@@ -417,6 +418,10 @@ export default function PaymentStory() {
                         onChangeText={setBodyEdit}
                         multiline
                         accessibilityLabel="What the message says"
+                        // request_payment_chase bounds these (0284); bounding
+                        // the field too keeps the limit where the typing is,
+                        // rather than a silent cut at send time.
+                        maxLength={4000}
                         className="border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk text-[14px] leading-[21px] min-h-[104px]"
                       />
                       <View className="flex-row items-center gap-2 flex-wrap">

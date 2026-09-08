@@ -109,14 +109,24 @@ describe('nothing is built and then lost', () => {
   // href beside it is where it actually goes.
   it('never sends anybody to a retired route', () => {
     const allowed = ['back-office.ts', 'demo-targets.ts'];
-    const files = sourceFiles('src').filter(
+    // supabase/functions too: send-cover-notifications built every cover
+    // email's CTA as /management/cover for the whole life of that retirement,
+    // and a test that only read src/ could never see it.
+    const files = [...sourceFiles('src'), ...sourceFiles('supabase/functions')].filter(
       (f) => !allowed.some((a) => f.endsWith(a)) && !f.endsWith('.test.ts'),
     );
     const offenders: string[] = [];
     for (const f of files) {
       const text = readFileSync(f, 'utf8');
       for (const r of RETIRED_ROUTES) {
-        if (new RegExp(`['"\`]${r.route}(['"\`?])`).test(text)) {
+        // A `}` opens the match as well as a quote: send-cover-notifications
+        // built its CTA as `${origin}/management/cover`, where the route
+        // follows an interpolation rather than a quote, and a quote-only
+        // pattern read that as clean for the whole life of the retirement.
+        // The CLOSING class deliberately excludes `/`: several retired routes
+        // are prefixes of live ones, and allowing it made every link to
+        // /management/communications/automations/<id> look retired.
+        if (new RegExp(`['"\`}]${r.route}(['"\`?])`).test(text)) {
           offenders.push(`${f} → ${r.route}`);
         }
       }
