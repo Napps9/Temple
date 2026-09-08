@@ -335,4 +335,19 @@ describe('the gym\'s jobs', () => {
       expect(behind.has(a.subject_profile!)).toBe(true);
     }
   });
+
+  // The chase card's way in — "Read and edit first" — follows the action's
+  // subscription to the draft. A seeded action without one rendered a chip
+  // that did nothing at all when tapped, which is what the showcase
+  // tenant was doing: no navigation, no error, no explanation.
+  it('gives every money proposal the failing subscription to open', () => {
+    const money = plan.agentActions.filter(
+      (a) => a.action_kind === 'chase_message' || a.action_kind === 'plan_adjustment_offer',
+    );
+    expect(money.length).toBeGreaterThan(1);
+    const failing = new Map(plan.dunning.map((d) => [d.profile_id, d.plan_subscription_id]));
+    for (const a of money) {
+      expect(a.subject_subscription).toBe(failing.get(a.subject_profile!));
+    }
+  });
 });

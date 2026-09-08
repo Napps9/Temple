@@ -1814,6 +1814,31 @@ function AgentActionCard({
   // qualified: past twelve this is a mailshot and the tick caps it.
   const sentCount = Array.isArray(payload.recipients) ? payload.recipients.length : 0;
 
+  // Every question gets one way through to a page that answers it, and the
+  // card only ever offers a destination it already holds. The old chip
+  // went looking for the subscription at press time and navigated only if
+  // it found one, so a chase without one — every seeded demo proposal —
+  // swallowed the tap and said nothing.
+  //
+  // For a chase that is the payment's own page, where the draft is read
+  // and edited before it goes (0284). For everything else it is the
+  // nudge's own page: what was noticed, where you stand, and a box to ask
+  // about it, which until now was only reachable after deciding.
+  const subscriptionId =
+    typeof event.detail.subscription_id === 'string'
+      ? event.detail.subscription_id
+      : null;
+  const wayIn: { label: string; icon: 'create-outline' | 'reader-outline'; href: string } | null =
+    kind === 'chase_message' && subscriptionId
+      ? {
+          label: 'Read and edit first',
+          icon: 'create-outline',
+          href: `/timeline/payment/${subscriptionId}`,
+        }
+      : actionId
+        ? { label: 'See the whole story', icon: 'reader-outline', href: `/timeline/${actionId}` }
+        : null;
+
   const line = formatTimelineLine(event);
   const reasoning =
     kind === 'class_return_message'
@@ -1931,24 +1956,15 @@ function AgentActionCard({
           </Text>
         </Pressable>
       ) : null}
-      {kind === 'chase_message' && !decided ? (
-        // The nudge can be read and changed before it goes (0284); the
-        // editor lives on the payment's own page, found through the
-        // action's subscription.
-        <ChipButton
-          label="Read and edit first"
-          icon="create-outline"
-          tone="neutral"
-          onPress={async () => {
-            const { data } = await supabase
-              .from('agent_actions')
-              .select('subject_subscription')
-              .eq('id', actionId)
-              .maybeSingle();
-            const sub = data?.subject_subscription;
-            if (sub) router.push(`/timeline/payment/${sub}` as never);
-          }}
-        />
+      {wayIn ? (
+        <View className="flex-row">
+          <ChipButton
+            label={wayIn.label}
+            icon={wayIn.icon}
+            tone="neutral"
+            onPress={() => router.push(wayIn.href as never)}
+          />
+        </View>
       ) : null}
       <View className="flex-row items-center gap-2">
         <View className="flex-1">

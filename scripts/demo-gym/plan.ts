@@ -275,6 +275,10 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   // backs the card: a demo where the upgrade offer names a member on
   // Unlimited falls apart the moment anybody taps through to them.
   const packMembers: DemoUser[] = [];
+  // Only the mid-dunning subscriptions get an explicit id, and the money
+  // proposals need it: the chase card follows subject_subscription to the
+  // draft it lets the owner read and edit.
+  const failingSubByProfile = new Map<string, string>();
   activeMembers.forEach((m, i) => {
     const base = {
       gym_membership_id: membershipIdByProfile.get(m.id)!,
@@ -297,6 +301,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
         paid_period_end: iso(daysFrom(config.now, rngInt(rng, 5, 30))),
       });
       if (subId) {
+        failingSubByProfile.set(m.id, subId);
         dunning.push({
           plan_subscription_id: subId,
           profile_id: m.id,
@@ -850,7 +855,11 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
   // show whatever today's dates happened to make true. These are written
   // in the shape a tick writes them, pointed at people whose other seeded
   // data backs the card.
-  const person = (u: DemoUser) => ({ id: u.id, name: u.fullName });
+  const person = (u: DemoUser) => ({
+    id: u.id,
+    name: u.fullName,
+    subscriptionId: failingSubByProfile.get(u.id),
+  });
   const planBy = (id: string) => plans.find((pl) => pl.plan_id === id)!;
   const { authority: agentAuthority, templates: agentTemplates, actions: agentActions } =
     buildAgentJobs({

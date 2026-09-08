@@ -5,7 +5,7 @@
 -- agent_actions ledger seed: staff-read only, no client writes.
 
 begin;
-select plan(15);
+select plan(16);
 
 \ir _helpers.psql
 
@@ -59,6 +59,7 @@ begin
   insert into public.plan_subscription_dunning
     (plan_subscription_id, profile_id, gym_id, payment_failure_count)
   values (v_sub, v_member, v_gym, 1);
+  perform set_config('test.sub', v_sub::text, false);
 
   -- A pending membership change request (feeds membership_request).
   insert into public.membership_change_requests
@@ -163,6 +164,18 @@ select is(
     where kind = 'payment_failing'),
   current_setting('test.member'),
   'the failing payment names its member'
+);
+
+-- 0286: and the ledger line carries the subscription it is about, because
+-- that is what the proposal card's way in follows. The card used to look
+-- this up from the client when tapped and go nowhere if it came back
+-- null, so a chase without it was a control that swallowed the tap.
+select is(
+  (select detail->>'subscription_id'
+     from timeline_feed(current_setting('test.gym')::uuid)
+    where kind = 'agent_action'),
+  current_setting('test.sub'),
+  'the ledger line carries the subscription it is about'
 );
 
 -- Feed is newest-first and respects the limit.

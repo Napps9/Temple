@@ -20,7 +20,12 @@
 
 type Json = Record<string, unknown>;
 
-export type JobPerson = { id: string; name: string };
+// subscriptionId is the failing plan_subscription for the two people
+// whose card has bounced. A real money tick writes it onto the action it
+// proposes (0222), and the proposal card follows it to the draft — so a
+// seeded action without it is a card whose "Read and edit first" has
+// nowhere to go.
+export type JobPerson = { id: string; name: string; subscriptionId?: string };
 
 export type JobsCast = {
   // Retries exhausted — the money loop's founding case.
@@ -77,6 +82,7 @@ export type AgentActionRow = {
   teammate: 'revenue' | 'retention' | 'ops';
   action_kind: string;
   subject_profile: string | null;
+  subject_subscription: string | null;
   payload: Json;
   evidence: string[];
   status: 'proposed' | 'rejected' | 'executed';
@@ -211,6 +217,7 @@ export function buildAgentJobs(input: JobsInput): {
       teammate: 'revenue',
       action_kind: 'chase_message',
       subject_profile: cast.urgentDunning.id,
+      subject_subscription: cast.urgentDunning.subscriptionId ?? null,
       payload: { member_name: cast.urgentDunning.name },
       evidence: [
         'Card declined 9 days ago — insufficient funds.',
@@ -228,6 +235,7 @@ export function buildAgentJobs(input: JobsInput): {
       teammate: 'revenue',
       action_kind: 'plan_upgrade_offer',
       subject_profile: cast.packHeavy.id,
+      subject_subscription: null,
       payload: {
         member_name: cast.packHeavy.name,
         plan_name: prices.packName,
@@ -254,6 +262,7 @@ export function buildAgentJobs(input: JobsInput): {
       teammate: 'retention',
       action_kind: 'retention_message',
       subject_profile: cast.quiet.id,
+      subject_subscription: null,
       payload: { member_name: cast.quiet.name, weeks_absent: 4 },
       evidence: [
         'Last trained 29 days ago.',
@@ -278,6 +287,7 @@ export function buildAgentJobs(input: JobsInput): {
       teammate: 'revenue',
       action_kind: 'credits_low_message',
       subject_profile: cast.packLow.id,
+      subject_subscription: null,
       payload: {
         member_name: cast.packLow.name,
         plan_name: prices.packName,
@@ -300,6 +310,7 @@ export function buildAgentJobs(input: JobsInput): {
       teammate: 'ops',
       action_kind: 'cover_ask',
       subject_profile: null,
+      subject_subscription: null,
       payload: { requester_name: cast.coverCoach },
       evidence: [
         'Asked 2 days ago and still unclaimed.',
@@ -317,6 +328,7 @@ export function buildAgentJobs(input: JobsInput): {
       teammate: 'retention',
       action_kind: 'first_week_message',
       subject_profile: cast.justJoined.id,
+      subject_subscription: null,
       payload: { member_name: cast.justJoined.name, days_since_join: 12 },
       evidence: [
         'Joined 12 days ago.',
@@ -334,6 +346,7 @@ export function buildAgentJobs(input: JobsInput): {
       teammate: 'revenue',
       action_kind: 'chase_message',
       subject_profile: cast.softDunning.id,
+      subject_subscription: cast.softDunning.subscriptionId ?? null,
       payload: { member_name: cast.softDunning.name },
       evidence: [
         'Card declined 2 days ago.',
@@ -351,6 +364,7 @@ export function buildAgentJobs(input: JobsInput): {
       teammate: 'retention',
       action_kind: 'retention_message',
       subject_profile: cast.justJoined.id,
+      subject_subscription: null,
       payload: { member_name: cast.justJoined.name, weeks_absent: 3 },
       evidence: [
         'Last trained 22 days ago.',
@@ -368,6 +382,7 @@ export function buildAgentJobs(input: JobsInput): {
       teammate: 'revenue',
       action_kind: 'plan_adjustment_offer',
       subject_profile: cast.softDunning.id,
+      subject_subscription: cast.softDunning.subscriptionId ?? null,
       payload: {
         member_name: cast.softDunning.name,
         offer_plan_name: prices.creditPeriodName,

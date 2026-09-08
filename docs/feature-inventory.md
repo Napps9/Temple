@@ -705,6 +705,20 @@ The staff area shows up when `can_access_staff_area` is on.
   (0284) rather than sending from the row, because the words are the
   decision and a feed row has no space to show them; a proposal card in
   the stream carries the same door beside its Yes.
+- **Every proposal card has one way in, and it always works** (0286) —
+  a chase card's "Read and edit first" used to look its subscription up
+  from the client when tapped and navigate only if it found one, so a
+  chase carrying no `subject_subscription` — every seeded demo proposal,
+  because the seeder never wrote the column — swallowed the tap: no
+  navigation, no error, nothing. `timeline_feed`'s ledger detail now
+  carries `subscription_id`, so the card holds its destination before it
+  renders the chip: a chase goes to the payment page's draft editor, and
+  every other kind (offers, retention, first-week, credits, cover) goes
+  to the nudge's own story page, which until now was only reachable
+  *after* deciding. Guarded from both ends — a pgTAP assertion that the
+  feed line carries the subscription it is about, and a seeder test that
+  every money proposal points at the subscription the dunning table says
+  is failing.
 - **The Timeline pages by day** — one thread per day. Today is the
   conversation (stream + Waiting block + talk bar, unchanged); swipe
   right (or the ‹ arrow / month picker / TodayButton header shared with
