@@ -365,9 +365,6 @@ export function AgentSettings() {
     onError: (e) => setError(errorMessage(e, 'Could not update the rule')),
   });
 
-  if (membership && !isOwner) return <Redirect href="/management/leads" />;
-  if (!membership) return null;
-
   const agentOn = agent.data?.enabled ?? false;
   const agentNumber = agent.data?.phone_number ?? null;
   const voiceOn = agent.data?.voice_enabled ?? false;
@@ -403,6 +400,11 @@ export function AgentSettings() {
     if (isStaleCall) discardInterview.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isStaleCall, interview?.id]);
+
+  // After every hook: the returns above the effect once dropped it from
+  // the render when the membership changed under this page (React #300).
+  if (membership && !isOwner) return <Redirect href="/management/leads" />;
+  if (!membership) return null;
 
   return (
     <>

@@ -42,11 +42,16 @@ test('a coach joins a second gym and switches between them', async ({ page }) =>
   // A coach at their own gym lands on the Timeline.
   await page.waitForURL('**/timeline**', { timeout: 30_000 });
 
-  await page.getByLabel(/^Account/).first().click();
-  const backToMember = page.getByText('Switch · Member');
-  await expect(backToMember).toBeVisible({ timeout: 15_000 });
-  await backToMember.click();
+  // Back the other way from Account's "Your gyms", the path that crashed
+  // the staff layout the first time an owner switched to a gym where they
+  // are a member (React #300: a hook below the layout's redirect).
+  await page.goto('/management/account');
+  const row = page.getByText(/tap to switch/).first();
+  await expect(row).toBeVisible({ timeout: 15_000 });
+  await row.click();
 
-  // A new member at the second gym meets its gates before /book.
+  // A new member at the second gym meets its gates before /book, and the
+  // crash screen never shows on the way.
   await page.waitForURL(/\/(book|consent|waiver|parq)/, { timeout: 30_000 });
+  await expect(page.getByText('The app crashed')).toHaveCount(0);
 });

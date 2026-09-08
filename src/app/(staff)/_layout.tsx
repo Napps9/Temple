@@ -70,6 +70,10 @@ export default function StaffLayout() {
   // for every gym and can never name anybody, this one records a demo
   // visitor's path and never touches a real tenant (0279).
   useDemoViews(membership?.gymId, isDemo);
+  // Before the early returns: a gym switch (0283) can turn
+  // canAccessStaff false while this layout is mounted, and a hook that
+  // sat below the return then vanished mid-render (React #300).
+  const [railCollapsed, toggleRailCollapsed] = useRailCollapsed();
 
   if (session === null) return <Redirect href="/sign-in" />;
   if (canAccessStaff === false) {
@@ -85,7 +89,6 @@ export default function StaffLayout() {
   // 1024 rather than 768 because the rail is 246px the page never sees;
   // see lib/breakpoint.ts.
   const rail = width >= LG;
-  const [railCollapsed, toggleRailCollapsed] = useRailCollapsed();
 
   const tabs = (
     <>

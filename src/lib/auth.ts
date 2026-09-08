@@ -151,11 +151,15 @@ async function lookAt(gymId: string | null | undefined): Promise<void> {
   if (userId) await writeSelectedGym(userId, gymId);
 }
 
-// Look at another of the account's gyms (0283). The whole cache goes,
-// as it does on sign-out: every tenant query is keyed on the gym, but a
-// handful are keyed on the user alone and would otherwise carry the old
-// gym's answer across. Then the one refetch the redirect can trust, and
-// the root index re-forks by the new gym's role and setup state.
+// Look at another of the account's gyms (0283). Leave the page first:
+// the staff layout redirects the moment can_access_staff_area reads
+// false, and a layout whose answer flips under it mid-render is how the
+// first switch from Account crashed. The root index shows its loading
+// state, then the whole cache goes, as it does on sign-out: every tenant
+// query is keyed on the gym, but a handful are keyed on the user alone
+// and would otherwise carry the old gym's answer across. Then the one
+// refetch the index can trust, and it re-forks by the new gym's role and
+// setup state.
 export function useSwitchGym() {
   const queryClient = useQueryClient();
   const session = useSession();
@@ -163,11 +167,9 @@ export function useSwitchGym() {
     mutationFn: async (gymId: string) => {
       if (!session) return;
       await writeSelectedGym(session.user.id, gymId);
+      router.replace('/');
       queryClient.clear();
       await refreshMembership(queryClient);
-    },
-    onSuccess: () => {
-      router.replace('/');
     },
   });
 }
