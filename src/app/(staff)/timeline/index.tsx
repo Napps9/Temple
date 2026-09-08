@@ -47,7 +47,7 @@ import { recentTurns, toWireTurns, type Turn } from '@/lib/chat-memory';
 import { formatDate } from '@/lib/format-date';
 import {
   holdComposerOpen,
-  reportDockScroll,
+  reportThreadScroll,
   useComposerExpanded,
 } from '@/lib/dock';
 import { GLASS, GLASS_FILL } from '@/lib/glass';
@@ -475,12 +475,14 @@ export default function Timeline() {
       layoutMeasurement: { height: number };
     };
   }) => {
-    const y = e.nativeEvent.contentOffset.y;
-    reportDockScroll(y, y - lastStreamY.current);
-    lastStreamY.current = y;
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
-    pinnedToEnd.current =
+    const y = contentOffset.y;
+    const atEnd =
       contentOffset.y + layoutMeasurement.height >= contentSize.height - 120;
+    // The thread rule, not the page rule: down here means towards now.
+    reportThreadScroll(y, y - lastStreamY.current, atEnd);
+    lastStreamY.current = y;
+    pinnedToEnd.current = atEnd;
   };
 
   useEffect(() => {

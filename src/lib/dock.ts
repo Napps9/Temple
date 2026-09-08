@@ -69,10 +69,35 @@ export function useComposerExpanded() {
   return value;
 }
 
-// Offsets under the top threshold always mean full, including iOS
-// overscroll; the direction thresholds keep a resting finger from
-// flickering it. One signal, both pieces of chrome — what they do with it
-// afterwards is their own business.
+// A THREAD is not a page, and the Timeline is a thread: its stream is
+// pinned to its end, so scrolling up is reading back through the day and
+// scrolling down is coming back to now — which is where the composer is,
+// and where somebody is about to type or move on. The page rule below
+// would have it exactly backwards, shrinking the chrome at the moment it
+// is most likely to be wanted and growing it while somebody is reading
+// history they cannot act on.
+//
+// So the thread inverts: out of the way going back, up again on the way
+// forward, and full at the live end however the reader got there.
+export function reportThreadScroll(y: number, dy: number, atEnd: boolean) {
+  if (atEnd) {
+    setDockExpanded(true);
+    setComposerExpanded(true);
+  } else if (dy < -4) {
+    setDockExpanded(false);
+    setComposerExpanded(false);
+  } else if (dy > 8) {
+    setDockExpanded(true);
+    setComposerExpanded(true);
+  }
+}
+
+// A PAGE reads top to bottom, so its chrome gets out of the way as the
+// reader goes down and comes back on the way up. Offsets under the top
+// threshold always mean full, including iOS overscroll; the direction
+// thresholds keep a resting finger from flickering it. One signal, both
+// pieces of chrome — what they do with it afterwards is their own
+// business.
 export function reportDockScroll(y: number, dy: number) {
   if (y <= 16) {
     setDockExpanded(true);
