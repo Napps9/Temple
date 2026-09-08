@@ -4745,6 +4745,24 @@ surround:
   should have caught it read only `src/` and matched only a quoted path,
   so it now reads `supabase/functions` too and matches a route that
   follows a `${…}` interpolation.
+- **`/programming` is one URL and two screens, and the page decides** —
+  `(member)/programming` and `(staff)/programming` both serve at
+  `/programming`, a route group contributing no segment, and the static
+  export writes one file for it: the member one, because `"(m"` sorts
+  before `"(s"`. So a refresh, a bookmark, or the marketing site's
+  Programming tour stop put an owner on the read-only member calendar
+  with no rail back — and the tour stop was wrong even client-side,
+  because it navigates from `(auth)` where Expo Router's group-similarity
+  tiebreak is inert. `unstable_settings`, `anchor` and `initialRouteName`
+  cannot arbitrate two routes at one path, so the served page does: it
+  reads `can_access_staff_area` and sends staff to `/(staff)/programming`,
+  carrying the query so `?date=` survives, and holds a spinner while the
+  capability is `undefined` rather than flashing the wrong screen. The
+  member nav sends `?as=member`, which means "the member render, whoever
+  is asking", so an owner crossing over on purpose still gets it — that
+  is Job 4 of the demo. `vercel-rewrites.test.ts` fails on any new
+  same-URL collision that is not declared with the page resolving it, and
+  `e2e/12-programming-by-role.spec.ts` cold-loads both.
 - **The marketing funnel is measured** (`0279`) — two layers, and the line
   between them is whether a person is named. `site_events` is a rollup
   (event, day, page, source, device, count) written for every visitor, with

@@ -15,10 +15,16 @@ const MEMBER_SECTIONS: NavSection[] = [
   // Programming exists under both (member) and (staff) at the same
   // '/programming' URL — the group-qualified navigateTo pins this pill to
   // the member view specifically. See NavSection's comment in TopNav.
+  //
+  // as=member rides along because the group is not in the URL: the served
+  // page routes by capability on a cold load, and without this a staff
+  // viewer who crossed to the member side on purpose would be sent straight
+  // back to the editor. href stays bare, so the active pill still matches
+  // the pathname.
   {
     name: 'programming',
     href: '/programming',
-    navigateTo: '/(member)/programming',
+    navigateTo: '/(member)/programming?as=member',
     label: 'Programming',
     icon: 'barbell-outline',
   },

@@ -123,7 +123,9 @@ rehearsal so an uncovered class already exists before the live one.
 ## Job 4. Programming, messaging, leads (owner, laptop)
 
 1. `/programming`: a programmed day, then Sunday (empty, the Add
-   affordance), then back. Member tab: the same day as Alice sees it.
+   affordance), then back. Member tab (Viewing Staff, then Programming in
+   the member nav): the same day as Alice sees it. Typing `/programming`
+   gives the editor now — the URL routes by role.
 2. `/classes`, open a class, Message class: "Bring a skipping rope
    tomorrow." Member tab, `/inbox`: it has arrived.
 3. `/management`, AI Front Desk: the pipeline. Megan Pryce and Tomasz

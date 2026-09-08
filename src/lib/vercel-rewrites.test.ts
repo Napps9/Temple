@@ -81,6 +81,14 @@ function describeRoute(file: string) {
   };
 }
 
+// The URL a route file is actually served at: groups stripped, and a
+// trailing `index` dropped, since (staff)/timeline/index.tsx is /timeline.
+function servedUrl(file: string): string {
+  const parts = segments(file);
+  const trimmed = parts[parts.length - 1] === 'index' ? parts.slice(0, -1) : parts;
+  return `/${trimmed.join('/')}`;
+}
+
 const dynamicRoutes = routeFiles(APP)
   .map(describeRoute)
   .filter((r) => r.dynamic)
@@ -166,5 +174,54 @@ describe('every dynamic route has the rewrite that serves it', () => {
     const vercel = JSON.parse(readFileSync(join(ROOT, 'vercel.json'), 'utf8'));
     expect(vercel.cleanUrls).toBe(true);
     expect(vercel.trailingSlash).toBe(false);
+  });
+});
+
+// Two route files can claim one URL, because a group contributes no segment:
+// (member)/programming.tsx and (staff)/programming.tsx are both /programming.
+// The static export writes ONE file for that URL and picks one of the two,
+// and which one it picks is not ours to choose — so the other screen has no
+// cold-loadable URL at all. That shipped: /programming served the member
+// calendar, and an owner who refreshed or followed the marketing demo link
+// lost the editor, with no rail to get back to.
+//
+// A collision is allowed, but only when the served page resolves it and says
+// so here. A new one fails instead of silently serving whichever screen the
+// exporter happened to write.
+const SHARED_URLS: Record<string, string> = {
+  '/programming':
+    '(member)/programming.tsx is the file the export serves; it sends a ' +
+    'can_access_staff_area holder to /(staff)/programming unless the URL ' +
+    'carries as=member, which is the crossing the member nav makes.',
+};
+
+describe('a URL two screens share is resolved on purpose', () => {
+  const byUrl = new Map<string, string[]>();
+  for (const file of routeFiles(APP)) {
+    const url = servedUrl(file);
+    byUrl.set(url, [...(byUrl.get(url) ?? []), file]);
+  }
+
+  it('finds the routes at all', () => {
+    expect(byUrl.size).toBeGreaterThan(40);
+  });
+
+  it('declares every URL served by more than one route file', () => {
+    const undeclared = [...byUrl.entries()]
+      .filter(([, files]) => files.length > 1)
+      .filter(([url]) => !(url in SHARED_URLS))
+      .map(
+        ([url, files]) =>
+          `${url} is served by ${files.join(' and ')}. The export writes one of them, so the other is unreachable on a cold load: route by capability in the served page, then declare it in SHARED_URLS.`,
+      );
+    expect(undeclared, undeclared.join('\n\n')).toEqual([]);
+  });
+
+  it('keeps no stale declaration', () => {
+    const collisions = new Set(
+      [...byUrl.entries()].filter(([, files]) => files.length > 1).map(([url]) => url),
+    );
+    expect(Object.keys(SHARED_URLS).filter((url) => !collisions.has(url))).toEqual([]);
+    for (const why of Object.values(SHARED_URLS)) expect(why.length).toBeGreaterThan(40);
   });
 });
