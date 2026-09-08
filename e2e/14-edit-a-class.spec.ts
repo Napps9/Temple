@@ -50,9 +50,19 @@ test('an owner edits one class from its sheet', async ({ page }, testInfo) => {
 
   // Capacity is the one field with no consequences: nobody is told, no
   // schedule is rewritten, and it is visible again on the sheet underneath.
+  //
+  // Relative to whatever it currently is, not a fixed number. A fixed one
+  // is a no-op the moment the gym already holds it — which is exactly what
+  // happened on the first run that got this far, and the sheet was right to
+  // refuse it — and it makes the journey un-runnable twice. Upwards,
+  // because lowering it under the members already booked in is a skip the
+  // RPC reports rather than an edit.
   const capacity = page.getByLabel('Capacity');
   await expect(capacity).toBeVisible({ timeout: 15_000 });
-  await capacity.fill('17');
+  const before = Number(await capacity.inputValue());
+  expect(Number.isFinite(before), 'capacity should be a number').toBe(true);
+  const after = before + 1;
+  await capacity.fill(String(after));
 
   await page.getByRole('button', { name: 'Save this class' }).click();
 
@@ -73,13 +83,15 @@ test('an owner edits one class from its sheet', async ({ page }, testInfo) => {
       .map((l) => l.trim())
       .filter(Boolean)
       .join(' | ');
-    throw new Error(`No receipt after Save. The screen said: ${said.slice(0, 1500)}`);
+    // Generously: the sheet's error sits below every field, so a tighter
+    // slice cut off the one line that explains the failure.
+    throw new Error(`No receipt after Save. The screen said: ${said.slice(0, 4000)}`);
   }
 
   await page.getByRole('button', { name: 'Done' }).click();
 
   // And the class underneath agrees, which is the invalidation working.
-  await expect(page.getByText(/\/ 17 spots taken/)).toBeVisible({
+  await expect(page.getByText(new RegExp(`/ ${after} spots taken`))).toBeVisible({
     timeout: 30_000,
   });
   await expect(page.getByText('The app crashed')).toHaveCount(0);
