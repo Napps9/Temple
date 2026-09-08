@@ -1,115 +1,170 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-// The web build is a STATIC export: every route becomes one .html file, so
-// dist/timeline/[action].html is a file literally called "[action].html".
-// A request for /timeline/abc reaches it only because vercel.json rewrites
-// /timeline/:action onto it. A dynamic route with no rewrite therefore does
-// not fail in the app — it 404s at Vercel, the white NOT_FOUND page, before
-// any of our code runs.
+// The web build is a STATIC export (app.json web.output = "static"), so every
+// route becomes one file on disk and a dynamic route becomes a file whose name
+// contains brackets: dist/timeline/[action].html. Nothing on Vercel knows that
+// "[action]" means "any segment". A request for /timeline/abc123 reaches that
+// file only because vercel.json rewrites /timeline/:action onto it.
 //
-// That is not hypothetical. /timeline/payment/[subscription] shipped with no
-// rewrite and a gym owner hit the 404 opening a failing payment on the demo.
-// Two more were missing with it: /trial/[token], which is in every emailed
-// trial link, and /inbox/announcement/[id]. Nothing noticed, because
-// client-side navigation into those screens works perfectly — only a cold
-// load, a refresh, or a pasted link ever asks Vercel for the URL.
+// A dynamic route shipped without its rewrite therefore does NOT fail in the
+// app, where it would be visible. It 404s at the platform — the white
+// "404: NOT_FOUND" page with a Code and an ID — before a line of Temple runs.
+// Nothing catches it in review either, because every in-app tap into those
+// screens is client-side routing and works perfectly. Only a cold load, a
+// refresh, or a pasted link ever asks Vercel for the URL, which is exactly
+// what an owner opening an emailed link does.
 //
-// So: every dynamic route must have its rewrite, and every rewrite must
-// still have its route. The mapping is mechanical, which is why a test can
-// hold it rather than a person remembering.
+// So: every dynamic route file must have a rewrite, and every rewrite must
+// still have its file. Both halves are mechanical, which is why a test holds
+// them rather than a person remembering at the moment they add a screen.
+//
+// Two things this deliberately does not assert. Vercel checks the filesystem
+// BEFORE applying rewrites, so /management/members/:profile does not eat
+// /management/members/import — that page is a real file and wins. And an
+// unknown URL still lands on Vercel's 404 rather than Temple's +not-found;
+// that is a separate decision, not drift.
 
-const APP = 'src/app';
+const ROOT = fileURLToPath(new URL('../../', import.meta.url));
+const APP = join(ROOT, 'src/app');
 
-type Route = { file: string; url: string; source: string; destination: string };
+type Rewrite = { source: string; destination: string };
+
+// Rewrites that are not a dynamic route's — a proxy, a vendor callback. Each
+// states why, so the reverse check can stay strict without a reader having to
+// guess whether an unmatched entry is deliberate or a leftover.
+const NOT_A_ROUTE: Record<string, string> = {};
 
 function routeFiles(dir: string, prefix = ''): string[] {
   return readdirSync(dir).flatMap((name) => {
     const full = join(dir, name);
     if (statSync(full).isDirectory()) return routeFiles(full, `${prefix}${name}/`);
-    if (!name.endsWith('.tsx')) return [];
-    // +html and +not-found are Expo Router's own, not addressable routes;
-    // a layout is never served on its own.
+    if (!/\.[jt]sx?$/.test(name) || /\.(test|d)\.[jt]sx?$/.test(name)) return [];
+    // A layout is never served on its own, and Expo Router's own +html,
+    // +not-found and +api files are not addressable URLs.
     if (name.startsWith('+') || name === '_layout.tsx') return [];
     return [`${prefix}${name}`];
   });
 }
 
 // A directory in parentheses is a route GROUP: it organises files and
-// contributes no url segment, which is why (staff)/timeline/payment/[x] is
-// served at /timeline/payment/<x> and the destination drops it too.
+// contributes no url segment. That is why (staff)/timeline/payment/[x] is
+// served at /timeline/payment/<x>, and why the destination has to drop the
+// group too — path-to-regexp reads "(staff)" as a capture group, so a
+// destination that kept it would not resolve to any file.
 function segments(file: string): string[] {
   return file
-    .replace(/\.tsx$/, '')
+    .replace(/\.[jt]sx?$/, '')
     .split('/')
     .filter((s) => !(s.startsWith('(') && s.endsWith(')')));
 }
 
-function describeRoute(file: string): Route {
+function param(segment: string): string | null {
+  const m = /^\[(\.\.\.)?(.+)\]$/.exec(segment);
+  if (!m) return null;
+  // A catch-all [...rest] spans any number of segments, which in a rewrite
+  // source is :rest* rather than :rest.
+  return m[1] ? `:${m[2]}*` : `:${m[2]}`;
+}
+
+function describeRoute(file: string) {
   const parts = segments(file);
-  const urlParts = parts[parts.length - 1] === 'index' ? parts.slice(0, -1) : parts;
   return {
     file,
-    url: `/${urlParts.join('/')}`,
-    source: `/${urlParts
-      .map((s) => (s.startsWith('[') && s.endsWith(']') ? `:${s.slice(1, -1)}` : s))
-      .join('/')}`,
+    // The bracketed path, which is the file the export actually wrote.
     destination: `/${parts.join('/')}`,
+    source: `/${parts.map((s) => param(s) ?? s).join('/')}`,
+    dynamic: parts.some((s) => param(s) !== null),
   };
 }
 
-const dynamicRoutes: Route[] = routeFiles(APP)
+const dynamicRoutes = routeFiles(APP)
   .map(describeRoute)
-  .filter((r) => r.url.includes('['))
-  .sort((a, b) => a.source.localeCompare(b.source));
+  .filter((r) => r.dynamic)
+  .sort((a, b) => a.file.localeCompare(b.file));
 
-const rewrites = (
-  JSON.parse(readFileSync('vercel.json', 'utf8')) as {
-    rewrites?: { source: string; destination: string }[];
-  }
-).rewrites ?? [];
+const rewrites: Rewrite[] =
+  (JSON.parse(readFileSync(join(ROOT, 'vercel.json'), 'utf8')) as { rewrites?: Rewrite[] })
+    .rewrites ?? [];
 
-describe('vercel rewrites cover every dynamic route', () => {
+const line = (r: { source: string; destination: string }) =>
+  `  { "source": "${r.source}", "destination": "${r.destination}" },`;
+
+describe('every dynamic route has the rewrite that serves it', () => {
+  // A walker that quietly matched nothing would make every assertion below
+  // pass while proving nothing at all.
   it('finds the dynamic routes at all', () => {
-    // A walker that silently matched nothing would make every assertion
-    // below pass while proving nothing.
     expect(dynamicRoutes.length).toBeGreaterThan(10);
+    expect(rewrites.length).toBeGreaterThan(10);
   });
 
-  it('has a rewrite for each one, pointing at the right file', () => {
-    const bySource = new Map(rewrites.map((r) => [r.source, r.destination]));
-    const wrong = dynamicRoutes
-      .filter((r) => bySource.get(r.source) !== r.destination)
-      .map((r) =>
-        bySource.has(r.source)
-          ? `${r.file} → "${r.source}" points at "${bySource.get(r.source)}", want "${r.destination}"`
-          : `${r.file} has no rewrite — add { "source": "${r.source}", "destination": "${r.destination}" }`,
-      );
-    expect(wrong).toEqual([]);
+  it('has a rewrite for each one', () => {
+    const byDestination = new Map(rewrites.map((r) => [r.destination, r.source]));
+    const missing = dynamicRoutes
+      .filter((r) => !byDestination.has(r.destination))
+      .map((r) => `src/app/${r.file} would 404 on a cold load. Add to vercel.json rewrites:\n${line(r)}`);
+    expect(missing, missing.join('\n\n')).toEqual([]);
   });
 
-  it('has no rewrite left pointing at a route that is gone', () => {
-    const live = new Set(dynamicRoutes.map((r) => r.source));
-    const dead = rewrites
-      .filter((r) => !live.has(r.source))
-      .map((r) => `${r.source} → ${r.destination} matches no route file`);
-    expect(dead).toEqual([]);
-  });
-
-  it('names every param after the file it comes from', () => {
-    // A rewrite whose :param spelling drifts from the [bracket] still
-    // resolves the page but hands the screen an empty useLocalSearchParams,
-    // which reads as "not found" rather than as a routing bug.
+  // Matched by destination rather than by source, so a rewrite whose :param
+  // spelling drifted from the [bracket] is reported as the drift it is. Such a
+  // rewrite still resolves the page, then hands the screen an empty
+  // useLocalSearchParams — which reads as "this record is gone", not as a
+  // routing bug, and so gets debugged in the wrong file.
+  it('names every param after the bracket it comes from', () => {
+    const byDestination = new Map(rewrites.map((r) => [r.destination, r.source]));
     const drift = dynamicRoutes
-      .filter((r) => {
-        const params = segments(r.file)
-          .filter((s) => s.startsWith('['))
-          .map((s) => s.slice(1, -1));
-        return !params.every((p) => r.source.includes(`:${p}`));
-      })
-      .map((r) => r.file);
-    expect(drift).toEqual([]);
+      .filter((r) => byDestination.has(r.destination))
+      .filter((r) => byDestination.get(r.destination) !== r.source)
+      .map(
+        (r) =>
+          `src/app/${r.file} is served by "${byDestination.get(r.destination)}", which does not match the file. Want:\n${line(r)}`,
+      );
+    expect(drift, drift.join('\n\n')).toEqual([]);
+  });
+
+  // The other direction. A rewrite pointing at a deleted screen sends a real
+  // request to a file that is not there, and the reader of vercel.json has no
+  // way to tell it apart from one that works.
+  it('has no rewrite pointing at a route that is gone', () => {
+    const live = new Set(dynamicRoutes.map((r) => r.destination));
+    const dead = rewrites
+      .filter((r) => !live.has(r.destination) && !(r.source in NOT_A_ROUTE))
+      .map(
+        (r) =>
+          `"${r.source}" → "${r.destination}" matches no file under src/app. Delete it, or name why it is not a route in NOT_A_ROUTE.`,
+      );
+    expect(dead, dead.join('\n')).toEqual([]);
+  });
+
+  it('has no two rewrites racing for the same file', () => {
+    const seen = new Map<string, string[]>();
+    for (const r of rewrites) {
+      seen.set(r.destination, [...(seen.get(r.destination) ?? []), r.source]);
+    }
+    const doubled = [...seen.entries()]
+      .filter(([, sources]) => sources.length > 1)
+      .map(([destination, sources]) => `${destination} ← ${sources.join(' and ')}`);
+    expect(doubled).toEqual([]);
+  });
+
+  it('keeps no stale exemption', () => {
+    const sources = new Set(rewrites.map((r) => r.source));
+    expect(Object.keys(NOT_A_ROUTE).filter((s) => !sources.has(s))).toEqual([]);
+    for (const why of Object.values(NOT_A_ROUTE)) expect(why.length).toBeGreaterThan(20);
+  });
+
+  // The rewrites only work because the export is static and served flat. If
+  // either changes, this whole file is answering a question nobody is asking
+  // any more, and should be deleted rather than maintained.
+  it('still describes how the site is actually served', () => {
+    const app = JSON.parse(readFileSync(join(ROOT, 'app.json'), 'utf8'));
+    expect(app.expo.web.output).toBe('static');
+    const vercel = JSON.parse(readFileSync(join(ROOT, 'vercel.json'), 'utf8'));
+    expect(vercel.cleanUrls).toBe(true);
+    expect(vercel.trailingSlash).toBe(false);
   });
 });
