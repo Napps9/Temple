@@ -4635,6 +4635,31 @@ record are `docs/design/contra-refresh/` (34 boards, `node build.mjs &&
 node shot.mjs` to rebuild); this is what a contributor needs to know
 without reading them.
 
+- **The floating chrome, on glass** — the phone dock and the Timeline's
+  talk bar both sit over the page rather than walling it off. The talk bar
+  used to be a sibling of the stream, so the day's last card stopped where
+  the composer started and the thread read as if it ended there; it is
+  absolutely positioned now, the stream runs the full height with
+  `COMPOSER_CLEARANCE` of padding so the last row stays reachable, and both
+  containers take a translucent fill plus a blur (`src/lib/glass.ts`) so a
+  card scrolling underneath is visible through them. The blur is web-only
+  and says so: `backdrop-filter` is a browser feature, React Native ignores
+  the style, and having it on the binaries would mean a native blur module
+  and a rebuild of both apps — without it the translucency alone still
+  shows movement under the chrome, which is the part that says the page
+  continues.
+  - **Three sizes each, and the middle one is the point.** Full at the top
+    of a page, compact once the reader scrolls down into them (the bar's
+    chips fold away to leave the line and Send; both shrink about their own
+    bottom edge so the gap they stand off by is unchanged), full again on
+    the first scroll back up.
+  - **They expand independently** (`src/lib/dock.ts` holds two flags).
+    Scrolling is the one signal they share; using one has nothing to do
+    with using the other. Focus **holds** the talk bar open however far the
+    page scrolls — `setComposerExpanded(false)` no-ops while held — so a
+    composer somebody is typing into never shrinks under them, while the
+    dock carries on getting out of the way. A dock section press restores
+    the dock and grows no composer.
 - **The UX pass (2026-08-23).** Six pushes reworked the platform around
   three outcomes — obvious to a first-time user, navigable without prior
   knowledge, key actions in three taps or fewer, driven by a tap-by-tap

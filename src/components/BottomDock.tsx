@@ -9,6 +9,7 @@ import { ManageNavMenu } from './ManageNavMenu';
 import { NavAccountMenu } from './NavAccountMenu';
 import type { NavSection } from './TopNav';
 import { setDockExpanded, setDockTop, useDockExpanded } from '@/lib/dock';
+import { GLASS, GLASS_FILL } from '@/lib/glass';
 import { haptic } from '@/lib/haptic';
 import { BRAND, useThemeColors } from '@/lib/theme';
 
@@ -111,7 +112,9 @@ export function BottomDock({
         {/* The transform sits on its own wrapper: NativeWind does not
             style Animated.View, so the pill's classes stay on a View. */}
         <Animated.View style={{ transform: [{ translateY }, { scale }] }}>
-        <View className="flex-row gap-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-full px-4 py-1.5 shadow-float">
+        <View
+          style={GLASS}
+          className={`flex-row gap-1 ${GLASS_FILL} border border-line dark:border-line-dk rounded-full px-4 py-1.5 shadow-float`}>
           {sections.map((s) => {
             const active = pathname.startsWith(s.href);
             return (

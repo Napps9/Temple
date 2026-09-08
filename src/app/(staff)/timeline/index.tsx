@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { LABEL_CLASS, LABEL_TYPE } from '@/components/SectionLabel';
 import { AIMark } from '@/components/AIMark';
 import { ListRow, RuledList } from '@/components/ListRow';
@@ -45,7 +45,12 @@ import type { Capability } from '@/lib/can';
 import { chainStopLine, leftoverLine, travelTogether } from '@/lib/chain';
 import { recentTurns, toWireTurns, type Turn } from '@/lib/chat-memory';
 import { formatDate } from '@/lib/format-date';
-import { reportDockScroll } from '@/lib/dock';
+import {
+  holdComposerOpen,
+  reportDockScroll,
+  useComposerExpanded,
+} from '@/lib/dock';
+import { GLASS, GLASS_FILL } from '@/lib/glass';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
 import { nextStepLine, splitWaitingByChase } from '@/lib/payment-story';
 import {
@@ -989,7 +994,11 @@ export default function Timeline() {
         <ScrollView
           ref={scrollRef}
           className="flex-1"
-          contentContainerClassName="gap-6 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full"
+          contentContainerClassName="gap-6 pt-6 px-4 md:max-w-2xl md:mx-auto md:w-full"
+          // The talk bar floats over this scroller rather than sitting
+          // below it, so the page's own last row would otherwise end up
+          // permanently under it.
+          contentContainerStyle={{ paddingBottom: COMPOSER_CLEARANCE }}
           onScroll={onStreamScroll}
           scrollEventThrottle={16}
           onContentSizeChange={() => {
@@ -1156,55 +1165,13 @@ export default function Timeline() {
         </GestureDetector>
 
         {isOwner && page.isToday ? (
-          <View className="px-4 pb-3 pt-1 md:max-w-2xl md:mx-auto md:w-full">
-            {/* One card, the shape a chat assistant's composer has settled
-                into: the text on top with room to grow, the tools along
-                the bottom edge and the send button at their right. The
-                chips are the assistant's own doors (its rules, the team it
-                can act on, the goals it works to), so they live inside the
-                card rather than floating above it. */}
-            <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card shadow-float px-4 pt-3 pb-2 gap-2">
-              <TextInput
-                value={input}
-                onChangeText={setInput}
-                editable={!busy}
-                placeholder="Show me a member, change a class, send a newsletter…"
-                placeholderTextColor={colors.ink3}
-                multiline
-                className="text-ink dark:text-ink-dk text-[16px] leading-[22px] min-h-[24px] max-h-32 py-0.5"
-                onSubmitEditing={send}
-              />
-              <View className="flex-row items-center gap-1">
-                <BarChip
-                  icon="document-text-outline"
-                  label="Your rules"
-                  onPress={showRulesSheet}
-                />
-                <BarChip
-                  icon="people-outline"
-                  label="The team"
-                  onPress={() => router.push('/management/roster' as never)}
-                />
-                <BarChip
-                  icon="flag-outline"
-                  label="Goals"
-                  onPress={() => router.push('/management/goals' as never)}
-                />
-                <View className="flex-1" />
-                <Pressable
-                  onPress={send}
-                  disabled={busy || !input.trim()}
-                  accessibilityLabel="Send"
-                  className={`w-8 h-8 rounded-full items-center justify-center ${busy || !input.trim() ? 'bg-sunken dark:bg-raised-dk' : 'bg-primary active:bg-primary-dark'}`}>
-                  <Ionicons
-                    name="arrow-up"
-                    size={17}
-                    color={busy || !input.trim() ? colors.ink3 : colors.onPrimary}
-                  />
-                </Pressable>
-              </View>
-            </View>
-          </View>
+          <TalkBar
+            input={input}
+            setInput={setInput}
+            busy={busy}
+            onSend={send}
+            onShowRules={showRulesSheet}
+          />
         ) : isOwner ? (
           // The pen stays on today: local cards render inside today's
           // thread and the sentences anchor their dates to it. Without
@@ -1240,6 +1207,154 @@ export default function Timeline() {
         onClose={() => setPickerOpen(false)}
       />
     </Screen>
+  );
+}
+
+// The clearance the stream keeps under the floating talk bar: its full
+// height plus the gap it stands off the dock by.
+const COMPOSER_CLEARANCE = 116;
+const COMPOSER_COMPACT = 0.93;
+const COMPOSER_HEIGHT = 96;
+
+// The owner's pen, floating over the stream rather than walling it off.
+//
+// It used to be a sibling of the scroller, which meant the day's last card
+// stopped where the composer started and the thread read as if it ended
+// there. Now the stream runs the full height and the bar sits over it on
+// glass, so a card scrolling underneath is visible through it — the page
+// continues, it just continues behind the thing you type into.
+//
+// Three sizes, and the middle one is the point: full at the top of the
+// thread, compact once the reader scrolls down into it (the chips fold
+// away, the card shrinks about its own bottom edge), and held full for as
+// long as somebody is typing however far the page moves. The dock does the
+// same dance beside it and neither drives the other — see lib/dock.
+function TalkBar({
+  input,
+  setInput,
+  busy,
+  onSend,
+  onShowRules,
+}: {
+  input: string;
+  setInput: (v: string) => void;
+  busy: boolean;
+  onSend: () => void;
+  onShowRules: () => void;
+}) {
+  const colors = useThemeColors();
+  const expanded = useComposerExpanded();
+  const size = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.spring(size, {
+      toValue: expanded ? 1 : 0,
+      useNativeDriver: Platform.OS !== 'web',
+      damping: 18,
+      stiffness: 220,
+      mass: 0.8,
+    }).start();
+  }, [expanded, size]);
+
+  const scale = size.interpolate({
+    inputRange: [0, 1],
+    outputRange: [COMPOSER_COMPACT, 1],
+  });
+  // A scale is about the centre; this keeps the bottom edge where it is, so
+  // the compact bar stands off the dock by the same gap.
+  const translateY = size.interpolate({
+    inputRange: [0, 1],
+    outputRange: [((1 - COMPOSER_COMPACT) * COMPOSER_HEIGHT) / 2, 0],
+  });
+
+  // Released on blur rather than on send: somebody who sends one sentence
+  // usually has a second one, and the bar collapsing between them is the
+  // page moving under their hands.
+  useEffect(() => () => holdComposerOpen(false), []);
+
+  return (
+    <View
+      pointerEvents="box-none"
+      className="absolute left-0 right-0 bottom-0 px-4 pb-3 pt-1 md:max-w-2xl md:mx-auto md:w-full">
+      <Animated.View style={{ transform: [{ translateY }, { scale }] }}>
+        {/* One card, the shape a chat assistant's composer has settled
+            into: the text on top with room to grow, the tools along the
+            bottom edge and the send button at their right. The chips are
+            the assistant's own doors (its rules, the team it can act on,
+            the goals it works to), so they live inside the card rather
+            than floating above it. */}
+        <View
+          style={GLASS}
+          className={`${GLASS_FILL} border border-line dark:border-line-dk rounded-card shadow-float px-4 pt-3 pb-2 gap-2`}>
+          <TextInput
+            value={input}
+            onChangeText={setInput}
+            editable={!busy}
+            onFocus={() => holdComposerOpen(true)}
+            onBlur={() => holdComposerOpen(false)}
+            placeholder="Show me a member, change a class, send a newsletter…"
+            placeholderTextColor={colors.ink3}
+            multiline
+            className="text-ink dark:text-ink-dk text-[16px] leading-[22px] min-h-[24px] max-h-32 py-0.5"
+            onSubmitEditing={onSend}
+          />
+          {expanded ? (
+            <View className="flex-row items-center gap-1">
+              <BarChip
+                icon="document-text-outline"
+                label="Your rules"
+                onPress={onShowRules}
+              />
+              <BarChip
+                icon="people-outline"
+                label="The team"
+                onPress={() => router.push('/management/roster' as never)}
+              />
+              <BarChip
+                icon="flag-outline"
+                label="Goals"
+                onPress={() => router.push('/management/goals' as never)}
+              />
+              <View className="flex-1" />
+              <SendButton busy={busy} input={input} onSend={onSend} />
+            </View>
+          ) : (
+            // Compact: the doors fold away and the send button comes up
+            // beside the text, so the bar is a single row the height of
+            // one line — still the whole control, just out of the way.
+            <View className="flex-row items-center justify-end">
+              <SendButton busy={busy} input={input} onSend={onSend} />
+            </View>
+          )}
+        </View>
+      </Animated.View>
+    </View>
+  );
+}
+
+function SendButton({
+  busy,
+  input,
+  onSend,
+}: {
+  busy: boolean;
+  input: string;
+  onSend: () => void;
+}) {
+  const colors = useThemeColors();
+  const off = busy || !input.trim();
+  return (
+    <Pressable
+      onPress={onSend}
+      disabled={off}
+      accessibilityLabel="Send"
+      className={`w-8 h-8 rounded-full items-center justify-center ${off ? 'bg-sunken dark:bg-raised-dk' : 'bg-primary active:bg-primary-dark'}`}>
+      <Ionicons
+        name="arrow-up"
+        size={17}
+        color={off ? colors.ink3 : colors.onPrimary}
+      />
+    </Pressable>
   );
 }
 
