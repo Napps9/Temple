@@ -24,12 +24,16 @@ test('an owner cold-loading /programming gets the editor', async ({ page }) => {
 
   await page.goto('/programming');
 
-  // The Week/Year toggle and the Analysis chip exist only on the staff
-  // render. The member calendar has neither.
-  await expect(page.getByText(STAFF_ONLY, { exact: true })).toBeVisible({
+  // Attached rather than visible, and .first(): the toggle is rendered twice,
+  // once for md+ and once for the phone row, and NativeWind hides the wrong
+  // one with display:none rather than unmounting it. Which of the two is on
+  // screen is a layout question; what this journey settles is which SCREEN
+  // answered the URL, and only the staff render puts a Week/Year toggle or an
+  // Analysis chip in the tree at all.
+  await expect(page.getByText(STAFF_ONLY, { exact: true }).first()).toBeAttached({
     timeout: 30_000,
   });
-  await expect(page.getByText('Analysis', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Analysis', { exact: true }).first()).toBeAttached();
   await expect(page.getByText('The app crashed')).toHaveCount(0);
 });
 
