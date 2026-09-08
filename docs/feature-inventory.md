@@ -4712,10 +4712,18 @@ surround:
 - **Cloud-only dev workflow** — push to main → CI (tsc + 403 vitest
   + 90 pgTAP files) → migrations auto-deploy to the hosted Supabase
   project → Vercel auto-deploys Production.
-- **Vercel rewrites for dynamic routes** — `/join/:slug`,
-  `/track/movement/:movement`, `/track/group/:group`,
-  `/track/workout/:id`, `/inbox/direct/:peer`,
-  `/management/members/:profile`.
+- **Vercel rewrites for dynamic routes, held by a test** — the web build
+  is a static export, so `/timeline/payment/<id>` only resolves because
+  `vercel.json` rewrites it onto `[subscription]`. A dynamic route with
+  no rewrite 404s at Vercel on a cold load, a refresh or a pasted link,
+  while client-side navigation into it works perfectly — which is how
+  three shipped unnoticed (`/timeline/payment/:subscription`,
+  `/trial/:token` in every emailed trial link, and
+  `/inbox/announcement/:id`) until an owner opened a failing payment on
+  the demo. `src/lib/vercel-rewrites.test.ts` now derives the served URL
+  of every route file, strips the `(group)` dirs, and fails CI naming the
+  exact line to add — in both directions, so a deleted screen cannot
+  leave a rewrite behind either.
 - **The marketing funnel is measured** (`0279`) — two layers, and the line
   between them is whether a person is named. `site_events` is a rollup
   (event, day, page, source, device, count) written for every visitor, with
