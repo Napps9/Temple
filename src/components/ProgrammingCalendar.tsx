@@ -129,6 +129,7 @@ function fmtDayShort(d: Date) {
 
 export function ProgrammingCalendar({
   mode,
+  viewSwitcher,
   headerAction,
   memberScope,
   topBar,
@@ -136,8 +137,12 @@ export function ProgrammingCalendar({
   roadmap,
 }: {
   mode: 'manage' | 'view';
-  // Optional control rendered beside the month header (right-aligned
-  // on desktop, its own row on mobile) — staff use it for Analysis.
+  // The view toggle (Week, Year), seated where Classes seats its own:
+  // before Today on the left at md+, first in the row beneath the date
+  // on a phone. Same seat on every calendar, so nobody looks for it.
+  viewSwitcher?: React.ReactNode;
+  // The page's actions (Individuals, Analysis): the right zone at md+,
+  // after the toggle in the row beneath the date on a phone.
   headerAction?: React.ReactNode;
   // Show the roadmap block strip above the week (staff surfaces only —
   // blocks are coaching material, RLS-hidden from members anyway).
@@ -354,6 +359,12 @@ export function ProgrammingCalendar({
     ((personalDay?.sections.length ?? 0) > 0 || personalFiles.length > 0);
 
   const today = <TodayButton onPress={() => setDate(startOfDay(new Date()))} />;
+  const wideLeft = (
+    <View className="flex-row items-center gap-2">
+      <View className="hidden md:flex">{viewSwitcher ?? null}</View>
+      {today}
+    </View>
+  );
   const dateControl = (
     <DateNav
       label={fmtDayShort(date)}
@@ -390,19 +401,20 @@ export function ProgrammingCalendar({
           <View className="-mx-10 md:mx-0">
             <PageTopRow
               className="pt-3 pb-4 md:pt-6 md:pb-6"
-              left={today}
+              left={wideLeft}
               center={dateControl}
               right={wideAction}
             />
           </View>
         )}
 
-        {headerAction ? (
+        {viewSwitcher || headerAction ? (
           // -mx-6 undoes Screen's px-6 and this container's px-4: a header
           // row at the 16px the date row sits at, so it fits a 360px phone;
           // wrap stays as the fallback for a long label.
           <View className="md:hidden -mx-6 flex-row flex-wrap justify-center gap-2 pb-4 -mt-1">
-            {headerAction}
+            {viewSwitcher ?? null}
+            {headerAction ?? null}
           </View>
         ) : null}
 

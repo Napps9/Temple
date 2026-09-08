@@ -39,8 +39,8 @@ export default function StaffProgramming() {
   if (view === 'year') {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
-        <View className="-mx-6 md:mx-auto md:w-full md:max-w-5xl md:px-2">
-          <PageTopRow className="pt-3 pb-1" left={toggle} />
+        <View className="-mx-6 md:mx-auto md:w-full md:max-w-5xl md:px-4">
+          <PageTopRow className="pt-3 pb-1 md:pt-6 md:pb-6" left={toggle} />
         </View>
         <ProgrammingRoadmap gymId={membership?.gymId} canEdit={canEdit} />
       </Screen>
@@ -51,9 +51,9 @@ export default function StaffProgramming() {
     <ProgrammingCalendar
       mode={canEdit ? 'manage' : 'view'}
       roadmap
+      viewSwitcher={toggle}
       headerAction={
         <View className="flex-row items-center gap-2">
-          {toggle}
           {canProgramMembers ? (
             <ChipButton
               label="Individuals"
