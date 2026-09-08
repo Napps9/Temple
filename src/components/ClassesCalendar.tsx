@@ -1901,6 +1901,11 @@ function DayClassCard({
             }
       }
       disabled={isPast}
+      accessibilityRole="button"
+      // Same omission the agenda row had, in the card that carries most of
+      // them: this one draws the Day grid, the Week grid and the wide Book
+      // list, and a screen reader had no name for any of them.
+      accessibilityLabel={`${sessionLabel(session)} at ${fmtTime(start)}`}
       style={inGrid ? { height: '100%', width: '100%' } : undefined}
       className={`bg-surface dark:bg-surface-dk border flex-row items-start gap-3 active:bg-raised dark:active:bg-raised-dk overflow-hidden ${
         dense ? 'rounded-md p-1.5' : inGrid ? 'rounded-card p-3' : 'rounded-card p-4'
