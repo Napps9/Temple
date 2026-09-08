@@ -38,6 +38,10 @@ export function DateNav({
         onPress={onPrev}
         disabled={prevDisabled}
         hitSlop={8}
+        // The label without the role reads as text a screen reader can see
+        // and not as something it can press, which is what these were: the
+        // date between them has carried the role all along.
+        accessibilityRole="button"
         accessibilityLabel={prevLabel}
         className={arrow}>
         <Text className={glyph(prevDisabled)}>‹</Text>
@@ -55,6 +59,7 @@ export function DateNav({
         onPress={onNext}
         disabled={nextDisabled}
         hitSlop={8}
+        accessibilityRole="button"
         accessibilityLabel={nextLabel}
         className={arrow}>
         <Text className={glyph(nextDisabled)}>›</Text>
