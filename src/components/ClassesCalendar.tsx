@@ -1494,6 +1494,10 @@ function AgendaCard({
     <Pressable
       onPress={isPast ? undefined : onPress}
       disabled={isPast}
+      accessibilityRole="button"
+      // The row is the whole tap target and had no accessible name, so a
+      // screen reader read out its parts and never what pressing it opens.
+      accessibilityLabel={`${sessionLabel(session)} at ${fmtTime(start)}`}
       className={`flex-row items-center gap-3 bg-surface dark:bg-surface-dk border rounded-card p-3.5 active:bg-raised dark:active:bg-raised-dk ${
         bookedByMe
           ? 'border-emerald-400 dark:border-emerald-600'
