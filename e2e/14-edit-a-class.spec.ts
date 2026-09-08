@@ -58,9 +58,23 @@ test('an owner edits one class from its sheet', async ({ page }, testInfo) => {
 
   // describeEditResult's first line for a single class. Its exact words are
   // the contract between the RPC's counters and the sheet.
-  await expect(page.getByText('That class is updated.')).toBeVisible({
-    timeout: 30_000,
-  });
+  //
+  // Reported with the sheet's own words on failure, because "not visible"
+  // cannot distinguish a save that was refused (the reason is on screen, in
+  // red, a few pixels away) from one that never went. Both look identical
+  // to a locator waiting for a receipt.
+  try {
+    await expect(page.getByText('That class is updated.')).toBeVisible({
+      timeout: 30_000,
+    });
+  } catch {
+    const said = (await page.locator('body').innerText())
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .join(' | ');
+    throw new Error(`No receipt after Save. The screen said: ${said.slice(0, 1500)}`);
+  }
 
   await page.getByRole('button', { name: 'Done' }).click();
 
