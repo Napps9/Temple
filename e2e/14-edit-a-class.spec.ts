@@ -16,8 +16,21 @@ import { OWNER_EMAIL, signIn } from './helpers';
 // touches no schedule, moves nothing, and tells nobody. The scope machinery
 // has its own pgTAP; this journey is about the path existing.
 
-test('an owner edits one class from its sheet', async ({ page }) => {
-  await signIn(page, OWNER_EMAIL);
+test('an owner edits one class from its sheet', async ({ page }, testInfo) => {
+  // Phone only, and not because the feature is: the sheet and its Edit chip
+  // are identical at both widths. The day arrows are not — the wide header
+  // renders a month nav and nothing that steps a day — and this journey has
+  // to reach a day whose classes are all still ahead of it.
+  test.skip(
+    testInfo.project.name !== 'phone',
+    'the day arrows belong to the phone header',
+  );
+  // Sign-in, a cold load and two round trips do not fit the 60s default.
+  test.setTimeout(120_000);
+
+  // expectBar false: this journey never types at Temple, and waiting for
+  // the talk bar to arrive is what put the first run over its budget.
+  await signIn(page, OWNER_EMAIL, { expectBar: false });
 
   // Tomorrow, so every class on the day is still ahead of us — Edit is not
   // offered on a class that has already run, and "today" late in the day
