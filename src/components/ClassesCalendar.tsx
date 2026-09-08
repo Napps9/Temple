@@ -1725,7 +1725,7 @@ function DayView({
                 }
               }
             }}
-            className="w-full max-w-5xl mx-auto px-2 pt-4 pb-2">
+            className="w-full max-w-5xl mx-auto px-4 pt-4 pb-2">
             {topSlot}
           </View>
         ) : null}
@@ -2115,7 +2115,7 @@ function WeekView({
                 }
               }
             }}
-            className="w-full max-w-5xl mx-auto px-2 pt-4 pb-2">
+            className="w-full max-w-5xl mx-auto px-4 pt-4 pb-2">
             {topSlot}
           </View>
         ) : null}
@@ -2307,7 +2307,7 @@ function MonthView({
 
       <PageScroll className="flex-1" contentContainerClassName="pb-10">
         {topSlot ? (
-          <View className="w-full max-w-5xl mx-auto px-2 pt-4 pb-2">{topSlot}</View>
+          <View className="w-full max-w-5xl mx-auto px-4 pt-4 pb-2">{topSlot}</View>
         ) : null}
         <View className="w-full max-w-5xl mx-auto px-4">
           {Array.from({ length: 6 }, (_, w) => (
