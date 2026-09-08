@@ -701,9 +701,10 @@ The staff area shows up when `can_access_staff_area` is on.
 - **Waiting-on-you payment lines carry their next step** — each row in
   the Waiting block grows a who-moves-next line (`nextStepLine`: Stripe's
   retry date, given-up, or "I'm on it") plus Chase for me / Chasing /
-  Message chips — the same `request_payment_chase` handover as the Needs
-  chasing list (0248), so the chase no longer requires a detour through
-  the money screen.
+  Message chips. Chase for me opens the nudge for reading and editing
+  (0284) rather than sending from the row, because the words are the
+  decision and a feed row has no space to show them; a proposal card in
+  the stream carries the same door beside its Yes.
 - **The Timeline pages by day** — one thread per day. Today is the
   conversation (stream + Waiting block + talk bar, unchanged); swipe
   right (or the ‹ arrow / month picker / TodayButton header shared with
@@ -2640,8 +2641,17 @@ The staff area shows up when `can_access_staff_area` is on.
   lies. Underneath the tiles, **Needs chasing** lists who
   (`gym_overdue_memberships`, `can_see_money`, deep-linking to the
   member).
-  **Chase for me** (0248) — when the money job is on, each row grows a
-  handover chip: `request_payment_chase(gym, subscription)` joins or
+  **Chase for me** (0248, 0284) — when the money job is on, each row
+  grows a handover chip. It no longer sends: it opens the payment's own
+  page, where the nudge is on screen as an editable subject and body,
+  and nothing leaves until the owner presses Send. An edit is stored on
+  the action as `subject_override` / `body_override` and the executor
+  prefers it over the template render, so one member can be written to
+  differently without editing the template for everyone; untouched, no
+  override is stored and the send is the template render exactly as
+  before. `payment_chase_preview` hands a stored edit back, so a reload
+  shows what will actually go. Then
+  `request_payment_chase(gym, subscription, subject, body)` joins or
   opens the same `agent_cases` row the revenue tick would, writes the
   same `chase_message` action, and executes it through
   `_agent_execute_action` (same template, outbound queue, quiet hours,

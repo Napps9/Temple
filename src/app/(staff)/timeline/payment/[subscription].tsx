@@ -171,10 +171,12 @@ export default function PaymentStory() {
   });
 
   const chase = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (edit: { subject: string | null; body: string | null }) => {
       const { error } = await supabase.rpc('request_payment_chase', {
         p_gym_id: gymId!,
         p_subscription_id: subscriptionId,
+        p_subject: edit.subject,
+        p_body: edit.body,
       });
       if (error) throw error;
     },
@@ -201,6 +203,19 @@ export default function PaymentStory() {
   });
 
   const chased = chase.isSuccess || (story.data?.chased ?? false);
+
+  // The owner's edits to this one nudge. null means untouched, which is not
+  // the same as "same as the template": untouched follows the preview if it
+  // refetches, and sends no override at all, so a nudge nobody changed is
+  // still rendered from the template at send time.
+  const [subjectEdit, setSubjectEdit] = useState<string | null>(null);
+  const [bodyEdit, setBodyEdit] = useState<string | null>(null);
+  const subject = subjectEdit ?? preview.data?.subject ?? '';
+  const body = bodyEdit ?? preview.data?.body ?? '';
+  const edited =
+    (subjectEdit !== null && subjectEdit !== preview.data?.subject) ||
+    (bodyEdit !== null && bodyEdit !== preview.data?.body);
+  const sendable = subject.trim().length > 0 && body.trim().length > 0;
 
   const [thread, setThread] = useState<AskTurn[]>([]);
   const [input, setInput] = useState('');
@@ -374,19 +389,56 @@ export default function PaymentStory() {
                       ? `The nudge on its way to ${first}`
                       : `The message ${first} would get`}
                   </Text>
-                  <Text className="text-ink dark:text-ink-dk text-[14.5px] font-semibold leading-[20px]">
-                    {preview.data.subject}
-                  </Text>
-                  <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3">
-                    <Text className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[21px]">
-                      {preview.data.body}
-                    </Text>
-                  </View>
-                  <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px]">
-                    {chased
-                      ? 'The receipt in the Timeline has the delivery story.'
-                      : 'Your template, their details — nothing goes until you say.'}
-                  </Text>
+                  {chased ? (
+                    // Gone, or going: the words are the record now, not a draft.
+                    <>
+                      <Text className="text-ink dark:text-ink-dk text-[14.5px] font-semibold leading-[20px]">
+                        {subject}
+                      </Text>
+                      <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3">
+                        <Text className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-[21px]">
+                          {body}
+                        </Text>
+                      </View>
+                      <Text className="text-ink-3 dark:text-ink-3-dk text-[12.5px]">
+                        The receipt in the Timeline has the delivery story.
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <TextInput
+                        value={subject}
+                        onChangeText={setSubjectEdit}
+                        accessibilityLabel="Subject"
+                        className="border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk text-[14.5px] font-semibold"
+                      />
+                      <TextInput
+                        value={body}
+                        onChangeText={setBodyEdit}
+                        multiline
+                        accessibilityLabel="What the message says"
+                        className="border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk text-[14px] leading-[21px] min-h-[104px]"
+                      />
+                      <View className="flex-row items-center gap-2 flex-wrap">
+                        {edited ? (
+                          <ChipButton
+                            label="Back to my template"
+                            icon="refresh-outline"
+                            tone="neutral"
+                            onPress={() => {
+                              setSubjectEdit(null);
+                              setBodyEdit(null);
+                            }}
+                          />
+                        ) : null}
+                        <Text className="flex-1 text-ink-3 dark:text-ink-3-dk text-[12.5px]">
+                          {edited
+                            ? 'Your template, their details, your edits. Nothing goes until you press Send.'
+                            : 'Your template, their details. Nothing goes until you press Send.'}
+                        </Text>
+                      </View>
+                    </>
+                  )}
                 </View>
               ) : null}
 
@@ -412,9 +464,27 @@ export default function PaymentStory() {
                 // handover before knowing one already happened is how a
                 // member gets the same email twice.
                 <View className="gap-2">
-                  <Button onPress={() => chase.mutate()} loading={chase.isPending}>
-                    Chase for me
+                  <Button
+                    onPress={() =>
+                      chase.mutate({
+                        subject: subjectEdit !== null && subjectEdit !== preview.data?.subject ? subject : null,
+                        body: bodyEdit !== null && bodyEdit !== preview.data?.body ? body : null,
+                      })
+                    }
+                    loading={chase.isPending}
+                    disabled={!sendable}>
+                    {`Send this to ${first}`}
                   </Button>
+                  {/* Names the standing arrangement rather than adding a
+                      second switch for it: 'Always allow this' on a
+                      proposal is what turns the asking off (0206). */}
+                  <View className="flex-row items-start gap-2">
+                    <AIMark size={12} />
+                    <Text className="flex-1 text-ink-3 dark:text-ink-3-dk text-[12.5px] leading-[18px]">
+                      I ask you first. Tick &ldquo;Always allow this&rdquo; on a
+                      proposal and I send these without showing you.
+                    </Text>
+                  </View>
                   {chase.error ? (
                     <Text className="text-red-500 dark:text-red-400 text-sm">
                       {errorMessage(chase.error, "That didn't go through")}

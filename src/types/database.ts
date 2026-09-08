@@ -4574,6 +4574,8 @@ export type Database = {
         Args: {
           p_gym_id: string;
           p_subscription_id: string;
+          p_subject?: string | null;
+          p_body?: string | null;
         };
         Returns: string;
       };

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, View } from 'react-native';
@@ -1931,6 +1931,25 @@ function AgentActionCard({
           </Text>
         </Pressable>
       ) : null}
+      {kind === 'chase_message' && !decided ? (
+        // The nudge can be read and changed before it goes (0284); the
+        // editor lives on the payment's own page, found through the
+        // action's subscription.
+        <ChipButton
+          label="Read and edit first"
+          icon="create-outline"
+          tone="neutral"
+          onPress={async () => {
+            const { data } = await supabase
+              .from('agent_actions')
+              .select('subject_subscription')
+              .eq('id', actionId)
+              .maybeSingle();
+            const sub = data?.subject_subscription;
+            if (sub) router.push(`/timeline/payment/${sub}` as never);
+          }}
+        />
+      ) : null}
       <View className="flex-row items-center gap-2">
         <View className="flex-1">
           <Button onPress={() => decide('approve')} loading={busy}>
@@ -1973,8 +1992,6 @@ function PaymentFailingCard({
   chipReady: boolean;
 }) {
   const colors = useThemeColors();
-  const qc = useQueryClient();
-  const subscriptionId = event.item_id.split(':')[1];
   const profileId =
     typeof event.detail.profile_id === 'string' ? event.detail.profile_id : null;
   const line = formatTimelineLine(event);
@@ -1983,33 +2000,6 @@ function PaymentFailingCard({
       ? event.detail.next_payment_attempt
       : null;
   const href = storyHref(event);
-
-  const chase = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.rpc('request_payment_chase', {
-        p_gym_id: gymId!,
-        p_subscription_id: subscriptionId,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      // Mark the row chased before the refetch lands: with only the
-      // invalidation, the chip re-arms for a beat and a double-tap
-      // spends the second touch on a duplicate email.
-      qc.setQueryData<Set<string>>(
-        ['payment-chases', gymId],
-        (old) => new Set([...(old ?? []), subscriptionId]),
-      );
-      // The outbound queue drains on a 15-minute cron; the owner just
-      // asked, so nudge the worker now. Best-effort — quiet hours or a
-      // failure here just leave it to the cron.
-      void supabase.functions.invoke('send-agent-messages', {
-        body: { gym_id: gymId },
-      });
-      void qc.invalidateQueries({ queryKey: ['payment-chases', gymId] });
-      void qc.invalidateQueries({ queryKey: ['timeline-feed', gymId] });
-    },
-  });
 
   const sentence = (
     <>
@@ -2089,13 +2079,14 @@ function PaymentFailingCard({
             )}
           </Text>
           <View className="pl-10 flex-row gap-2 items-center">
-            {jobOn && chipReady ? (
+            {jobOn && chipReady && href ? (
+              // Opens the nudge rather than sending it: the words are the
+              // decision, and the row has no room to show them.
               <ChipButton
-                label={chase.isPending ? 'Handing over…' : 'Chase for me'}
+                label="Chase for me"
                 icon={<AIMark />}
                 tone="primary"
-                disabled={chase.isPending}
-                onPress={() => chase.mutate()}
+                onPress={() => router.push(href as never)}
               />
             ) : null}
             {profileId ? (
@@ -2109,11 +2100,6 @@ function PaymentFailingCard({
           </View>
         </>
       )}
-      {chase.error ? (
-        <Text className="text-amber-700 dark:text-amber-500 text-[13px]">
-          {chase.error.message}
-        </Text>
-      ) : null}
     </View>
   );
 }

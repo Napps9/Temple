@@ -73,11 +73,15 @@ reseed: today, Tue 8 Sep, that is the 17:30.
 2. Show the dock. Scroll the feed: the dock shrinks. Scroll back: it
    returns. Tap the gear: the gym's doors. Tap the avatar: the account
    menu with the member switch.
-3. Composer, say: "show me Alice Adams". The member card opens.
-4. Say: "move tomorrow's 17:30 CrossFit to 18:00". Read the preview
+3. Open Ben's failing payment from the feed. Chase for me: the nudge
+   is on screen, subject and body. Change a word, press Send. Say the
+   line: "I ask you first. Tick Always allow this and I send them
+   myself."
+4. Composer, say: "show me Alice Adams". The member card opens.
+5. Say: "move tomorrow's 17:30 CrossFit to 18:00". Read the preview
    aloud, confirm, point at the receipt.
-5. Say: "what is uncovered". Nothing yet; that changes in job 3.
-6. Page back one day with the arrow. The composer's place says past days
+6. Say: "what is uncovered". Nothing yet; that changes in job 3.
+7. Page back one day with the arrow. The composer's place says past days
    are the record. Tap Today.
 
 Safe sentences if asked for more: "who has gone quiet", "close the gym

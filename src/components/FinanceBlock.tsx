@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, View } from 'react-native';
@@ -205,7 +205,6 @@ export function FinanceBlock({ gymId }: { gymId: string }) {
 // can_see_full_pii and routing them through a money RPC would sidestep it.
 function OverdueList({ gymId }: { gymId: string }) {
   const colors = useThemeColors();
-  const queryClient = useQueryClient();
   const rows = useQuery({
     queryKey: ['overdue-memberships', gymId],
     enabled: !!gymId,
@@ -269,33 +268,6 @@ function OverdueList({ gymId }: { gymId: string }) {
     },
   });
 
-  const chase = useMutation({
-    mutationFn: async (subscriptionId: string) => {
-      const { error } = await supabase.rpc('request_payment_chase', {
-        p_gym_id: gymId,
-        p_subscription_id: subscriptionId,
-      });
-      if (error) throw error;
-    },
-    onSuccess: (_data, subscriptionId) => {
-      // Mark the row chased before the refetch lands: with only the
-      // invalidation, the chip re-arms for a beat and a double-tap
-      // spends the second touch on a duplicate email.
-      queryClient.setQueryData<Set<string>>(
-        ['payment-chases', gymId],
-        (old) => new Set([...(old ?? []), subscriptionId]),
-      );
-      // The outbound queue drains on a 15-minute cron; the owner just
-      // asked, so nudge the worker now. Best-effort — quiet hours or a
-      // failure here just leave it to the cron.
-      void supabase.functions.invoke('send-agent-messages', {
-        body: { gym_id: gymId },
-      });
-      void queryClient.invalidateQueries({ queryKey: ['payment-chases', gymId] });
-      void queryClient.invalidateQueries({ queryKey: ['timeline-feed', gymId] });
-    },
-  });
-
   const list = rows.data ?? [];
   if (rows.error) {
     return (
@@ -323,8 +295,8 @@ function OverdueList({ gymId }: { gymId: string }) {
       </Text>
       {jobOn ? (
         <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
-          Chase for me skips my three-day wait — I send the nudge now, and
-          the receipt lands in the Timeline.
+          Chase for me skips my three-day wait — you read the nudge, change
+          what you like, and press Send. The receipt lands in the Timeline.
         </Text>
       ) : null}
       <View className="gap-2">
@@ -375,15 +347,12 @@ function OverdueList({ gymId }: { gymId: string }) {
                     />
                   ) : (
                     <ChipButton
-                      label={
-                        chase.isPending && chase.variables === r.subscription_id
-                          ? 'Handing over…'
-                          : 'Chase for me'
-                      }
+                      label="Chase for me"
                       icon={<AIMark />}
                       tone="primary"
-                      disabled={chase.isPending}
-                      onPress={() => chase.mutate(r.subscription_id)}
+                      onPress={() =>
+                        router.push(`/timeline/payment/${r.subscription_id}` as never)
+                      }
                     />
                   )
                 ) : null}
@@ -396,11 +365,6 @@ function OverdueList({ gymId }: { gymId: string }) {
                   tone="neutral"
                   onPress={() => router.push(`/inbox/direct/${r.profile_id}` as never)}
                 />
-                {chase.error && chase.variables === r.subscription_id ? (
-                  <Text className="text-red-500 dark:text-red-400 text-xs max-w-[140px]">
-                    {errorMessage(chase.error, "That didn't go through")}
-                  </Text>
-                ) : null}
               </View>
               <Ionicons name="chevron-forward" size={15} color={colors.ink3} />
             </View>
