@@ -4,12 +4,16 @@ The showcase runs on the seeded tenant `demo-crossfit-good-life` at
 app.jointemple.io. It is a demo gym (migration 0278): every email and
 SMS is simulated, invites show their code on screen, Stripe writes are
 refused, and the assistant is live. Nothing here can reach a real
-person. The current seed was taken on Sun 6 Sep 2026 at 20:29 BST
-(a reseed after the day's rehearsal traffic); the timetable runs to
-Sun 20 Sep. Reseed the evening before the showcase (Actions, "Demo
-gym", `mode=teardown` then `mode=seed`, slug `demo-crossfit-good-life`,
-name `CrossFit Good Life`) and the dates below move with it: the full
-class is always the first CrossFit after the reseed.
+person. The current seed was taken on Tue 8 Sep 2026 at 08:27 BST
+(the reseed before the QA pass, so the full class is Tue 17:30); the
+timetable runs to Tue 22 Sep. Reseed on the morning of the showcase,
+after 06:00 and before anyone signs in (Actions, "Demo gym",
+`mode=teardown` then `mode=seed`, slug `demo-crossfit-good-life`, name
+`CrossFit Good Life`), and the dates below move with it. The full class
+is always the first CrossFit after the reseed, so a morning reseed makes
+it that day's 17:30 CrossFit; an evening reseed would make it the next
+06:00, already past by the time the showcase starts. A reseed deletes
+and recreates every account, so sign in only after it.
 
 ## Before the showcase
 
@@ -20,11 +24,11 @@ class is always the first CrossFit after the reseed.
       long.
 - [ ] Rehearsal two, from the fixed sheet, with the phone on mobile
       data rather than Wi-Fi.
-- [ ] The evening before: reseed (teardown, then seed), open the four
-      sessions, reject the cookie banner in each, leave them signed in.
-- [ ] Morning of: charge the phone, laptop on the Timeline, check the
-      full Monday 06:00 CrossFit still shows 14 of 14 with three
-      waitlisted.
+- [ ] The evening before: charge the phone and the laptop.
+- [ ] Morning of, after 06:00: reseed (teardown, then seed), then open
+      the four sessions, reject the cookie banner in each, leave them
+      signed in, laptop on the Timeline, and check that day's 17:30
+      CrossFit shows 14 of 14 with three waitlisted.
 
 ## Logins
 
@@ -36,7 +40,7 @@ All on `@demo-crossfit-good-life.temple.test`, password `TempleDemo1!`.
 | Coach 1 | `coach1@` | Priya Sharma (CrossFit, Engine, Gymnastics) |
 | Coach 2 | `coach2@` | Callum Reid (Open Gym, Olympic Lifting) |
 | Member | `member01@` | Alice Adams |
-| Waitlisted | `member06@`, `member07@`, `member09@` | Finn Foster, Grace Green, Isla Irwin (queue order) |
+| Waitlisted | `member03@`, `member07@`, `member09@` | Chloe Clarke, Grace Green, Isla Irwin (queue order) |
 
 ## Sessions, set up before you walk in
 
@@ -49,7 +53,7 @@ All on `@demo-crossfit-good-life.temple.test`, password `TempleDemo1!`.
 
 | Day | Classes |
 |---|---|
-| Mon | 06:00 CrossFit (full, 14 of 14, three waitlisted), 12:00 Open Gym, 17:30 CrossFit |
+| Mon | 06:00 CrossFit, 12:00 Open Gym, 17:30 CrossFit |
 | Tue | 06:00 CrossFit, 07:15 Engine, 17:30 CrossFit, 18:30 Olympic Lifting |
 | Wed | 06:00 CrossFit, 12:00 Open Gym, 17:30 CrossFit |
 | Thu | 06:00 CrossFit, 07:15 Engine, 17:30 CrossFit, 18:30 Olympic Lifting |
@@ -57,7 +61,9 @@ All on `@demo-crossfit-good-life.temple.test`, password `TempleDemo1!`.
 | Sat | 09:00 Gymnastics |
 | Sun | nothing scheduled: add a class as the owner if the showcase is a Sunday |
 
-Programming is written for every class day of the week.
+Programming is written for every class day of the week. The full
+class (14 of 14, three waitlisted) is the first CrossFit after the
+reseed: today, Tue 8 Sep, that is the 17:30.
 
 ## Job 1. The owner's day (owner, iPhone)
 
@@ -84,14 +90,14 @@ Ellis". Avoid money, refunds and scheduled sends.
 2. Tap Book on tomorrow's 17:30 CrossFit. The row flips to booked with
    an undo. Tap undo, then Book again.
 3. Open the class. Cancel the booking from the sheet.
-4. Move the strip to Monday and open the 06:00 CrossFit. It is full:
+4. Open the full class, today's 17:30 CrossFit after a morning reseed:
    Join waitlist. Open `/bookings`: the waitlist card shows the rank.
-   Finn, Grace and Isla are already ahead in the queue.
+   Chloe, Grace and Isla are already ahead in the queue.
 5. Tap the grid toggle at the right of the date row to show the two-day
    grid, then back to the list.
 
-If the showcase is after Monday 06:00, make any future class full first
-as the owner: "set Thursday's 17:30 CrossFit capacity to 7" (its booked
+If the full class has already started, make any future class full
+first as the owner: "set Thursday's 17:30 CrossFit capacity to 7" (its booked
 count), and use that class for the waitlist.
 
 ## Job 3. Coach cover and the calendar (coach1 laptop incognito, then owner)
