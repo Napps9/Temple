@@ -20,6 +20,7 @@ import { HtmlPreview } from '@/components/email/HtmlPreview';
 import { MemberTagChip } from '@/components/MemberTagChip';
 import { MoneyJobCard } from '@/components/MoneyJobCard';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
+import { DateNav } from '@/components/DateNav';
 import { PageTopRow } from '@/components/PageTopRow';
 import { RuleSheet } from '@/components/RuleSheet';
 import { Screen } from '@/components/Screen';
@@ -947,52 +948,28 @@ export default function Timeline() {
             and Programming calendars carry, so days read as days
             everywhere; on a phone it is the screen's top row. */}
         <PageTopRow
-          className="pt-3 pb-3 px-4 md:max-w-2xl md:mx-auto md:w-full"
+          className="pt-3 pb-3 px-4 md:pt-6 md:pb-6 md:max-w-5xl md:mx-auto md:w-full"
           left={<TodayButton onPress={() => setDayKey(todayKey)} />}
           center={
-            <View className="flex-row items-center gap-0.5">
-              <Pressable
-                onPress={() => shiftDay(-1)}
-                disabled={atFloor}
-                hitSlop={8}
-                accessibilityLabel="Previous day"
-                className="w-8 h-8 items-center justify-center">
-                <Text
-                  className={`text-lg ${atFloor ? 'text-ink-3 dark:text-ink-2' : 'text-ink-3 dark:text-ink-3-dk'}`}>
-                  ‹
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={openPicker}
-                hitSlop={6}
-                accessibilityRole="button"
-                accessibilityLabel="Pick a date"
-                className="px-1.5 py-1 items-center justify-center active:opacity-70">
-                <Text className="text-ink dark:text-ink-dk text-base font-semibold">
-                  {dayStart(dayKey).toLocaleDateString(undefined, {
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short',
-                  })}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => shiftDay(1)}
-                disabled={atCeiling}
-                hitSlop={8}
-                accessibilityLabel="Next day"
-                className="w-8 h-8 items-center justify-center">
-                <Text
-                  className={`text-lg ${atCeiling ? 'text-ink-3 dark:text-ink-2' : 'text-ink-3 dark:text-ink-3-dk'}`}>
-                  ›
-                </Text>
-              </Pressable>
-            </View>
+            <DateNav
+              label={dayStart(dayKey).toLocaleDateString(undefined, {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+              })}
+              prevLabel="Previous day"
+              nextLabel="Next day"
+              onPrev={() => shiftDay(-1)}
+              onNext={() => shiftDay(1)}
+              onPress={openPicker}
+              prevDisabled={atFloor}
+              nextDisabled={atCeiling}
+            />
           }
         />
         {/* px-10 puts the strip at the inset the Classes and Programming
             strips sit at, so the days line up from one tab to the next. */}
-        <View className="px-10 md:px-4 md:max-w-2xl md:mx-auto md:w-full">
+        <View className="px-10 md:px-4 md:max-w-5xl md:mx-auto md:w-full">
           <WeekStrip
             days={weekDays}
             selected={dayStart(dayKey)}

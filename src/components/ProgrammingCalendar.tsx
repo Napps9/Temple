@@ -11,6 +11,7 @@ import { ChipButton } from '@/components/ChipButton';
 import { ClassLeaderboardModal } from '@/components/ClassLeaderboardModal';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
 import { EmptyState } from '@/components/EmptyState';
+import { DateNav } from '@/components/DateNav';
 import { PageTopRow } from '@/components/PageTopRow';
 import { WeekStrip } from '@/components/WeekStrip';
 import { PercentPrescriptionRow } from '@/components/PercentPrescriptionRow';
@@ -354,32 +355,14 @@ export function ProgrammingCalendar({
 
   const today = <TodayButton onPress={() => setDate(startOfDay(new Date()))} />;
   const dateControl = (
-    <View className="flex-row items-center gap-0.5">
-      <Pressable
-        onPress={() => setDate(addDays(date, -1))}
-        hitSlop={8}
-        accessibilityLabel="Previous day"
-        className="w-8 h-8 items-center justify-center">
-        <Text className="text-ink-3 dark:text-ink-3-dk text-lg">‹</Text>
-      </Pressable>
-      <Pressable
-        onPress={openPicker}
-        hitSlop={6}
-        accessibilityRole="button"
-        accessibilityLabel="Pick a date"
-        className="px-1.5 py-1 items-center justify-center active:opacity-70">
-        <Text className="text-ink dark:text-ink-dk text-base font-semibold">
-          {fmtDayShort(date)}
-        </Text>
-      </Pressable>
-      <Pressable
-        onPress={() => setDate(addDays(date, 1))}
-        hitSlop={8}
-        accessibilityLabel="Next day"
-        className="w-8 h-8 items-center justify-center">
-        <Text className="text-ink-3 dark:text-ink-3-dk text-lg">›</Text>
-      </Pressable>
-    </View>
+    <DateNav
+      label={fmtDayShort(date)}
+      prevLabel="Previous day"
+      nextLabel="Next day"
+      onPrev={() => setDate(addDays(date, -1))}
+      onNext={() => setDate(addDays(date, 1))}
+      onPress={openPicker}
+    />
   );
   // Beside the date on md+; a two-chip headerAction has no room there
   // on phone widths, so it moves to its own row below.
@@ -389,14 +372,14 @@ export function ProgrammingCalendar({
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
-      <View className="w-full max-w-5xl mx-auto px-2">
+      <View className="w-full max-w-5xl mx-auto px-4">
         {topBar ?? null}
         {/* Same date header as the Book calendar: Today jump, the selected
             day with day-stepping arrows, and a tap-to-open month grid. On
             the top-level screens it is the phone's top row (PageTopRow);
             under a topBar (a member's programming, behind a Back) the
-            bar stays and this is an ordinary row. -mx-8 undoes Screen's
-            px-6 and this container's px-2 so the row spans the width. */}
+            bar stays and this is an ordinary row. -mx-10 undoes Screen's
+            px-6 and this container's px-4 so the row spans the width. */}
         {topBar ? (
           <View className="flex-row items-center pt-3 pb-4">
             <View className="flex-1 flex-row justify-start">{today}</View>
@@ -404,9 +387,9 @@ export function ProgrammingCalendar({
             <View className="flex-1 flex-row justify-end">{wideAction}</View>
           </View>
         ) : (
-          <View className="-mx-8 md:mx-0">
+          <View className="-mx-10 md:mx-0">
             <PageTopRow
-              className="pt-3 pb-4"
+              className="pt-3 pb-4 md:pt-6 md:pb-6"
               left={today}
               center={dateControl}
               right={wideAction}
@@ -415,10 +398,10 @@ export function ProgrammingCalendar({
         )}
 
         {headerAction ? (
-          // -mx-4 undoes Screen's px-6 and this container's px-2: a header
+          // -mx-6 undoes Screen's px-6 and this container's px-4: a header
           // row at the 16px the date row sits at, so it fits a 360px phone;
           // wrap stays as the fallback for a long label.
-          <View className="md:hidden -mx-4 flex-row flex-wrap justify-center gap-2 pb-4 -mt-1">
+          <View className="md:hidden -mx-6 flex-row flex-wrap justify-center gap-2 pb-4 -mt-1">
             {headerAction}
           </View>
         ) : null}
@@ -445,20 +428,16 @@ export function ProgrammingCalendar({
           </View>
         ) : null}
 
-        {/* px-2 brings the strip to the same inset as the Classes one,
-            whose container is px-4 where this one is px-2. */}
-        <View className="px-2">
-          <WeekStrip
-            days={weekDays}
-            selected={date}
-            onSelect={setDate}
-            hasContent={(d) => programmedDays.has(fmtDateLocal(d))}
-          />
-        </View>
+        <WeekStrip
+          days={weekDays}
+          selected={date}
+          onSelect={setDate}
+          hasContent={(d) => programmedDays.has(fmtDateLocal(d))}
+        />
       </View>
 
       <PageScroll className="flex-1" contentContainerClassName="pb-10">
-        <View className="w-full max-w-5xl mx-auto px-2 gap-3">
+        <View className="w-full max-w-5xl mx-auto px-4 gap-3">
           {memberScope ? (
             <PersonalCard
               title={memberScope.name}

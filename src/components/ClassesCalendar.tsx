@@ -14,6 +14,7 @@ import { PageScroll } from '@/components/PageScroll';
 import { Avatar } from '@/components/Avatar';
 import { BulkClassEditModal } from '@/components/BulkClassEditModal';
 import { ChipButton } from '@/components/ChipButton';
+import { DateNav } from '@/components/DateNav';
 import { ClassDetailModal } from '@/components/ClassDetailModal';
 import { CreateClassModal } from '@/components/CreateClassModal';
 import { MonthPickerModal } from '@/components/MonthPickerModal';
@@ -991,32 +992,12 @@ export function ClassesCalendar({
               left={<TodayButton onPress={goToToday} />}
               right={compactBook ? <ViewIconToggle view={view} /> : null}
               center={
-                <View className="flex-row items-center gap-0.5">
-                  <Pressable
-                    onPress={() => shiftDate(-1)}
-                    hitSlop={8}
-                    accessibilityLabel="Previous"
-                    className="w-8 h-8 items-center justify-center">
-                    <Text className="text-ink-3 dark:text-ink-3-dk text-lg">‹</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={openPicker}
-                    hitSlop={6}
-                    accessibilityRole="button"
-                    accessibilityLabel="Pick a date"
-                    className="px-1.5 py-1 items-center justify-center active:opacity-70">
-                    <Text className="text-ink dark:text-ink-dk text-base font-semibold">
-                      {headerLabel}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => shiftDate(1)}
-                    hitSlop={8}
-                    accessibilityLabel="Next"
-                    className="w-8 h-8 items-center justify-center">
-                    <Text className="text-ink-3 dark:text-ink-3-dk text-lg">›</Text>
-                  </Pressable>
-                </View>
+                <DateNav
+                  label={headerLabel}
+                  onPrev={() => shiftDate(-1)}
+                  onNext={() => shiftDate(1)}
+                  onPress={openPicker}
+                />
               }
             />
           </View>
@@ -1044,51 +1025,48 @@ export function ClassesCalendar({
         </>
       ) : (
         <View className="w-full max-w-5xl mx-auto px-4">
-          <View className="relative flex-row items-center justify-center gap-4 pt-6 pb-6">
-            {/* View switcher sits left of the month header, mirroring
-                the Add-class CTA on the right. */}
-            <View className="absolute left-0 top-6 flex-row items-center gap-2">
-              <ViewSwitcher view={view} />
-              <TodayButton onPress={goToToday} />
-            </View>
-            <Pressable
-              onPress={() => {
-                haptic.selection();
-                setDate(startOfDay(addMonths(date, -1)));
-              }}
-              hitSlop={8}
-              className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center hover:bg-raised dark:hover:bg-raised-dk">
-              <Text className="text-ink-2 dark:text-ink-2-dk text-lg">‹</Text>
-            </Pressable>
-            <Text className="text-ink dark:text-ink-dk text-xl font-semibold">
-              {fmtMonthYear(date)}
-            </Text>
-            <Pressable
-              onPress={() => {
-                haptic.selection();
-                setDate(startOfDay(addMonths(date, 1)));
-              }}
-              hitSlop={8}
-              className="w-9 h-9 rounded-full border border-line dark:border-line-dk items-center justify-center hover:bg-raised dark:hover:bg-raised-dk">
-              <Text className="text-ink-2 dark:text-ink-2-dk text-lg">›</Text>
-            </Pressable>
-            {canCreate || canBulkEdit ? (
-              <View className="absolute right-0 top-6 flex-row items-center gap-2">
-                {canBulkEdit ? (
-                  <ChipButton
-                    label="Bulk"
-                    icon="calendar-outline"
-                    tone="neutral"
-                    onPress={() => {
-                      setBulkResult(null);
-                      setBulkOpen(true);
-                    }}
-                  />
-                ) : null}
-                {canCreate ? <AddClassButton onPress={() => setCreateAt({ date })} /> : null}
+          <PageTopRow
+            className="pt-6 pb-6"
+            left={
+              <View className="flex-row items-center gap-2">
+                <ViewSwitcher view={view} />
+                <TodayButton onPress={goToToday} />
               </View>
-            ) : null}
-          </View>
+            }
+            center={
+              <DateNav
+                label={fmtMonthYear(date)}
+                prevLabel="Previous month"
+                nextLabel="Next month"
+                onPrev={() => {
+                  haptic.selection();
+                  setDate(startOfDay(addMonths(date, -1)));
+                }}
+                onNext={() => {
+                  haptic.selection();
+                  setDate(startOfDay(addMonths(date, 1)));
+                }}
+              />
+            }
+            right={
+              canCreate || canBulkEdit ? (
+                <View className="flex-row items-center gap-2">
+                  {canBulkEdit ? (
+                    <ChipButton
+                      label="Bulk"
+                      icon="calendar-outline"
+                      tone="neutral"
+                      onPress={() => {
+                        setBulkResult(null);
+                        setBulkOpen(true);
+                      }}
+                    />
+                  ) : null}
+                  {canCreate ? <AddClassButton onPress={() => setCreateAt({ date })} /> : null}
+                </View>
+              ) : null
+            }
+          />
         </View>
       )}
 
