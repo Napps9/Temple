@@ -142,6 +142,69 @@ describe('buildDemoPlan', () => {
     expect(attended).toBeGreaterThan(100);
   });
 
+  // The one account a demo is signed in as. Without the owner's own lifts,
+  // the member Programming view's "@ 75%" column has nothing to resolve
+  // against on the crossover Job 4 makes, and Track is empty for the only
+  // person looking at it.
+  it('gives the owner a month of their own training', () => {
+    const owner = plan.users.find((u) => u.role === 'owner')!;
+    const theirs = plan.workouts.filter((w) => w.profile_id === owner.id);
+    expect(theirs.length).toBeGreaterThanOrEqual(9);
+
+    const dayMs = 86_400_000;
+    const oldest = Math.min(...theirs.map((w) => Date.parse(w.performed_at!)));
+    const newest = Math.max(...theirs.map((w) => Date.parse(w.performed_at!)));
+    // Inside a month, and spread across it rather than bunched in one week.
+    expect(CONFIG.now.getTime() - oldest).toBeLessThanOrEqual(31 * dayMs);
+    expect(newest - oldest).toBeGreaterThanOrEqual(14 * dayMs);
+
+    // Lifts the WOD templates program percentages against, each one a 1RM
+    // so the percentage column has a number to work from.
+    const ids = new Set(theirs.map((w) => w.id));
+    const results = plan.movementResults.filter((r) => ids.has(r.workout_id));
+    expect(new Set(results.map((r) => r.movement_key))).toContain('back_squat');
+    for (const r of results) {
+      expect(r.profile_id).toBe(owner.id);
+      expect(r.track_key).toBe('1rm');
+      expect(r.value_numeric).toBeGreaterThan(0);
+    }
+
+    // One class a logged session: he trained at the class he logged it
+    // after. The members' log days land a third of their sessions on a
+    // Sunday, when this timetable is closed — right for a member's own
+    // training, wrong for the owner, and this is what catches it.
+    const attended = plan.bookings.filter(
+      (b) => b.profile_id === owner.id && b.attended_at,
+    );
+    expect(attended.length).toBe(theirs.length);
+
+    // The lifts in the order a body puts them, at weights a coach would
+    // hold. progressionSeries rolls an independent 30-80kg start per
+    // movement, which gave him a 52kg back squat under a 107kg front squat
+    // — invisible across forty members, and the first thing anybody who
+    // lifts would read on the one account a demo is signed into.
+    const best = (key: string) =>
+      Math.max(
+        ...results
+          .filter((r) => r.movement_key === key)
+          .map((r) => r.value_numeric as number),
+      );
+    expect(best('deadlift')).toBeGreaterThan(best('back_squat'));
+    expect(best('back_squat')).toBeGreaterThan(best('front_squat'));
+    expect(best('front_squat')).toBeGreaterThan(best('push_press'));
+    expect(best('push_press')).toBeGreaterThan(60);
+
+    // And a month's progress, not a year's: indexing a per-lift series by
+    // the global session count (which the members' loop does) put 30kg on
+    // his squat in four weeks.
+    for (const key of ['back_squat', 'deadlift', 'front_squat', 'push_press']) {
+      const vals = results
+        .filter((r) => r.movement_key === key)
+        .map((r) => r.value_numeric as number);
+      expect(Math.max(...vals) - Math.min(...vals)).toBeLessThanOrEqual(15);
+    }
+  });
+
   it('movement results carry exactly one value matching the metric', () => {
     for (const r of plan.movementResults) {
       const hasNumeric = r.value_numeric != null;

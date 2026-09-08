@@ -512,6 +512,145 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     }
   }
 
+  // --- the owner trains here too -------------------------------------------------------
+  //
+  // Sam Okafor owns the gym and also trains at it, which the demo leans on
+  // twice. Job 4 crosses from the staff side into the member view, where
+  // Programming resolves "@ 75%" against the VIEWER's own rep maxes
+  // (showMyPercentages) — with none of the owner's own lifts on file that
+  // column has nothing to resolve against. And the Track surfaces are
+  // otherwise empty for the one account a demo is actually signed in as:
+  // every seeded workout belongs to a member nobody is looking at.
+  //
+  // A month rather than the members' ten weeks, because a month is what the
+  // timetable covers backwards (weeksBack) and the classes he attends have
+  // to exist. Deliberately the lifts the WOD templates program percentages
+  // against, so the crossover lands on numbers the programming refers to.
+  //
+  // The starting weights are written down rather than rolled, and that is
+  // the point of them: progressionSeries picks an independent 30-80kg start
+  // per movement, which for forty members nobody inspects is fine and for
+  // this account gave him a 52kg back squat under a 107kg front squat. On
+  // the one screen a demo is signed into, anybody who lifts reads that
+  // immediately. Deadlift over back squat over front squat over push press,
+  // at weights a coach would actually hold.
+  const OWNER_LIFTS: { key: string; from: number }[] = [
+    { key: 'back_squat', from: 132.5 },
+    { key: 'deadlift', from: 165 },
+    { key: 'front_squat', from: 105 },
+    { key: 'push_press', from: 82.5 },
+  ];
+  const ownerLifts = OWNER_LIFTS.map(({ key }) =>
+    pool.find((f) => f.movementKey === key),
+  ).filter((f): f is FocusScheme => !!f);
+  // A Hyrox gym's pool is race stations, so none of those keys are in it.
+  const ownerPool = ownerLifts.length >= 3 ? ownerLifts : pool.slice(0, 4);
+  const ownerWeeks = Math.min(4, config.weeksBack);
+  // Monday, Wednesday, Friday, taken from the weekday rather than an offset
+  // into the week. The members' logDays offsets land a third of their
+  // sessions on a Sunday, and this timetable is closed on Sundays — fine
+  // for a member's own training, wrong for the owner, whose every session
+  // should be the class he just coached.
+  const ownerDows = [1, 3, 5];
+  const ownerDays: Date[] = [];
+  for (let back = 1; back <= ownerWeeks * 7; back++) {
+    const day = daysFrom(config.now, -back);
+    if (ownerDows.includes(day.getUTCDay())) ownerDays.push(day);
+  }
+  // Oldest first, because progressionSeries puts the all-time best last and
+  // a recent PR is the point.
+  ownerDays.reverse();
+  // How many times each lift comes round, which is what its series is
+  // indexed by below — NOT the global session count. The members' loop
+  // indexes a per-focus series by its overall session index, so a lift's
+  // three appearances read positions 0, 4 and 8 of its own progression;
+  // harmless against their random walk, but against a linear one it put
+  // 30kg on his back squat in a month.
+  const ownerReps = Math.ceil(ownerDays.length / ownerPool.length);
+  const ownerSeries = ownerPool.map((f) => {
+    const base = OWNER_LIFTS.find((l) => l.key === f.movementKey)?.from;
+    // A Hyrox pool is race stations, so there is no written-down weight for
+    // them and the members' generator is the right one.
+    if (f.metric !== 'weight' || base === undefined) {
+      return progressionSeries(rng, f, ownerReps);
+    }
+    // A plate a session, so the newest is the best and the PR badge reads
+    // as recent — the same guarantee progressionSeries makes.
+    return Array.from({ length: ownerReps }, (_, i) => base + i * 2.5);
+  });
+  const ownerTrainedOn: string[] = [];
+  let ownerIndex = 0;
+  for (const day of ownerDays) {
+    const focusIdx = ownerIndex % ownerPool.length;
+    const focus = ownerPool[focusIdx];
+    // Round-robin, so this is how many times this lift has come up. NOT the
+    // global session count, which is what the members' loop indexes with.
+    const rep = Math.floor(ownerIndex / ownerPool.length);
+    const performedAt = new Date(day);
+    // Just after the 06:00 class, which is the one he coaches.
+    performedAt.setUTCHours(7, 10, 0, 0);
+    if (performedAt >= config.now) continue;
+    const workoutId = demoUuid(rng);
+    const value =
+      ownerSeries[focusIdx][Math.min(rep, ownerSeries[focusIdx].length - 1)];
+    workouts.push({
+      id: workoutId,
+      gym_id: gymId,
+      profile_id: owner.id,
+      performed_at: iso(performedAt),
+      title: focus.metric === 'weight' ? 'Strength session' : 'Engine work',
+    });
+    movementResults.push({
+      gym_id: gymId,
+      profile_id: owner.id,
+      workout_id: workoutId,
+      movement_key: focus.movementKey,
+      track_key: focus.trackKey,
+      value_numeric: focus.metric === 'weight' ? value : null,
+      value_seconds: focus.metric === 'time' ? value : null,
+      value_unit: focus.metric === 'weight' ? 'kg' : null,
+      performed_at: iso(performedAt),
+    });
+    ownerTrainedOn.push(iso(performedAt).slice(0, 10));
+    ownerIndex++;
+  }
+
+  // The class he did before logging it. One a training day, into that day's
+  // first class that still has room, so the roster reads as an owner who
+  // turns up rather than one who only appears in the numbers. The spotlight
+  // session is already topped to exact capacity, so the room check skips it
+  // and the waitlist behind it stays three deep.
+  const bookedPerSession = new Map<string, number>();
+  for (const b of bookings) {
+    bookedPerSession.set(
+      b.class_session_id,
+      (bookedPerSession.get(b.class_session_id) ?? 0) + 1,
+    );
+  }
+  for (const date of ownerTrainedOn) {
+    const candidate = sessions
+      .filter((s) => s.starts_at.slice(0, 10) === date && s.starts_at <= nowISO)
+      .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+      .find((s) => (bookedPerSession.get(s.id!) ?? 0) < (s.capacity ?? 12));
+    if (!candidate) continue;
+    const startedAt = new Date(candidate.starts_at).getTime();
+    bookings.push({
+      id: demoUuid(rng),
+      gym_id: gymId,
+      class_session_id: candidate.id!,
+      profile_id: owner.id,
+      created_at: iso(new Date(startedAt - 36 * 3_600_000)),
+      attended_at: iso(new Date(startedAt + 3 * 60_000)),
+      marked_by: coaches[0].id,
+      no_show: false,
+      no_show_marked_at: null,
+    });
+    bookedPerSession.set(
+      candidate.id!,
+      (bookedPerSession.get(candidate.id!) ?? 0) + 1,
+    );
+  }
+
   // --- Hyrox races ----------------------------------------------------------------------
   // A Hyrox-discipline gym races far more of its roster than a
   // CrossFit box that merely offers the odd sim — six racers across

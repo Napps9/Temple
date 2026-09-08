@@ -36,7 +36,7 @@ All on `@demo-crossfit-good-life.temple.test`, password `TempleDemo1!`.
 
 | Who | Email | Name |
 |---|---|---|
-| Owner | `owner@` | Sam Okafor |
+| Owner | `owner@` | Sam Okafor — trains here too: a month of Mon/Wed/Fri, 12 logged sessions and the 06:00 class attended each time |
 | Coach 1 | `coach1@` | Priya Sharma (CrossFit, Engine, Gymnastics) |
 | Coach 2 | `coach2@` | Callum Reid (Open Gym, Olympic Lifting) |
 | Member | `member01@` | Alice Adams |
