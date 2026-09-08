@@ -35,18 +35,13 @@ test('the way into a proposal changes the URL and lands on a real page', async (
   // left the URL exactly where it was.
   await page.waitForURL(/\/timeline\/[^/?#]+/, { timeout: 30_000 });
 
-  // And the page at the other end is Temple's, not the platform's 404 and
-  // not the app's own "this one is gone" state. Back is on every one of
-  // these pages; the editor additionally has something to send.
-  await expect(page.getByText('Back', { exact: true }).first()).toBeVisible({
-    timeout: 30_000,
-  });
-  await expect(page.getByText('Nothing here')).toHaveCount(0);
-  await expect(page.getByText('The app crashed')).toHaveCount(0);
-
+  // And what rendered is the page the label promised. Asserted by the
+  // page's own content rather than by a shared affordance: the payment
+  // page passes coveredByNav and so has no Back at any width, which a
+  // first cut of this journey mistook for a page that hadn't loaded.
   if (label === 'Read and edit first') {
-    // The draft editor: the whole point of that label is that the words
-    // are on screen and changeable before anything goes.
+    // The whole point of that label is that the words are on screen and
+    // changeable before anything goes.
     await expect(page.getByText(/^Send this to /).first()).toBeVisible({
       timeout: 30_000,
     });
@@ -55,4 +50,7 @@ test('the way into a proposal changes the URL and lands on a real page', async (
       timeout: 30_000,
     });
   }
+
+  await expect(page.getByText('Nothing here')).toHaveCount(0);
+  await expect(page.getByText('The app crashed')).toHaveCount(0);
 });
