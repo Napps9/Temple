@@ -38,7 +38,10 @@ test('the Timeline pages back a day and comes home', async ({ page }) => {
     const now = (await picker.innerText()).trim();
     expect(now, `pager did not move from "${startedOn}"`).not.toBe(startedOn);
   }).toPass({ timeout: 15_000 });
-  await expect(picker).toHaveText('Yesterday');
+  // Not a relative word: this header is the one the Classes and Programming
+  // calendars carry, so a day reads as a date everywhere. The two lines
+  // below are what actually prove we are on a past day.
+  expect((await picker.innerText()).trim()).not.toBe('Today');
   // Past days are the record; the pen stays on today, and the composer's
   // place says so rather than standing empty.
   await expect(page.getByPlaceholder(TALK_BAR_PLACEHOLDER)).toHaveCount(0);

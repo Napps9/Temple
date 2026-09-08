@@ -14,8 +14,17 @@ import { COACH_EMAIL, signIn } from './helpers';
 // again; it skips rather than fails when that gym is not seeded.
 
 const SECOND = process.env.E2E_SECOND_SLUG ?? 'demo-ironworks';
+const HOME = process.env.E2E_SLUG ?? 'demo-ironworks';
 
 test('a coach joins a second gym and switches between them', async ({ page }) => {
+  // Both default to demo-ironworks, so a run against that stack asks the
+  // coach to join the gym they already coach at: there is no second
+  // membership to make, no second name in the menu and nothing to switch
+  // to. It failed rather than skipping, which read as a broken product.
+  test.skip(
+    SECOND === HOME,
+    `E2E_SECOND_SLUG is ${SECOND}, the gym this coach is already in`,
+  );
   await signIn(page, COACH_EMAIL, { expectBar: false });
 
   await page.goto(`/join/${SECOND}`);

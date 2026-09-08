@@ -934,6 +934,17 @@ export function ClassDetailModal({
                   onPress={() => setShowCancelClass(true)}>
                   Cancel class
                 </Button>
+              ) : mode === 'manage' && canEditClasses ? (
+                // Edit and Cancel are both gone above, and without a reason
+                // an owner looking at this evening's classes sees a sheet
+                // that simply cannot do anything. Say why: the RPCs refuse
+                // a class that has already run because its check-ins are
+                // the record of who was there.
+                <Text className="text-ink-3 dark:text-ink-3-dk text-[13px] leading-5">
+                  This class has run, so it can&apos;t be changed or
+                  cancelled — the check-ins above are the register. Open a
+                  class that is still ahead to edit it.
+                </Text>
               ) : null}
 
             </>
