@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, useWindowDimensions, View } from 'react-native';
 import { LABEL_CLASS, LABEL_TYPE } from '@/components/SectionLabel';
 import { AIMark } from '@/components/AIMark';
 import { ListRow, RuledList } from '@/components/ListRow';
@@ -51,6 +51,8 @@ import {
   useComposerExpanded,
 } from '@/lib/dock';
 import { GLASS, GLASS_FILL } from '@/lib/glass';
+import { MD } from '@/lib/breakpoint';
+import { DOCK_CLEARANCE } from '@/components/BottomDock';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
 import { nextStepLine, splitWaitingByChase } from '@/lib/payment-story';
 import {
@@ -1245,6 +1247,7 @@ function TalkBar({
   const colors = useThemeColors();
   const expanded = useComposerExpanded();
   const size = useRef(new Animated.Value(1)).current;
+  const { width } = useWindowDimensions();
 
   useEffect(() => {
     Animated.spring(size, {
@@ -1275,7 +1278,14 @@ function TalkBar({
   return (
     <View
       pointerEvents="box-none"
-      className="absolute left-0 right-0 bottom-0 px-4 pb-3 pt-1 md:max-w-2xl md:mx-auto md:w-full">
+      // Above the dock, by the same number pb-dock reserves. Not bottom-0
+      // and not the parent's padding: an absolutely positioned child is
+      // laid out against its containing block's PADDING box, whose bottom
+      // edge is below that padding — so pb-dock on the scroller's parent
+      // does not lift this at all, and the first cut of it landed the bar
+      // exactly where the dock draws. There is no dock at md and up.
+      style={{ bottom: width >= MD ? 0 : DOCK_CLEARANCE }}
+      className="absolute left-0 right-0 px-4 pb-3 pt-1 md:max-w-2xl md:mx-auto md:w-full">
       <Animated.View style={{ transform: [{ translateY }, { scale }] }}>
         {/* One card, the shape a chat assistant's composer has settled
             into: the text on top with room to grow, the tools along the
