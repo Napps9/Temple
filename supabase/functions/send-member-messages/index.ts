@@ -149,13 +149,16 @@ Deno.serve(async (req: Request) => {
   const emailLive = !!RESEND_API_KEY && !!RESEND_FROM && realGym;
   // sms_capable was selected here and never read: a gym holding a UK
   // local number would have been handed to Twilio as a From that cannot
-  // carry SMS. It decides the sender now, and Temple's own sender picks
-  // up the gyms whose number can't (see _shared/sms-sender.ts).
-  const smsSender = outboundSmsSender(
-    agent?.phone_number,
-    agent?.sms_capable === true,
-    Deno.env.get('TWILIO_PLATFORM_SMS_SENDER') ?? null,
-  );
+  // carry SMS.
+  //
+  // Deliberately NOT falling back to Temple's platform sender the way the
+  // front desk's join link does. The member opted in to hearing from
+  // *their gym* (0270), months before this text arrives, and a personal
+  // best landing from an unknown shared sender they cannot reply to is a
+  // different thing from a link somebody asked for on a call thirty
+  // seconds ago. It also keeps my_sms_readiness honest: the switch tells
+  // a member their gym cannot text, and that stays true.
+  const smsSender = outboundSmsSender(agent?.phone_number, agent?.sms_capable === true, null);
   const smsLive = !!TWILIO_SID && !!TWILIO_TOKEN && !!smsSender && realGym;
   const gymName = gym?.name ?? 'your gym';
   const nowIso = new Date().toISOString();

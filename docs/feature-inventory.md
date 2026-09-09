@@ -3805,13 +3805,14 @@ which is why nothing in the product had ever sent a text.
 `_shared/sms-sender.ts` resolves it instead: the gym's own number
 whenever `sms_capable`, else `TWILIO_PLATFORM_SMS_SENDER` (a Messaging
 Service SID or an E.164 number on Temple's account), else nothing. Only
-messages Temple *starts* may fall back — the join and onboarding links
-and `send-member-messages`; a reply on a thread and the missed-call
-opener still go out on the gym's own number or not at all, because an
-answer has to come from the number the person wrote to. `send-member-messages`
-was selecting `sms_capable` and never reading it, so a voice-only number
-would have been handed to Twilio as a `From`; it decides the sender now.
-vitest: `src/lib/sms-sender.test.ts`.
+the front desk's **join and onboarding links** may fall back — a reply on
+a thread and the missed-call opener go out on the gym's own number or not
+at all, because an answer has to come from the number the person wrote
+to, and member messages don't either: that opt-in was to hear from *their
+gym*, and `my_sms_readiness` tells the member their gym cannot text, which
+has to stay true. `send-member-messages` was selecting `sms_capable` and
+never reading it, so a voice-only number would have been handed to Twilio
+as a `From`; it honours it now. vitest: `src/lib/sms-sender.test.ts`.
 
 **Call review, coaching & voice (0137)** [`can_review_ai_calls`, owner/admin].
 Voice calls are recorded (Vapi artifact) and pulled into a private
