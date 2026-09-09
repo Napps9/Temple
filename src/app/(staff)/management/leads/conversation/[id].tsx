@@ -741,6 +741,7 @@ function CoachModal({
       visible={!!message}
       title="Coach this turn"
       onClose={onClose}
+      busy={deploy.isPending}
       actions={
         <>
           <SheetAction>

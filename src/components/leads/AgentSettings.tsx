@@ -847,6 +847,7 @@ export function AgentSettings() {
         title="Rewrite with AI"
         subtitle={'This fills in the notes below — tap "Save notes" after to make it live.'}
         onClose={() => setBriefModalOpen(false)}
+        busy={applyInterview.isPending}
         size="wide"
         actions={
           <>

@@ -235,6 +235,7 @@ function DocumentsModal({
       title="Programme documents"
       subtitle={`PDFs ${memberName} can open from their Programming tab.`}
       onClose={onClose}
+      busy={upload.isPending}
       actions={
         <>
           <SheetAction>

@@ -659,6 +659,7 @@ function SourcesEditorModal({
       visible={visible}
       title="Lead sources"
       onClose={onClose}
+      busy={create.isPending || archive.isPending}
       actions={
         <SheetAction grow>
           <Button

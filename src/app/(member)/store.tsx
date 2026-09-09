@@ -441,6 +441,7 @@ function ProductSheet({
   return (
     <Sheet
       visible={!suppressed}
+      busy={pending}
       title={product.name}
       subtitle={`${priceLabelFor(product, currency)} · ${kindLine}`}
       onClose={onClose}
@@ -622,6 +623,7 @@ function BagSheet({
   return (
     <Sheet
       visible={visible}
+      busy={pending}
       title="Your bag"
       subtitle={
         inBag > 0

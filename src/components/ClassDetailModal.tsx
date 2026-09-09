@@ -564,6 +564,14 @@ export function ClassDetailModal({
       // this one still scrolled behind the second. It stands aside while
       // one of them is open, so there is one modal on screen at a time.
       visible={visible && !showEditClass && !showCancelClass && staffSheet === null}
+      busy={
+        book.isPending ||
+        cancel.isPending ||
+        joinWaitlist.isPending ||
+        leaveWaitlist.isPending ||
+        requestCover.isPending ||
+        broadcast.isPending
+      }
       title={detail ? dateLabel : 'Class'}
       subtitle={
         detail && start && end
