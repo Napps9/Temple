@@ -209,6 +209,7 @@ async function reply(
     channel: 'sms' as const,
     appOrigin,
     twilio: { accountSid: env.twilioSid, authToken: env.twilioToken },
+    platformSmsSender: Deno.env.get('TWILIO_PLATFORM_SMS_SENDER') ?? null,
     supabaseUrl: env.supabaseUrl,
     anonKey: env.anonKey,
   };

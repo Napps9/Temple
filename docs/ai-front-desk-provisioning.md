@@ -152,9 +152,16 @@ the "wrong" variable still buys the type it was approved for.
 
 ## Not in phase 1
 
-- **SMS** for gyms provisioned without a mobile bundle — their number is
-  voice-only and `sms_capable` says so; texts stay dark for them until
-  they take a number that can text.
+- **SMS from the gym's own number**, for gyms provisioned without a
+  mobile bundle — their number is voice-only and `sms_capable` says so.
+  Texts are no longer dark for them, though: anything Temple *starts*
+  (the join link, the onboarding link, member texts) falls back to
+  `TWILIO_PLATFORM_SMS_SENDER` — one Messaging Service SID or E.164
+  number on Temple's account, set once, covering every gym. Replies on a
+  thread still need the gym's own number, because an answer has to come
+  from the number the person wrote to. This is what makes the front desk
+  able to text before any bundle is approved; the mobile bundle is still
+  what makes a gym's texts come from the gym.
 - **Platform billing** that flips the entitlement flag automatically.
 - Recovery UI for a `provisioning` status stuck mid-run (e.g. the owner
   closed the tab mid-request) — today the same "Set up my number" /

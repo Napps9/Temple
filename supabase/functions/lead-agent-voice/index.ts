@@ -227,6 +227,7 @@ Deno.serve(async (req: Request) => {
         TWILIO_SID && TWILIO_TOKEN
           ? { accountSid: TWILIO_SID, authToken: TWILIO_TOKEN }
           : null,
+      platformSmsSender: Deno.env.get('TWILIO_PLATFORM_SMS_SENDER') ?? null,
       supabaseUrl: SUPABASE_URL,
       anonKey: ANON_KEY,
     };

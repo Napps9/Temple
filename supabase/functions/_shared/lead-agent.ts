@@ -6,6 +6,7 @@
 
 import { demoVendorId } from './demo.ts';
 import { escapeHtml, templeEmailHtml } from './email-layout.ts';
+import { outboundSmsSender, twilioSenderParam } from './sms-sender.ts';
 
 // deno-lint-ignore no-explicit-any
 type Client = any;
@@ -381,6 +382,9 @@ export type ToolContext = {
   channel: 'sms' | 'voice' | 'whatsapp';
   appOrigin: string;
   twilio: { accountSid: string; authToken: string } | null;
+  // TWILIO_PLATFORM_SMS_SENDER — what Temple sends its own messages on
+  // when a gym's number cannot carry SMS. Null means it has none.
+  platformSmsSender: string | null;
   supabaseUrl: string;
   anonKey: string;
 };
@@ -588,12 +592,19 @@ async function textProspect(ctx: ToolContext, message: string): Promise<TextOutc
     console.error('agent sms: Twilio credentials missing from the environment');
     return 'no_sms_number';
   }
+  // The gym's own number when it can carry SMS, else Temple's sender —
+  // a join link is one-way and its body names the gym, so it does not
+  // have to wait on a mobile number of the gym's own.
+  const sender = outboundSmsSender(
+    ctx.gym.settings.phone_number,
+    ctx.gym.settings.sms_capable,
+    ctx.platformSmsSender,
+  );
   // A demo gym's send is simulated rather than made (0278), so it is
-  // exempt from the capability check: a visitor should see the product
-  // work, not the one thing an unprovisioned number cannot do.
-  if (!ctx.gym.isDemo && (!ctx.gym.settings.sms_capable || !ctx.gym.settings.phone_number)) {
-    return 'no_sms_number';
-  }
+  // exempt: a visitor should see the product work, not the one thing an
+  // unprovisioned number cannot do.
+  if (!sender && !ctx.gym.isDemo) return 'no_sms_number';
+
   const to = await textDestination(ctx);
   if (!to) return 'no_destination';
 
@@ -612,7 +623,9 @@ async function textProspect(ctx: ToolContext, message: string): Promise<TextOutc
   const sent = await sendTwilioSms(
     ctx.twilio.accountSid,
     ctx.twilio.authToken,
-    ctx.gym.settings.phone_number,
+    // Only a demo gym reaches here without one, and its send returns
+    // before the sender is read.
+    sender ?? '',
     to,
     message,
     ctx.gym.isDemo,
@@ -1039,7 +1052,9 @@ export async function runAgentLoop(opts: {
 export async function sendTwilioSms(
   accountSid: string,
   authToken: string,
-  from: string,
+  // A gym's E.164 number, or a Messaging Service SID for the messages
+  // Temple sends on its own sender — see _shared/sms-sender.ts.
+  sender: string,
   to: string,
   body: string,
   isDemo: boolean,
@@ -1061,7 +1076,7 @@ export async function sendTwilioSms(
           Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
           'content-type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({ From: from, To: to, Body: body }),
+        body: new URLSearchParams([twilioSenderParam(sender), ['To', to], ['Body', body]]),
       },
     );
     const data = await res.json();

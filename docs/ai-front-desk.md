@@ -45,6 +45,19 @@ select vault.create_secret('<the PURGE_STORAGE_SECRET value>', 'agent_storage_pu
 
 Optional extras:
 
+- `TWILIO_PLATFORM_SMS_SENDER` — **what makes texting work at all today.**
+  A gym's own number is bought under Temple's UK regulatory bundle, and
+  the bundle Temple holds covers *local* numbers, which are voice-only
+  (0270). Until a second bundle is approved against the GB **mobile**
+  regulation, no gym has a number that can send a text — so the AI front
+  desk asks for a mobile, promises to text a link, and cannot. Set this
+  to a Twilio **Messaging Service SID** (`MG…`, which can hold a number,
+  a pool, or an alphanumeric sender) or a plain E.164 number Temple owns,
+  and every message Temple *starts* — the join link, the onboarding link,
+  member texts — goes out on it instead. A gym's own number still wins
+  whenever it can carry SMS, and replies on a thread never use this: an
+  answer has to come from the number the person wrote to. See
+  `supabase/functions/_shared/sms-sender.ts`.
 - `ELEVENLABS_API_KEY` — voice previews in the picker. `voice-sample`
   synthesises each voice's sample clip once (ElevenLabs TTS) and caches
   it in the public `agent-voice-samples` bucket; without the key the play

@@ -23,6 +23,7 @@ import { requireGymMember } from '../_shared/caller.ts';
 import { escapeHtml, templeEmailHtml } from '../_shared/email-layout.ts';
 import { inQuietHours } from '../_shared/gym-clock.ts';
 import { sendTwilioSms } from '../_shared/lead-agent.ts';
+import { outboundSmsSender } from '../_shared/sms-sender.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -146,8 +147,16 @@ Deno.serve(async (req: Request) => {
   // we cannot read is not a gym we will send on behalf of.
   const realGym = gym?.is_demo === false;
   const emailLive = !!RESEND_API_KEY && !!RESEND_FROM && realGym;
-  const smsLive =
-    !!TWILIO_SID && !!TWILIO_TOKEN && !!agent?.phone_number && realGym;
+  // sms_capable was selected here and never read: a gym holding a UK
+  // local number would have been handed to Twilio as a From that cannot
+  // carry SMS. It decides the sender now, and Temple's own sender picks
+  // up the gyms whose number can't (see _shared/sms-sender.ts).
+  const smsSender = outboundSmsSender(
+    agent?.phone_number,
+    agent?.sms_capable === true,
+    Deno.env.get('TWILIO_PLATFORM_SMS_SENDER') ?? null,
+  );
+  const smsLive = !!TWILIO_SID && !!TWILIO_TOKEN && !!smsSender && realGym;
   const gymName = gym?.name ?? 'your gym';
   const nowIso = new Date().toISOString();
 
@@ -234,9 +243,10 @@ Deno.serve(async (req: Request) => {
     const out = await sendTwilioSms(
       TWILIO_SID!,
       TWILIO_TOKEN!,
-      agent!.phone_number as string,
+      smsSender!,
       to,
       r.body,
+      !realGym,
     );
     if (out.error) {
       await mark(r.id, {
