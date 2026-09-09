@@ -118,6 +118,6 @@ export function useThemeColors() {
     lineStrong: dark ? '#34373D' : '#DCDCE3',
     ink: dark ? '#F4F5F6' : '#14161A',
     ink2: dark ? '#9AA0A9' : '#5B606A',
-    ink3: dark ? '#6C727B' : '#8B909A',
+    ink3: dark ? '#7C838D' : '#6B7280',
   };
 }

@@ -54,8 +54,13 @@ module.exports = {
         'ink-dk': '#F4F5F6',
         'ink-2': '#5B606A', // body copy, secondary text
         'ink-2-dk': '#9AA0A9',
-        'ink-3': '#8B909A', // labels, meta, placeholder
-        'ink-3-dk': '#6C727B',
+        // labels, meta, placeholder. Darkened from #8B909A / lightened
+        // from #6C727B: the old pair was 3.2:1 on white and 3.8:1 on the
+        // dark surface, and it is used at 11-13px, where the large-text
+        // allowance does not apply. Sheet's subtitle is one of these, so
+        // it failed on every modal in the product.
+        'ink-3': '#6B7280',
+        'ink-3-dk': '#7C838D',
       },
       borderRadius: {
         // Two radii, chosen by what the thing is: a card, or a control
