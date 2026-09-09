@@ -774,6 +774,26 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      agent_sms_sends: {
+        Row: {
+          id: string;
+          gym_id: string;
+          conversation_id: string | null;
+          phone: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          gym_id: string;
+          conversation_id?: string | null;
+          phone: string;
+          created_at?: string;
+        };
+        Update: Partial<{
+          phone: string;
+        }>;
+        Relationships: [];
+      };
       agent_interviews: {
         Row: {
           id: string;

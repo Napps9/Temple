@@ -3783,6 +3783,21 @@ Meta-approved template per gym on top of business verification, and
 answering somebody who messaged first needs neither. pgTAP:
 `where_people_already_talk`.
 
+**The number they read out (0289).** `capture_lead` takes a `phone`, used
+only when the conversation's own is not dialable — caller ID stays
+authoritative where there is one, and a browser call's `web-test`
+sentinel no longer reaches `leads.phone` (it lands null). On the voice
+channel `textProspect` reports *which* way a text failed rather than
+false: no SMS-capable number (`gym_agent_settings.sms_capable`, checked
+before offering rather than discovered at Twilio; demo gyms are exempt
+because their send is simulated), no dialable destination, opted out,
+capped, or refused — each one a tool result naming the way round it
+(ask for a number and retry, or fall back to `start_onboarding`'s email).
+Twilio's rejection is logged. Agent-initiated texts are capped at three
+per destination per gym per day (`agent_sms_sends` /
+`agent_sms_send_allowed`), the same argument 0143 made for the dictated
+email address. pgTAP: `the_number_they_read_out`.
+
 **Call review, coaching & voice (0137)** [`can_review_ai_calls`, owner/admin].
 Voice calls are recorded (Vapi artifact) and pulled into a private
 `agent-call-recordings` Storage bucket at `/end-of-call`; `call_recordings`

@@ -24,6 +24,10 @@ export type AgentGym = {
   settings: {
     enabled: boolean;
     phone_number: string;
+    // 0270 — a UK local number is voice-only. Read off what Twilio
+    // actually sold us, so the agent never offers a text this gym's
+    // number physically cannot carry.
+    sms_capable: boolean;
     voice_enabled: boolean;
     vapi_assistant_id: string | null;
     context: string | null;
@@ -43,7 +47,7 @@ export type Conversation = {
 };
 
 const AGENT_SETTINGS_SELECT =
-  'gym_id, enabled, phone_number, voice_enabled, vapi_assistant_id, context, call_recording_enabled, recording_notice_at, daily_message_cap, gyms!gym_id(id, name, slug, currency, timezone, public_signup_enabled, is_demo)';
+  'gym_id, enabled, phone_number, sms_capable, voice_enabled, vapi_assistant_id, context, call_recording_enabled, recording_notice_at, daily_message_cap, gyms!gym_id(id, name, slug, currency, timezone, public_signup_enabled, is_demo)';
 
 // deno-lint-ignore no-explicit-any
 function toAgentGym(data: any): AgentGym | null {
@@ -60,6 +64,7 @@ function toAgentGym(data: any): AgentGym | null {
     settings: {
       enabled: !!data.enabled,
       phone_number: data.phone_number,
+      sms_capable: data.sms_capable === true,
       voice_enabled: !!data.voice_enabled,
       vapi_assistant_id: data.vapi_assistant_id ?? null,
       context: data.context ?? null,
@@ -355,7 +360,7 @@ export function buildSystemPrompt(
     coachingText ? `${coachingText}\n` : '',
     'Rules:',
     '- Only talk about this gym. Never invent prices, offers, classes or facts not listed above or in the gym notes.',
-    '- As soon as the prospect shares their name, call capture_lead. Add useful details (goals, availability) as notes.',
+    '- As soon as the prospect shares their name, call capture_lead. Pass their mobile number too if they give one — it is what anything you send them goes to. Add useful details (goals, availability) as notes.',
     '- When someone wants to join or asks how to sign up, use send_join_link.',
     "- If they hesitate or raise a concern (too expensive, no time, nervous, comparing gyms, wanting to think it over), don't let it drop: acknowledge it honestly, answer with one concrete fact — the intro offer, a beginner-friendly class, or the plan that fits their budget — and offer one low-pressure next step like a free intro or a look around. Offer the intro offer once; never be pushy. Call log_objection with the closest category and whether they're still considering, want time, or aren't keen (use flag_health_mention, not log_objection, for anything about an injury or health). If they're not ready, be gracious and leave the door open.",
     '- When they commit to joining, agree which plan they want and which class they will come to first (from the schedule), then ask for their email and read it back to confirm, then use enroll_member with the exact plan name and the first class. It emails them a one-time sign-in link (to their inbox only — never texted). Tell them to tap it, then personally sign the waiver and a short health form and pay for their plan — you cannot do those steps for them. (Use start_onboarding instead only if they would rather set a password and sign themselves up.)',
@@ -392,6 +397,11 @@ const CAPTURE_LEAD: ToolDef = {
     properties: {
       name: { type: 'string', description: 'Full name as they gave it' },
       email: { type: 'string' },
+      phone: {
+        type: 'string',
+        description:
+          'Their mobile number, as they said it. On a call that did not come from their own phone this is the only number anything can be sent to.',
+      },
       notes: {
         type: 'string',
         description: 'Goals, availability, anything useful for the coach',
@@ -538,29 +548,99 @@ export const VOICE_TOOLS: ToolDef[] = [
   REQUEST_HANDOFF,
 ];
 
+// Every way texting a prospect can fail is a different thing for the
+// agent to say next, so this reports which one rather than false. The
+// boolean is why a caller was once told there was "a restriction on
+// texting links": the single failure string guessed at an opt-out, the
+// model dressed the guess up as policy, and the real reason — a gym
+// whose number cannot send SMS at all — was never logged anywhere.
+type TextOutcome =
+  | 'sent'
+  | 'no_sms_number'
+  | 'no_destination'
+  | 'opted_out'
+  | 'capped'
+  | 'failed';
+
+const DIALABLE = /^\+[1-9][0-9]{6,14}$/;
+
+// The number to text: the thread they are already on, else the one they
+// read out on the call. lead-agent-voice substitutes 'web-test' when a
+// browser call has no caller ID, so on those the conversation's own
+// phone is never dialable and the lead's is all there is.
+async function textDestination(ctx: ToolContext): Promise<string | null> {
+  if (DIALABLE.test(ctx.conversation.phone)) return ctx.conversation.phone;
+  if (!ctx.conversation.lead_id) return null;
+  const { data } = await ctx.service
+    .from('leads')
+    .select('phone')
+    .eq('id', ctx.conversation.lead_id)
+    .maybeSingle();
+  const phone = (data as { phone: string | null } | null)?.phone ?? null;
+  return phone && DIALABLE.test(phone) ? phone : null;
+}
+
 // Text the voice caller on their SMS thread — refused when that thread
 // opted out (STOP applies to the texting programme even if they phone
 // later) and logged so staff see it in the conversation.
-async function textProspect(ctx: ToolContext, message: string): Promise<boolean> {
-  if (!ctx.twilio) return false;
-  const conv = await getOrCreateConversation(
-    ctx.service,
-    ctx.gym.id,
-    ctx.conversation.phone,
-    'sms',
-  );
-  if (conv.status === 'closed') return false;
+async function textProspect(ctx: ToolContext, message: string): Promise<TextOutcome> {
+  if (!ctx.twilio) {
+    console.error('agent sms: Twilio credentials missing from the environment');
+    return 'no_sms_number';
+  }
+  // A demo gym's send is simulated rather than made (0278), so it is
+  // exempt from the capability check: a visitor should see the product
+  // work, not the one thing an unprovisioned number cannot do.
+  if (!ctx.gym.isDemo && (!ctx.gym.settings.sms_capable || !ctx.gym.settings.phone_number)) {
+    return 'no_sms_number';
+  }
+  const to = await textDestination(ctx);
+  if (!to) return 'no_destination';
+
+  const conv = await getOrCreateConversation(ctx.service, ctx.gym.id, to, 'sms');
+  if (conv.status === 'closed') return 'opted_out';
+
+  // The destination can be one the caller dictated, so it is capped like
+  // the dictated email address is (0143, 0289). Fails closed.
+  const { data: allowed, error: capError } = await ctx.service.rpc('agent_sms_send_allowed', {
+    p_conversation_id: ctx.conversation.id,
+    p_phone: to,
+  });
+  if (capError) console.error('agent_sms_send_allowed failed', capError.message);
+  if (allowed !== true) return 'capped';
+
   const sent = await sendTwilioSms(
     ctx.twilio.accountSid,
     ctx.twilio.authToken,
     ctx.gym.settings.phone_number,
-    ctx.conversation.phone,
+    to,
     message,
     ctx.gym.isDemo,
   );
-  if (!sent.sid) return false;
+  if (!sent.sid) {
+    console.error('agent sms: Twilio refused', ctx.gym.id, sent.error);
+    return 'failed';
+  }
   await appendMessage(ctx.service, conv, 'agent', message, sent.sid);
-  return true;
+  return 'sent';
+}
+
+// What to tell the agent when the text did not go. Each one names the
+// obstacle and the way round it, because a tool result that only says
+// "could not" is an invitation to invent a reason out loud.
+function cannotTextAdvice(outcome: TextOutcome): string {
+  switch (outcome) {
+    case 'no_destination':
+      return "You have no number to text them on — this call did not come from one. Ask for their mobile number, call capture_lead with it, then try this again.";
+    case 'no_sms_number':
+      return "This gym's number cannot send texts. Don't offer to text them: ask for their email and use start_onboarding instead, or say a coach will follow up.";
+    case 'opted_out':
+      return 'They have asked this gym to stop texting them. Ask for their email and use start_onboarding instead, or say a coach will follow up.';
+    case 'capped':
+      return "That number has had all the texts this gym sends it in a day. Ask for their email and use start_onboarding instead, or say a coach will follow up.";
+    default:
+      return 'The text would not send. Ask for their email and use start_onboarding instead, or say a coach will follow up.';
+  }
 }
 
 // Caps agent-triggered email (3/day per conversation and per address) —
@@ -668,6 +748,7 @@ export async function executeTool(
       p_full_name: String(input?.name ?? ''),
       p_email: input?.email ? String(input.email) : null,
       p_notes: input?.notes ? String(input.notes) : null,
+      p_phone: input?.phone ? String(input.phone) : null,
     });
     if (error) return `Could not save the lead: ${error.message}`;
     ctx.conversation.lead_id = data as string;
@@ -680,13 +761,13 @@ export async function executeTool(
     }
     const link = `${ctx.appOrigin}/join/${ctx.gym.slug}`;
     if (ctx.channel === 'voice') {
-      const texted = await textProspect(
+      const outcome = await textProspect(
         ctx,
         `Great to talk! Here's the link to join ${ctx.gym.name}: ${link}`,
       );
-      return texted
+      return outcome === 'sent'
         ? 'The signup link has been texted to them — tell them to check their messages.'
-        : 'Could not text the link (they may have opted out of texts). Give them the gym name and say a coach will follow up.';
+        : cannotTextAdvice(outcome);
     }
     return `Send them this link: ${link}`;
   }
@@ -717,14 +798,18 @@ export async function executeTool(
       (await sendOnboardingEmail(ctx.gym.name, email, link, ctx.gym.isDemo));
 
     if (ctx.channel === 'voice') {
-      const texted = await textProspect(
+      const outcome = await textProspect(
         ctx,
         `Welcome to ${ctx.gym.name}! Tap to join and finish your quick onboarding — membership, waiver and a short health form: ${link}`,
       );
-      if (texted) {
+      if (outcome === 'sent') {
         return `Onboarding link texted${emailed ? ' and emailed' : ''}. Tell them to tap it to join, set a password, and sign the waiver and short health form themselves (about 2 minutes) — you can't fill those in for them.`;
       }
-      return 'Could not text the link (they may have opted out of texts) — give them the gym name and say a coach will follow up.';
+      // The email is the whole job when it lands; the text was the extra.
+      if (emailed) {
+        return `Onboarding link emailed to ${email} — the text wouldn't send, so tell them to look in their inbox rather than their messages. They tap it, set a password, and sign the waiver and a short health form themselves (about 2 minutes).`;
+      }
+      return cannotTextAdvice(outcome);
     }
 
     // SMS channel: include the link in your reply; it's also emailed.
