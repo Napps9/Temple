@@ -210,7 +210,7 @@ export function BulkClassEditModal({
           </SheetAction>
         </>
       }>
-      <View className="gap-4 pb-1">
+      <View className="gap-4">
           <View className="flex-row gap-2">
             {(
               [

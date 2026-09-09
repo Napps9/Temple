@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from './Text';
 
 import { Button } from '@/components/Button';
 import { modalShape } from '@/lib/breakpoint';
+import { useSheetInsets } from '@/lib/safe-area';
 import { useThemeColors } from '@/lib/theme';
 
 // One modal for the whole product: a sheet on a phone, a dialog on a
@@ -89,8 +90,22 @@ export function Sheet({
   dialogWidth?: number;
 }) {
   const { width, height } = useWindowDimensions();
+  const insets = useSheetInsets();
   const colors = useThemeColors();
   const asDialog = modalShape(width) === 'dialog';
+
+  // A phone sheet is bottom-anchored, so its last row sits on the home
+  // indicator unless something makes room. BottomDock's floor is the
+  // house idiom: honour the inset, but never leave less than a thumb's
+  // worth of gap on a device that reports none.
+  const bottomInset = asDialog ? 16 : 16 + Math.max(insets.bottom, 10);
+
+  // The old fractions were a guess at "leave a bit of the page showing"
+  // with no idea where the status bar was; on a notched phone the sheet
+  // cleared the notch by luck. Now the fraction is only an upper bound.
+  const maxHeight = asDialog
+    ? Math.min(height * 0.86, height - insets.top - insets.bottom - 48)
+    : Math.min(height * 0.9, height - insets.top - 12);
 
   // The discard question is a STEP of this sheet, not a second one. Board
   // 04's rule is not suspended because the question is the shell's own:
@@ -103,6 +118,14 @@ export function Sheet({
     setAsking(false);
   }
   const copy = { ...DISCARD, ...discard };
+
+  // Every step-using sheet gives its step a distinct title, so the title
+  // is a free step key. Without this, opening a picker from halfway down
+  // a long form opens it already scrolled.
+  const scroller = useRef<ScrollView>(null);
+  useEffect(() => {
+    scroller.current?.scrollTo({ y: 0, animated: false });
+  }, [title]);
 
   // The three exits the shell owns. The foot is the caller's and does not
   // come through here.
@@ -188,7 +211,8 @@ export function Sheet({
 
   const foot = footActions ? (
     <View
-      className={`flex-row gap-2 px-4 pt-3 pb-4 border-t border-line dark:border-line-dk ${
+      style={{ paddingBottom: bottomInset }}
+      className={`flex-row gap-2 px-4 pt-3 border-t border-line dark:border-line-dk ${
         asDialog ? 'justify-end' : ''
       }`}>
       {footActions}
@@ -200,54 +224,79 @@ export function Sheet({
       visible={visible}
       transparent
       animationType={asDialog ? 'fade' : 'slide'}
+      // Without these the Android modal gets its own window, inset by the
+      // system bars, while useWindowDimensions still reports the whole
+      // window — so maxHeight was measured against a height the sheet
+      // never had. React-native-web drops both.
+      statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={requestDismiss}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={{ flex: 1 }}>
+        {/* The dim, as a sibling BEHIND the card rather than its parent.
+            It used to wrap the dialog, which is invalid — an ARIA button
+            cannot own a dialog — and because react-native-web gives every
+            Pressable a tabIndex, it was also the first tab stop inside
+            every modal in the product: a control announced "Close" that
+            is not visibly anywhere. It keeps the press, because a tap
+            outside is a real affordance, and loses the role, the label and
+            the tab stop, because the head's Close already is those. */}
         <Pressable
           onPress={requestDismiss}
-          accessibilityRole="button"
-          accessibilityLabel="Close"
-          className={`flex-1 bg-black/45 ${
-            asDialog ? 'items-center justify-center px-6' : 'justify-end'
-          }`}>
-          {/* Swallows the press so a tap inside never dismisses. */}
-          <Pressable
-            onPress={() => {}}
-            accessibilityViewIsModal
-            role="dialog"
-            aria-modal
-            accessibilityLabel={asking ? copy.title : title}
-            style={
-              asDialog
-                ? { width: Math.min(dialogWidth, width - 48), maxHeight: height * 0.86 }
-                : { width: '100%', maxHeight: height * 0.88 }
-            }
-            className={`bg-surface dark:bg-surface-dk border border-line dark:border-line-dk shadow-float ${
-              asDialog ? 'rounded-[18px]' : 'rounded-t-[22px] border-b-0'
+          tabIndex={-1}
+          aria-hidden
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={StyleSheet.absoluteFill}
+          className="bg-black/45"
+        />
+        <KeyboardAvoidingView
+          style={{ flex: 1, pointerEvents: 'box-none' }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View
+            style={{ pointerEvents: 'box-none' }}
+            className={`flex-1 ${
+              asDialog ? 'items-center justify-center px-6' : 'justify-end'
             }`}>
-            {asDialog ? null : (
-              <View className="items-center pt-2 pb-0.5">
-                <View className="w-9 h-1 rounded-full bg-sunken dark:bg-sunken-dk" />
-              </View>
-            )}
-            {head}
-            <ScrollView
-              className="px-4"
-              contentContainerClassName="pb-1"
-              keyboardShouldPersistTaps="handled">
-              {asking ? (
-                <Text className="text-ink-2 dark:text-ink-2-dk text-[14.5px] leading-[21px]">
-                  {copy.body}
-                </Text>
-              ) : (
-                children
+            {/* Was a Pressable whose only job was to swallow the backdrop's
+                press. With the dim behind rather than around it, there is
+                nothing to swallow. */}
+            <View
+              accessibilityViewIsModal
+              role="dialog"
+              aria-modal
+              accessibilityLabel={asking ? copy.title : title}
+              style={
+                asDialog
+                  ? { width: Math.min(dialogWidth, width - 48), maxHeight }
+                  : { width: '100%', maxHeight }
+              }
+              className={`bg-surface dark:bg-surface-dk border border-line dark:border-line-dk shadow-float ${
+                asDialog ? 'rounded-[18px]' : 'rounded-t-[22px] border-b-0'
+              }`}>
+              {asDialog ? null : (
+                <View className="items-center pt-2 pb-0.5">
+                  <View className="w-9 h-1 rounded-full bg-sunken dark:bg-sunken-dk" />
+                </View>
               )}
-            </ScrollView>
-            {foot}
-          </Pressable>
-        </Pressable>
-      </KeyboardAvoidingView>
+              {head}
+              <ScrollView
+                ref={scroller}
+                contentContainerClassName="px-4"
+                contentContainerStyle={{ paddingBottom: foot ? 12 : bottomInset }}
+                keyboardShouldPersistTaps="handled">
+                {asking ? (
+                  <Text className="text-ink-2 dark:text-ink-2-dk text-[14.5px] leading-[21px]">
+                    {copy.body}
+                  </Text>
+                ) : (
+                  children
+                )}
+              </ScrollView>
+              {foot}
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

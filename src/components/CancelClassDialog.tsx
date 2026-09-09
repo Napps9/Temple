@@ -187,7 +187,7 @@ export function CancelClassDialog({
           </SheetAction>
         </>
       }>
-      <View className="gap-3 pb-1">
+      <View className="gap-3">
         <Text className="text-ink-2 dark:text-ink-2-dk text-[13.5px] leading-5">
           Members lose access to this class. Credit-pack and comp credits are
           refunded automatically. Members on unlimited plans don&apos;t lose

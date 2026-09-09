@@ -794,7 +794,7 @@ export function RecordWorkoutModal({
           </SheetAction>
         </>
       }>
-      <View className="gap-4 pb-1">
+      <View className="gap-4">
             <DatePicker label="Date" value={date} onChange={setDate} />
             <Input
               label="Workout title (optional)"
@@ -1565,13 +1565,13 @@ function TagEditStep({
   const meta = tag ? findMovement(tag.movement_key) : undefined;
   if (!meta || meta.movement.schemes.length === 0) {
     return (
-      <Text className="text-ink-2 dark:text-ink-2-dk text-sm pb-1">
+      <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
         This movement has no rep schemes to choose from.
       </Text>
     );
   }
   return (
-    <View className="gap-1 pb-1">
+    <View className="gap-1">
       <FieldLabel>Rep scheme</FieldLabel>
       <SchemeRow
         label="No scheme"
@@ -1711,7 +1711,7 @@ function MovementTagPickerStep({
   );
 
   return (
-    <View className="gap-3 pb-1">
+    <View className="gap-3">
           <SearchField
             value={search}
             onChangeText={setSearch}

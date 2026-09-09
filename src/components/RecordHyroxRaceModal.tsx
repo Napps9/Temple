@@ -212,7 +212,7 @@ export function RecordHyroxRaceModal({
           </SheetAction>
         </>
       }>
-      <View className="gap-4 pb-1">
+      <View className="gap-4">
 
             <DatePicker label="Date" value={date} onChange={setDate} />
 

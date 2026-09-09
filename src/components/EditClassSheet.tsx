@@ -297,7 +297,7 @@ export function EditClassSheet({
           )}
         </>
       }>
-      <View className="gap-3 pb-1">
+      <View className="gap-3">
         {done ? (
           <View className="gap-1.5">
             {done.map((line, i) => (

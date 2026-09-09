@@ -105,7 +105,7 @@ export function DateRangeCta({
       </Pressable>
 
       <Sheet visible={open} title="Select period" onClose={() => setOpen(false)}>
-        <View className="gap-3 pb-1">
+        <View className="gap-3">
             <View className="gap-1">
               {(Object.keys(PRESET_LABELS) as Exclude<Preset, 'custom'>[]).map((p) => (
                 <PresetOption

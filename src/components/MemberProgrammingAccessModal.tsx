@@ -98,7 +98,7 @@ export function MemberProgrammingAccessModal({
         onClose={onClose}
         onBack={() => setPickerOpen(false)}
         dialogWidth={520}>
-        <View className="gap-1 pb-1">
+        <View className="gap-1">
           <Pressable
             onPress={() => {
               setProductId(null);
@@ -159,7 +159,7 @@ export function MemberProgrammingAccessModal({
           </SheetAction>
         </>
       }>
-      <View className="gap-4 pb-1">
+      <View className="gap-4">
           <View className="flex-row gap-2">
             {(['free', 'paid'] as const).map((m) => {
               const active = mode === m;

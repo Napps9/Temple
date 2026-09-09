@@ -192,7 +192,7 @@ export function RefundDialog({
           </>
         ) : undefined
       }>
-      <View className="gap-3 pb-1">
+      <View className="gap-3">
         {charge.isLoading ? (
           <Text className="text-ink-3 dark:text-ink-3-dk text-[13px]">
             Loading payment…

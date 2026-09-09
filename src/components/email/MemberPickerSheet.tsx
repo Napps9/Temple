@@ -102,7 +102,7 @@ export function MemberPickerSheet({
           </Button>
         </SheetAction>
       }>
-      <View className="gap-2 pb-1">
+      <View className="gap-2">
         <SearchField
           value={search}
           onChangeText={setSearch}

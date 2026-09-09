@@ -290,7 +290,7 @@ function BlockModal({
           </SheetAction>
         </>
       }>
-      <View className="gap-4 pb-1">
+      <View className="gap-4">
           <Input
             label="Name"
             value={draft.name}

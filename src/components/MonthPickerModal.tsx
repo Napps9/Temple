@@ -68,7 +68,7 @@ export function MonthPickerModal({
 
   return (
     <Sheet visible={visible} title="Jump to a date" onClose={onClose} dialogWidth={400}>
-      <View className="gap-2 pb-2">
+      <View className="gap-2">
         <View className="flex-row items-center justify-between">
           <Pressable
             onPress={() => onChangeMonth(-1)}

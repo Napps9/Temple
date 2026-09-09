@@ -54,7 +54,7 @@ export function InviteQRModal({ visible, onClose, title, subtitle, url }: Props)
           </SheetAction>
         </>
       }>
-      <View className="gap-3 items-center pb-1">
+      <View className="gap-3 items-center">
         <View className="bg-white p-3 rounded-card border border-line">
           <QRCode value={url} size={228} />
         </View>

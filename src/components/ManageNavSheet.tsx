@@ -23,7 +23,7 @@ export function ManageNavSheet({
 
   return (
     <Sheet visible={visible} onClose={onClose} title={brand.gymName} dialogWidth={420}>
-      <View className="pb-4">
+      <View>
       <RuledList>
         <ListRow
           ruled

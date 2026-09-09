@@ -59,6 +59,10 @@ export default defineConfig({
       { find: /^expo-haptics$/, replacement: stubTs('expo-haptics') },
       { find: /^react-native-svg$/, replacement: stub('react-native-svg') },
       {
+        find: /^react-native-safe-area-context$/,
+        replacement: stub('react-native-safe-area-context'),
+      },
+      {
         find: /^react-native-qrcode-svg$/,
         replacement: stub('react-native-qrcode-svg'),
       },

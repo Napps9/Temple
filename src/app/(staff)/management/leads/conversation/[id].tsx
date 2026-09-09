@@ -753,7 +753,7 @@ function CoachModal({
           </SheetAction>
         </>
       }>
-      <View className="gap-4 pb-1">
+      <View className="gap-4">
           <View className="gap-1">
             <FieldLabel>
               The AI said

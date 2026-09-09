@@ -864,7 +864,7 @@ export function AgentSettings() {
             </SheetAction>
           </>
         }>
-        <View className="pb-1">
+        <View>
           <AgentBriefBuilder
             gymId={membership.gymId}
             value={briefDraft}

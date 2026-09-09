@@ -50,11 +50,21 @@ describe('Sheet', () => {
         <Text>Body</Text>
       </Sheet>,
     );
-    // Both the backdrop and the button are named "Close" — the button is
-    // the inner one.
-    const closers = screen.getAllByLabelText('Close');
-    fireEvent.click(closers[closers.length - 1]);
+    fireEvent.click(screen.getByLabelText('Close'));
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  // The dim is a press target, not a control. It used to be an ARIA button
+  // wrapping the dialog — invalid, and the first tab stop in every modal in
+  // the product, announced "Close" and visibly nowhere.
+  it('offers exactly one thing called Close, and it is the head button', () => {
+    render(
+      <Sheet visible title="Metcon" onClose={() => {}}>
+        <Text>Body</Text>
+      </Sheet>,
+    );
+    expect(screen.getAllByLabelText('Close')).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Close' })).toHaveLength(1);
   });
 
   it('does not close when the press lands inside it', () => {
@@ -131,7 +141,7 @@ describe('Sheet', () => {
         <Text>Body</Text>
       </Sheet>,
     );
-    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalled();
   });
 });
@@ -142,19 +152,17 @@ describe('Sheet', () => {
 describe('Sheet dismissal', () => {
   const body = <Text>Seventeen booked in</Text>;
 
-  function closeButton() {
-    // The backdrop carries the same label; the head's button is the last.
-    const all = screen.getAllByLabelText('Close');
-    return all[all.length - 1];
-  }
-  function backdrop() {
-    return screen.getAllByLabelText('Close')[0];
+  // Every exit the shell owns runs through the same requestDismiss, so
+  // the head's Close stands for all of them. The dim is deliberately not
+  // reachable by label any more — that is the a11y fix, asserted above.
+  function dismiss() {
+    fireEvent.click(screen.getByLabelText('Close'));
   }
 
   it('lets a clean sheet go without asking', () => {
     const onClose = vi.fn();
     render(<Sheet visible title="Metcon" onClose={onClose}>{body}</Sheet>);
-    fireEvent.click(backdrop());
+    dismiss();
     expect(onClose).toHaveBeenCalledOnce();
     expect(screen.queryByText('Discard your changes?')).toBeNull();
   });
@@ -162,8 +170,7 @@ describe('Sheet dismissal', () => {
   it('refuses every shell exit while a write is in flight', () => {
     const onClose = vi.fn();
     render(<Sheet visible title="Metcon" onClose={onClose} busy>{body}</Sheet>);
-    fireEvent.click(backdrop());
-    fireEvent.click(closeButton());
+    dismiss();
     expect(onClose).not.toHaveBeenCalled();
   });
 
@@ -188,7 +195,7 @@ describe('Sheet dismissal', () => {
   it('asks before throwing away typing', () => {
     const onClose = vi.fn();
     render(<Sheet visible title="Metcon" onClose={onClose} dirty>{body}</Sheet>);
-    fireEvent.click(backdrop());
+    dismiss();
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByText('Discard your changes?')).toBeTruthy();
     expect(screen.queryByText('Seventeen booked in')).toBeNull();
@@ -200,10 +207,9 @@ describe('Sheet dismissal', () => {
         {body}
       </Sheet>,
     );
-    fireEvent.click(backdrop());
+    dismiss();
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
-    // Only the backdrop is left carrying the label, and it is inert here.
-    expect(screen.getAllByLabelText('Close')).toHaveLength(1);
+    expect(screen.queryByLabelText('Close')).toBeNull();
   });
 
   it('gives the body back when the answer is keep editing', () => {
@@ -222,7 +228,7 @@ describe('Sheet dismissal', () => {
         {body}
       </Sheet>,
     );
-    fireEvent.click(backdrop());
+    dismiss();
     fireEvent.click(screen.getByText('Keep editing'));
     expect(screen.getByText('Seventeen booked in')).toBeTruthy();
     expect(screen.getByText('Save')).toBeTruthy();
@@ -232,7 +238,7 @@ describe('Sheet dismissal', () => {
   it('closes once when the answer is discard', () => {
     const onClose = vi.fn();
     render(<Sheet visible title="Metcon" onClose={onClose} dirty>{body}</Sheet>);
-    fireEvent.click(backdrop());
+    dismiss();
     fireEvent.click(screen.getByText('Discard'));
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -240,7 +246,7 @@ describe('Sheet dismissal', () => {
   it('lets a write in flight outrank the question', () => {
     const onClose = vi.fn();
     render(<Sheet visible title="Metcon" onClose={onClose} dirty busy>{body}</Sheet>);
-    fireEvent.click(backdrop());
+    dismiss();
     expect(screen.queryByText('Discard your changes?')).toBeNull();
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -250,7 +256,7 @@ describe('Sheet dismissal', () => {
     const { rerender } = render(
       <Sheet visible title="Metcon" onClose={onClose} dirty>{body}</Sheet>,
     );
-    fireEvent.click(backdrop());
+    dismiss();
     expect(screen.getByText('Discard your changes?')).toBeTruthy();
     rerender(<Sheet visible={false} title="Metcon" onClose={onClose} dirty>{body}</Sheet>);
     rerender(<Sheet visible title="Metcon" onClose={onClose} dirty>{body}</Sheet>);
@@ -269,7 +275,7 @@ describe('Sheet dismissal', () => {
         {body}
       </Sheet>,
     );
-    fireEvent.click(backdrop());
+    dismiss();
     expect(screen.getByText('Throw away this workout?')).toBeTruthy();
     expect(screen.getByText('Throw it away')).toBeTruthy();
     expect(screen.getByText('Keep editing')).toBeTruthy();

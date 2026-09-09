@@ -560,7 +560,7 @@ export function ClassDetailModal({
           </Button>
         </SheetAction>
       }>
-      <View className="gap-5 pb-1">
+      <View className="gap-5">
           {sessionQuery.isLoading || !detail ? (
             <EmptyState kind="loading" rows={3} title="Loading the class" />
           ) : (

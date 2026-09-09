@@ -771,7 +771,7 @@ function AddLeadModal({
           </SheetAction>
         </>
       }>
-            <View className="gap-4 pb-1">
+            <View className="gap-4">
               <Input
                 label="Name"
                 value={name}
@@ -1100,7 +1100,7 @@ function LeadDetailModal({
           </Button>
         </SheetAction>
       }>
-            <View className="gap-4 pb-1">
+            <View className="gap-4">
 
               {lead.notes ? (
                 <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3">

@@ -473,7 +473,7 @@ function ProductSheet({
           </>
         )
       }>
-      <View className="gap-3 pb-1">
+      <View className="gap-3">
         {images.length > 0 ? (
           <Pressable
             onPress={() => setGalleryOpen(true)}
@@ -631,7 +631,7 @@ function BagSheet({
           </SheetAction>
         ) : undefined
       }>
-      <View className="gap-3 pb-1">
+      <View className="gap-3">
         {lines.length === 0 ? (
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
             Tap a product and add it to your bag — checkout takes everything

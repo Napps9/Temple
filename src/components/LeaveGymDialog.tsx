@@ -97,7 +97,7 @@ export function LeaveGymDialog({
           </SheetAction>
         </>
       }>
-      <View className="gap-3 pb-1">
+      <View className="gap-3">
         {consequence(
           'barbell-outline',
           'Your training history stays with you',

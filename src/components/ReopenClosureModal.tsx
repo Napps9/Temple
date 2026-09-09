@@ -104,7 +104,7 @@ export function ReopenClosureModal({
           </SheetAction>
         </>
       }>
-      <View className="gap-3 pb-1">
+      <View className="gap-3">
         <Text className="text-ink-2 dark:text-ink-2-dk text-[13.5px] leading-5">
           Pick the classes to put back on the calendar. Tap a date to take the
           whole day. Anyone who lost a booking to a class you bring back is told

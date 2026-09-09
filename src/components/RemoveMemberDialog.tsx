@@ -115,7 +115,7 @@ export function RemoveMemberDialog({
           </SheetAction>
         </>
       }>
-      <View className="gap-3 pb-1">
+      <View className="gap-3">
         <Text className="text-ink-2 dark:text-ink-2-dk text-[14px] leading-5">
           They lose access to bookings, eligibility, and any active
           subscriptions or comp grants. History is preserved — you can restore

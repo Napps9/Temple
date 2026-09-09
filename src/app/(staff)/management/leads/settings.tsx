@@ -667,7 +667,7 @@ function SourcesEditorModal({
           </Button>
         </SheetAction>
       }>
-            <View className="gap-4 pb-1">
+            <View className="gap-4">
 
               <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                 Where your prospects come from — Instagram, walk-in,

@@ -190,7 +190,7 @@ function MovementPickerModal({
           </Button>
         </SheetAction>
       }>
-      <View className="pb-1">
+      <View>
         {hits.length === 0 ? (
           <Text className="text-ink-3 dark:text-ink-3-dk text-[13px]">
             No matching lift in the movement catalogue.

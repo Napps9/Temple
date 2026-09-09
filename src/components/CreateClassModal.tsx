@@ -355,7 +355,7 @@ export function CreateClassModal({
           </>
         )
       }>
-      <View className="pb-1">
+      <View>
           {stage === 'form' ? (
             <View className="gap-4">
               <ClassTypePicker value={classTypeId} onChange={setClassTypeId} />

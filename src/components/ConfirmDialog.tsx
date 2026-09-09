@@ -65,7 +65,7 @@ export function ConfirmDialog({
           </SheetAction>
         </>
       }>
-      <View className="gap-3 pb-1">
+      <View className="gap-3">
         <Text className="text-ink-2 dark:text-ink-2-dk text-[14.5px] leading-[21px]">
           {body}
         </Text>

@@ -48,7 +48,7 @@ export function ClassLeaderboardModal({
       title={sectionTitle}
       subtitle="Leaderboard"
       onClose={onClose}>
-      <View className="pb-1">
+      <View>
         {query.isLoading ? (
           <Text className="text-ink-3 dark:text-ink-3-dk text-[13px]">Loading…</Text>
         ) : rows.length === 0 ? (

@@ -249,7 +249,7 @@ function DocumentsModal({
           </SheetAction>
         </>
       }>
-      <View className="gap-2 pb-1">
+      <View className="gap-2">
             {files.data && files.data.length > 0 ? (
               files.data.map((f) => (
                 <View

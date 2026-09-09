@@ -298,7 +298,7 @@ export function RecordMovementResultModal({
           </SheetAction>
         </>
       }>
-      <View className="gap-4 pb-1">
+      <View className="gap-4">
             <DatePicker label="Date" value={date} onChange={setDate} />
             <Input
               label="Title (optional)"
@@ -487,7 +487,7 @@ function SchemePickerStep({
   }, [visible]);
 
   return (
-    <View className="gap-2 pb-1">
+    <View className="gap-2">
             {groups.map((g) => (
               <View key={g.key}>
                 <Pressable

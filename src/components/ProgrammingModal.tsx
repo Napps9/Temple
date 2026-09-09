@@ -352,7 +352,7 @@ export function ProgrammingModal({
           </>
         ) : undefined
       }>
-      <View className="gap-5 pb-1">
+      <View className="gap-5">
           {/* Class programming only. An individual programme is already
               gated per member (0123), so a second embargo there would be
               a switch that governs nothing. */}
