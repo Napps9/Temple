@@ -139,12 +139,11 @@ export function SideNav({
         {/* Every block in here is a FIXED height, the same in both states,
             because the panel opens over the strip: an icon that sits at a
             different y once the labels arrive slides out from under the
-            cursor that went to press it. 74 is the collapsed column —
-            the 44px badge, the 6px gap and the 24px pin — and the open row
-            centres its card in the same box. */}
+            cursor that went to press it. The badge sets that height and
+            the pin sits beside it, so both states are one 44px row. */}
         <View
-          className={`h-[74px] justify-center ${
-            collapsed ? 'gap-1.5' : 'flex-row items-center gap-1.5'
+          className={`h-11 flex-row items-center gap-1.5 ${
+            collapsed ? 'justify-center' : ''
           }`}>
           <Pressable
             onPress={() => {
@@ -175,19 +174,24 @@ export function SideNav({
               </View>
             )}
           </Pressable>
-          <Pressable
-            onPress={onTogglePinned}
-            accessibilityRole="button"
-            accessibilityState={{ selected: pinned }}
-            accessibilityLabel={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
-            hitSlop={4}
-            className={`h-6 w-7 items-center justify-center rounded-ctl hover:bg-raised dark:hover:bg-raised-dk active:opacity-70`}>
-            <Ionicons
-              name={pinned ? 'chevron-back-outline' : 'chevron-forward-outline'}
-              size={15}
-              color={pinned ? colors.ink2 : colors.ink3}
-            />
-          </Pressable>
+          {/* Only while the panel is open. In the strip it was an arrow
+              pointing at nothing, and it is the one control here that is
+              about the rail rather than about the gym. */}
+          {open ? (
+            <Pressable
+              onPress={onTogglePinned}
+              accessibilityRole="button"
+              accessibilityState={{ selected: pinned }}
+              accessibilityLabel={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+              hitSlop={4}
+              className="h-6 w-7 items-center justify-center rounded-ctl hover:bg-raised dark:hover:bg-raised-dk active:opacity-70">
+              <Ionicons
+                name={pinned ? 'chevron-back-outline' : 'chevron-forward-outline'}
+                size={15}
+                color={pinned ? colors.ink : colors.ink2}
+              />
+            </Pressable>
+          ) : null}
         </View>
 
         <View className="gap-0.5">
@@ -283,7 +287,9 @@ export function SideNav({
             ? 'bg-brand/10'
             : 'hover:bg-raised/60 dark:hover:bg-raised-dk/60'
         }`}>
-        {renderIconSlot(icon, 18, active ? BRAND : colors.ink3)}
+        {/* ink2, not ink3: collapsed there is no label beside these, so
+            the icon is the whole destination and has to read like one. */}
+        {renderIconSlot(icon, 18, active ? BRAND : colors.ink2)}
         {collapsed ? null : (
           <Text
             className={`flex-1 text-[14px] ${
