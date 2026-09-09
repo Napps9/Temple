@@ -134,7 +134,146 @@ describe('Sheet', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
     expect(onClose).toHaveBeenCalled();
   });
+});
 
+// The shell owns the ways out, so it owns refusing them. Before this, the
+// backdrop and Escape called onClose unconditionally and two modals out of
+// 33 guarded it — a stray click beside a half-written workout took the lot.
+describe('Sheet dismissal', () => {
+  const body = <Text>Seventeen booked in</Text>;
+
+  function closeButton() {
+    // The backdrop carries the same label; the head's button is the last.
+    const all = screen.getAllByLabelText('Close');
+    return all[all.length - 1];
+  }
+  function backdrop() {
+    return screen.getAllByLabelText('Close')[0];
+  }
+
+  it('lets a clean sheet go without asking', () => {
+    const onClose = vi.fn();
+    render(<Sheet visible title="Metcon" onClose={onClose}>{body}</Sheet>);
+    fireEvent.click(backdrop());
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(screen.queryByText('Discard your changes?')).toBeNull();
+  });
+
+  it('refuses every shell exit while a write is in flight', () => {
+    const onClose = vi.fn();
+    render(<Sheet visible title="Metcon" onClose={onClose} busy>{body}</Sheet>);
+    fireEvent.click(backdrop());
+    fireEvent.click(closeButton());
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('leaves the caller its own foot while busy', () => {
+    render(
+      <Sheet
+        visible
+        title="Metcon"
+        onClose={() => {}}
+        busy
+        actions={
+          <SheetAction grow>
+            <Button onPress={() => {}}>Save</Button>
+          </SheetAction>
+        }>
+        {body}
+      </Sheet>,
+    );
+    expect(screen.getByText('Save')).toBeTruthy();
+  });
+
+  it('asks before throwing away typing', () => {
+    const onClose = vi.fn();
+    render(<Sheet visible title="Metcon" onClose={onClose} dirty>{body}</Sheet>);
+    fireEvent.click(backdrop());
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByText('Discard your changes?')).toBeTruthy();
+    expect(screen.queryByText('Seventeen booked in')).toBeNull();
+  });
+
+  it('offers the question two answers and no third way out', () => {
+    render(
+      <Sheet visible title="Metcon" onClose={() => {}} dirty onBack={() => {}}>
+        {body}
+      </Sheet>,
+    );
+    fireEvent.click(backdrop());
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    // Only the backdrop is left carrying the label, and it is inert here.
+    expect(screen.getAllByLabelText('Close')).toHaveLength(1);
+  });
+
+  it('gives the body back when the answer is keep editing', () => {
+    const onClose = vi.fn();
+    render(
+      <Sheet
+        visible
+        title="Metcon"
+        onClose={onClose}
+        dirty
+        actions={
+          <SheetAction grow>
+            <Button onPress={() => {}}>Save</Button>
+          </SheetAction>
+        }>
+        {body}
+      </Sheet>,
+    );
+    fireEvent.click(backdrop());
+    fireEvent.click(screen.getByText('Keep editing'));
+    expect(screen.getByText('Seventeen booked in')).toBeTruthy();
+    expect(screen.getByText('Save')).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('closes once when the answer is discard', () => {
+    const onClose = vi.fn();
+    render(<Sheet visible title="Metcon" onClose={onClose} dirty>{body}</Sheet>);
+    fireEvent.click(backdrop());
+    fireEvent.click(screen.getByText('Discard'));
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('lets a write in flight outrank the question', () => {
+    const onClose = vi.fn();
+    render(<Sheet visible title="Metcon" onClose={onClose} dirty busy>{body}</Sheet>);
+    fireEvent.click(backdrop());
+    expect(screen.queryByText('Discard your changes?')).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('reopens on the body, not on a question it asked last time', () => {
+    const onClose = vi.fn();
+    const { rerender } = render(
+      <Sheet visible title="Metcon" onClose={onClose} dirty>{body}</Sheet>,
+    );
+    fireEvent.click(backdrop());
+    expect(screen.getByText('Discard your changes?')).toBeTruthy();
+    rerender(<Sheet visible={false} title="Metcon" onClose={onClose} dirty>{body}</Sheet>);
+    rerender(<Sheet visible title="Metcon" onClose={onClose} dirty>{body}</Sheet>);
+    expect(screen.queryByText('Discard your changes?')).toBeNull();
+    expect(screen.getByText('Seventeen booked in')).toBeTruthy();
+  });
+
+  it('takes the caller’s words for the question when it has better ones', () => {
+    render(
+      <Sheet
+        visible
+        title="Metcon"
+        onClose={() => {}}
+        dirty
+        discard={{ title: 'Throw away this workout?', confirmLabel: 'Throw it away' }}>
+        {body}
+      </Sheet>,
+    );
+    fireEvent.click(backdrop());
+    expect(screen.getByText('Throw away this workout?')).toBeTruthy();
+    expect(screen.getByText('Throw it away')).toBeTruthy();
+    expect(screen.getByText('Keep editing')).toBeTruthy();
+  });
 });
 
 // ConfirmDialog is seven call sites' worth of destructive decisions, and

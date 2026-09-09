@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Text } from './Text';
 
+import { Button } from '@/components/Button';
 import { modalShape } from '@/lib/breakpoint';
 import { useThemeColors } from '@/lib/theme';
 
@@ -28,7 +29,21 @@ import { useThemeColors } from '@/lib/theme';
 //   - a foot whose primary sits right on desktop and which is a
 //     full-width pair on a phone, where both thumbs can reach it
 //
-// The breakpoint itself lives in lib/modal-shape.ts.
+// The breakpoint itself lives in lib/breakpoint.ts.
+//
+// The shell also owns the ways OUT, which is why `busy` and `dirty` are
+// here rather than repeated at 33 call sites. Before them, the backdrop
+// and Escape both called onClose unconditionally and exactly two modals
+// guarded it — so a stray click beside a sheet holding a written day of
+// programming, or twenty-four typed race splits, destroyed all of it with
+// nothing asked.
+const DISCARD = {
+  title: 'Discard your changes?',
+  body: "You have typed something here that has not been saved. Leaving now throws it away.",
+  confirmLabel: 'Discard',
+  cancelLabel: 'Keep editing',
+};
+
 export function Sheet({
   visible,
   title,
@@ -37,6 +52,9 @@ export function Sheet({
   children,
   actions,
   onBack,
+  busy = false,
+  dirty = false,
+  discard,
   dialogWidth = 460,
 }: {
   visible: boolean;
@@ -53,21 +71,67 @@ export function Sheet({
   // The foot. Order them cancel-first: on desktop that puts the primary
   // on the right, on a phone it puts it under the dominant thumb.
   actions?: ReactNode;
+  // A write is in flight. Every exit the SHELL owns goes dead — the
+  // backdrop, Escape, the close X, the back chevron. The caller's foot is
+  // untouched: its primary is already showing a spinner, and that is the
+  // button that should still look alive. This is the half that stops a
+  // double-charge, not just a lost draft.
+  busy?: boolean;
+  // The body holds typing that has not been written, so the shell's exits
+  // ask before they take it away. Ignored while `busy` — a write in flight
+  // outranks a question about a draft.
+  //
+  // `dirty` means TYPED, not CHOSEN. A radio moved from "Just this one" to
+  // "The whole series" is not unsaved work, and prompting on it is how a
+  // prompt becomes something people dismiss without reading.
+  dirty?: boolean;
+  discard?: Partial<typeof DISCARD>;
   dialogWidth?: number;
 }) {
   const { width, height } = useWindowDimensions();
   const colors = useThemeColors();
   const asDialog = modalShape(width) === 'dialog';
 
+  // The discard question is a STEP of this sheet, not a second one. Board
+  // 04's rule is not suspended because the question is the shell's own:
+  // two sheets on a phone is two grabbers and two backdrops whoever put
+  // them there.
+  const [asking, setAsking] = useState(false);
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (wasVisible !== visible) {
+    setWasVisible(visible);
+    setAsking(false);
+  }
+  const copy = { ...DISCARD, ...discard };
+
+  // The three exits the shell owns. The foot is the caller's and does not
+  // come through here.
+  function requestDismiss() {
+    if (busy || asking) return;
+    if (dirty) {
+      setAsking(true);
+      return;
+    }
+    onClose();
+  }
+
+  // While the question is up the head keeps only the title. A two-answer
+  // question with a third exit whose meaning is ambiguous — does the X
+  // discard or keep? — is the defect restated. While `busy` the buttons
+  // stay in the tree and go disabled, so the head does not reflow.
   const head = (
     <View className="flex-row items-start gap-3 px-4 pb-3 pt-2">
-      {onBack ? (
+      {onBack && !asking ? (
         <Pressable
           onPress={onBack}
+          disabled={busy}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Back"
-          className="w-[30px] h-[30px] rounded-full items-center justify-center border border-line-strong dark:border-line-strong-dk active:opacity-70">
+          accessibilityState={{ disabled: busy }}
+          className={`w-[30px] h-[30px] rounded-full items-center justify-center border border-line-strong dark:border-line-strong-dk active:opacity-70 ${
+            busy ? 'opacity-40' : ''
+          }`}>
           <Ionicons name="chevron-back" size={15} color={colors.ink2} />
         </Pressable>
       ) : null}
@@ -75,31 +139,59 @@ export function Sheet({
         <Text
           accessibilityRole="header"
           className="text-ink dark:text-ink-dk text-[19px] font-bold tracking-[-0.5px]">
-          {title}
+          {asking ? copy.title : title}
         </Text>
-        {subtitle ? (
+        {!asking && subtitle ? (
           <Text className="text-ink-3 dark:text-ink-3-dk text-[13px]">
             {subtitle}
           </Text>
         ) : null}
       </View>
-      <Pressable
-        onPress={onClose}
-        hitSlop={8}
-        accessibilityRole="button"
-        accessibilityLabel="Close"
-        className="w-[30px] h-[30px] rounded-full items-center justify-center border border-line-strong dark:border-line-strong-dk active:opacity-70">
-        <Ionicons name="close" size={14} color={colors.ink2} />
-      </Pressable>
+      {asking ? null : (
+        <Pressable
+          onPress={requestDismiss}
+          disabled={busy}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          accessibilityState={{ disabled: busy }}
+          className={`w-[30px] h-[30px] rounded-full items-center justify-center border border-line-strong dark:border-line-strong-dk active:opacity-70 ${
+            busy ? 'opacity-40' : ''
+          }`}>
+          <Ionicons name="close" size={14} color={colors.ink2} />
+        </Pressable>
+      )}
     </View>
   );
 
-  const foot = actions ? (
+  const footActions = asking ? (
+    <>
+      <SheetAction>
+        <Button variant="secondary" onPress={() => setAsking(false)}>
+          {copy.cancelLabel}
+        </Button>
+      </SheetAction>
+      <SheetAction grow>
+        <Button
+          variant="destructive"
+          onPress={() => {
+            setAsking(false);
+            onClose();
+          }}>
+          {copy.confirmLabel}
+        </Button>
+      </SheetAction>
+    </>
+  ) : (
+    actions
+  );
+
+  const foot = footActions ? (
     <View
       className={`flex-row gap-2 px-4 pt-3 pb-4 border-t border-line dark:border-line-dk ${
         asDialog ? 'justify-end' : ''
       }`}>
-      {actions}
+      {footActions}
     </View>
   ) : null;
 
@@ -108,12 +200,12 @@ export function Sheet({
       visible={visible}
       transparent
       animationType={asDialog ? 'fade' : 'slide'}
-      onRequestClose={onClose}>
+      onRequestClose={requestDismiss}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable
-          onPress={onClose}
+          onPress={requestDismiss}
           accessibilityRole="button"
           accessibilityLabel="Close"
           className={`flex-1 bg-black/45 ${
@@ -125,7 +217,7 @@ export function Sheet({
             accessibilityViewIsModal
             role="dialog"
             aria-modal
-            accessibilityLabel={title}
+            accessibilityLabel={asking ? copy.title : title}
             style={
               asDialog
                 ? { width: Math.min(dialogWidth, width - 48), maxHeight: height * 0.86 }
@@ -144,7 +236,13 @@ export function Sheet({
               className="px-4"
               contentContainerClassName="pb-1"
               keyboardShouldPersistTaps="handled">
-              {children}
+              {asking ? (
+                <Text className="text-ink-2 dark:text-ink-2-dk text-[14.5px] leading-[21px]">
+                  {copy.body}
+                </Text>
+              ) : (
+                children
+              )}
             </ScrollView>
             {foot}
           </Pressable>
