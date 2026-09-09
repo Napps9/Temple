@@ -275,7 +275,8 @@ function BlockModal({
       visible
       title={draft.id ? 'Edit block' : 'Add a block'}
       onClose={onClose}
-      dialogWidth={440}
+      busy={busy}
+      size="compact"
       actions={
         <>
           <SheetAction>

@@ -80,6 +80,7 @@ export function LeaveGymDialog({
       title={`Leave ${gymName}?`}
       subtitle="Your membership ends now — any active plan stops and unused credits are lost."
       onClose={onClose}
+      busy={leave.isPending}
       actions={
         <>
           <SheetAction grow>

@@ -210,6 +210,15 @@ export function RecordWorkoutModal({
     { sectionIdx: number; tagIdx: number } | null
   >(null);
   const [saved, markSaved] = useSavedFlag();
+
+  // Would closing now throw away typing? Not "does any state differ from
+  // mount": the three picker states are navigation and `error` is a
+  // symptom, so neither counts. What is left is the log itself, and
+  // isEmptyDraft already says what an untouched section looks like.
+  const dirty =
+    workoutTitle.trim() !== (initialTitle ?? '').trim() ||
+    workoutNotes.trim() !== '' ||
+    drafts.some((d) => !isEmptyDraft(d));
   const autoPrefilledRef = useRef(false);
 
   useEffect(() => {
@@ -762,8 +771,10 @@ export function RecordWorkoutModal({
         title={step.title}
         subtitle={step.subtitle}
         onClose={close}
+        busy={save.isPending}
+        dirty={dirty}
         onBack={step.back}
-        dialogWidth={680}
+        size="wide"
         actions={step.actions}>
         {step.body}
       </Sheet>
@@ -776,7 +787,9 @@ export function RecordWorkoutModal({
       title="Record workout"
       subtitle="Add sections from today's session and log your results."
       onClose={close}
-      dialogWidth={680}
+      busy={save.isPending}
+      dirty={dirty}
+      size="wide"
       actions={
         <>
           <SheetAction>

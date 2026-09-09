@@ -552,7 +552,7 @@ export function ClassDetailModal({
           : undefined
       }
       onClose={close}
-      dialogWidth={640}
+      size="wide"
       actions={
         <SheetAction grow>
           <Button variant="secondary" onPress={close}>

@@ -89,6 +89,13 @@ export function RecordMovementResultModal({
   const [drafts, setDrafts] = useState<DraftResult[]>([emptyDraft()]);
   const [error, setError] = useState<string | null>(null);
   const [pickerOpenFor, setPickerOpenFor] = useState<number | null>(null);
+
+  // A result the user has begun entering. The date is seeded and the
+  // picker is navigation, so neither counts as typing.
+  const dirty =
+    title.trim() !== (initialTitle ?? '').trim() ||
+    notes.trim() !== '' ||
+    drafts.some((d) => d.option !== null || d.value.trim() !== '' || d.notes.trim() !== '');
   const [saved, markSaved] = useSavedFlag();
 
   const schemeOptions = useMemo(
@@ -260,8 +267,10 @@ export function RecordMovementResultModal({
         visible={visible}
         title="Pick a movement"
         onClose={onClose}
+        busy={save.isPending}
+        dirty={dirty}
         onBack={() => setPickerOpenFor(null)}
-        dialogWidth={620}>
+        size="wide">
         <SchemePickerStep
           visible
           options={schemeOptions}
@@ -280,7 +289,9 @@ export function RecordMovementResultModal({
       title="Record workout"
       subtitle="Log a session and any movement results."
       onClose={onClose}
-      dialogWidth={620}
+      busy={save.isPending}
+      dirty={dirty}
+      size="wide"
       actions={
         <>
           <SheetAction>

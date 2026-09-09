@@ -74,6 +74,10 @@ export function RecordHyroxRaceModal({
     emptyRaceSplits().map(() => ''),
   );
   const [error, setError] = useState<string | null>(null);
+
+  // The splits are the work here — two dozen times typed one at a time.
+  // The pickers above them are choices, not typing, so they do not count.
+  const dirty = splitTexts.some((t) => t.trim() !== '');
   const [saved, markSaved] = useSavedFlag();
 
   useEffect(() => {
@@ -192,8 +196,10 @@ export function RecordHyroxRaceModal({
       visible={visible}
       title={"Log a full race simulation"}
       subtitle={"Every run, station and roxzone split — the total posts as your Race Simulation result too."}
-      dialogWidth={620}
+      size="wide"
       onClose={onClose}
+      busy={save.isPending}
+      dirty={dirty}
       actions={
         <>
           <SheetAction>

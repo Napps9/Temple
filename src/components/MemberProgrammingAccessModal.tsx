@@ -49,6 +49,10 @@ export function MemberProgrammingAccessModal({
   const [productId, setProductId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const dirty =
+    mode !== (current?.mode ?? 'free') ||
+    productId !== (current?.store_product_id ?? null);
   const [saved, markSaved] = useSavedFlag();
 
   useEffect(() => {
@@ -96,8 +100,9 @@ export function MemberProgrammingAccessModal({
         visible={visible}
         title="Pick a product"
         onClose={onClose}
+        busy={save.isPending}
         onBack={() => setPickerOpen(false)}
-        dialogWidth={520}>
+        size="standard">
         <View className="gap-1">
           <Pressable
             onPress={() => {
@@ -141,7 +146,9 @@ export function MemberProgrammingAccessModal({
       title="Programming access"
       subtitle={`How ${memberName} unlocks their individual programming.`}
       onClose={onClose}
-      dialogWidth={520}
+      busy={save.isPending}
+      dirty={dirty}
+      size="standard"
       actions={
         <>
           <SheetAction>

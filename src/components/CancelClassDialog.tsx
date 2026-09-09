@@ -169,7 +169,8 @@ export function CancelClassDialog({
       title={`Cancel ${classTypeName}?`}
       subtitle={fmtSessionWhen(startsAt, durationMinutes)}
       onClose={close}
-      dialogWidth={520}
+      busy={cancelMut.isPending}
+      size="standard"
       actions={
         <>
           <SheetAction>

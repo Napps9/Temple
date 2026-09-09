@@ -244,6 +244,7 @@ function DependentCard({
           dependent.fullName ?? 'this child'
         } from the gym and erases their health data (PAR-Q, injuries). This can't be undone.`}
         confirmLabel="Remove"
+        cancelLabel="Keep them"
         onConfirm={() => remove.mutate()}
         onCancel={() => {
           setShowRemove(false);

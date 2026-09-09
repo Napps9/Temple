@@ -22,15 +22,16 @@ import { Sheet, SheetAction } from '@/components/Sheet';
 //     what they are told. Not "this cannot be undone".
 //   - RED APPEARS ONCE, on the confirm. The heading and the border stay
 //     monochrome, so red still means something when it shows up.
-//   - The SAFE OPTION IS NAMED. `cancelLabel` defaults to "Cancel", which
-//     inside a cancel-a-class dialog means both things at once — pass
-//     "Keep the class" instead.
+//   - The SAFE OPTION IS NAMED. `cancelLabel` is required, with no
+//     fallback, because the fallback was "Cancel" — which inside a
+//     cancel-a-class dialog means both things at once, and which three of
+//     five call sites were quietly taking.
 export function ConfirmDialog({
   visible,
   title,
   body,
   confirmLabel,
-  cancelLabel = 'Cancel',
+  cancelLabel,
   onConfirm,
   onCancel,
   pending,
@@ -40,7 +41,7 @@ export function ConfirmDialog({
   title: string;
   body: string;
   confirmLabel: string;
-  cancelLabel?: string;
+  cancelLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
   pending?: boolean;
@@ -51,6 +52,7 @@ export function ConfirmDialog({
       visible={visible}
       title={title}
       onClose={onCancel}
+      busy={pending}
       actions={
         <>
           <SheetAction>

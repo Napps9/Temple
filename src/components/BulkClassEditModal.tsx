@@ -177,7 +177,8 @@ export function BulkClassEditModal({
       visible={visible}
       title="Bulk edit the timetable"
       onClose={onClose}
-      dialogWidth={560}
+      busy={pending}
+      size="standard"
       actions={
         <>
           <SheetAction>
@@ -419,6 +420,7 @@ export function BulkClassEditModal({
         title="Close the gym for these dates?"
         body={confirmBody}
         confirmLabel="Close the gym"
+        cancelLabel="Keep them open"
         onCancel={() => setConfirming(false)}
         onConfirm={() => {
           setConfirming(false);

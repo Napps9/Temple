@@ -38,6 +38,20 @@ import { useThemeColors } from '@/lib/theme';
 // guarded it — so a stray click beside a sheet holding a written day of
 // programming, or twenty-four typed race splits, destroyed all of it with
 // nothing asked.
+// Three widths, named for what fits rather than by a number, because the
+// number is a judgement about a shape and the shape is what a caller
+// knows. Nine were in use before this and the gaps between them were not
+// decisions — no call site moves more than 40px.
+//
+// Dialog only: below `md` every sheet is full width and this is ignored.
+export type SheetSize = 'compact' | 'standard' | 'wide';
+
+const DIALOG_WIDTH: Record<SheetSize, number> = {
+  compact: 440,  // one question, a short list, a month grid
+  standard: 560, // labelled fields in a single column
+  wide: 660,     // a sectioned form, or a list beside a form
+};
+
 const DISCARD = {
   title: 'Discard your changes?',
   body: "You have typed something here that has not been saved. Leaving now throws it away.",
@@ -56,7 +70,7 @@ export function Sheet({
   busy = false,
   dirty = false,
   discard,
-  dialogWidth = 460,
+  size = 'compact',
 }: {
   visible: boolean;
   title: string;
@@ -87,7 +101,7 @@ export function Sheet({
   // prompt becomes something people dismiss without reading.
   dirty?: boolean;
   discard?: Partial<typeof DISCARD>;
-  dialogWidth?: number;
+  size?: SheetSize;
 }) {
   const { width, height } = useWindowDimensions();
   const insets = useSheetInsets();
@@ -118,6 +132,9 @@ export function Sheet({
     setAsking(false);
   }
   const copy = { ...DISCARD, ...discard };
+
+  // A one-sentence question does not want a 660px dialog.
+  const dialogWidth = DIALOG_WIDTH[asking ? 'compact' : size];
 
   // Every step-using sheet gives its step a distinct title, so the title
   // is a free step key. Without this, opening a picker from halfway down

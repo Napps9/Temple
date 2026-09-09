@@ -31,7 +31,7 @@ export function ManageModal({
       title={title}
       subtitle={subtitle}
       onClose={onClose}
-      dialogWidth={560}>
+      size="standard">
       <View className="gap-4">{children}</View>
     </Sheet>
   );

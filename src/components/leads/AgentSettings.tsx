@@ -841,10 +841,11 @@ export function AgentSettings() {
 
       <Sheet
         visible={briefModalOpen}
+        dirty={briefDraft.trim() !== ''}
         title="Rewrite with AI"
         subtitle={'This fills in the notes below — tap "Save notes" after to make it live.'}
         onClose={() => setBriefModalOpen(false)}
-        dialogWidth={640}
+        size="wide"
         actions={
           <>
             <SheetAction>
@@ -934,6 +935,7 @@ export function AgentSettings() {
         title="Turn off the AI front desk?"
         body={`This releases ${agentNumber ?? 'your number'} back to Temple's pool — it may be reassigned to another gym — and deletes the AI assistant. Calls and texts to this number stop working immediately.`}
         confirmLabel="Turn off & release number"
+        cancelLabel="Keep it on"
         pending={turnOff.isPending}
         onConfirm={() => turnOff.mutate()}
         onCancel={() => setConfirmTurnOff(false)}

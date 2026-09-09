@@ -75,7 +75,9 @@ export function ReopenClosureModal({
       title="Reopen classes"
       subtitle={closureLabel}
       onClose={onClose}
-      dialogWidth={520}
+      busy={pending}
+      dirty={excluded.size > 0}
+      size="standard"
       actions={
         <>
           <SheetAction>

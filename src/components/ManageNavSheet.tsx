@@ -22,7 +22,7 @@ export function ManageNavSheet({
   const links = useGymNavLinks();
 
   return (
-    <Sheet visible={visible} onClose={onClose} title={brand.gymName} dialogWidth={420}>
+    <Sheet visible={visible} onClose={onClose} title={brand.gymName} size="compact">
       <View>
       <RuledList>
         <ListRow

@@ -105,6 +105,12 @@ export function ProgrammingModal({
   // otherwise. Writing ahead is the deliberate act, not publishing.
   const [publishNow, setPublishNow] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // A section the coach has begun writing. The publish switch and the
+  // picker are choices, not writing.
+  const dirty = drafts.some(
+    (d) => (d.title ?? '').trim() !== '' || (d.body ?? '').trim() !== '',
+  );
   const [saved, markSaved] = useSavedFlag();
   const [pickerOpenFor, setPickerOpenFor] = useState<
     { idx: number; kind: 'category' | 'format' } | null
@@ -310,8 +316,10 @@ export function ProgrammingModal({
             : 'Pick a scoring format'
         }
         onClose={close}
+        busy={save.isPending}
+        dirty={dirty}
         onBack={() => setPickerOpenFor(null)}
-        dialogWidth={620}>
+        size="wide">
         <PickerStep
           kind={pickerOpenFor.kind}
           onPick={(key) => {
@@ -332,7 +340,9 @@ export function ProgrammingModal({
       visible={visible}
       title="Programming"
       onClose={close}
-      dialogWidth={620}
+      busy={save.isPending}
+      dirty={dirty}
+      size="wide"
       actions={
         target && date ? (
           <>

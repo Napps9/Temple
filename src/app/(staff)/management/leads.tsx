@@ -754,6 +754,13 @@ function AddLeadModal({
       visible={visible}
       title="Add a lead"
       onClose={onClose}
+      busy={save.isPending}
+      dirty={
+        name.trim() !== '' ||
+        email.trim() !== '' ||
+        phone.trim() !== '' ||
+        notes.trim() !== ''
+      }
       actions={
         <>
           <SheetAction>
@@ -1092,7 +1099,7 @@ function LeadDetailModal({
           : undefined
       }
       onClose={onClose}
-      dialogWidth={520}
+      size="standard"
       actions={
         <SheetAction grow>
           <Button variant="secondary" onPress={onClose}>

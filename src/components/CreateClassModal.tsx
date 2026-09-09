@@ -89,6 +89,14 @@ export function CreateClassModal({
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<'form' | 'confirm'>('form');
 
+  // Date and time are seeded from the slot that was tapped, so they are
+  // not typing; a class type, a note or a changed recurrence is.
+  const dirty =
+    classTypeId !== null ||
+    notes.trim() !== '' ||
+    recurring ||
+    recurrence !== EMPTY_RECURRENCE;
+
   // Shared canonical query (see useClassCatalog); archived types can't
   // be scheduled.
   const allTypesQuery = useClassTypes();
@@ -319,7 +327,9 @@ export function CreateClassModal({
           : 'Have a quick look — tap Edit if anything needs changing.'
       }
       onClose={onClose}
-      dialogWidth={620}
+      busy={create.isPending}
+      dirty={dirty}
+      size="wide"
       actions={
         stage === 'form' ? (
           <>

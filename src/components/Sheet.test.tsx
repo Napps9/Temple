@@ -291,6 +291,7 @@ describe('ConfirmDialog', () => {
     title: 'Cancel Thursday 17:30 Metcon?',
     body: '17 members are booked in. Everyone is refunded in full.',
     confirmLabel: 'Cancel the class',
+    cancelLabel: 'Keep the class',
     onConfirm: () => {},
     onCancel: () => {},
   };
@@ -309,9 +310,13 @@ describe('ConfirmDialog', () => {
     expect(screen.getByText('Cancel the class')).toBeTruthy();
   });
 
-  it('falls back to Cancel when the caller does not name it', () => {
+  it('has no unnamed fallback for the safe option', () => {
+    // cancelLabel is required, so "Cancel" cannot appear beside a title
+    // that is itself a cancel. The type is the enforcement; this pins the
+    // consequence.
     render(<ConfirmDialog {...base} />);
-    expect(screen.getByText('Cancel')).toBeTruthy();
+    expect(screen.getByText('Keep the class')).toBeTruthy();
+    expect(screen.queryByText('Cancel')).toBeNull();
   });
 
   it('shows an error without losing the body', () => {

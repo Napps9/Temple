@@ -118,6 +118,12 @@ export function EditClassSheet({
   }
   const set = (patch: Partial<EditDraft>) => setDraft((d) => ({ ...d, ...patch }));
 
+  // The draft already carries the class as it stood, so "has anything been
+  // typed" is a field-wise comparison and nothing has to be remembered.
+  const dirty = (Object.keys(original) as (keyof EditDraft)[]).some(
+    (k) => draft[k] !== original[k],
+  );
+
   // Owners and coaches only — set_session_coach's rule and user_can_cover's
   // before it: admins do not coach, so offering one is offering a choice
   // that fails.
@@ -280,7 +286,9 @@ export function EditClassSheet({
       title={`Edit ${classTypeName}`}
       subtitle={fmtSessionWhen(startsAt, durationMinutes)}
       onClose={close}
-      dialogWidth={560}
+      busy={save.isPending}
+      dirty={dirty && !done}
+      size="standard"
       actions={
         <>
           <SheetAction>

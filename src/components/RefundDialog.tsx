@@ -169,7 +169,8 @@ export function RefundDialog({
         charge.data ? `Last payment ${money(charge.data.amount_cents)}` : undefined
       }
       onClose={onClose}
-      dialogWidth={560}
+      busy={refund.isPending}
+      size="standard"
       actions={
         charge.data ? (
           <>

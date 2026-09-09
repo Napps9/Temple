@@ -98,6 +98,7 @@ export function RemoveMemberDialog({
       visible={visible}
       title={`Remove ${memberName} from the gym?`}
       onClose={onClose}
+      busy={remove.isPending}
       actions={
         <>
           <SheetAction>

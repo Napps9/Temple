@@ -67,7 +67,7 @@ export function MonthPickerModal({
   const today = new Date();
 
   return (
-    <Sheet visible={visible} title="Jump to a date" onClose={onClose} dialogWidth={400}>
+    <Sheet visible={visible} title="Jump to a date" onClose={onClose} size="compact">
       <View className="gap-2">
         <View className="flex-row items-center justify-between">
           <Pressable
