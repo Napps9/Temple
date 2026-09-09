@@ -28,6 +28,13 @@
 // members. It is our alarm, and a demo gym tripping it is exactly when we
 // want to hear about it.
 //
+// And one named exception, added by 0290: a demo gym may really text a
+// handset somebody has explicitly written into demo_sms_allowlist. The
+// rule above is about a stranger being reached; a number a person put on
+// a list is not a stranger. It covers SMS and nothing else — every other
+// door here stays shut on a demo tenant — and demoSmsAllowed below is the
+// only way through it.
+//
 // WHAT A BLOCKED CALL DOES INSTEAD. It does not fail and it does not
 // vanish. The senders already had this: `const live = Boolean(RESEND_API_KEY
 // && fromAddress)` and, when false, the recipient row is written
@@ -75,6 +82,33 @@ export async function gymIsDemo(
     .maybeSingle();
   if (error || !data) return true;
   return data.is_demo === true;
+}
+
+/**
+ * May this demo gym really text this handset? (0290)
+ *
+ * The AI front desk's whole job on a call is to text the prospect a link,
+ * and a text that only appears in the Conversations thread cannot
+ * demonstrate that. So a number somebody has explicitly allowed for this
+ * gym is sent to for real; every other destination still simulates.
+ *
+ * Fails closed, like gymIsDemo: a lookup that cannot answer is not
+ * permission.
+ */
+export async function demoSmsAllowed(
+  service: ServiceClient,
+  gymId: string,
+  phone: string,
+): Promise<boolean> {
+  const { data, error } = await service.rpc('demo_sms_allowed', {
+    p_gym_id: gymId,
+    p_phone: phone,
+  });
+  if (error) {
+    console.error('demo_sms_allowed failed', error.message);
+    return false;
+  }
+  return data === true;
 }
 
 // A phone number that can never belong to anybody. 07700 900000-900999 is

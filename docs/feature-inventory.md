@@ -3814,6 +3814,17 @@ has to stay true. `send-member-messages` was selecting `sms_capable` and
 never reading it, so a voice-only number would have been handed to Twilio
 as a `From`; it honours it now. vitest: `src/lib/sms-sender.test.ts`.
 
+**A demo that can text one person (0290).** `0278` blocked demo tenants
+from every vendor because jointemple.io publishes one tenant's owner
+password — a reason about the *destination*, expressed as a flag about the
+*tenant*, which left the front desk unable to demonstrate the one thing it
+is for. `demo_sms_allowlist` makes the destination the unit: a demo gym
+really texts a handset an owner has named (`allow_demo_sms_number`,
+normalised on the way in, 30 days by default) and simulates every other
+one. SMS only — email, Stripe and the rest stay shut on a demo tenant —
+no wildcards, and entries expire, so a list added for one sales call
+closes itself. pgTAP: `a_demo_that_can_text_one_person`.
+
 **Call review, coaching & voice (0137)** [`can_review_ai_calls`, owner/admin].
 Voice calls are recorded (Vapi artifact) and pulled into a private
 `agent-call-recordings` Storage bucket at `/end-of-call`; `call_recordings`
