@@ -1,5 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from './Text';
 
@@ -45,6 +52,14 @@ import { useThemeColors } from '@/lib/theme';
 //
 // Dialog only: below `md` every sheet is full width and this is ignored.
 export type SheetSize = 'compact' | 'standard' | 'wide';
+
+// Board 04's rule, enforced rather than described. Types cannot see
+// through `children: ReactNode`, so this is a runtime throw — and not
+// gated on __DEV__, because the test env pins that false and an
+// unenforceable rule is what got us here. It is deliberately loud: on
+// react-native-web a nested modal portals out and looks fine, which is
+// exactly why one shipped and stayed.
+const InSheet = createContext(false);
 
 const DIALOG_WIDTH: Record<SheetSize, number> = {
   compact: 440,  // one question, a short list, a month grid
@@ -103,6 +118,14 @@ export function Sheet({
   discard?: Partial<typeof DISCARD>;
   size?: SheetSize;
 }) {
+  if (useContext(InSheet)) {
+    throw new Error(
+      `Sheet "${title}" is rendered inside another Sheet. A modal never ` +
+        'opens another modal — give the outer sheet a step (onBack) instead, ' +
+        'or close it before opening this one.',
+    );
+  }
+
   const { width, height } = useWindowDimensions();
   const insets = useSheetInsets();
   const colors = useThemeColors();
@@ -296,6 +319,7 @@ export function Sheet({
                 </View>
               )}
               {head}
+              <InSheet.Provider value>
               <ScrollView
                 ref={scroller}
                 contentContainerClassName="px-4"
@@ -309,6 +333,7 @@ export function Sheet({
                   children
                 )}
               </ScrollView>
+              </InSheet.Provider>
               {foot}
             </View>
           </View>

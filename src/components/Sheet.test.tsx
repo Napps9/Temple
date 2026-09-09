@@ -146,6 +146,41 @@ describe('Sheet', () => {
   });
 });
 
+// The one rule in the shell's own header that shipped broken: a
+// ConfirmDialog rendered inside a Sheet's body was a Modal inside a
+// ScrollView inside a Modal. On web it portals out and looks right, which
+// is why nobody saw it; on a phone it is two grabbers and two backdrops.
+describe('Sheet nesting', () => {
+  it('refuses to render inside another sheet', () => {
+    // React logs the thrown error before the boundary catches it.
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() =>
+      render(
+        <Sheet visible title="Bulk edit" onClose={() => {}}>
+          <Sheet visible title="Close the gym?" onClose={() => {}}>
+            <Text>Body</Text>
+          </Sheet>
+        </Sheet>,
+      ),
+    ).toThrow(/never\s+opens another modal/);
+    quiet.mockRestore();
+  });
+
+  it('is happy with two sheets side by side', () => {
+    render(
+      <>
+        <Sheet visible title="One" onClose={() => {}}>
+          <Text>First</Text>
+        </Sheet>
+        <Sheet visible={false} title="Two" onClose={() => {}}>
+          <Text>Second</Text>
+        </Sheet>
+      </>,
+    );
+    expect(screen.getByText('First')).toBeTruthy();
+  });
+});
+
 // The shell owns the ways out, so it owns refusing them. Before this, the
 // backdrop and Escape called onClose unconditionally and two modals out of
 // 33 guarded it — a stray click beside a half-written workout took the lot.

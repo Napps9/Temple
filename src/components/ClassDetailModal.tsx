@@ -450,6 +450,14 @@ export function ClassDetailModal({
     setBroadcastBody('');
     setBroadcastError(null);
     setBroadcastSent(false);
+    // This component stays mounted between classes, so anything left set
+    // here shows up on the next one. coverStep was the visible case:
+    // "Asked the coaches." greeted whichever class you opened next.
+    setCoverStep(null);
+    setChosenEntitlement(null);
+    setShowEditClass(false);
+    setShowCancelClass(false);
+    setStaffSheet(null);
     onClose();
   }
 
@@ -544,7 +552,12 @@ export function ClassDetailModal({
   return (
     <>
     <Sheet
-      visible={visible}
+      // This sheet opens three others — edit, cancel, and the staff
+      // booking sheet. They are siblings rather than children, so nothing
+      // stopped both being up at once: two grabbers, two backdrops, and
+      // this one still scrolled behind the second. It stands aside while
+      // one of them is open, so there is one modal on screen at a time.
+      visible={visible && !showEditClass && !showCancelClass && staffSheet === null}
       title={detail ? dateLabel : 'Class'}
       subtitle={
         detail && start && end
@@ -981,7 +994,7 @@ export function ClassDetailModal({
         onClose={() => setShowCancelClass(false)}
         onCancelled={() => {
           setShowCancelClass(false);
-          onClose();
+          close();
         }}
       />
     ) : null}

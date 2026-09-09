@@ -5,7 +5,7 @@ import { Check } from './Check';
 import { Text } from './Text';
 
 import { Button } from '@/components/Button';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { confirmStep } from '@/components/ConfirmDialog';
 import { Sheet, SheetAction } from '@/components/Sheet';
 import { DatePicker } from '@/components/DatePicker';
 import { Input } from '@/components/Input';
@@ -172,14 +172,41 @@ export function BulkClassEditModal({
       : '. Nobody has booked into them.') +
     ' Classes scheduled into these dates later will be blocked until you reopen them.';
 
+  // The question used to be a ConfirmDialog rendered inside this sheet's
+  // own body — a Modal inside a ScrollView inside a Modal. On web it
+  // portalled out and looked fine, which is how it survived; on a phone it
+  // was two grabbers and two backdrops.
+  const closureStep = confirmStep({
+    title: 'Close the gym for these dates?',
+    body: confirmBody,
+    confirmLabel: 'Close the gym',
+    cancelLabel: 'Keep them open',
+    pending,
+    onCancel: () => setConfirming(false),
+    onConfirm: () => {
+      setConfirming(false);
+      onClosureCreated({
+        start,
+        end,
+        reason,
+        excludeSessionIds: [...excluded],
+        postNotice: canPostNotice && postNotice,
+      });
+    },
+  });
+
   return (
     <Sheet
       visible={visible}
-      title="Bulk edit the timetable"
+      title={confirming ? closureStep.title : 'Bulk edit the timetable'}
+      onBack={confirming ? () => setConfirming(false) : undefined}
       onClose={onClose}
       busy={pending}
       size="standard"
       actions={
+        confirming ? (
+          closureStep.actions
+        ) : (
         <>
           <SheetAction>
             <Button variant="secondary" onPress={onClose}>
@@ -210,7 +237,11 @@ export function BulkClassEditModal({
             )}
           </SheetAction>
         </>
+        )
       }>
+      {confirming ? (
+        closureStep.body
+      ) : (
       <View className="gap-4">
           <View className="flex-row gap-2">
             {(
@@ -414,26 +445,7 @@ export function BulkClassEditModal({
           ) : null}
 
       </View>
-
-      <ConfirmDialog
-        visible={confirming}
-        title="Close the gym for these dates?"
-        body={confirmBody}
-        confirmLabel="Close the gym"
-        cancelLabel="Keep them open"
-        onCancel={() => setConfirming(false)}
-        onConfirm={() => {
-          setConfirming(false);
-          onClosureCreated({
-            start,
-            end,
-            reason,
-            excludeSessionIds: [...excluded],
-            postNotice: canPostNotice && postNotice,
-          });
-        }}
-        pending={pending}
-      />
+      )}
     </Sheet>
   );
 }

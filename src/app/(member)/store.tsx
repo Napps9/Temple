@@ -100,6 +100,10 @@ export default function StoreScreen() {
       : list.filter((p) => p.category?.trim() === activeAisle);
 
   const openProduct = list.find((p) => p.id === openId) ?? null;
+  // Which product's photos are being looked at, at screen level rather
+  // than inside the product sheet, so the two are never open together.
+  const [photosFor, setPhotosFor] = useState<string | null>(null);
+  const photoProduct = list.find((p) => p.id === photosFor) ?? null;
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
@@ -221,6 +225,8 @@ export default function StoreScreen() {
 
       <ProductSheet
         product={openProduct}
+        suppressed={photosFor !== null}
+        onViewPhotos={() => openProduct && setPhotosFor(openProduct.id)}
         currency={currency}
         subscribed={openProduct ? subscribedIds.has(openProduct.id) : false}
         pending={checkout.isPending}
@@ -240,6 +246,13 @@ export default function StoreScreen() {
           addToBag(openProduct.id, variantId, qty);
           setOpenId(null);
         }}
+      />
+
+      <ImageGalleryModal
+        visible={photosFor !== null}
+        images={photoProduct ? productImages(photoProduct) : []}
+        initialIndex={0}
+        onClose={() => setPhotosFor(null)}
       />
 
       <BagSheet
@@ -373,18 +386,25 @@ function ProductSheet({
   onClose,
   onBuyNow,
   onAddToBag,
+  onViewPhotos,
+  suppressed,
 }: {
   product: StoreProduct | null;
   currency: string;
   subscribed: boolean;
   pending: boolean;
+  // The gallery is a full-bleed lightbox with its own gesture root, so it
+  // cannot be a step of this sheet. It is opened at screen level instead,
+  // and this sheet steps aside while it is up — one modal at a time,
+  // rather than a lightbox inside a sheet's ScrollView.
+  onViewPhotos: () => void;
+  suppressed: boolean;
   onClose: () => void;
   onBuyNow: (qty: number, variantId: string | null) => void;
   onAddToBag: (qty: number, variantId: string | null) => void;
 }) {
   const [qty, setQty] = useState(1);
   const [variantId, setVariantId] = useState<string | null>(null);
-  const [galleryOpen, setGalleryOpen] = useState(false);
   // Reset the quantity and size when a different product opens.
   useEffect(() => {
     setQty(1);
@@ -420,7 +440,7 @@ function ProductSheet({
 
   return (
     <Sheet
-      visible
+      visible={!suppressed}
       title={product.name}
       subtitle={`${priceLabelFor(product, currency)} · ${kindLine}`}
       onClose={onClose}
@@ -476,7 +496,7 @@ function ProductSheet({
       <View className="gap-3">
         {images.length > 0 ? (
           <Pressable
-            onPress={() => setGalleryOpen(true)}
+            onPress={onViewPhotos}
             accessibilityRole="imagebutton"
             accessibilityLabel="View photos">
             <Image
@@ -493,12 +513,6 @@ function ProductSheet({
             ) : null}
           </Pressable>
         ) : null}
-        <ImageGalleryModal
-          visible={galleryOpen}
-          images={images}
-          initialIndex={0}
-          onClose={() => setGalleryOpen(false)}
-        />
 
         {product.description ? (
           <Text className="text-ink-2 dark:text-ink-2-dk text-sm">

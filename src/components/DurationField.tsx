@@ -1,6 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { FieldLabel } from './SectionLabel';
 import { Text, TextInput } from './Text';
 
@@ -225,9 +224,13 @@ export function DurationField({
       {blurb ? (
         <Text className="text-ink-2 dark:text-ink-2-dk text-xs">{blurb}</Text>
       ) : null}
-      {/* Number on the left, unit dropdown on the right. The compact
-          trigger (current unit + chevron) sidesteps the mobile clipping
-          the old inline segmented control had with 'weeks'. */}
+      {/* The unit sits under the number as a wrapping row rather than in a
+          popover. The popover was a second react-native Modal, so a
+          duration field inside a sheet opened a modal on top of a modal —
+          and it positioned itself from a measureInWindow snapshot, so it
+          drifted if the sheet scrolled after measuring and had no room to
+          flip near the bottom of a phone. There are only ever two to six
+          units, and they are three letters each. */}
       <View className="flex-row items-center gap-2">
         <TextInput
           value={amount}
@@ -237,99 +240,37 @@ export function DurationField({
           placeholderTextColor={colors.ink3}
           className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-4 py-3 text-ink dark:text-ink-dk text-base"
         />
-        <UnitDropdown
-          units={units}
-          unit={unit}
-          onChange={changeUnit}
-          canUse={exactIn}
-        />
       </View>
+      {units.length > 1 ? (
+        <View className="flex-row flex-wrap gap-2">
+          {units.map((u) => {
+            const on = u === unit;
+            const usable = on || exactIn(u);
+            return (
+              <Pressable
+                key={u}
+                disabled={!usable}
+                onPress={() => changeUnit(u)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: on, disabled: !usable }}
+                className={`h-9 px-3 justify-center rounded-full border ${
+                  on
+                    ? 'border-ink dark:border-ink-dk bg-raised dark:bg-raised-dk'
+                    : 'border-line dark:border-line-dk'
+                } ${usable ? 'active:opacity-70' : 'opacity-40'}`}>
+                <Text
+                  className={`text-[13px] ${
+                    on
+                      ? 'text-ink dark:text-ink-dk font-semibold'
+                      : 'text-ink-2 dark:text-ink-2-dk'
+                  }`}>
+                  {UNIT_LABEL[u]}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
     </View>
-  );
-}
-
-function UnitDropdown({
-  units,
-  unit,
-  onChange,
-  canUse,
-}: {
-  units: DurationUnit[];
-  unit: DurationUnit;
-  onChange: (u: DurationUnit) => void;
-  canUse: (u: DurationUnit) => boolean;
-}) {
-  const colors = useThemeColors();
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef<View>(null);
-  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(
-    null,
-  );
-
-  function openMenu() {
-    triggerRef.current?.measureInWindow((x, y, width, height) => {
-      setPos({ top: y + height + 4, left: x, width });
-      setOpen(true);
-    });
-  }
-
-  return (
-    <>
-      <Pressable
-        ref={triggerRef}
-        onPress={openMenu}
-        className="w-24 flex-row items-center justify-between gap-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-3 active:opacity-70">
-        <Text className="text-ink dark:text-ink-dk text-base">
-          {UNIT_LABEL[unit]}
-        </Text>
-        <Ionicons name="chevron-down" size={16} color={colors.ink3} />
-      </Pressable>
-      <Modal
-        visible={open}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(false)}>
-        <Pressable
-          className="flex-1"
-          onPress={() => setOpen(false)}
-          accessibilityLabel="Close unit menu"
-        />
-        {pos ? (
-          <View
-            style={{ position: 'absolute', top: pos.top, left: pos.left, width: pos.width }}
-            className="bg-surface dark:bg-surface-dk rounded-ctl border border-line dark:border-line-dk shadow-float p-1">
-            {units.map((u) => {
-              const on = u === unit;
-              const usable = on || canUse(u);
-              return (
-                <Pressable
-                  key={u}
-                  disabled={!usable}
-                  accessibilityState={{ disabled: !usable, selected: on }}
-                  onPress={() => {
-                    onChange(u);
-                    setOpen(false);
-                  }}
-                  className={`flex-row items-center justify-between rounded-md px-3 py-2 ${
-                    usable ? 'active:opacity-70' : 'opacity-40'
-                  } ${on ? 'bg-primary/10' : ''}`}>
-                  <Text
-                    className={`text-sm ${
-                      on
-                        ? 'text-ink dark:text-ink-dk font-medium'
-                        : 'text-ink-2 dark:text-ink-2-dk'
-                    }`}>
-                    {UNIT_LABEL[u]}
-                  </Text>
-                  {on ? (
-                    <Ionicons name="checkmark" size={16} color={colors.primary} />
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
-      </Modal>
-    </>
   );
 }
