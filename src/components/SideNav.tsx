@@ -136,7 +136,16 @@ export function SideNav({
         peeking && !pinned ? 'shadow-float' : ''
       }`}>
       <ScrollView contentContainerClassName="p-3 gap-3.5 flex-1">
-        <View className={collapsed ? 'gap-1.5' : 'flex-row items-center gap-1.5'}>
+        {/* Every block in here is a FIXED height, the same in both states,
+            because the panel opens over the strip: an icon that sits at a
+            different y once the labels arrive slides out from under the
+            cursor that went to press it. 74 is the collapsed column —
+            the 44px badge, the 6px gap and the 24px pin — and the open row
+            centres its card in the same box. */}
+        <View
+          className={`h-[74px] justify-center ${
+            collapsed ? 'gap-1.5' : 'flex-row items-center gap-1.5'
+          }`}>
           <Pressable
             onPress={() => {
               haptic.selection();
@@ -144,8 +153,8 @@ export function SideNav({
             }}
             accessibilityRole="button"
             accessibilityLabel={brand.gymName}
-            className={`flex-row items-center rounded-ctl border border-line dark:border-line-dk hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk ${
-              collapsed ? 'justify-center px-0 py-2' : 'flex-1 min-w-0 px-2.5 py-2'
+            className={`h-11 flex-row items-center rounded-ctl border border-line dark:border-line-dk hover:bg-raised dark:hover:bg-raised-dk active:bg-raised dark:active:bg-raised-dk ${
+              collapsed ? 'w-11 justify-center px-0' : 'flex-1 min-w-0 px-2.5'
             }`}>
             {collapsed ? (
               <Text className="text-ink dark:text-ink-dk text-[15px] font-semibold">
@@ -172,9 +181,7 @@ export function SideNav({
             accessibilityState={{ selected: pinned }}
             accessibilityLabel={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
             hitSlop={4}
-            className={`items-center justify-center rounded-ctl hover:bg-raised dark:hover:bg-raised-dk active:opacity-70 ${
-              collapsed ? 'py-1.5' : 'w-7 h-9'
-            }`}>
+            className={`h-6 w-7 items-center justify-center rounded-ctl hover:bg-raised dark:hover:bg-raised-dk active:opacity-70`}>
             <Ionicons
               name={pinned ? 'chevron-back-outline' : 'chevron-forward-outline'}
               size={15}
@@ -200,11 +207,15 @@ export function SideNav({
 
         {gymLinks.length ? (
           <View className="gap-0.5">
-            {collapsed ? (
-              <View className="border-t border-line dark:border-line-dk mx-2 mb-1.5" />
-            ) : (
-              <FieldLabel className="px-3 pt-1.5 pb-1">The gym</FieldLabel>
-            )}
+            {/* A heading and a rule are not the same height, and the six
+                rows under them moved by the difference. */}
+            <View className="h-6 justify-center">
+              {collapsed ? (
+                <View className="border-t border-line dark:border-line-dk mx-2" />
+              ) : (
+                <FieldLabel className="px-3">The gym</FieldLabel>
+              )}
+            </View>
             {gymLinks.map((l) => (
               <NavRow
                 key={l.href}
@@ -229,8 +240,8 @@ export function SideNav({
           }}
           accessibilityRole="button"
           accessibilityLabel="Viewing Staff"
-          className={`flex-row items-center rounded-ctl border border-blue-500/40 bg-blue-500/10 hover:opacity-80 active:opacity-70 ${
-            collapsed ? 'justify-center px-0 py-2' : 'gap-2 px-3 py-2'
+          className={`h-9 flex-row items-center rounded-ctl border border-blue-500/40 bg-blue-500/10 hover:opacity-80 active:opacity-70 ${
+            collapsed ? 'justify-center px-0' : 'gap-2 px-3'
           }`}>
           <Ionicons name="swap-horizontal-outline" size={16} color="#3B82F6" />
           {collapsed ? null : (
@@ -265,8 +276,8 @@ export function SideNav({
         accessibilityRole="tab"
         accessibilityState={{ selected: active }}
         accessibilityLabel={label}
-        className={`flex-row items-center rounded-ctl ${
-          collapsed ? 'justify-center px-0 py-2.5' : 'gap-2.5 px-3 py-2'
+        className={`h-9 flex-row items-center rounded-ctl ${
+          collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'
         } ${
           active
             ? 'bg-brand/10'
