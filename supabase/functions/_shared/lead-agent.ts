@@ -4,7 +4,7 @@
 //
 // Plans and schedule are read directly with the service client.
 
-import { demoSmsAllowed, demoVendorId } from './demo.ts';
+import { demoVendorId } from './demo.ts';
 import { escapeHtml, templeEmailHtml } from './email-layout.ts';
 import { outboundSmsSender, twilioSenderParam } from './sms-sender.ts';
 
@@ -600,20 +600,12 @@ async function textProspect(ctx: ToolContext, message: string): Promise<TextOutc
     ctx.gym.settings.sms_capable,
     ctx.platformSmsSender,
   );
-  // A demo gym is exempt from needing one, because its send is usually
-  // simulated (0278) — but not always, see below.
+  // A demo gym is exempt from needing one: its send is simulated (0278),
+  // and the message still lands in the thread the visitor is reading.
   if (!sender && !ctx.gym.isDemo) return 'no_sms_number';
 
   const to = await textDestination(ctx);
   if (!to) return 'no_destination';
-
-  // 0290: a demo gym really texts a handset somebody has allowed, and
-  // simulates every other destination.
-  const simulate =
-    ctx.gym.isDemo && !(await demoSmsAllowed(ctx.service, ctx.gym.id, to));
-  // An allowed number on a demo gym is a real send, so it needs a real
-  // sender like anybody else.
-  if (!simulate && !sender) return 'no_sms_number';
 
   const conv = await getOrCreateConversation(ctx.service, ctx.gym.id, to, 'sms');
   if (conv.status === 'closed') return 'opted_out';
@@ -635,7 +627,7 @@ async function textProspect(ctx: ToolContext, message: string): Promise<TextOutc
     sender ?? '',
     to,
     message,
-    simulate,
+    ctx.gym.isDemo,
   );
   if (!sent.sid) {
     console.error('agent sms: Twilio refused', ctx.gym.id, sent.error);

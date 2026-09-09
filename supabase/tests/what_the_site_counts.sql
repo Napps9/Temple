@@ -20,6 +20,10 @@ declare
 begin
   perform _test_mk_membership(v_real, v_owner, 'owner');
   perform _test_mk_membership(v_demo, v_owner, 'owner');
+  -- Flagged explicitly since 0291: the slug stopped deciding, and what
+  -- this half of the funnel counts is the tenant embedded on the
+  -- marketing site, which is the flagged one.
+  update public.gyms set is_demo = true where id = v_demo;
   perform set_config('test.real', v_real::text, true);
   perform set_config('test.demo', v_demo::text, true);
 end $$;

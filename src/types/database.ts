@@ -794,31 +794,6 @@ export type Database = {
         }>;
         Relationships: [];
       };
-      demo_sms_allowlist: {
-        Row: {
-          id: string;
-          gym_id: string;
-          phone: string;
-          label: string | null;
-          created_by: string | null;
-          created_at: string;
-          expires_at: string;
-        };
-        Insert: {
-          id?: string;
-          gym_id: string;
-          phone: string;
-          label?: string | null;
-          created_by?: string | null;
-          created_at?: string;
-          expires_at?: string;
-        };
-        Update: Partial<{
-          label: string | null;
-          expires_at: string;
-        }>;
-        Relationships: [];
-      };
       agent_interviews: {
         Row: {
           id: string;

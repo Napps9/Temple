@@ -3814,16 +3814,21 @@ has to stay true. `send-member-messages` was selecting `sms_capable` and
 never reading it, so a voice-only number would have been handed to Twilio
 as a `From`; it honours it now. vitest: `src/lib/sms-sender.test.ts`.
 
-**A demo that can text one person (0290).** `0278` blocked demo tenants
-from every vendor because jointemple.io publishes one tenant's owner
-password — a reason about the *destination*, expressed as a flag about the
-*tenant*, which left the front desk unable to demonstrate the one thing it
-is for. `demo_sms_allowlist` makes the destination the unit: a demo gym
-really texts a handset an owner has named (`allow_demo_sms_number`,
-normalised on the way in, 30 days by default) and simulates every other
-one. SMS only — email, Stripe and the rest stay shut on a demo tenant —
-no wildcards, and entries expire, so a list added for one sales call
-closes itself. pgTAP: `a_demo_that_can_text_one_person`.
+**What makes a gym a demo (0291).** `0278` inferred it from the slug —
+anything starting `demo-` was force-flagged and could not be unflagged —
+because the two sales tenants existed nowhere in the repo and the prefix
+was the only handle on them. `tenants.ts` has since named all three, so
+the flag now follows the exposure instead: `demo_marketing_credentials` is
+the row `api/demo-credentials.ts` serves to anyone loading jointemple.io,
+so an `after insert or update` trigger on it flags that gym, and nothing
+else is flagged by its name. A tenant one person signs into with a
+password only they hold is an ordinary gym whose AI front desk really
+texts prospects, which is the thing it exists to demonstrate. `is_demo`
+stays settable by hand for an internal tenant that wants the guards.
+`0290`'s per-handset allowlist is dropped in the same migration — a real
+gym texts whoever the prospect gives it, and special-casing the
+destination made the demo behave unlike the product. pgTAP:
+`a_demo_gym_cannot_reach_anybody`.
 
 **Call review, coaching & voice (0137)** [`can_review_ai_calls`, owner/admin].
 Voice calls are recorded (Vapi artifact) and pulled into a private

@@ -156,6 +156,16 @@ Deliberately none of these is `demo-ironworks`/`demo-hyrox`: those two are
 internal QA fixtures with a stable password (`TempleDemo1!`) engineers rely
 on, and the rotation job must never touch them.
 
+**Only the published one is guarded.** `gyms.is_demo` — the flag every
+egress guard asks, so no email, text or charge leaves on that tenant's
+behalf — is set by publishing a password to `demo_marketing_credentials`,
+which is what the marketing site serves (0291). So `demo-launchpad` is
+flagged and the others are ordinary gyms: they really send, which is the
+only way to demonstrate an AI front desk that texts a prospect a link.
+That is deliberate, and it means the person giving a demo on one of them
+is doing it on a live account. Set `is_demo` by hand on any tenant you
+want the guards back on.
+
 - **All three are reseeded nightly** at 03:00 UTC by
   `demo-marketing-rotate.yml` (`workflow_dispatch` with **no inputs** — the
   list comes from `tenants.ts`, which refuses a slug that is not
