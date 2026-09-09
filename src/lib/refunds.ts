@@ -124,3 +124,33 @@ export function computeRefund(
       };
   }
 }
+
+// What the owner typed into the goodwill amount box, resolved.
+//
+// Three answers, and they have to stay three. Blank means "the full
+// charge" and is a real choice the label offers. A number is itself. And
+// something that will not parse is neither: parseFloat('£20') is NaN, and
+// a NaN that reaches the wire is serialised to null — which is the same
+// value blank sends, so the server refunds everything while the button
+// still says £0.00, because clampCents reads NaN as 0. Keeping 'invalid'
+// distinct is what stops the preview and the charge disagreeing.
+export type TypedAmount =
+  | { kind: 'blank' }
+  | { kind: 'amount'; cents: number }
+  | { kind: 'problem'; message: string };
+
+export function parseAmountMajor(input: string, chargeCents: number): TypedAmount {
+  const typed = input.trim();
+  if (typed === '') return { kind: 'blank' };
+  if (!/^\d+(?:\.\d{1,2})?$/.test(typed)) {
+    return { kind: 'problem', message: 'Enter an amount in numbers, like 20 or 20.00.' };
+  }
+  const cents = Math.round(Number(typed) * 100);
+  if (cents <= 0) {
+    return { kind: 'problem', message: 'Enter an amount greater than zero.' };
+  }
+  if (cents > chargeCents) {
+    return { kind: 'problem', message: 'That is more than the amount charged.' };
+  }
+  return { kind: 'amount', cents };
+}

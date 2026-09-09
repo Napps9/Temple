@@ -571,6 +571,14 @@ export function ProgrammingCalendar({
   );
 }
 
+// A member with no max for a movement gets a chip offering to add one.
+// Its handler was never passed by either call site, so the chip rendered
+// and did nothing when pressed. The movement's own page already owns the
+// recorder, so the chip goes there rather than growing a second one.
+function recordMaxFor(movementKey: string) {
+  router.push(`/track/movement/${movementKey}` as never);
+}
+
 function ClassTypeCard({
   classType,
   programmingId,
@@ -656,7 +664,11 @@ function ClassTypeCard({
             </View>
             <Text className="text-ink-2 dark:text-ink-2-dk">{s.body}</Text>
             {repMaxLookup ? (
-              <PercentPrescriptionRow section={s} lookup={repMaxLookup} />
+              <PercentPrescriptionRow
+                section={s}
+                lookup={repMaxLookup}
+                onRecord={mode === 'view' ? recordMaxFor : undefined}
+              />
             ) : null}
             {s.leaderboard_enabled && programmingId ? (
               <ChipButton
@@ -785,7 +797,11 @@ function PersonalCard({
             </View>
             <Text className="text-ink-2 dark:text-ink-2-dk">{s.body}</Text>
             {repMaxLookup ? (
-              <PercentPrescriptionRow section={s} lookup={repMaxLookup} />
+              <PercentPrescriptionRow
+                section={s}
+                lookup={repMaxLookup}
+                onRecord={mode === 'view' ? recordMaxFor : undefined}
+              />
             ) : null}
           </View>
         ))}

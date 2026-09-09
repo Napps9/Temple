@@ -1,16 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, Switch, View } from 'react-native';
-import { Text, TextInput } from './Text';
+import { Text } from './Text';
 
 import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
 import { Sheet, SheetAction } from '@/components/Sheet';
 import { errorMessage } from '@/lib/errors';
 import { formatMoney } from '@/lib/coach-earnings';
-import { computeRefund, type PlanKind, type RefundMode } from '@/lib/refunds';
+import {
+  computeRefund,
+  parseAmountMajor,
+  type PlanKind,
+  type RefundMode,
+} from '@/lib/refunds';
 import { supabase } from '@/lib/supabase';
 import { currencySymbol } from '@/lib/setup-flow';
-import { useThemeColors } from '@/lib/theme';
 import { useGymCurrency } from '@/lib/useGymCurrency';
 
 type RefundSub = {
@@ -57,7 +62,6 @@ export function RefundDialog({
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
-  const colors = useThemeColors();
   const gymCurrency = useGymCurrency();
   const [selected, setSelected] = useState<RefundMode>('prorata_revoke');
   const [customMajor, setCustomMajor] = useState('');
@@ -106,12 +110,18 @@ export function RefundDialog({
       }
     : null;
 
-  const customCents =
-    customMajor.trim() === '' ? null : Math.round(parseFloat(customMajor) * 100);
+  const typed = parseAmountMajor(customMajor, charge.data?.amount_cents ?? 0);
+  const amountProblem = typed.kind === 'problem' ? typed.message : null;
+  // Blank legitimately means the full charge, so only a real number is sent.
+  // Anything unparseable is refused before it can become a null on the wire,
+  // because null is the value that means "refund everything".
+  const sendCents = typed.kind === 'amount' ? typed.cents : null;
+  const keepBlocked = typed.kind === 'problem';
 
   function previewCents(mode: RefundMode): number | null {
     if (!ent) return null;
-    return computeRefund(ent, mode, now, mode === 'keep' ? customCents : null).refundCents;
+    if (mode === 'keep' && keepBlocked) return null;
+    return computeRefund(ent, mode, now, mode === 'keep' ? sendCents : null).refundCents;
   }
 
   const refund = useMutation({
@@ -120,7 +130,7 @@ export function RefundDialog({
         body: {
           plan_subscription_id: sub.id,
           mode: selected,
-          custom_cents: selected === 'keep' ? customCents : null,
+          custom_cents: selected === 'keep' ? sendCents : null,
           notify_member: notify,
         },
       });
@@ -173,7 +183,9 @@ export function RefundDialog({
                 variant="destructive"
                 onPress={() => refund.mutate()}
                 loading={refund.isPending}
-                disabled={!ent || selectedCents === null}>
+                disabled={
+                  !ent || selectedCents === null || (selected === 'keep' && keepBlocked)
+                }>
                 {selectedCents !== null ? `Refund ${money(selectedCents)}` : 'Refund'}
               </Button>
             </SheetAction>
@@ -228,13 +240,13 @@ export function RefundDialog({
                   Amount to refund ({currencySymbol(currency)}) — leave blank for the
                   full {money(charge.data.amount_cents)}
                 </Text>
-                <TextInput
+                <Input
+                  accessibilityLabel="Amount to refund"
                   value={customMajor}
                   onChangeText={setCustomMajor}
                   keyboardType="decimal-pad"
                   placeholder={(charge.data.amount_cents / 100).toFixed(2)}
-                  placeholderTextColor={colors.ink3}
-                  className="bg-surface dark:bg-surface-dk border border-line-strong dark:border-line-strong-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk text-[15px]"
+                  error={amountProblem ?? undefined}
                 />
               </View>
             ) : null}

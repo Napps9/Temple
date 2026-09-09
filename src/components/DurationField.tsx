@@ -104,6 +104,22 @@ const FORMAT_UNITS: Record<DurationBase, DurationUnit[]> = {
   months:  ['years', 'months'],
 };
 
+// The same duration said in another unit, or null when it cannot be said
+// there exactly.
+//
+// Null is the whole point. The field holds whole numbers, so 90 minutes is
+// not a whole number of hours; the old code rounded, and switching the unit
+// on a 90-minute class silently stored 120 while the field read "2 hrs" as
+// though it always had. A conversion that cannot be exact is not offered.
+export function convertExact(
+  amount: number,
+  from: DurationUnit,
+  to: DurationUnit,
+): number | null {
+  const mins = amount * MIN_PER[from];
+  return mins % MIN_PER[to] === 0 ? mins / MIN_PER[to] : null;
+}
+
 // Render a stored base value in its most natural unit — used for the
 // collapsed summary lines.
 export function formatBaseDuration(baseValue: number, base: DurationBase): string {
@@ -178,16 +194,26 @@ export function DurationField({
     emit(v, unit);
   }
 
+  // A unit that cannot say the current value exactly is shown but not
+  // selectable. Hiding it instead would make the menu jump as the number
+  // is typed.
+  function exactIn(u: DurationUnit): boolean {
+    const a = parseInt(amount, 10);
+    if (!Number.isFinite(a)) return true;
+    return convertExact(a, unit, u) !== null;
+  }
+
   // Switching the unit re-expresses the same duration (48 hrs -> 2 days)
   // rather than reinterpreting the number, so it reads as "show me this
-  // in another unit".
+  // in another unit". It never changes the duration itself.
   function changeUnit(next: DurationUnit) {
     const a = parseInt(amount, 10);
     if (Number.isFinite(a)) {
-      const reconverted = String(Math.round((a * MIN_PER[unit]) / MIN_PER[next]));
-      setAmount(reconverted);
+      const reconverted = convertExact(a, unit, next);
+      if (reconverted === null) return;
+      setAmount(String(reconverted));
       setUnit(next);
-      emit(reconverted, next);
+      emit(String(reconverted), next);
       return;
     }
     setUnit(next);
@@ -211,7 +237,12 @@ export function DurationField({
           placeholderTextColor={colors.ink3}
           className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-4 py-3 text-ink dark:text-ink-dk text-base"
         />
-        <UnitDropdown units={units} unit={unit} onChange={changeUnit} />
+        <UnitDropdown
+          units={units}
+          unit={unit}
+          onChange={changeUnit}
+          canUse={exactIn}
+        />
       </View>
     </View>
   );
@@ -221,10 +252,12 @@ function UnitDropdown({
   units,
   unit,
   onChange,
+  canUse,
 }: {
   units: DurationUnit[];
   unit: DurationUnit;
   onChange: (u: DurationUnit) => void;
+  canUse: (u: DurationUnit) => boolean;
 }) {
   const colors = useThemeColors();
   const [open, setOpen] = useState(false);
@@ -267,16 +300,19 @@ function UnitDropdown({
             className="bg-surface dark:bg-surface-dk rounded-ctl border border-line dark:border-line-dk shadow-float p-1">
             {units.map((u) => {
               const on = u === unit;
+              const usable = on || canUse(u);
               return (
                 <Pressable
                   key={u}
+                  disabled={!usable}
+                  accessibilityState={{ disabled: !usable, selected: on }}
                   onPress={() => {
                     onChange(u);
                     setOpen(false);
                   }}
-                  className={`flex-row items-center justify-between rounded-md px-3 py-2 active:opacity-70 ${
-                    on ? 'bg-primary/10' : ''
-                  }`}>
+                  className={`flex-row items-center justify-between rounded-md px-3 py-2 ${
+                    usable ? 'active:opacity-70' : 'opacity-40'
+                  } ${on ? 'bg-primary/10' : ''}`}>
                   <Text
                     className={`text-sm ${
                       on

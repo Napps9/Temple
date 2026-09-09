@@ -106,6 +106,12 @@ export function TrialLinkCard({
     onError: (e) => setError(errorMessage(e, 'Could not create a trial link')),
   });
 
+  // Revoking kills a live link someone may already have been sent, and it
+  // is one tap in a row of them. It asks first — inline rather than through
+  // ConfirmDialog, because this card also renders inside the lead sheet and
+  // a dialog there would be a modal on top of a modal.
+  const [confirmingRevoke, setConfirmingRevoke] = useState<string | null>(null);
+
   const revoke = useMutation({
     mutationFn: async (passId: string) => {
       const { error: e } = await supabase.rpc('revoke_trial_pass', {
@@ -213,12 +219,32 @@ export function TrialLinkCard({
                   {p.invited_name ? ` · ${p.invited_name}` : ''}
                 </Text>
               </Pressable>
-              <ChipButton
-                label="Revoke"
-                icon="close"
-                tone="red"
-                onPress={() => revoke.mutate(p.id)}
-              />
+              {confirmingRevoke === p.id ? (
+                <>
+                  <ChipButton
+                    label="Keep it"
+                    icon="arrow-undo-outline"
+                    tone="neutral"
+                    onPress={() => setConfirmingRevoke(null)}
+                  />
+                  <ChipButton
+                    label="Revoke"
+                    icon="close"
+                    tone="red"
+                    onPress={() => {
+                      setConfirmingRevoke(null);
+                      revoke.mutate(p.id);
+                    }}
+                  />
+                </>
+              ) : (
+                <ChipButton
+                  label="Revoke"
+                  icon="close"
+                  tone="red"
+                  onPress={() => setConfirmingRevoke(p.id)}
+                />
+              )}
             </View>
           ))}
         </View>

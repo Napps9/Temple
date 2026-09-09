@@ -925,10 +925,6 @@ function LeadDetailModal({
   const setStatus = useMutation({
     mutationFn: async (next: LeadStatus) => {
       if (!lead) throw new Error('No lead selected');
-      if (next === 'converted') {
-        setConvertPicker(true);
-        return;
-      }
       const { error: e } = await supabase.rpc('set_lead_status', {
         p_lead_id: lead.id,
         p_status: next,
@@ -938,10 +934,27 @@ function LeadDetailModal({
     },
     onSuccess: () => {
       setError(null);
-      if (!convertPicker) onChanged();
+      onChanged();
     },
     onError: (e) => setError(errorMessage(e, 'Could not change status')),
   });
+
+  // Converted is the one status that cannot be set on its own — it needs the
+  // member it converted to — so it opens the picker instead of writing.
+  //
+  // It used to do that from inside mutationFn, returning before the RPC. The
+  // mutation then "succeeded", and onSuccess read a convertPicker that was
+  // still false in its closure, so it called onChanged() — which closes this
+  // sheet. Pressing Converted opened the picker, closed the sheet out from
+  // under it, and refetched the list as though something had been written.
+  function chooseStatus(next: LeadStatus) {
+    if (next === 'converted') {
+      setError(null);
+      setConvertPicker(true);
+      return;
+    }
+    setStatus.mutate(next);
+  }
 
   const reassign = useMutation({
     mutationFn: async (coachId: string) => {
@@ -1287,7 +1300,7 @@ function LeadDetailModal({
                         return (
                           <Pressable
                             key={s}
-                            onPress={() => setStatus.mutate(s)}
+                            onPress={() => chooseStatus(s)}
                             disabled={setStatus.isPending}
                             className={`px-3 py-1.5 rounded-full border ${
                               sel ? 'border-primary' : 'border-line dark:border-line-dk'

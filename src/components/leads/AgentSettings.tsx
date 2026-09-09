@@ -350,6 +350,13 @@ export function AgentSettings() {
     onError: (e) => setError(errorMessage(e, 'Could not discard the update')),
   });
 
+  // Turning a rule off is one-way from here — nothing in this screen turns
+  // one back on — so it asks first, and the question quotes the coaching it
+  // is about to stop using.
+  const [retiring, setRetiring] = useState<{ id: string; correction: string } | null>(
+    null,
+  );
+
   const toggleRule = useMutation({
     mutationFn: async (id: string) => {
       const { error: e } = await supabase.rpc('set_agent_correction_active', {
@@ -360,6 +367,7 @@ export function AgentSettings() {
       await syncVapiAssistant(membership!.gymId);
     },
     onSuccess: () => {
+      setRetiring(null);
       queryClient.invalidateQueries({ queryKey: ['agent-rules', membership?.gymId] });
     },
     onError: (e) => setError(errorMessage(e, 'Could not update the rule')),
@@ -887,7 +895,7 @@ export function AgentSettings() {
                 <Text className="text-ink-3 dark:text-ink-3-dk text-xs uppercase tracking-wide">
                   {r.field_kind} · {r.scope === 'standing_rule' ? 'always' : 'example'}
                 </Text>
-                <Pressable onPress={() => toggleRule.mutate(r.id)} hitSlop={6}>
+                <Pressable onPress={() => setRetiring(r)} hitSlop={6}>
                   <Text className="text-red-600 dark:text-red-400 text-xs font-semibold">
                     Turn off
                   </Text>
@@ -930,6 +938,17 @@ export function AgentSettings() {
         onConfirm={() => turnOff.mutate()}
         onCancel={() => setConfirmTurnOff(false)}
         error={turnOff.error ? errorMessage(turnOff.error, "Couldn't turn off the AI front desk") : null}
+      />
+
+      <ConfirmDialog
+        visible={retiring !== null}
+        title="Stop using this coaching?"
+        body={`The agent will stop applying "${retiring?.correction ?? ''}". Calls and texts already handled are unchanged, and you can teach it again from a conversation.`}
+        confirmLabel="Stop using it"
+        cancelLabel="Keep it"
+        pending={toggleRule.isPending}
+        onConfirm={() => retiring && toggleRule.mutate(retiring.id)}
+        onCancel={() => setRetiring(null)}
       />
 
       {error ? <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text> : null}

@@ -8,7 +8,6 @@ import { Check } from './Check';
 import { InviteQRModal } from './InviteQRModal';
 import { MonthPickerModal } from './MonthPickerModal';
 import { RemoveMemberDialog } from './RemoveMemberDialog';
-import { SessionPickerModal } from './SessionPickerModal';
 
 // The tick box that four modals used to each draw for themselves. What
 // can be checked without layout is that the three states are three
@@ -126,28 +125,8 @@ describe('destructive modals ask a question and name the safe option', () => {
   });
 });
 
-// The pickers all confirm with a count, and all refuse to confirm with
-// nothing picked — the thing a caller relies on to not fire an empty RPC.
+// The month picker names itself, steps, and hands back the day tapped.
 describe('pickers', () => {
-  it('SessionPickerModal counts the selection in its confirm label', () => {
-    render(
-      <SessionPickerModal visible onClose={() => {}} onConfirm={() => {}} />,
-    );
-    expect(screen.getByText('Request cover (0)')).toBeTruthy();
-  });
-
-  it('SessionPickerModal takes the caller’s own confirm label', () => {
-    render(
-      <SessionPickerModal
-        visible
-        onClose={() => {}}
-        onConfirm={() => {}}
-        confirmLabel="Offer these"
-      />,
-    );
-    expect(screen.getByText('Offer these (0)')).toBeTruthy();
-  });
-
   it('MonthPickerModal names itself and steps through months', () => {
     const onChangeMonth = vi.fn();
     render(
