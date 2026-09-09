@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 
 import { BottomDock } from '@/components/BottomDock';
-import { SideNav, useRailCollapsed } from '@/components/SideNav';
+import { SideNav, useRailPinned } from '@/components/SideNav';
 import { TopNav, type NavSection } from '@/components/TopNav';
 import { LG, MD } from '@/lib/breakpoint';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -73,7 +73,7 @@ export default function StaffLayout() {
   // Before the early returns: a gym switch (0283) can turn
   // canAccessStaff false while this layout is mounted, and a hook that
   // sat below the return then vanished mid-render (React #300).
-  const [railCollapsed, toggleRailCollapsed] = useRailCollapsed();
+  const [railPinned, toggleRailPinned] = useRailPinned();
 
   if (session === null) return <Redirect href="/sign-in" />;
   if (canAccessStaff === false) {
@@ -86,8 +86,8 @@ export default function StaffLayout() {
   // third of the screen doing nothing and gave Members, Plans,
   // Communications and Billing nowhere to live except behind Manage.
   //
-  // 1024 rather than 768 because the rail is 246px the page never sees;
-  // see lib/breakpoint.ts.
+  // 1024 rather than 768 because a pinned rail is 246px the page never
+  // sees; see lib/breakpoint.ts.
   const rail = width >= LG;
 
   const tabs = (
@@ -122,8 +122,8 @@ export default function StaffLayout() {
         <View className="flex-1 flex-row bg-ground dark:bg-ground-dk">
           <SideNav
             sections={STAFF_SECTIONS}
-            collapsed={railCollapsed}
-            onToggleCollapsed={toggleRailCollapsed}
+            pinned={railPinned}
+            onTogglePinned={toggleRailPinned}
           />
           <View className="flex-1 min-w-0">{tabs}</View>
         </View>
