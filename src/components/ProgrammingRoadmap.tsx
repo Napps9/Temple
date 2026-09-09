@@ -298,7 +298,7 @@ function BlockModal({
             onChangeText={(name: string) => onChange({ ...draft, name })}
             placeholder="Squat strength"
           />
-          <View className="flex-row gap-3">
+          <View className="gap-3 md:flex-row">
             <View className="flex-1">
               <DatePicker
                 label="From"

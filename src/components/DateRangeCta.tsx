@@ -6,7 +6,7 @@ import { Text } from './Text';
 
 import { Button } from '@/components/Button';
 import { DatePicker } from '@/components/DatePicker';
-import { Sheet } from '@/components/Sheet';
+import { Sheet, SheetAction } from '@/components/Sheet';
 
 export type Preset = 'month' | 'quarter' | 'year' | '7d' | '30d' | 'custom';
 
@@ -104,7 +104,25 @@ export function DateRangeCta({
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Change</Text>
       </Pressable>
 
-      <Sheet visible={open} title="Select period" onClose={() => setOpen(false)}>
+      <Sheet
+        visible={open}
+        title="Select period"
+        onClose={() => setOpen(false)}
+        dirty={showCustom && (draftStart !== '' || draftEnd !== '')}
+        actions={
+          showCustom ? (
+            <SheetAction grow>
+              <Button
+                disabled={!draftStart || !draftEnd || draftEnd < draftStart}
+                onPress={() => {
+                  onChange({ preset: 'custom', start: draftStart, end: draftEnd });
+                  setOpen(false);
+                }}>
+                Apply custom range
+              </Button>
+            </SheetAction>
+          ) : undefined
+        }>
         <View className="gap-3">
             <View className="gap-1">
               {(Object.keys(PRESET_LABELS) as Exclude<Preset, 'custom'>[]).map((p) => (
@@ -127,7 +145,7 @@ export function DateRangeCta({
 
             {showCustom ? (
               <View className="gap-3 pt-2 border-t border-line dark:border-line-dk">
-                <View className="flex-row gap-3">
+                <View className="gap-3 md:flex-row">
                   <View className="flex-1">
                     <DatePicker
                       label="From"
@@ -143,17 +161,6 @@ export function DateRangeCta({
                     />
                   </View>
                 </View>
-                <Button
-                  onPress={() => {
-                    onChange({
-                      preset: 'custom',
-                      start: draftStart,
-                      end: draftEnd,
-                    });
-                    setOpen(false);
-                  }}>
-                  Apply custom range
-                </Button>
               </View>
             ) : null}
         </View>

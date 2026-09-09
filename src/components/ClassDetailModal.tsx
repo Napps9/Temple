@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { AIMark } from './AIMark';
 import { FieldLabel, SectionLabel } from './SectionLabel';
 import { Text, TextInput } from './Text';
@@ -654,7 +654,7 @@ export function ClassDetailModal({
                     <FieldLabel>
                       Members
                     </FieldLabel>
-                    <View className="flex-row gap-2">
+                    <View className="flex-row flex-wrap gap-2">
                       {canBroadcastClass &&
                       (bookings.length > 0 || (staffWaitlist.data?.length ?? 0) > 0) ? (
                         <ChipButton
@@ -786,7 +786,7 @@ export function ClassDetailModal({
                       Check-in opens 15 minutes before class.
                     </Text>
                   ) : null}
-                  <ScrollView className="max-h-48">
+                  <View>
                     {bookings.length === 0 ? (
                       <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                         No bookings yet.
@@ -860,7 +860,7 @@ export function ClassDetailModal({
                         ))}
                       </View>
                     )}
-                  </ScrollView>
+                  </View>
                 </View>
               ) : null}
 

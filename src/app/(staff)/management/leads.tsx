@@ -1172,7 +1172,7 @@ function LeadDetailModal({
                     onChangeText={setMemberQuery}
                     placeholder="Search members"
                   />
-                  <ScrollView className="max-h-56">
+                  <View>
                     {members.isLoading ? (
                       <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                         Loading…
@@ -1192,7 +1192,7 @@ function LeadDetailModal({
                         ))}
                       </View>
                     )}
-                  </ScrollView>
+                  </View>
                   <View className="flex-row gap-3">
                     <View className="flex-1">
                       <Button
@@ -1211,7 +1211,7 @@ function LeadDetailModal({
                   <FieldLabel>
                     Assign to
                   </FieldLabel>
-                  <ScrollView className="max-h-56">
+                  <View>
                     <View className="gap-1.5">
                       {coaches.map((c) => {
                         const sel = c.profile_id === lead.assigned_coach_id;
@@ -1233,7 +1233,7 @@ function LeadDetailModal({
                         );
                       })}
                     </View>
-                  </ScrollView>
+                  </View>
                   <Button
                     variant="secondary"
                     onPress={() => setReassignOpen(false)}>
@@ -1258,7 +1258,7 @@ function LeadDetailModal({
                             (lead.assigned_coach_id ? 'Coach' : 'Unassigned')}
                         </Text>
                       </View>
-                      <View className="flex-row gap-2">
+                      <View className="flex-row flex-wrap gap-2">
                         <ChipButton
                           label="Reassign"
                           icon="swap-horizontal-outline"

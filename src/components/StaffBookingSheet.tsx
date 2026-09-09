@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { SearchField } from '@/components/SearchField';
-import { Sheet } from './Sheet';
+import { Sheet, SheetAction } from './Sheet';
 import { ListRow, RuledList } from './ListRow';
 import { FieldLabel } from './SectionLabel';
 import { Text, TextInput } from './Text';
@@ -208,6 +208,32 @@ export function StaffBookingSheet({
               setNoCharge(false);
             }
           : undefined
+      }
+      busy={book.isPending || swap.isPending}
+      actions={
+        showSearch ? undefined : (
+          <>
+            <SheetAction>
+              <Button variant="secondary" onPress={close}>
+                Cancel
+              </Button>
+            </SheetAction>
+            <SheetAction grow>
+              <Button
+                onPress={() => {
+                  if (mode === 'add') book.mutate();
+                  else swap.mutate();
+                }}
+                loading={book.isPending || swap.isPending}
+                disabled={
+                  entitlements.isLoading ||
+                  (!noCharge && (entitlements.data?.length ?? 0) === 0)
+                }>
+                {mode === 'add' ? 'Book' : 'Swap'}
+              </Button>
+            </SheetAction>
+          </>
+        )
       }>
 
           {showSearch ? (
@@ -217,7 +243,7 @@ export function StaffBookingSheet({
                 onChangeText={setQuery}
                 placeholder="Search members"
               />
-              <ScrollView className="max-h-72">
+              <View>
                 {candidates.isLoading ? (
                   <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                     Loading…
@@ -241,7 +267,7 @@ export function StaffBookingSheet({
                     ))}
                   </RuledList>
                 )}
-              </ScrollView>
+              </View>
             </>
           ) : showPicker ? (
             <>
@@ -327,22 +353,12 @@ export function StaffBookingSheet({
                 </View>
               )}
               {error ? (
-                <Text className="text-red-500 dark:text-red-400 text-sm">
+                <Text
+                  accessibilityLiveRegion="polite"
+                  className="text-red-500 dark:text-red-400 text-sm">
                   {error}
                 </Text>
               ) : null}
-              <Button
-                onPress={() => {
-                  if (mode === 'add') book.mutate();
-                  else swap.mutate();
-                }}
-                loading={book.isPending || swap.isPending}
-                disabled={
-                  entitlements.isLoading ||
-                  (!noCharge && (entitlements.data?.length ?? 0) === 0)
-                }>
-                {mode === 'add' ? 'Book' : 'Swap'}
-              </Button>
             </>
           ) : null}
     </Sheet>

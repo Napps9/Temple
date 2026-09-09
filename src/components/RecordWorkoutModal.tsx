@@ -1175,7 +1175,7 @@ function AggregateInputs({
       ) : null}
       {shape.aggregateFields.includes('total_rounds') ||
       shape.aggregateFields.includes('total_extra_reps') ? (
-        <View className="flex-row gap-3">
+        <View className="gap-3 md:flex-row">
           {shape.aggregateFields.includes('total_rounds') ? (
             <View className="flex-1">
               <Input

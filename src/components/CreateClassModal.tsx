@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Check } from './Check';
 import { FieldLabel } from './SectionLabel';
 import { Text } from './Text';
@@ -370,7 +370,7 @@ export function CreateClassModal({
             <View className="gap-4">
               <ClassTypePicker value={classTypeId} onChange={setClassTypeId} />
 
-              <View className="flex-row gap-3">
+              <View className="gap-3 md:flex-row">
                 <View className="flex-1">
                   <DatePicker
                     label={recurring ? 'Start date' : 'Date'}
@@ -511,7 +511,7 @@ function ConfirmView({
     .join(', ');
 
   return (
-    <ScrollView className="max-h-[36rem]">
+    <View>
       <View className="gap-5">
         <ConfirmRow label="Type">
           <View className="flex-row items-center gap-2">
@@ -568,7 +568,7 @@ function ConfirmView({
           </ConfirmRow>
         ) : null}
       </View>
-    </ScrollView>
+    </View>
   );
 }
 

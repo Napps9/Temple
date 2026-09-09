@@ -403,7 +403,7 @@ export function EditClassSheet({
               </View>
             </View>
 
-            <View className="flex-row gap-3">
+            <View className="gap-3 md:flex-row">
               <View className="flex-1">
                 {seriesScope ? (
                   // A series keeps its days, so there is no date to pick —
@@ -449,7 +449,7 @@ export function EditClassSheet({
               </Text>
             ) : null}
 
-            <View className="flex-row gap-3">
+            <View className="gap-3 md:flex-row">
               <View className="flex-1">
                 <DurationField
                   label="Length"

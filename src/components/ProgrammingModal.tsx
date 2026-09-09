@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { Pressable, Switch, View } from 'react-native';
 import { Text } from './Text';
 
 import { Button } from './Button';
@@ -412,9 +412,7 @@ export function ProgrammingModal({
                 </Text>
               </View>
 
-              <ScrollView
-                className="max-h-[60vh]"
-                contentContainerClassName="gap-3">
+              <View className="gap-3">
                 {programming.isLoading ? (
                   <Text className="text-ink-2 dark:text-ink-2-dk">
                     Loading…
@@ -446,7 +444,7 @@ export function ProgrammingModal({
                     </Pressable>
                   </>
                 )}
-              </ScrollView>
+              </View>
 
               {error ? (
                 <Text className="text-red-500 dark:text-red-400 text-sm">

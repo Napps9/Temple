@@ -97,6 +97,14 @@ export function DatePicker({
 // classes because a native date input is styled by prop, not className.
 const webInputBase = {
   backgroundColor: 'transparent',
+  // A raw DOM input is not a react-native-web component, so none of RNW's
+  // resets reach it — including the min-width:0 that Text.tsx's TextInput
+  // wrapper now applies. Without it the browser's `min-width: auto` floors
+  // the field at the intrinsic width of a date plus its calendar chrome,
+  // about 165px, and a flex-1 column on a 390px sheet is about 173px. It
+  // overflowed and was clipped by the sheet's own overflow-x.
+  minWidth: 0,
+  width: '100%',
   borderWidth: 1,
   // `rounded-ctl`, the radius every other field in a row draws.
   borderRadius: 12,

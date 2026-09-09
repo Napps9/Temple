@@ -9,9 +9,12 @@ import { Sheet } from '@/components/Sheet';
 // these three modals became bottom sheets on a phone without their call
 // sites changing.
 //
-// Kept as its own name rather than collapsing into Sheet because the
-// three callers put their own actions inside the body, so there is no
-// foot — and a Sheet with no `actions` is exactly this.
+// Kept as its own name rather than collapsing into Sheet because its
+// callers share a width and a body rhythm. Both are genuinely footless:
+// ImportDataModal is a list of routes, and TagRulesPanel renders at
+// /management/tags as well, where there is no foot to put an action in.
+// A caller that grows a single primary should use Sheet directly rather
+// than teaching this one a foot it has no use for.
 export function ManageModal({
   visible,
   onClose,

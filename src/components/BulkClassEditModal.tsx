@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { Pressable, Switch, View } from 'react-native';
 import { Check } from './Check';
 import { Text } from './Text';
 
@@ -278,7 +278,7 @@ export function BulkClassEditModal({
               : 'Change capacity, length or start time for every class between these dates. Leave a field blank to keep it as it is. Repeating schedules are updated to match, so the change sticks — untick a class and its schedule is left alone instead.'}
           </Text>
 
-          <View className="flex-row gap-3">
+          <View className="gap-3 md:flex-row">
             <View className="flex-1">
               <DatePicker
                 label="From"
@@ -334,7 +334,7 @@ export function BulkClassEditModal({
             </View>
           ) : (
             <View className="gap-3">
-              <View className="flex-row gap-3">
+              <View className="gap-3 md:flex-row">
                 <View className="flex-1">
                   <Input
                     label="Capacity"
@@ -364,7 +364,7 @@ export function BulkClassEditModal({
           )}
 
           {window ? (
-            <ScrollView className="max-h-64">
+            <View>
               {previewQuery.isLoading ? (
                 <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
                   Finding the classes…
@@ -415,7 +415,7 @@ export function BulkClassEditModal({
                   })}
                 </View>
               )}
-            </ScrollView>
+            </View>
           ) : null}
 
           {mode === 'edit' && 'fields' in editFields && window ? (
