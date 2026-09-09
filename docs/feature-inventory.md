@@ -3830,6 +3830,20 @@ gym texts whoever the prospect gives it, and special-casing the
 destination made the demo behave unlike the product. pgTAP:
 `a_demo_gym_cannot_reach_anybody`.
 
+**The sentinel that stuck to a lead (0292).** `0289` stopped writing
+`web-test` into `leads.phone` but left the rows that already had it, and
+left a dedup branch that could only fill an empty phone (`coalesce(phone,
+v_phone)`) — so a gym that had taken one browser call before that deploy
+could never text anybody from one again. Every browser call at a gym
+shares a single `agent_conversations` row (there is no caller id to key it
+by), that row's `lead_id` pins the first lead captured on it, and the
+sentinel outlived every later number. The migration nulls the stored
+sentinels and makes the branch replace a phone that does not parse, while
+leaving a hand-typed one exactly as written. The voice prompt now also has
+the agent read a number back digit by digit before saving it — it already
+did that for an email, and a number heard once over a phone line is the
+least reliable input in the flow. pgTAP: `the_sentinel_that_stuck_to_a_lead`.
+
 **Call review, coaching & voice (0137)** [`can_review_ai_calls`, owner/admin].
 Voice calls are recorded (Vapi artifact) and pulled into a private
 `agent-call-recordings` Storage bucket at `/end-of-call`; `call_recordings`
