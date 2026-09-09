@@ -767,7 +767,7 @@ export function ClassTypesPanel() {
                           onPress={() => removeSchedule(idx, sIdx)}
                           hitSlop={4}
                           className="self-start">
-                          <Text className="text-red-500 dark:text-red-400 text-sm">
+                          <Text className="text-red-600 dark:text-red-400 text-sm">
                             Remove schedule
                           </Text>
                         </Pressable>
@@ -952,7 +952,7 @@ export function ClassTypesPanel() {
                 ) : null}
 
                 {saveError?.idx === idx ? (
-                  <Text className="text-red-500 dark:text-red-400 text-sm">
+                  <Text className="text-red-600 dark:text-red-400 text-sm">
                     {saveError.message}
                   </Text>
                 ) : null}
@@ -974,7 +974,7 @@ export function ClassTypesPanel() {
         ) : null}
 
         {actionError ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{actionError}</Text>
+          <Text className="text-red-600 dark:text-red-400 text-sm">{actionError}</Text>
         ) : null}
 
         {archivedRows.length > 0 ? (

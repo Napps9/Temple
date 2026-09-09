@@ -12,7 +12,7 @@ import type { DnsRecordDisplay, StatusTone } from '@/lib/domain-utils';
 // than a status enum, so this file stays provider-agnostic.
 
 export const TONE: Record<StatusTone, { bg: string; text: string }> = {
-  amber: { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400' },
+  amber: { bg: 'bg-amber-500/10', text: 'text-amber-700 dark:text-amber-400' },
   green: { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400' },
   red: { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400' },
 };

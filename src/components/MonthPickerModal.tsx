@@ -120,7 +120,7 @@ export function MonthPickerModal({
                     <Text
                       className={`text-[14px] ${
                         isSelected
-                          ? 'text-white font-bold'
+                          ? 'text-on-primary font-bold'
                           : isToday
                             ? 'text-ink dark:text-ink-dk font-bold'
                             : inMonth

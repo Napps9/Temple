@@ -205,7 +205,7 @@ function DetailRow({
       <Text
         className={`text-sm font-medium ${
           tone === 'warn'
-            ? 'text-amber-600 dark:text-amber-400'
+            ? 'text-amber-700 dark:text-amber-400'
             : 'text-ink dark:text-ink-dk'
         }`}>
         {value}
@@ -927,12 +927,12 @@ export default function MembershipScreen() {
               />
             ) : null}
             {changeError ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">
+              <Text className="text-red-600 dark:text-red-400 text-sm">
                 {errorMessage(changeError, 'Could not update your membership')}
               </Text>
             ) : null}
             {portal.error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">
+              <Text className="text-red-600 dark:text-red-400 text-sm">
                 {errorMessage(portal.error, 'Could not open the billing portal')}
               </Text>
             ) : null}
@@ -994,7 +994,7 @@ export default function MembershipScreen() {
         ) : null}
 
         {checkout.error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">
+          <Text className="text-red-600 dark:text-red-400 text-sm">
             {errorMessage(checkout.error, 'Could not start checkout')}
           </Text>
         ) : null}

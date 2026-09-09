@@ -1430,7 +1430,7 @@ function TrendCard({
                 <Text
                   className={`text-[10px] font-bold ${
                     m.trend === 'improving'
-                      ? 'text-emerald-600 dark:text-emerald-400'
+                      ? 'text-emerald-700 dark:text-emerald-400'
                       : m.trend === 'declining'
                         ? 'text-red-600 dark:text-red-400'
                         : 'text-ink-2 dark:text-ink-2-dk'

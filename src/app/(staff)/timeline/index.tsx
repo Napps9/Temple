@@ -1051,7 +1051,7 @@ export default function Timeline() {
                   Waiting on you
                 </Text>
                 <View className="bg-amber-500/15 rounded-full px-2 py-0.5">
-                  <Text className="text-amber-600 dark:text-amber-400 text-[11px] font-bold">
+                  <Text className="text-amber-700 dark:text-amber-400 text-[11px] font-bold">
                     {stillWaiting.length + (stripe ? 1 : 0)}
                   </Text>
                 </View>

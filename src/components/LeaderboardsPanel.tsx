@@ -108,7 +108,7 @@ export function LeaderboardsPanel() {
       </Text>
 
       {save.isError ? (
-        <Text className="text-red-500 dark:text-red-400 text-xs">
+        <Text className="text-red-600 dark:text-red-400 text-xs">
           {errorMessage(save.error, 'Could not save')}
         </Text>
       ) : null}

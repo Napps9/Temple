@@ -25,17 +25,25 @@ import { useThemeColors } from '@/lib/theme';
 // nothing anchoring it to the bottom of the screen. Twenty-six components
 // inherited that shape.
 //
-// Anatomy, in order, and none of it optional:
+// Anatomy, in order:
 //   - a grabber, on the sheet only, because that is the affordance that
-//     says "swipe me"
-//   - the title on the left and a close on the right; the title names the
-//     thing, not the verb
+//     says "swipe me". It is a hint, not a gesture: the sheet has no
+//     swipe-to-dismiss, and adding one would need a gesture handler that
+//     does not fight the body's scroll.
+//   - the title on the left and a close on the right. A sheet named after
+//     an object names the object ("Your bag", "Lead sources"); a picker
+//     or an action names what it does ("Jump to a date", "Record
+//     workout"); a confirmation asks a question and names the thing in it
+//     ("Cancel Metcon?"). Two sheets must not share a title.
 //   - a back chevron before the title when the sheet is showing a step
 //     rather than its own body — which is how a modal that used to open
 //     another modal works now: the sheet stays, its body changes
 //   - a body that scrolls while the head and the foot do not
 //   - a foot whose primary sits right on desktop and which is a
-//     full-width pair on a phone, where both thumbs can reach it
+//     full-width pair on a phone, where both thumbs can reach it. A sheet
+//     may have no foot — a nav list, a read-only list — but a sheet with
+//     a primary action puts it HERE, never as the last child of the body,
+//     where you have to scroll to the button that should be pinned.
 //
 // The breakpoint itself lives in lib/breakpoint.ts.
 //

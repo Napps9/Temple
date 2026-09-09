@@ -133,7 +133,7 @@ export function SendingDomainCard() {
             </Text>
           </Text>
           {formError ? (
-            <Text className="text-red-500 dark:text-red-400 text-xs">{formError}</Text>
+            <Text className="text-red-600 dark:text-red-400 text-xs">{formError}</Text>
           ) : null}
           <Button onPress={connect} loading={action.isPending}>
             Connect domain
@@ -164,7 +164,7 @@ export function SendingDomainCard() {
                 placeholder="news"
               />
               {formError ? (
-                <Text className="text-red-500 dark:text-red-400 text-xs">{formError}</Text>
+                <Text className="text-red-600 dark:text-red-400 text-xs">{formError}</Text>
               ) : null}
               <View className="flex-row gap-2">
                 <View className="flex-1">
@@ -255,7 +255,7 @@ export function SendingDomainCard() {
       {/* One server-error line covering connect / verify / disconnect /
           rename — client-side validation shows inline above. */}
       {actionError ? (
-        <Text className="text-red-500 dark:text-red-400 text-xs">{actionError}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-xs">{actionError}</Text>
       ) : null}
     </View>
   );

@@ -659,7 +659,7 @@ function ProductEditor({
       </View>
 
       {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
 
       <Button onPress={() => save.mutate()} loading={save.isPending}>
@@ -961,7 +961,7 @@ function SubscriberCard({ sub }: { sub: StaffSubscription }) {
   const stateTone = ended
     ? 'text-ink-2 dark:text-ink-2-dk'
     : sub.cancel_at_period_end || sub.status === 'past_due'
-      ? 'text-amber-600 dark:text-amber-400'
+      ? 'text-amber-700 dark:text-amber-400'
       : 'text-green-600 dark:text-green-400';
 
   return (
@@ -991,7 +991,7 @@ function SubscriberCard({ sub }: { sub: StaffSubscription }) {
         />
       ) : null}
       {cancel.error ? (
-        <Text className="text-red-500 dark:text-red-400 text-xs">
+        <Text className="text-red-600 dark:text-red-400 text-xs">
           {errorMessage(cancel.error, 'Could not cancel')}
         </Text>
       ) : null}
@@ -1112,7 +1112,7 @@ function OrderCard({ order }: { order: StaffOrder }) {
       ) : null}
 
       {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
     </View>
   );
@@ -1204,7 +1204,7 @@ function StoreSettingsPanel() {
         shipping or collection.
       </Text>
       {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
       <Button
         onPress={() => save.mutate()}

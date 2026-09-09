@@ -1483,12 +1483,12 @@ function AgendaCard({
         ? 'Open'
         : `${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left`;
   const statusClass = bookedByMe
-    ? 'text-emerald-600 dark:text-emerald-400'
+    ? 'text-emerald-700 dark:text-emerald-400'
     : full
       ? 'text-ink-3 dark:text-ink-3-dk'
       : spotsLeft !== null && spotsLeft <= 3
-        ? 'text-amber-600 dark:text-amber-400'
-        : 'text-emerald-600 dark:text-emerald-400';
+        ? 'text-amber-700 dark:text-amber-400'
+        : 'text-emerald-700 dark:text-emerald-400';
 
   return (
     <Pressable

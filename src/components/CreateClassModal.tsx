@@ -448,7 +448,7 @@ export function CreateClassModal({
           {error ? (
             <Text
               accessibilityLiveRegion="polite"
-              className="text-red-500 dark:text-red-400 text-[13px] pt-3">
+              className="text-red-600 dark:text-red-400 text-[13px] pt-3">
               {error}
             </Text>
           ) : null}

@@ -582,7 +582,7 @@ export default function MemberDetailScreen() {
               />
             </View>
             {setBookingRequirement.error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">
+              <Text className="text-red-600 dark:text-red-400 text-sm">
                 {errorMessage(setBookingRequirement.error, 'Could not save')}
               </Text>
             ) : null}
@@ -639,7 +639,7 @@ export default function MemberDetailScreen() {
         </Section>
 
         {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+          <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
 
         {!isRemoved && canRemove ? (

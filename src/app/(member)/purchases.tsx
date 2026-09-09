@@ -27,7 +27,7 @@ import {
 import { useThemeColors } from '@/lib/theme';
 
 const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
-  pending: { label: 'Awaiting payment', tone: 'text-amber-600 dark:text-amber-400' },
+  pending: { label: 'Awaiting payment', tone: 'text-amber-700 dark:text-amber-400' },
   paid: { label: 'Paid', tone: 'text-blue-600 dark:text-blue-400' },
   fulfilled: { label: 'Complete', tone: 'text-green-600 dark:text-green-400' },
   cancelled: { label: 'Cancelled', tone: 'text-ink-2 dark:text-ink-2-dk' },
@@ -125,7 +125,7 @@ function SubscriptionCard({ sub }: { sub: MyStoreSubscription }) {
             ended
               ? 'text-ink-2 dark:text-ink-2-dk'
               : sub.cancel_at_period_end
-                ? 'text-amber-600 dark:text-amber-400'
+                ? 'text-amber-700 dark:text-amber-400'
                 : 'text-green-600 dark:text-green-400'
           }`}>
           {ended ? 'Ended' : sub.cancel_at_period_end ? 'Cancelling' : 'Active'}
@@ -155,7 +155,7 @@ function SubscriptionCard({ sub }: { sub: MyStoreSubscription }) {
         />
       ) : null}
       {cancel.error ? (
-        <Text className="text-red-500 dark:text-red-400 text-xs">
+        <Text className="text-red-600 dark:text-red-400 text-xs">
           {errorMessage(cancel.error, 'Could not cancel')}
         </Text>
       ) : null}
@@ -256,7 +256,7 @@ function ShippingSection({
         />
       ))}
       {update.error ? (
-        <Text className="text-red-500 dark:text-red-400 text-xs">
+        <Text className="text-red-600 dark:text-red-400 text-xs">
           {errorMessage(update.error, 'Could not save the address')}
         </Text>
       ) : null}
@@ -326,7 +326,7 @@ function OrderCard({ order }: { order: MyStoreOrder }) {
             />
           ))}
           {download.error ? (
-            <Text className="text-red-500 dark:text-red-400 text-xs">
+            <Text className="text-red-600 dark:text-red-400 text-xs">
               {errorMessage(download.error, 'Could not open the download')}
             </Text>
           ) : null}

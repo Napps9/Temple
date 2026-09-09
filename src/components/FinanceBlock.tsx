@@ -118,7 +118,7 @@ export function FinanceBlock({ gymId }: { gymId: string }) {
         <Text className="text-ink dark:text-ink-dk text-lg font-semibold">
           Money
         </Text>
-        <Text className="text-red-500 dark:text-red-400 text-sm">
+        <Text className="text-red-600 dark:text-red-400 text-sm">
           {errorMessage(error, 'Could not load the finance summary')}
         </Text>
       </View>
@@ -271,7 +271,7 @@ function OverdueList({ gymId }: { gymId: string }) {
   const list = rows.data ?? [];
   if (rows.error) {
     return (
-      <Text className="text-red-500 dark:text-red-400 text-sm">
+      <Text className="text-red-600 dark:text-red-400 text-sm">
         {errorMessage(rows.error, 'Could not load who needs chasing')}
       </Text>
     );

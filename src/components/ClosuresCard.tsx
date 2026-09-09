@@ -98,7 +98,7 @@ export function ClosuresCard() {
       {closuresQuery.isLoading ? (
         <Text className="text-ink-2 dark:text-ink-2-dk text-sm">Loading…</Text>
       ) : closuresQuery.error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
+        <Text className="text-red-600 dark:text-red-400 text-sm">
           {errorMessage(closuresQuery.error, 'Could not load closures')}
         </Text>
       ) : closures.length === 0 ? (

@@ -98,9 +98,12 @@ describe('hexToRgbTriplet', () => {
     expect(hexToRgbTriplet('#000000')).toBe('0 0 0');
     expect(hexToRgbTriplet('#FFFFFF')).toBe('255 255 255');
   });
-  it('falls back to the default for malformed input', () => {
-    expect(hexToRgbTriplet('#nope')).toBe('194 65 12');
-    expect(hexToRgbTriplet('')).toBe('194 65 12');
-    expect(hexToRgbTriplet('zzzzzz')).toBe('194 65 12');
+  // The fallback is ACCENT.light.primary, so a malformed hex lands on the
+  // accent the app actually uses. It used to be a burnt orange left over
+  // from when a gym chose the accent colour.
+  it('falls back to the accent for malformed input', () => {
+    expect(hexToRgbTriplet('#nope')).toBe('20 22 26');
+    expect(hexToRgbTriplet('')).toBe('20 22 26');
+    expect(hexToRgbTriplet('zzzzzz')).toBe('20 22 26');
   });
 });

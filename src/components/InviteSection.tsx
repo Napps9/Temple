@@ -161,8 +161,8 @@ export function InviteSection({
           <Text
             className={`text-sm ${
               emailNotice.tone === 'ok'
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-amber-600 dark:text-amber-400'
+                ? 'text-emerald-700 dark:text-emerald-400'
+                : 'text-amber-700 dark:text-amber-400'
             }`}>
             {emailNotice.text}
           </Text>
@@ -182,7 +182,7 @@ export function InviteSection({
           </View>
         ) : null}
         {emailInvite.error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">
+          <Text className="text-red-600 dark:text-red-400 text-sm">
             {errorMessage(emailInvite.error, 'Could not send the invite')}
           </Text>
         ) : null}

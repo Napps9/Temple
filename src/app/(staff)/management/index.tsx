@@ -737,7 +737,7 @@ function MembershipPoliciesPanel() {
         onChange={(v) => setDraft({ ...draft, cancel: v })}
       />
       {save.error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
+        <Text className="text-red-600 dark:text-red-400 text-sm">
           {errorMessage(save.error, 'Could not save policies')}
         </Text>
       ) : null}
@@ -771,7 +771,7 @@ function CommsTab() {
   return (
     <View className="gap-3">
       {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
       <CommunicationsHome onNew={() => create.mutate()} />
     </View>
@@ -1347,7 +1347,7 @@ function InsightsStats({
   return (
     <View className="gap-4">
       {queryError ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
+        <Text className="text-red-600 dark:text-red-400 text-sm">
           {errorMessage(queryError, 'Could not load insights')}
         </Text>
       ) : null}
@@ -1523,7 +1523,7 @@ function MembersTab() {
       ) : null}
 
       {showInsights && !rangeValid ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
+        <Text className="text-red-600 dark:text-red-400 text-sm">
           Pick valid dates with From on or before To.
         </Text>
       ) : null}
@@ -1601,7 +1601,7 @@ function MembersTab() {
             ) : null}
           </View>
           {canExport && exportMembers.error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">
+            <Text className="text-red-600 dark:text-red-400 text-sm">
               {exportErrorMessage(exportMembers.error, 'members')}
             </Text>
           ) : null}

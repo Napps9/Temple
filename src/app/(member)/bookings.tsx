@@ -227,20 +227,20 @@ export default function BookingsScreen() {
           <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         ) : null}
         {bookings.error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">
+          <Text className="text-red-600 dark:text-red-400 text-sm">
             {errorMessage(bookings.error, 'Could not load bookings')}
           </Text>
         ) : null}
         {cancelError ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{cancelError}</Text>
+          <Text className="text-red-600 dark:text-red-400 text-sm">{cancelError}</Text>
         ) : null}
         {waitlist.error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">
+          <Text className="text-red-600 dark:text-red-400 text-sm">
             {errorMessage(waitlist.error, 'Could not load your waitlist places')}
           </Text>
         ) : null}
         {waitlistError ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{waitlistError}</Text>
+          <Text className="text-red-600 dark:text-red-400 text-sm">{waitlistError}</Text>
         ) : null}
 
         <View className="gap-2">

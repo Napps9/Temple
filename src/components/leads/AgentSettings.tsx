@@ -612,7 +612,7 @@ export function AgentSettings() {
                       before anything changes.
                     </Text>
                     {interview?.status === 'failed' ? (
-                      <Text className="text-amber-600 dark:text-amber-400 text-xs">
+                      <Text className="text-amber-700 dark:text-amber-400 text-xs">
                         The last attempt didn't capture anything — try again.
                       </Text>
                     ) : null}
@@ -685,7 +685,9 @@ export function AgentSettings() {
               {provisionFailed ? 'Try again' : 'Set up my number'}
             </Button>
             {provision.error ? (
-              <Text className="text-red-500 dark:text-red-400 text-xs">
+              <Text
+                accessibilityLiveRegion="polite"
+                className="text-red-600 dark:text-red-400 text-xs">
                 {errorMessage(provision.error, "Couldn't set up your number")}
               </Text>
             ) : null}
@@ -897,7 +899,9 @@ export function AgentSettings() {
                   {r.field_kind} · {r.scope === 'standing_rule' ? 'always' : 'example'}
                 </Text>
                 <Pressable onPress={() => setRetiring(r)} hitSlop={6}>
-                  <Text className="text-red-600 dark:text-red-400 text-xs font-semibold">
+                  <Text
+                    accessibilityLiveRegion="polite"
+                    className="text-red-600 dark:text-red-400 text-xs font-semibold">
                     Turn off
                   </Text>
                 </Pressable>
@@ -953,7 +957,9 @@ export function AgentSettings() {
         onCancel={() => setRetiring(null)}
       />
 
-      {error ? <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text> : null}
+      {error ? <Text
+        accessibilityLiveRegion="polite"
+        className="text-red-600 dark:text-red-400 text-sm">{error}</Text> : null}
     </>
   );
 }

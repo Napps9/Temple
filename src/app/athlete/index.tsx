@@ -223,7 +223,7 @@ export default function AthleteHome() {
             {exportError ? (
               <Text
                 accessibilityLiveRegion="polite"
-                className="text-red-500 dark:text-red-400 text-sm">
+                className="text-red-600 dark:text-red-400 text-sm">
                 {exportError}
               </Text>
             ) : null}
@@ -269,7 +269,7 @@ export default function AthleteHome() {
                   Keep tracking on your own
                 </Text>
                 <View className="rounded-full bg-amber-500/15 px-2 py-0.5">
-                  <Text className="text-amber-600 dark:text-amber-400 text-[10px] font-semibold uppercase tracking-widest">
+                  <Text className="text-amber-700 dark:text-amber-400 text-[10px] font-semibold uppercase tracking-widest">
                     Free in beta
                   </Text>
                 </View>
@@ -282,7 +282,7 @@ export default function AthleteHome() {
             {activateError ? (
               <Text
                 accessibilityLiveRegion="polite"
-                className="text-red-500 dark:text-red-400 text-sm">
+                className="text-red-600 dark:text-red-400 text-sm">
                 {activateError}
               </Text>
             ) : null}

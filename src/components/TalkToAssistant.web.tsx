@@ -146,7 +146,7 @@ function ReadyBody({
         Test call — kept separate from your leads and pipeline
       </Text>
       {call.error ? (
-        <Text className="text-red-500 dark:text-red-400 text-xs text-center">{call.error}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-xs text-center">{call.error}</Text>
       ) : null}
       <View className="flex-row gap-2 self-stretch">
         {onCancel ? (

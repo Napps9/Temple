@@ -319,7 +319,7 @@ export default function BillingScreen() {
                     fix it.
                   </Text>
                   {stripeError ? (
-                    <Text className="text-red-500 dark:text-red-400 text-xs">
+                    <Text className="text-red-600 dark:text-red-400 text-xs">
                       {stripeError}
                     </Text>
                   ) : null}
@@ -327,7 +327,7 @@ export default function BillingScreen() {
               ) : null}
 
               {error ? (
-                <Text className="text-red-500 dark:text-red-400 text-sm">
+                <Text className="text-red-600 dark:text-red-400 text-sm">
                   {error}
                 </Text>
               ) : null}
@@ -387,7 +387,7 @@ export default function BillingScreen() {
                 existing Stripe account if you have one.
               </Text>
               {error ? (
-                <Text className="text-red-500 dark:text-red-400 text-sm">
+                <Text className="text-red-600 dark:text-red-400 text-sm">
                   {error}
                 </Text>
               ) : null}
@@ -418,7 +418,7 @@ export default function BillingScreen() {
             />
           </View>
           {setSelfCheckout.error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">
+            <Text className="text-red-600 dark:text-red-400 text-sm">
               {errorMessage(setSelfCheckout.error, 'Could not save the setting')}
             </Text>
           ) : null}
@@ -446,7 +446,7 @@ export default function BillingScreen() {
             />
           </View>
           {setRequireMembership.error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">
+            <Text className="text-red-600 dark:text-red-400 text-sm">
               {errorMessage(setRequireMembership.error, 'Could not save the setting')}
             </Text>
           ) : null}

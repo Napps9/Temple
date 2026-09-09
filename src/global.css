@@ -11,8 +11,8 @@
    ACCENT in src/lib/theme.ts, which is also what native reads — native
    never parses this file, so the constants have to live in TS. */
 :root {
-  --color-primary: 194 65 12;
-  --color-primary-dark: 165 55 10;
+  --color-primary: 20 22 26;
+  --color-primary-dark: 42 46 51;
   --color-on-primary: 255 255 255;
   --color-link: 20 22 26;
   --color-brand: 224 72 152;

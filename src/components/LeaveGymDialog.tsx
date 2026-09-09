@@ -115,7 +115,9 @@ export function LeaveGymDialog({
           'It stays on record as a legal document, as the waiver says.',
         )}
         {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+          <Text
+            accessibilityLiveRegion="polite"
+            className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
       </View>
     </Sheet>

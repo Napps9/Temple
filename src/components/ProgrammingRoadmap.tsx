@@ -14,6 +14,7 @@ import {
   yearLanes,
   type ProgrammingBlock,
 } from '@/lib/programming-roadmap';
+import { labelOn } from '@/lib/contrast';
 import { CLASS_TYPE_PALETTE } from '@/lib/setup-flow';
 import { supabase } from '@/lib/supabase';
 
@@ -121,7 +122,8 @@ export function ProgrammingRoadmap({
                   className="items-center justify-center px-1">
                   <Text
                     numberOfLines={1}
-                    className="text-white text-[10px] font-bold uppercase tracking-wide">
+                    style={{ color: labelOn(l.block.color) }}
+                    className="text-[10px] font-bold uppercase tracking-wide">
                     {l.block.name}
                   </Text>
                 </View>
@@ -353,7 +355,9 @@ function BlockModal({
               hitSlop={6}
               accessibilityRole="button"
               className="py-1">
-              <Text className="text-red-600 dark:text-red-400 text-[13px] font-semibold text-center">
+              <Text
+                accessibilityLiveRegion="polite"
+                className="text-red-600 dark:text-red-400 text-[13px] font-semibold text-center">
                 Remove this block
               </Text>
             </Pressable>

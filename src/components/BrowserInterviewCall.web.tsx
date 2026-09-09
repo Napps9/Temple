@@ -100,7 +100,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
   if (prepError && !assistant) {
     return (
       <View className="gap-2">
-        <Text className="text-red-500 dark:text-red-400 text-sm">{prepError}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-sm">{prepError}</Text>
         <Pressable onPress={onCancel} hitSlop={6} className="self-start">
           <Text className="text-primary text-xs font-semibold">Back to calling by phone</Text>
         </Pressable>
@@ -130,7 +130,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
           questions, no phone call.
         </Text>
         {call.error ? (
-          <Text className="text-red-500 dark:text-red-400 text-xs">{call.error}</Text>
+          <Text className="text-red-600 dark:text-red-400 text-xs">{call.error}</Text>
         ) : null}
         <View className="flex-row gap-2">
           <Pressable
@@ -207,7 +207,7 @@ export function BrowserInterviewCall({ gymId, onCompleted, onCancel }: BrowserIn
   if (submit.isError) {
     return (
       <View className="gap-2">
-        <Text className="text-red-500 dark:text-red-400 text-sm">{prepError}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-sm">{prepError}</Text>
         <Pressable
           onPress={() => submit.mutate()}
           className="py-2.5 rounded-ctl items-center bg-primary">

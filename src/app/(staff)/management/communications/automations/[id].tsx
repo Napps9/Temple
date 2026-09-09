@@ -1039,7 +1039,7 @@ export default function AutomationEditor() {
           </Button>
         </View>
 
-        {error ? <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text> : null}
+        {error ? <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text> : null}
 
         <View className="gap-2">
           <Button variant="secondary" onPress={() => sendTest.mutate(null)} loading={sendTest.isPending}>

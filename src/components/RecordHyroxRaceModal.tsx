@@ -323,7 +323,9 @@ export function RecordHyroxRaceModal({
             </View>
 
           {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+            <Text
+              accessibilityLiveRegion="polite"
+              className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
           ) : null}
           {!canSave && !error ? (
             <Text className="text-ink-3 dark:text-ink-3-dk text-xs">

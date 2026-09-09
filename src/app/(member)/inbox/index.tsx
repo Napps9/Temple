@@ -859,7 +859,7 @@ function AnnouncementComposer({
         ) : null}
       </View>
       {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-xs">{error}</Text>
       ) : null}
       <Button onPress={() => post.mutate()} loading={post.isPending}>
         Post announcement

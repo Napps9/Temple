@@ -225,12 +225,12 @@ export default function AcceptInviteScreen() {
             </Text>
           </View>
           {resendNotice ? (
-            <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+            <Text className="text-emerald-700 dark:text-emerald-400 text-sm">
               {resendNotice}
             </Text>
           ) : null}
           {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+            <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
           ) : null}
           <Button variant="secondary" onPress={resend} loading={resendLoading}>
             Resend confirmation email
@@ -262,7 +262,7 @@ export default function AcceptInviteScreen() {
             {ROLE_LABEL[info.role]}.
           </Text>
           {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+            <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
           ) : null}
           <Button
             onPress={() => acceptSignedIn.mutate()}
@@ -304,7 +304,7 @@ export default function AcceptInviteScreen() {
           />
         </View>
         {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+          <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
         <Button
           onPress={() => signUpAndAccept.mutate()}

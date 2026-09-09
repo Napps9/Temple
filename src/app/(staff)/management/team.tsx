@@ -324,7 +324,7 @@ function RolePermissionsSection() {
       )}
 
       {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
 
       <ChipButton
@@ -611,7 +611,7 @@ function MemberPermissionsSection() {
       )}
 
       {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
 
       <ChipButton

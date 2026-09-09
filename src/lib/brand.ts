@@ -100,7 +100,9 @@ export function trialUrl(origin: string, token: string): string {
 // Convert "#14161A" → "20 22 26" (space-separated RGB triplet) for the
 // CSS variables Tailwind splices into `rgb(... / <alpha-value>)`. Only
 // ThemedShell calls it, to push ACCENT into the `primary` token.
-const FALLBACK_TRIPLET = '194 65 12';
+// ACCENT.light.primary. It was a burnt orange left over from when a gym
+// picked the accent; nothing has been that colour since it went mono.
+const FALLBACK_TRIPLET = '20 22 26';
 
 export function hexToRgbTriplet(hex: string): string {
   const clean = hex.replace(/^#/, '');

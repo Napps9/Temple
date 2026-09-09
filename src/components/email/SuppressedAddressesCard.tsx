@@ -59,7 +59,7 @@ export function SuppressedAddressesCard() {
         leaving alone for a spam report.
       </Text>
       {clear.isError ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
+        <Text className="text-red-600 dark:text-red-400 text-sm">
           {errorMessage(clear.error, 'Could not clear that address')}
         </Text>
       ) : null}

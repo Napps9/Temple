@@ -696,7 +696,7 @@ export function PlansPanel() {
               disabled={exportMemberships.isPending}
             />
             {exportMemberships.error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">
+              <Text className="text-red-600 dark:text-red-400 text-sm">
                 {exportErrorMessage(exportMemberships.error, 'memberships')}
               </Text>
             ) : null}
@@ -914,7 +914,7 @@ export function PlansPanel() {
                       placeholder="10"
                     />
                     {editingExistingCredits ? (
-                      <Text className="text-amber-600 dark:text-amber-400 text-xs">
+                      <Text className="text-amber-700 dark:text-amber-400 text-xs">
                         This changes how many credits new subscribers receive.
                         Existing subs are not retroactively re-entitled.
                       </Text>
@@ -930,7 +930,7 @@ export function PlansPanel() {
                     placeholder="50"
                   />
                   {editingExistingPrice ? (
-                    <Text className="text-amber-600 dark:text-amber-400 text-xs">
+                    <Text className="text-amber-700 dark:text-amber-400 text-xs">
                       This changes the price new subscribers pay. Existing
                       subscriptions keep the price they signed up at.
                     </Text>
@@ -1016,7 +1016,7 @@ export function PlansPanel() {
                       Members on this plan can book any class type.
                     </Text>
                   ) : (classTypes.data?.length ?? 0) === 0 ? (
-                    <Text className="text-amber-600 dark:text-amber-400 text-xs">
+                    <Text className="text-amber-700 dark:text-amber-400 text-xs">
                       No class types yet — add some under Class types first.
                     </Text>
                   ) : (
@@ -1059,7 +1059,7 @@ export function PlansPanel() {
                 )}
 
                 {rowError ? (
-                  <Text className="text-red-500 dark:text-red-400 text-sm">
+                  <Text className="text-red-600 dark:text-red-400 text-sm">
                     {rowError}
                   </Text>
                 ) : null}
@@ -1107,7 +1107,7 @@ export function PlansPanel() {
         </View>
 
         {actionError ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{actionError}</Text>
+          <Text className="text-red-600 dark:text-red-400 text-sm">{actionError}</Text>
         ) : null}
 
         {archivedRows.length > 0 ? (

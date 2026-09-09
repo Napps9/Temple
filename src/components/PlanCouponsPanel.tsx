@@ -167,7 +167,7 @@ export function PlanCouponsPanel() {
       ) : null}
 
       {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-xs">{error}</Text>
       ) : null}
 
       {(coupons.data ?? []).map((c) => (

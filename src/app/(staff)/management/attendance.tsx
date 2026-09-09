@@ -177,7 +177,7 @@ export default function AttendanceScreen() {
               disabled={exportAttendance.isPending}
             />
             {exportAttendance.error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">
+              <Text className="text-red-600 dark:text-red-400 text-sm">
                 {exportErrorMessage(exportAttendance.error, 'attendance')}
               </Text>
             ) : null}
@@ -185,17 +185,17 @@ export default function AttendanceScreen() {
         ) : null}
 
         {!rangeValid ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">
+          <Text className="text-red-600 dark:text-red-400 text-sm">
             Pick valid dates with From on or before To.
           </Text>
         ) : null}
 
         {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+          <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
 
         {queryError ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">
+          <Text className="text-red-600 dark:text-red-400 text-sm">
             {errorMessage(queryError, 'Could not load attendance data')}
           </Text>
         ) : null}

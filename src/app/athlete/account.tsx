@@ -63,7 +63,7 @@ export default function AthleteAccount() {
                 Solo tracking
               </Text>
               <View className="rounded-full bg-emerald-500/15 px-2 py-0.5">
-                <Text className="text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold uppercase tracking-widest">
+                <Text className="text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold uppercase tracking-widest">
                   Active · free in beta
                 </Text>
               </View>
@@ -81,7 +81,7 @@ export default function AthleteAccount() {
               disabled={cancel.isPending}
             />
             {cancelError ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">
+              <Text className="text-red-600 dark:text-red-400 text-sm">
                 {cancelError}
               </Text>
             ) : null}

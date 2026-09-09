@@ -153,12 +153,12 @@ export default function EmailPreferencesScreen() {
         )}
 
         {setTopic.error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">
+          <Text className="text-red-600 dark:text-red-400 text-sm">
             {errorMessage(setTopic.error, 'Could not save preference')}
           </Text>
         ) : null}
         {setBlanket.error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">
+          <Text className="text-red-600 dark:text-red-400 text-sm">
             {errorMessage(setBlanket.error, 'Could not save master toggle')}
           </Text>
         ) : null}

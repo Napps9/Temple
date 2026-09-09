@@ -227,7 +227,7 @@ export function WaiverPanel() {
         </Pressable>
 
         {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+          <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
 
         <Button
@@ -518,7 +518,7 @@ export function ParqPanel() {
       </Pressable>
 
       {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
 
       <Button onPress={() => publish.mutate()} loading={publish.isPending} success={saved}>

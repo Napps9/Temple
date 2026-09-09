@@ -18,6 +18,7 @@ import { EditClassSheet } from '@/components/EditClassSheet';
 import { StaffBookingSheet } from '@/components/StaffBookingSheet';
 import { useSession } from '@/lib/auth';
 import { invalidateBookingCaches, isLateCancel } from '@/lib/bookings';
+import { labelOn } from '@/lib/contrast';
 import {
   errorMessage,
   isMembershipRequiredError,
@@ -533,7 +534,12 @@ export function ClassDetailModal({
     booksOpenAt !== null && Date.now() < booksOpenAt;
   const bookClosed =
     booksCloseAt !== null && Date.now() >= booksCloseAt && !inPast;
-  const typeColor = detail?.class_types?.color ?? colors.primary;
+  // A class type's colour is authored per type, so the label over it has
+  // to be computed rather than assumed white — white on the Yellow swatch
+  // is 1.9:1. The no-type fallback is a neutral: `primary` is the action
+  // accent, and content colour is not brand (it is also paper in dark, so
+  // the old white label vanished on it).
+  const typeColor = detail?.class_types?.color ?? colors.sunken;
   const typeName = detail?.class_types?.name ?? detail?.name ?? '';
   const coachName = detail?.coach?.full_name ?? 'Coach';
 
@@ -590,7 +596,11 @@ export function ClassDetailModal({
                 <View
                   style={{ backgroundColor: typeColor }}
                   className="self-start rounded-full px-3 py-1">
-                  <Text className="text-white text-xs font-semibold">{typeName}</Text>
+                  <Text
+                    style={{ color: labelOn(typeColor) }}
+                    className="text-xs font-semibold">
+                    {typeName}
+                  </Text>
                 </View>
               </View>
 
@@ -706,7 +716,9 @@ export function ClassDetailModal({
                         until somebody picks it up.
                       </Text>
                       {requestCover.error ? (
-                        <Text className="text-red-600 dark:text-red-400 text-sm">
+                        <Text
+                          accessibilityLiveRegion="polite"
+                          className="text-red-600 dark:text-red-400 text-sm">
                           {errorMessage(requestCover.error, 'Could not ask the coaches')}
                         </Text>
                       ) : null}
@@ -727,7 +739,7 @@ export function ClassDetailModal({
                     </View>
                   ) : null}
                   {coverStep === 'sent' ? (
-                    <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+                    <Text className="text-emerald-700 dark:text-emerald-400 text-sm">
                       Asked the coaches.
                     </Text>
                   ) : null}
@@ -744,12 +756,14 @@ export function ClassDetailModal({
                         className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2 text-ink dark:text-ink-dk min-h-[72px]"
                       />
                       {broadcastError ? (
-                        <Text className="text-red-500 dark:text-red-400 text-xs">
+                        <Text
+                          accessibilityLiveRegion="polite"
+                          className="text-red-600 dark:text-red-400 text-xs">
                           {broadcastError}
                         </Text>
                       ) : null}
                       {broadcastSent ? (
-                        <Text className="text-emerald-600 dark:text-emerald-400 text-xs">
+                        <Text className="text-emerald-700 dark:text-emerald-400 text-xs">
                           Sent. Closing…
                         </Text>
                       ) : null}
@@ -817,7 +831,7 @@ export function ClassDetailModal({
                                 ) : null}
                               </View>
                               {b.promoted_from_waitlist ? (
-                                <Text className="text-amber-600 dark:text-amber-400 text-[10px] uppercase tracking-widest">
+                                <Text className="text-amber-700 dark:text-amber-400 text-[10px] uppercase tracking-widest">
                                   Promoted from waitlist
                                 </Text>
                               ) : null}
@@ -893,7 +907,9 @@ export function ClassDetailModal({
               ) : null}
 
               {error ? (
-                <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+                <Text
+                  accessibilityLiveRegion="polite"
+                  className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
               ) : null}
 
               {mode === 'book' && needMembership ? (
@@ -1068,7 +1084,9 @@ function DependentBookRow({
         Book a child
       </FieldLabel>
       {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        <Text
+          accessibilityLiveRegion="polite"
+          className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
       {kids.map((k) => {
         const booked = bookedIds.has(k.id);
@@ -1078,7 +1096,7 @@ function DependentBookRow({
               {k.fullName ?? 'Child'}
             </Text>
             {booked ? (
-              <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+              <Text className="text-emerald-700 dark:text-emerald-400 text-sm">
                 Booked
               </Text>
             ) : (
@@ -1164,7 +1182,9 @@ function BookMembershipPrompt({
         </Text>
       ) : null}
       {checkout.error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
+        <Text
+          accessibilityLiveRegion="polite"
+          className="text-red-600 dark:text-red-400 text-sm">
           {errorMessage(checkout.error, 'Could not start checkout')}
         </Text>
       ) : null}
@@ -1327,7 +1347,7 @@ function BookActions({
           Cancel your booking for this class?
         </Text>
         {lateCancel ? (
-          <Text className="text-amber-600 dark:text-amber-400 text-sm">
+          <Text className="text-amber-700 dark:text-amber-400 text-sm">
             Late cancel — your credit will be forfeited.
           </Text>
         ) : null}

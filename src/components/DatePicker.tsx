@@ -83,7 +83,7 @@ export function DatePicker({
       {error ? (
         <Text
           accessibilityLiveRegion="polite"
-          className="text-red-500 dark:text-red-400 text-xs">
+          className="text-red-600 dark:text-red-400 text-xs">
           {error}
         </Text>
       ) : null}

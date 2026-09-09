@@ -163,12 +163,12 @@ export default function WelcomeScreen() {
             )}
 
             {resumeError ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm text-center">
+              <Text className="text-red-600 dark:text-red-400 text-sm text-center">
                 {resumeError}
               </Text>
             ) : null}
             {membership.isError ? (
-              <Text className="text-amber-600 dark:text-amber-400 text-sm text-center">
+              <Text className="text-amber-700 dark:text-amber-400 text-sm text-center">
                 We couldn't load your gym just now. Check your connection and
                 try again.
               </Text>

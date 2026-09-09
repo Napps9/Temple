@@ -14,7 +14,7 @@ import {
 
 const TONE_BADGE: Record<StatusTone, { bg: string; text: string }> = {
   gray: { bg: 'bg-raised dark:bg-raised-dk', text: 'text-ink-2 dark:text-ink-2-dk' },
-  amber: { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400' },
+  amber: { bg: 'bg-amber-500/10', text: 'text-amber-700 dark:text-amber-400' },
   green: { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400' },
   red: { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400' },
 };

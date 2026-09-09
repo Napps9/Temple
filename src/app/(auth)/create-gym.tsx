@@ -182,12 +182,12 @@ export default function CreateGymScreen() {
                   </Text>
                 </View>
                 {resendNotice ? (
-                  <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+                  <Text className="text-emerald-700 dark:text-emerald-400 text-sm">
                     {resendNotice}
                   </Text>
                 ) : null}
                 {error ? (
-                  <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+                  <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
                 ) : null}
                 <Button
                   variant="secondary"
@@ -264,7 +264,7 @@ export default function CreateGymScreen() {
                 ) : null}
 
                 {error ? (
-                  <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+                  <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
                 ) : null}
                 <Button onPress={submit} loading={loading}>Create gym</Button>
               </View>

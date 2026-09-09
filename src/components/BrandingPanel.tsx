@@ -192,7 +192,7 @@ export function BrandingPanel() {
 
   function cardError(card: CardKey) {
     return saveError?.card === card ? (
-      <Text className="text-red-500 dark:text-red-400 text-sm">
+      <Text className="text-red-600 dark:text-red-400 text-sm">
         {saveError.message}
       </Text>
     ) : null;
@@ -239,7 +239,7 @@ export function BrandingPanel() {
             placeholder="iron-temple"
           />
           {slugWarn ? (
-            <Text className="text-amber-600 dark:text-amber-400 text-xs">
+            <Text className="text-amber-700 dark:text-amber-400 text-xs">
               Changing the slug will break previously shared join links.
             </Text>
           ) : null}

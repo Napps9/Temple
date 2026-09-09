@@ -491,7 +491,7 @@ export default function PaymentStory() {
                     </Text>
                   </View>
                   {chase.error ? (
-                    <Text className="text-red-500 dark:text-red-400 text-sm">
+                    <Text className="text-red-600 dark:text-red-400 text-sm">
                       {errorMessage(chase.error, "That didn't go through")}
                     </Text>
                   ) : null}

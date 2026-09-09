@@ -53,7 +53,7 @@ export function Input({
     ? 'bg-surface-dk border-line-dk'
     : 'bg-surface dark:bg-surface-dk border-line dark:border-line-dk';
   const inputCls = forceDark ? 'text-ink-dk' : 'text-ink dark:text-ink-dk';
-  const errorCls = forceDark ? 'text-red-400' : 'text-red-500 dark:text-red-400';
+  const errorCls = forceDark ? 'text-red-400' : 'text-red-600 dark:text-red-400';
 
   return (
     <View className="gap-1.5">

@@ -817,7 +817,7 @@ function AddLeadModal({
                           ? 'border-transparent bg-raised dark:bg-raised-dk'
                           : 'border-line dark:border-line-dk'
                       }`}>
-                      <Text className="text-xs">None</Text>
+                      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">None</Text>
                     </Pressable>
                     {sources.map((s) => {
                       const sel = sourceId === s.id;
@@ -831,9 +831,18 @@ function AddLeadModal({
                           style={
                             sel ? { backgroundColor: s.color + '22' } : undefined
                           }>
+                          {/* The label is ink either way. Unselected it
+                              had no colour class at all, so it was black
+                              on the dark surface; selected it was the
+                              source's own colour on a 13% wash of that
+                              same colour, which is 2.4:1. The wash and
+                              the border carry the identity. */}
                           <Text
-                            className="text-xs"
-                            style={sel ? { color: s.color } : undefined}>
+                            className={
+                              sel
+                                ? 'text-xs font-medium text-ink dark:text-ink-dk'
+                                : 'text-xs text-ink-2 dark:text-ink-2-dk'
+                            }>
                             {s.label}
                           </Text>
                         </Pressable>
@@ -852,7 +861,9 @@ function AddLeadModal({
               />
 
               {error ? (
-                <Text className="text-red-500 dark:text-red-400 text-sm">
+                <Text
+                  accessibilityLiveRegion="polite"
+                  className="text-red-600 dark:text-red-400 text-sm">
                   {error}
                 </Text>
               ) : null}
@@ -1280,7 +1291,7 @@ function LeadDetailModal({
                         <Text
                           className={`text-xs ${
                             latestEmail.status === 'failed'
-                              ? 'text-red-500 dark:text-red-400'
+                              ? 'text-red-600 dark:text-red-400'
                               : 'text-ink-2 dark:text-ink-2-dk'
                           }`}>
                           {sendStatusLabel(latestEmail)}
@@ -1318,8 +1329,11 @@ function LeadDetailModal({
                                 : undefined
                             }>
                             <Text
-                              className="text-xs font-medium"
-                              style={sel ? { color: STATUS_COLORS[s] } : undefined}>
+                              className={
+                                sel
+                                  ? 'text-xs font-medium text-ink dark:text-ink-dk'
+                                  : 'text-xs font-medium text-ink-2 dark:text-ink-2-dk'
+                              }>
                               {STATUS_LABELS[s]}
                             </Text>
                           </Pressable>
@@ -1349,7 +1363,7 @@ function LeadDetailModal({
               {error ? (
                 <Text
                   accessibilityLiveRegion="polite"
-                  className="text-red-500 dark:text-red-400 text-[13px]">
+                  className="text-red-600 dark:text-red-400 text-[13px]">
                   {error}
                 </Text>
               ) : null}

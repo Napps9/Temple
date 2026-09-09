@@ -176,14 +176,14 @@ export default function SignInScreen() {
           {error ? (
             <Text
               accessibilityLiveRegion="polite"
-              className="text-red-500 dark:text-red-400 text-sm">
+              className="text-red-600 dark:text-red-400 text-sm">
               {error}
             </Text>
           ) : null}
           {resendNotice ? (
             <Text
               accessibilityLiveRegion="polite"
-              className="text-emerald-600 dark:text-emerald-400 text-sm">
+              className="text-emerald-700 dark:text-emerald-400 text-sm">
               {resendNotice}
             </Text>
           ) : null}

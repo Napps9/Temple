@@ -222,7 +222,7 @@ export default function DirectThread() {
           </Pressable>
         </View>
         {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-xs px-3 pt-1">
+          <Text className="text-red-600 dark:text-red-400 text-xs px-3 pt-1">
             {error}
           </Text>
         ) : null}

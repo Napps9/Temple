@@ -576,7 +576,9 @@ export default function LeadSettingsScreen() {
         </Button>
       </View>
 
-      {error ? <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text> : null}
+      {error ? <Text
+        accessibilityLiveRegion="polite"
+        className="text-red-600 dark:text-red-400 text-sm">{error}</Text> : null}
 
       <SourcesEditorModal
         visible={sourcesOpen}
@@ -735,7 +737,7 @@ function SourcesEditorModal({
                 {error ? (
                   <Text
                     accessibilityLiveRegion="polite"
-                    className="text-red-500 dark:text-red-400 text-[13px]">
+                    className="text-red-600 dark:text-red-400 text-[13px]">
                     {error}
                   </Text>
                 ) : null}

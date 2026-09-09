@@ -614,7 +614,7 @@ export default function AgentSetupWizard() {
                   {provisionFailed ? 'Try again' : 'Set up my number'}
                 </Button>
                 {provision.error ? (
-                  <Text className="text-red-500 dark:text-red-400 text-xs">
+                  <Text className="text-red-600 dark:text-red-400 text-xs">
                     {errorMessage(provision.error, "Couldn't set up your number")}
                   </Text>
                 ) : null}
@@ -639,7 +639,7 @@ export default function AgentSetupWizard() {
         ) : null}
 
         {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+          <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
       </PageScroll>
     </Screen>

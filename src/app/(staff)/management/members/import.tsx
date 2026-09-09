@@ -757,7 +757,7 @@ export default function ImportMembersScreen() {
             />
 
             {error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+              <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
             ) : null}
             <Button
               onPress={() => {
@@ -841,7 +841,7 @@ export default function ImportMembersScreen() {
               </Button>
             </View>
             {error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+              <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
             ) : null}
           </View>
         ) : null}
@@ -956,7 +956,7 @@ export default function ImportMembersScreen() {
               </Button>
             </View>
             {error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+              <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
             ) : null}
           </View>
         ) : null}
@@ -1132,7 +1132,7 @@ function ReviewPanel({
       </View>
 
       {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
 
       <View className="flex-row gap-2 pt-1">
@@ -1195,7 +1195,7 @@ function PlanReviewCard({
           From "{suggestion.raw_name}"
         </FieldLabel>
         {hint ? (
-          <Text className="text-amber-600 dark:text-amber-400 text-[10px] font-semibold uppercase tracking-widest">
+          <Text className="text-amber-700 dark:text-amber-400 text-[10px] font-semibold uppercase tracking-widest">
             Most common
           </Text>
         ) : null}
@@ -1265,7 +1265,7 @@ function PlanReviewCard({
             existing plan instead of creating a new one.
           </Text>
           {nameMatch && nameMatch.plan_id === final.existing_plan_id ? (
-            <Text className="text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
+            <Text className="text-emerald-700 dark:text-emerald-400 text-[11px] font-medium">
               Matched by name — check this is the right plan.
             </Text>
           ) : null}
@@ -1554,7 +1554,7 @@ function UnclaimedImportsBanner({
         </Text>
       ) : null}
       {error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
       ) : null}
     </View>
   );
@@ -1797,7 +1797,7 @@ function HandoverPanel({
           Create campaign from scratch
         </Button>
         {campaignError ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">
+          <Text className="text-red-600 dark:text-red-400 text-sm">
             {campaignError}
           </Text>
         ) : null}
@@ -1829,7 +1829,7 @@ function HandoverPanel({
           </Text>
         ) : null}
         {inviteError ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">
+          <Text className="text-red-600 dark:text-red-400 text-sm">
             {inviteError}
           </Text>
         ) : null}

@@ -92,13 +92,13 @@ export default function FamilyScreen() {
               max={new Date().toISOString().slice(0, 10)}
             />
             {validDob && age != null && age >= 18 ? (
-              <Text className="text-amber-600 dark:text-amber-400 text-xs">
+              <Text className="text-amber-700 dark:text-amber-400 text-xs">
                 A dependent must be under 18. An adult should make their own
                 account.
               </Text>
             ) : null}
             {error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+              <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
             ) : null}
             <Button
               onPress={() => add.mutate()}
@@ -207,7 +207,7 @@ function DependentCard({
       {screening.isLoading ? (
         <Text className="text-ink-3 dark:text-ink-3-dk text-xs">Checking…</Text>
       ) : ready ? (
-        <Text className="text-emerald-600 dark:text-emerald-400 text-xs">
+        <Text className="text-emerald-700 dark:text-emerald-400 text-xs">
           Ready to book — book them from any class.
         </Text>
       ) : (

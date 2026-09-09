@@ -135,7 +135,9 @@ export function ReopenClosureModal({
             Working out what would come back…
           </Text>
         ) : slotsQuery.error ? (
-          <Text className="text-red-500 dark:text-red-400 text-[13px]">
+          <Text
+            accessibilityLiveRegion="polite"
+            className="text-red-600 dark:text-red-400 text-[13px]">
             {errorMessage(slotsQuery.error, 'Could not load the classes')}
           </Text>
         ) : slots.length === 0 ? (
@@ -206,7 +208,7 @@ export function ReopenClosureModal({
         {error ? (
           <Text
             accessibilityLiveRegion="polite"
-            className="text-red-500 dark:text-red-400 text-[13px]">
+            className="text-red-600 dark:text-red-400 text-[13px]">
             {error}
           </Text>
         ) : null}

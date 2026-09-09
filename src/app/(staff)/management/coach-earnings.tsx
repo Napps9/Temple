@@ -231,7 +231,7 @@ export default function CoachEarningsPage() {
             })}
           </View>
           {setPolicy.isError ? (
-            <Text className="text-red-500 dark:text-red-400 text-xs">
+            <Text className="text-red-600 dark:text-red-400 text-xs">
               {errorMessage(setPolicy.error, 'Could not update policy')}
             </Text>
           ) : null}
@@ -498,7 +498,7 @@ function ClassTypeRateEditor({
             inputMode="decimal"
           />
           {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>
+            <Text className="text-red-600 dark:text-red-400 text-xs">{error}</Text>
           ) : null}
           <View className="flex-row gap-2">
             <View className="flex-1">

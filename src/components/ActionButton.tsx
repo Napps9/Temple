@@ -34,14 +34,14 @@ const KIND_STYLES: Record<
   archive: {
     container:
       'bg-amber-500/10 border border-amber-500/40 hover:bg-amber-500/15 active:bg-amber-500/20',
-    text: 'text-amber-600 dark:text-amber-400',
+    text: 'text-amber-700 dark:text-amber-400',
     icon: 'archive-outline',
     iconColor: '#F59E0B',
   },
   restore: {
     container:
       'bg-emerald-500/10 border border-emerald-500/40 hover:bg-emerald-500/15 active:bg-emerald-500/20',
-    text: 'text-emerald-600 dark:text-emerald-400',
+    text: 'text-emerald-700 dark:text-emerald-400',
     icon: 'arrow-undo-outline',
     iconColor: '#10B981',
   },

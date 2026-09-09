@@ -132,7 +132,7 @@ export function ClassTypePicker({
             <ColorSwatchPicker value={newColor} onChange={setNewColor} />
           </View>
           {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+            <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
           ) : null}
           <View className="flex-row gap-2">
             <View className="flex-1">

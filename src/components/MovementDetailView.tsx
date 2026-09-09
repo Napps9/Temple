@@ -296,7 +296,7 @@ export function MovementDetailView({
                   {best ? (
                     <View className="rounded-full bg-amber-500/15 px-2 py-0.5 flex-row items-center gap-1">
                       <Ionicons name="trophy" size={10} color="#F59E0B" />
-                      <Text className="text-amber-600 dark:text-amber-400 text-[10px] font-semibold">
+                      <Text className="text-amber-700 dark:text-amber-400 text-[10px] font-semibold">
                         {`PR \u00B7 ${fmtDateShort(best.performed_at)}`}
                       </Text>
                     </View>
@@ -599,7 +599,7 @@ function JournalRowView({
           {isPR ? (
             <View className="rounded-full bg-amber-500/15 px-1.5 py-0.5 flex-row items-center gap-0.5">
               <Ionicons name="trophy" size={9} color="#F59E0B" />
-              <Text className="text-amber-600 dark:text-amber-400 text-[9px] font-semibold uppercase tracking-wider">
+              <Text className="text-amber-700 dark:text-amber-400 text-[9px] font-semibold uppercase tracking-wider">
                 PR
               </Text>
             </View>

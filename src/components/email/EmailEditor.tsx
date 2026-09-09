@@ -662,7 +662,7 @@ export function EmailEditor({
                       uploading={uploading}
                     />
                     {uploadError ? (
-                      <Text className="text-red-500 dark:text-red-400 text-xs">
+                      <Text className="text-red-600 dark:text-red-400 text-xs">
                         {uploadError}
                       </Text>
                     ) : null}

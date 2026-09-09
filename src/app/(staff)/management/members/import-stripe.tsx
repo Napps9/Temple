@@ -317,7 +317,7 @@ export default function ImportStripeScreen() {
           </Text>
         ) : preview.error ? (
           <View className="gap-3">
-            <Text className="text-red-500 dark:text-red-400 text-sm">
+            <Text className="text-red-600 dark:text-red-400 text-sm">
               {errorMessage(preview.error, 'Could not read Stripe')}
             </Text>
             <Button
@@ -455,7 +455,7 @@ export default function ImportStripeScreen() {
                 Members ({importable.length} selected)
               </Text>
               {(preview.data?.skipped_no_email ?? 0) > 0 ? (
-                <Text className="text-amber-600 dark:text-amber-400 text-xs">
+                <Text className="text-amber-700 dark:text-amber-400 text-xs">
                   {preview.data!.skipped_no_email} subscriber
                   {preview.data!.skipped_no_email === 1 ? '' : 's'} skipped — no
                   email on the Stripe customer.
@@ -497,7 +497,7 @@ export default function ImportStripeScreen() {
             )}
 
             {error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+              <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
             ) : null}
             <Button
               onPress={() => commit.mutate()}

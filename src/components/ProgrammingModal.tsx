@@ -7,6 +7,7 @@ import { Text } from './Text';
 import { Button } from './Button';
 import { Input } from './Input';
 import { Sheet, SheetAction } from './Sheet';
+import { labelOn } from '@/lib/contrast';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -396,7 +397,9 @@ export function ProgrammingModal({
                   <View
                     style={{ backgroundColor: target.classType.color }}
                     className="self-start rounded-full px-3 py-1">
-                    <Text className="text-white text-xs font-semibold">
+                    <Text
+                      style={{ color: labelOn(target.classType.color) }}
+                      className="text-xs font-semibold">
                       {target.classType.name}
                     </Text>
                   </View>
@@ -447,7 +450,9 @@ export function ProgrammingModal({
               </View>
 
               {error ? (
-                <Text className="text-red-500 dark:text-red-400 text-sm">
+                <Text
+                  accessibilityLiveRegion="polite"
+                  className="text-red-600 dark:text-red-400 text-sm">
                   {error}
                 </Text>
               ) : null}

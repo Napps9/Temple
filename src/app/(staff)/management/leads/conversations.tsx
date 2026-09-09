@@ -20,8 +20,8 @@ type ConversationRow = {
 };
 
 const STATUS_COPY: Record<ConversationRow['status'], { label: string; cls: string }> = {
-  active: { label: 'AI replying', cls: 'text-emerald-600 dark:text-emerald-400' },
-  handed_off: { label: 'With a coach', cls: 'text-amber-600 dark:text-amber-400' },
+  active: { label: 'AI replying', cls: 'text-emerald-700 dark:text-emerald-400' },
+  handed_off: { label: 'With a coach', cls: 'text-amber-700 dark:text-amber-400' },
   closed: { label: 'Opted out', cls: 'text-ink-3 dark:text-ink-3-dk' },
 };
 

@@ -273,7 +273,7 @@ export default function ImportedMemberDetailScreen() {
         {canManageStaff !== true || query.isLoading ? (
           <Text className="text-ink-2 dark:text-ink-2-dk">Loading…</Text>
         ) : query.error || !row ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">
+          <Text className="text-red-600 dark:text-red-400 text-sm">
             {errorMessage(query.error, 'This imported member could not be found.')}
           </Text>
         ) : !form ? null : (
@@ -426,7 +426,7 @@ export default function ImportedMemberDetailScreen() {
             </View>
 
             {error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+              <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
             ) : null}
 
             <View className="gap-2">
@@ -453,7 +453,7 @@ export default function ImportedMemberDetailScreen() {
               ) : null}
 
               {send.data && send.data.sent > 0 ? (
-                <Text className="text-emerald-600 dark:text-emerald-400 text-xs text-center">
+                <Text className="text-emerald-700 dark:text-emerald-400 text-xs text-center">
                   Invite sent.
                 </Text>
               ) : null}

@@ -332,7 +332,7 @@ export default function ImportWorkoutsScreen() {
               className="bg-raised dark:bg-raised-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2 text-ink dark:text-ink-dk text-sm font-mono"
             />
             {error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+              <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
             ) : null}
             <Button
               onPress={() => {
@@ -407,7 +407,7 @@ export default function ImportWorkoutsScreen() {
               </Button>
             </View>
             {error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+              <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
             ) : null}
           </View>
         ) : null}
@@ -597,7 +597,7 @@ export default function ImportWorkoutsScreen() {
               </Button>
             </View>
             {error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+              <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
             ) : null}
           </View>
         ) : null}

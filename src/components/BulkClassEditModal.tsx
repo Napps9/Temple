@@ -300,7 +300,7 @@ export function BulkClassEditModal({
           {rangeError ? (
             <Text
               accessibilityLiveRegion="polite"
-              className="text-red-500 dark:text-red-400 text-sm">
+              className="text-red-600 dark:text-red-400 text-sm">
               {rangeError}
             </Text>
           ) : null}
@@ -370,7 +370,9 @@ export function BulkClassEditModal({
                   Finding the classes…
                 </Text>
               ) : previewQuery.error ? (
-                <Text className="text-red-500 dark:text-red-400 text-sm">
+                <Text
+                  accessibilityLiveRegion="polite"
+                  className="text-red-600 dark:text-red-400 text-sm">
                   {errorMessage(previewQuery.error, 'Could not load the classes')}
                 </Text>
               ) : rows.length === 0 ? (
@@ -435,13 +437,15 @@ export function BulkClassEditModal({
           {error ? (
             <Text
               accessibilityLiveRegion="polite"
-              className="text-red-500 dark:text-red-400 text-sm">
+              className="text-red-600 dark:text-red-400 text-sm">
               {error}
             </Text>
           ) : null}
 
           {mode === 'edit' && editError && (capacity || duration || shift) ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">{editError}</Text>
+            <Text
+              accessibilityLiveRegion="polite"
+              className="text-red-600 dark:text-red-400 text-sm">{editError}</Text>
           ) : null}
 
       </View>

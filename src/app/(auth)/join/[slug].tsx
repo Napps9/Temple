@@ -236,7 +236,7 @@ export default function JoinGymScreen() {
                   {info.name}.
                 </Text>
                 {error ? (
-                  <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+                  <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
                 ) : null}
                 <Button onPress={() => justJoin.mutate()} loading={justJoin.isPending}>
                   {`Join ${info.name}`}
@@ -258,12 +258,12 @@ export default function JoinGymScreen() {
                   </Text>
                 </View>
                 {resendNotice ? (
-                  <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+                  <Text className="text-emerald-700 dark:text-emerald-400 text-sm">
                     {resendNotice}
                   </Text>
                 ) : null}
                 {error ? (
-                  <Text className="text-red-500 dark:text-red-400 text-sm">
+                  <Text className="text-red-600 dark:text-red-400 text-sm">
                     {error}
                   </Text>
                 ) : null}
@@ -299,7 +299,7 @@ export default function JoinGymScreen() {
                         : 'This email already has an account — it may have been set up on a call with us.'}
                     </Text>
                     {freshLinkNotice ? (
-                      <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+                      <Text className="text-emerald-700 dark:text-emerald-400 text-sm">
                         {freshLinkNotice}
                       </Text>
                     ) : (
@@ -340,7 +340,7 @@ export default function JoinGymScreen() {
                   autoComplete="new-password"
                 />
                 {error ? (
-                  <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+                  <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
                 ) : null}
                 <Button
                   onPress={() => signupAndJoin.mutate()}

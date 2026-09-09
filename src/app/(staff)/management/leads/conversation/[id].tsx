@@ -649,7 +649,9 @@ export default function AgentConversationScreen() {
         )}
 
         {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+          <Text
+            accessibilityLiveRegion="polite"
+            className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
       </PageScroll>
 
@@ -835,7 +837,7 @@ function CoachModal({
           {error ? (
             <Text
               accessibilityLiveRegion="polite"
-              className="text-red-500 dark:text-red-400 text-[13px]">
+              className="text-red-600 dark:text-red-400 text-[13px]">
               {error}
             </Text>
           ) : null}
@@ -953,7 +955,9 @@ function InlineCoachForm({
         </View>
       ) : null}
 
-      {error ? <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text> : null}
+      {error ? <Text
+        accessibilityLiveRegion="polite"
+        className="text-red-600 dark:text-red-400 text-xs">{error}</Text> : null}
 
       <View className="flex-row gap-2">
         <View className="flex-1">

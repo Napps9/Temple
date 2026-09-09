@@ -286,7 +286,7 @@ export function RecordMovementResultModal({
   return (
     <Sheet
       visible={visible}
-      title="Record workout"
+      title="Record a result"
       subtitle="Log a session and any movement results."
       onClose={onClose}
       busy={save.isPending}
@@ -304,7 +304,7 @@ export function RecordMovementResultModal({
               onPress={() => save.mutate()}
               loading={save.isPending}
               success={saved}>
-              Save workout
+              Save result
             </Button>
           </SheetAction>
         </>
@@ -357,7 +357,7 @@ export function RecordMovementResultModal({
           {error ? (
             <Text
               accessibilityLiveRegion="polite"
-              className="text-red-500 dark:text-red-400 text-[13px]">
+              className="text-red-600 dark:text-red-400 text-[13px]">
               {error}
             </Text>
           ) : null}

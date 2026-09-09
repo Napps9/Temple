@@ -36,7 +36,7 @@ const TONE_STYLES: Record<Tone, { container: string; text: string }> = {
   amber: {
     container:
       'bg-amber-500/10 border border-amber-500/40 hover:bg-amber-500/15 active:bg-amber-500/20',
-    text: 'text-amber-600 dark:text-amber-400',
+    text: 'text-amber-700 dark:text-amber-400',
   },
   red: {
     container:

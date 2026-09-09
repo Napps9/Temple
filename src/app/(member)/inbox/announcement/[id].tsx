@@ -285,7 +285,7 @@ export default function AnnouncementDetail() {
               </View>
             ) : null}
             {setPin.error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">
+              <Text className="text-red-600 dark:text-red-400 text-sm">
                 {errorMessage(setPin.error, 'Could not change the pin')}
               </Text>
             ) : null}
@@ -316,7 +316,7 @@ export default function AnnouncementDetail() {
               </Button>
             )}
             {gotIt.error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">
+              <Text className="text-red-600 dark:text-red-400 text-sm">
                 {errorMessage(gotIt.error, 'Could not mark as read')}
               </Text>
             ) : null}

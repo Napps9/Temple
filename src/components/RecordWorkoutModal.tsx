@@ -903,7 +903,7 @@ export function RecordWorkoutModal({
           {error ? (
             <Text
               accessibilityLiveRegion="polite"
-              className="text-red-500 dark:text-red-400 text-[13px]">
+              className="text-red-600 dark:text-red-400 text-[13px]">
               {error}
             </Text>
           ) : null}

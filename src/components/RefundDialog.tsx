@@ -164,7 +164,7 @@ export function RefundDialog({
   return (
     <Sheet
       visible={visible}
-      title={`Refund ${sub.planName}`}
+      title={`Refund ${sub.planName}?`}
       subtitle={
         charge.data ? `Last payment ${money(charge.data.amount_cents)}` : undefined
       }
@@ -272,7 +272,7 @@ export function RefundDialog({
             {error ? (
               <Text
                 accessibilityLiveRegion="polite"
-                className="text-red-500 dark:text-red-400 text-[13px]">
+                className="text-red-600 dark:text-red-400 text-[13px]">
                 {error}
               </Text>
             ) : null}

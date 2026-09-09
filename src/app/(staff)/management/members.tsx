@@ -83,7 +83,7 @@ export default function MembersScreen() {
               disabled={exportMembers.isPending}
             />
             {exportMembers.error ? (
-              <Text className="text-red-500 dark:text-red-400 text-sm">
+              <Text className="text-red-600 dark:text-red-400 text-sm">
                 {exportErrorMessage(exportMembers.error, 'members')}
               </Text>
             ) : null}

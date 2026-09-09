@@ -194,7 +194,7 @@ export default function NewClassBroadcast() {
         />
 
         {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>
+          <Text className="text-red-600 dark:text-red-400 text-xs">{error}</Text>
         ) : null}
         <Button onPress={() => send.mutate()} loading={send.isPending}>
           Send broadcast

@@ -118,7 +118,7 @@ export default function CommsSettingsScreen() {
             provider default.
           </Text>
           {saveError?.card === 'sender' ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">
+            <Text className="text-red-600 dark:text-red-400 text-sm">
               {saveError.message}
             </Text>
           ) : null}
@@ -153,7 +153,7 @@ export default function CommsSettingsScreen() {
             Shown in the footer alongside the unsubscribe link.
           </Text>
           {saveError?.card === 'footer' ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">
+            <Text className="text-red-600 dark:text-red-400 text-sm">
               {saveError.message}
             </Text>
           ) : null}

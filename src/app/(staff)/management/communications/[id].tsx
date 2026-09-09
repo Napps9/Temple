@@ -101,7 +101,7 @@ export default function CampaignDetailScreen() {
       <Screen edges={['bottom', 'left', 'right']}>
         <PageScroll contentContainerClassName="gap-5 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full">
           <BackLink fallbackHref="/management/communications" coveredByNav />
-          <Text className="text-red-500 dark:text-red-400">
+          <Text className="text-red-600 dark:text-red-400">
             {errorMessage(campaign.error, 'Could not load this campaign')}
           </Text>
         </PageScroll>
@@ -551,7 +551,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
         ) : null}
 
         {error ? (
-          <Text className="text-red-500 dark:text-red-400 text-sm">{error}</Text>
+          <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
         ) : null}
 
         {/* Send / confirm */}
@@ -953,7 +953,7 @@ function ReportView({ campaign }: { campaign: Campaign }) {
                 <Text
                   className={`text-sm font-semibold ${
                     won
-                      ? 'text-emerald-600 dark:text-emerald-400'
+                      ? 'text-emerald-700 dark:text-emerald-400'
                       : 'text-ink-2 dark:text-ink-2-dk'
                   }`}>
                   {fullySimulated ? '—' : `${rate}%`}

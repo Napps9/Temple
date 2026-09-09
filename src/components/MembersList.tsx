@@ -409,12 +409,12 @@ export function MembersList() {
       ) : null}
 
       {cohortQuery.error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
+        <Text className="text-red-600 dark:text-red-400 text-sm">
           {errorMessage(cohortQuery.error, 'Could not load members')}
         </Text>
       ) : null}
       {pendingQuery.error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
+        <Text className="text-red-600 dark:text-red-400 text-sm">
           {errorMessage(pendingQuery.error, 'Could not load imported members')}
         </Text>
       ) : null}
@@ -727,7 +727,7 @@ function RequestActionRow({
         );
       })}
       {decide.error ? (
-        <Text className="text-red-500 dark:text-red-400 text-sm">
+        <Text className="text-red-600 dark:text-red-400 text-sm">
           {errorMessage(decide.error, 'Could not apply the decision')}
         </Text>
       ) : null}
@@ -881,7 +881,7 @@ function PendingMemberCard({
             disabled={send.isPending || (send.data?.sent ?? 0) > 0}
           />
           {error ? (
-            <Text className="text-red-500 dark:text-red-400 text-xs">{error}</Text>
+            <Text className="text-red-600 dark:text-red-400 text-xs">{error}</Text>
           ) : null}
         </View>
       ) : invited ? (

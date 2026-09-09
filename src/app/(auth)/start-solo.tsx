@@ -177,12 +177,12 @@ export default function StartSoloScreen() {
                   </Text>
                 </View>
                 {resendNotice ? (
-                  <Text className="text-emerald-600 dark:text-emerald-400 text-sm">
+                  <Text className="text-emerald-700 dark:text-emerald-400 text-sm">
                     {resendNotice}
                   </Text>
                 ) : null}
                 {error ? (
-                  <Text className="text-red-500 dark:text-red-400 text-sm">
+                  <Text className="text-red-600 dark:text-red-400 text-sm">
                     {error}
                   </Text>
                 ) : null}
@@ -247,7 +247,7 @@ export default function StartSoloScreen() {
                   </Text>
                 )}
                 {error ? (
-                  <Text className="text-red-500 dark:text-red-400 text-sm">
+                  <Text className="text-red-600 dark:text-red-400 text-sm">
                     {error}
                   </Text>
                 ) : null}

@@ -410,7 +410,7 @@ export function AccountScreen() {
             disabled={exportData.isPending}
           />
           {exportData.error ? (
-            <Text className="text-red-500 dark:text-red-400 text-xs">
+            <Text className="text-red-600 dark:text-red-400 text-xs">
               {errorMessage(exportData.error, 'Could not prepare the export')}
             </Text>
           ) : null}
@@ -507,7 +507,7 @@ export function AccountScreen() {
             </Text>
           ) : null}
           {detailsError ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">
+            <Text className="text-red-600 dark:text-red-400 text-sm">
               {detailsError}
             </Text>
           ) : null}
@@ -559,7 +559,7 @@ export function AccountScreen() {
             </Text>
           ) : null}
           {passwordError ? (
-            <Text className="text-red-500 dark:text-red-400 text-sm">
+            <Text className="text-red-600 dark:text-red-400 text-sm">
               {passwordError}
             </Text>
           ) : null}
@@ -591,12 +591,12 @@ export function AccountScreen() {
               disabled={withdrawConsent.isPending}
             />
             {withdrawMessage ? (
-              <Text className="text-emerald-600 dark:text-emerald-400 text-xs">
+              <Text className="text-emerald-700 dark:text-emerald-400 text-xs">
                 {withdrawMessage}
               </Text>
             ) : null}
             {withdrawError ? (
-              <Text className="text-red-500 dark:text-red-400 text-xs">
+              <Text className="text-red-600 dark:text-red-400 text-xs">
                 {withdrawError}
               </Text>
             ) : null}
