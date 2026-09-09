@@ -367,7 +367,7 @@ export function EditClassSheet({
                       onPress={() => set({ coachId: c.profile_id })}
                       accessibilityRole="radio"
                       accessibilityState={{ selected: on }}
-                      className={`flex-row items-center gap-2 rounded-full pl-1 pr-3 py-1 border ${
+                      className={`h-9 flex-row items-center gap-2 rounded-full pl-1 pr-3 border ${
                         on
                           ? 'border-ink dark:border-ink-dk bg-raised dark:bg-raised-dk'
                           : 'border-line dark:border-line-dk'
@@ -383,7 +383,7 @@ export function EditClassSheet({
                   onPress={() => set({ coachId: null })}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: !draft.coachId }}
-                  className={`rounded-full px-3 py-2 border ${
+                  className={`h-9 justify-center rounded-full px-3 border ${
                     !draft.coachId
                       ? 'border-ink dark:border-ink-dk bg-raised dark:bg-raised-dk'
                       : 'border-line dark:border-line-dk'
@@ -403,8 +403,8 @@ export function EditClassSheet({
                   // silently refuses on save.
                   <View className="gap-1.5">
                     <FieldLabel>Date</FieldLabel>
-                    <View className="rounded-ctl border border-dashed border-line-strong dark:border-line-strong-dk bg-raised dark:bg-raised-dk px-3 py-3">
-                      <Text className="text-ink-3 dark:text-ink-3-dk text-[14px]">
+                    <View className="rounded-ctl border border-dashed border-line-strong dark:border-line-strong-dk bg-raised dark:bg-raised-dk px-4 py-3">
+                      <Text className="text-ink-3 dark:text-ink-3-dk text-base">
                         {recurrence.data
                           ? fmtPattern(recurrence.data.days_of_week, [])
                           : 'The series'}

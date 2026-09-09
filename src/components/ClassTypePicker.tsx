@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
 import { Button } from './Button';
 import { ColorSwatchPicker, PALETTE } from './ColorSwatchPicker';
 import { Input } from './Input';
+import { FieldLabel } from './SectionLabel';
 import { useGymMembership } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -73,47 +74,49 @@ export function ClassTypePicker({
 
   return (
     <View className="gap-2">
-      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
-        Class type
-      </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View className="flex-row gap-2 pr-2">
-          {types.data?.map((t) => {
-            const selected = value === t.id;
-            return (
-              <Pressable
-                key={t.id}
-                onPress={() => onChange(t.id)}
-                className={`flex-row items-center gap-2 px-3 py-2 rounded-full border ${
+      <FieldLabel>Class type</FieldLabel>
+      {/* Wraps rather than scrolls sideways. A horizontal scroller inside a
+          fixed-width dialog cut the last chip in half with nothing to say it
+          moved, and the selected type is the one most likely to be last —
+          the value you just picked was the value you could not read. */}
+      <View className="flex-row flex-wrap gap-2">
+        {types.data?.map((t) => {
+          const selected = value === t.id;
+          return (
+            <Pressable
+              key={t.id}
+              onPress={() => onChange(t.id)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              className={`h-9 flex-row items-center gap-2 px-3 rounded-full border ${
+                selected
+                  ? 'border-ink dark:border-ink-dk bg-raised dark:bg-raised-dk'
+                  : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
+              }`}>
+              <View
+                style={{ backgroundColor: t.color }}
+                className="w-2.5 h-2.5 rounded-full"
+              />
+              <Text
+                className={
                   selected
-                    ? 'border-transparent bg-raised dark:bg-raised-dk'
-                    : 'border-line dark:border-line-dk bg-surface dark:bg-surface-dk'
-                }`}>
-                <View
-                  style={{ backgroundColor: t.color }}
-                  className="w-2.5 h-2.5 rounded-full"
-                />
-                <Text
-                  className={
-                    selected
-                      ? 'text-ink dark:text-ink-dk text-sm font-semibold'
-                      : 'text-ink dark:text-ink-dk text-sm'
-                  }>
-                  {t.name}
-                </Text>
-              </Pressable>
-            );
-          })}
-          <Pressable
-            onPress={() => setCreating(!creating)}
-            className="flex-row items-center gap-1 px-3 py-2 rounded-full border border-dashed border-line-strong dark:border-line-strong-dk bg-surface dark:bg-surface-dk">
-            <Ionicons name="add" size={14} color={colors.ink2} />
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
-              New type
-            </Text>
-          </Pressable>
-        </View>
-      </ScrollView>
+                    ? 'text-ink dark:text-ink-dk text-sm font-semibold'
+                    : 'text-ink dark:text-ink-dk text-sm'
+                }>
+                {t.name}
+              </Text>
+            </Pressable>
+          );
+        })}
+        <Pressable
+          onPress={() => setCreating(!creating)}
+          className="h-9 flex-row items-center gap-1 px-3 rounded-full border border-dashed border-line-strong dark:border-line-strong-dk bg-surface dark:bg-surface-dk">
+          <Ionicons name="add" size={14} color={colors.ink2} />
+          <Text className="text-ink-2 dark:text-ink-2-dk text-sm">
+            New type
+          </Text>
+        </Pressable>
+      </View>
 
       {creating ? (
         <View className="bg-raised dark:bg-raised-dk rounded-ctl p-3 gap-3">
@@ -125,9 +128,7 @@ export function ClassTypePicker({
             autoCapitalize="words"
           />
           <View className="gap-1.5">
-            <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
-              Colour
-            </Text>
+            <FieldLabel>Colour</FieldLabel>
             <ColorSwatchPicker value={newColor} onChange={setNewColor} />
           </View>
           {error ? (

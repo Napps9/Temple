@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, View } from 'react-native';
+import { FieldLabel } from './SectionLabel';
 import { Text, TextInput } from './Text';
 
 import { useThemeColors } from '@/lib/theme';
@@ -194,9 +195,7 @@ export function DurationField({
 
   return (
     <View className="gap-1.5">
-      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
-        {label}
-      </Text>
+      <FieldLabel>{label}</FieldLabel>
       {blurb ? (
         <Text className="text-ink-2 dark:text-ink-2-dk text-xs">{blurb}</Text>
       ) : null}
@@ -210,7 +209,7 @@ export function DurationField({
           keyboardType="number-pad"
           placeholder={placeholder}
           placeholderTextColor={colors.ink3}
-          className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 text-ink dark:text-ink-dk text-base"
+          className="flex-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-4 py-3 text-ink dark:text-ink-dk text-base"
         />
         <UnitDropdown units={units} unit={unit} onChange={changeUnit} />
       </View>
@@ -246,7 +245,7 @@ function UnitDropdown({
       <Pressable
         ref={triggerRef}
         onPress={openMenu}
-        className="w-24 flex-row items-center justify-between gap-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-2.5 active:opacity-70">
+        className="w-24 flex-row items-center justify-between gap-1 bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-ctl px-3 py-3 active:opacity-70">
         <Text className="text-ink dark:text-ink-dk text-base">
           {UNIT_LABEL[unit]}
         </Text>

@@ -47,6 +47,13 @@ export function Text({ className, ...rest }: ComponentProps<typeof RNText>) {
 const NO_OUTLINE =
   Platform.OS === 'web' ? ({ outlineStyle: 'none' } as unknown as TextStyle) : null;
 
+// `min-w-0` closes a react-native-web gap rather than styling anything.
+// RNW's View reset sets `minWidth: 0`; its TextInput reset does not, so a
+// field keeps the CSS default `min-width: auto` — the intrinsic width of a
+// DOM `<input>`, about 226px at this font size. A `flex-1` input inside a
+// narrow row therefore refuses to shrink and overflows its column, which is
+// how the class editor's length field came to sit on top of the capacity
+// field beside it. Yoga has no such floor, so this is inert on native.
 export function TextInput({
   className,
   style,
@@ -54,7 +61,7 @@ export function TextInput({
 }: ComponentProps<typeof RNTextInput>) {
   return (
     <RNTextInput
-      className={fontClass(className)}
+      className={`min-w-0 ${fontClass(className)}`}
       style={NO_OUTLINE ? [NO_OUTLINE, style] : style}
       {...rest}
     />

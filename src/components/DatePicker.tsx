@@ -1,5 +1,6 @@
 import { createElement } from 'react';
 import { Platform, View } from 'react-native';
+import { FieldLabel } from './SectionLabel';
 import { Text, TextInput } from './Text';
 
 import { formatDate } from '@/lib/format-date';
@@ -42,9 +43,7 @@ export function DatePicker({
 
   return (
     <View className="gap-1.5">
-      <Text className="text-ink-2 dark:text-ink-2-dk text-sm font-medium">
-        {label}
-      </Text>
+      <FieldLabel>{label}</FieldLabel>
       {Platform.OS === 'web' ? (
         // Native HTML date input — RNW's TextInput doesn't expose
         // type="date", so render the element directly. Browser
@@ -64,7 +63,6 @@ export function DatePicker({
           // the raw HTML input directly.
           'aria-label': label,
           style: scheme === 'dark' ? webInputStyleDark : webInputStyleLight,
-          className: 'date-picker-input',
         })
       ) : (
         <TextInput
@@ -79,7 +77,7 @@ export function DatePicker({
           keyboardType="numbers-and-punctuation"
         />
       )}
-      <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
+      <Text className="text-ink-3 dark:text-ink-3-dk text-xs">
         {display ? display : 'DD/MM/YYYY'}
       </Text>
       {error ? (
@@ -100,7 +98,8 @@ export function DatePicker({
 const webInputBase = {
   backgroundColor: 'transparent',
   borderWidth: 1,
-  borderRadius: 8,
+  // `rounded-ctl`, the radius every other field in a row draws.
+  borderRadius: 12,
   paddingTop: 12,
   paddingBottom: 12,
   paddingLeft: 16,
