@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { LABEL_CLASS, LABEL_TYPE } from '@/components/SectionLabel';
 import { AIMark } from '@/components/AIMark';
 import { ListRow, RuledList } from '@/components/ListRow';
@@ -50,7 +51,14 @@ import {
   reportThreadScroll,
   useComposerExpanded,
 } from '@/lib/dock';
-import { GLASS, GLASS_FILL, GLASS_FILL_PAGE, GLASS_PAGE } from '@/lib/glass';
+import {
+  GLASS,
+  GLASS_FILL,
+  GLASS_PAGE_BLEED,
+  GLASS_PAGE_LOCATIONS,
+  GLASS_PAGE_RAMP,
+  glassPageFill,
+} from '@/lib/glass';
 import { MD } from '@/lib/breakpoint';
 import { DOCK_CLEARANCE } from '@/components/BottomDock';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
@@ -1161,8 +1169,23 @@ export default function Timeline() {
             card passes underneath. */}
         <View
           onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)}
-          style={GLASS_PAGE}
-          className={`absolute top-0 left-0 right-0 ${GLASS_FILL_PAGE}`}>
+          className="absolute top-0 left-0 right-0">
+          {/* Painted before the content, so the day sits on the glass
+              rather than under it, and absolute so none of it counts
+              toward the height the scrollers take as their inset. */}
+          {GLASS_PAGE_RAMP.map((layer, i) => (
+            <View
+              key={i}
+              pointerEvents="none"
+              style={[StyleSheet.absoluteFill, BLEED_PAST, layer]}
+            />
+          ))}
+          <LinearGradient
+            pointerEvents="none"
+            colors={glassPageFill(colors.screenBg)}
+            locations={GLASS_PAGE_LOCATIONS}
+            style={[StyleSheet.absoluteFill, BLEED_PAST]}
+          />
           <PageTopRow
             className="pt-3 pb-3 px-4 md:pt-6 md:pb-6 md:max-w-5xl md:mx-auto md:w-full"
             left={<TodayButton onPress={() => setDayKey(todayKey)} />}
@@ -1248,6 +1271,10 @@ const COMPOSER_CLEARANCE = 116;
 // What pt-6 used to be: the breath between the floating header and the
 // first card once the thread is scrolled to the top.
 const STREAM_GAP = 24;
+
+// The glass's overhang, as a style rather than a number at the call site
+// so both the ramp layers and the fill are sized by one thing.
+const BLEED_PAST = { bottom: -GLASS_PAGE_BLEED } as const;
 // The floating day header at phone width: a 36px row in 12px of padding,
 // then the week strip's 68px of letter, disc and dot in 20px more. Only
 // the first paint's guess — onLayout has the real number by the second.

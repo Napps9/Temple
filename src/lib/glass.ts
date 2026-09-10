@@ -39,44 +39,76 @@ export const GLASS_FILL =
     ? 'bg-surface/60 dark:bg-surface-dk/60'
     : 'bg-surface/80 dark:bg-surface-dk/80';
 
-// The fill for chrome that spans the page instead of floating on it as a
-// pill — the Timeline's day header. It takes the GROUND, not the
-// surface, and the difference is the whole point: this header has to be
-// invisible when nothing is under it, because the same header on Classes
-// and Programming is an ordinary row on the page ground carrying no fill
-// at all. Surface at 60% over #F7F7F8 composites to #FCFCFC, which is a
-// white band across the top of one screen in a product where the other
-// two have none — a slab, and it needed a border to explain where it
-// ended.
+// The Timeline's day header, and the one piece of chrome here that is
+// not a uniform sheet. It ramps: heaviest blur hard against the top of
+// the window, easing to almost nothing by the time it reaches the day
+// numbers, so a card does not hit an invisible wall as it scrolls up —
+// it goes soft, then softer, then it is gone.
 //
-// Ground over ground is nothing to see, so there is nothing to draw a
-// line under. Over a card that has scrolled beneath it, the tint and the
-// blur are what keep the day legible, and the card stays visible through
-// both, which is the thing the border was hiding.
-// Sheerer than the pills, and it has to be. A pill floats over cards and
-// coloured buttons, so 60% still shows movement. This spans a thread of
-// WHITE cards on a near-white ground — #FFFFFF over #F7F7F8 is eight
-// levels apart, so the card's body is invisible under any fill and the
-// only thing with contrast under here is the text. At 70% just 30% of
-// that reached the eye, and the 24px pill blur had already averaged 13px
-// type into a flat wash before it got there. The two together erased the
-// thing they were meant to reveal: a header with no line and nothing
-// moving under it reads as a blank strip, not as glass.
-export const GLASS_FILL_PAGE =
-  Platform.OS === 'web'
-    ? 'bg-ground/50 dark:bg-ground-dk/50'
-    : 'bg-ground/88 dark:bg-ground-dk/88';
+// A single backdrop-filter cannot do that; the property is one radius
+// over the whole element. So it is four of them stacked, each blurring
+// more than the last and each masked to a band nearer the top. A layer's
+// backdrop is everything painted behind it, siblings included, so the
+// blurs compound downward through the stack — roughly 26px at the top
+// edge, nothing at the bottom — and the mask's own gradient is what
+// makes each step a fade rather than a seam.
+//
+// The percentages are of the header's height, so the ramp holds its
+// shape whether the header is two phone rows or two wider ones.
+const rampLayer = (blur: number, solid: number, gone: number) => {
+  const mask = `linear-gradient(to bottom, #000 0%, #000 ${solid}%, transparent ${gone}%)`;
+  return {
+    backdropFilter: `blur(${blur}px) saturate(1.6)`,
+    maskImage: mask,
+    WebkitMaskImage: mask,
+  } as unknown as ViewStyle;
+};
 
-// The page header's own blur, at a smaller radius than the pills' 24px.
-// Radius is what decides whether you see MOVEMENT or a smear: 24px over
-// body text leaves one uniform grey, and a uniform grey does not travel
-// when the thread scrolls. 16px keeps enough of a line's shape that the
-// card visibly moves underneath, which is the whole claim the header is
-// making. Registered, not a literal, for the reason at the top of this
-// file — an inline object reaches WebKit unprefixed and does nothing.
-export const GLASS_PAGE: ViewStyle | undefined =
-  Platform.OS === 'web'
-    ? StyleSheet.create({
-        g: { backdropFilter: 'blur(16px) saturate(1.6)' } as unknown as ViewStyle,
-      }).g
-    : undefined;
+export const GLASS_PAGE_RAMP: ViewStyle[] = (() => {
+  if (Platform.OS !== 'web') return [];
+  const s = StyleSheet.create({
+    a: rampLayer(3, 66, 100),
+    b: rampLayer(6, 46, 84),
+    c: rampLayer(12, 24, 58),
+    d: rampLayer(22, 7, 34),
+  });
+  return [s.a, s.b, s.c, s.d];
+})();
+
+// How far the glass runs PAST the header's own content, and the reason
+// the ramp is possible at all. The header is text almost to its bottom
+// edge — the week strip's numbers end about 90% of the way down — so a
+// ramp confined to it has a tenth of its height to clear out in, which
+// is not a fade, it is a hard stop with a soft top. Worse, it clears
+// while the day numbers are still there, and a card's paragraph comes
+// through sharp behind them.
+//
+// Sizing it to the ramp instead: the glass is the header plus this, the
+// clearing-out happens entirely below the strip, and the day numbers
+// keep a backing the whole way. The layers are absolute, so this changes
+// nothing about the height the scrollers take as their inset — at rest
+// it covers ground that is empty anyway, and it is the stretch a card
+// travels through while it goes soft.
+export const GLASS_PAGE_BLEED = 72;
+
+// The fill ramps with it, and has to: a fill that stayed flat while the
+// blur faded would leave the bottom of the header a sharp page seen
+// through a grey wash, which is worse than either. Three stops rather
+// than two because a straight line from opaque to nothing reads as a
+// band with soft edges; the midpoint held high keeps the day numbers
+// backed while the last stretch clears out.
+//
+// Native gets no backdrop-filter and no ramp above, so its fill is doing
+// the whole job alone and carries more weight at every stop. It still
+// clears at the bottom, which is the part that reads as a bleed rather
+// than a bar, and is the part it can actually do.
+const RAMP_ALPHA = Platform.OS === 'web' ? [0.84, 0.72, 0] : [0.96, 0.86, 0];
+export const GLASS_PAGE_LOCATIONS = [0, 0.76, 1] as const;
+
+// expo-linear-gradient takes colour strings, and the theme's ground is a
+// 6-digit hex, so the alpha rides on the end of it.
+export function glassPageFill(ground: string): [string, string, string] {
+  return RAMP_ALPHA.map(
+    (a) => ground + Math.round(a * 255).toString(16).padStart(2, '0'),
+  ) as [string, string, string];
+}
