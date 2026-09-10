@@ -923,6 +923,11 @@ export default function Timeline() {
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(() => startOfMonthOf(new Date()));
+  // The day header floats over the thread, so its height is what every
+  // scroller under it has to start below. Seeded with the phone value and
+  // then measured: starting at zero paints one frame with the first card
+  // behind the header, and at md the two rows are 24px taller.
+  const [headerH, setHeaderH] = useState(HEADER_CLEARANCE);
   const openPicker = () => {
     setPickerMonth(startOfMonthOf(dayStart(dayKey)));
     setPickerOpen(true);
@@ -952,57 +957,25 @@ export default function Timeline() {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1 pb-dock md:pb-0">
-        {/* The day header: Today jump, the visible day with stepping
-            arrows, tap-to-open month grid — the same header the Classes
-            and Programming calendars carry, so days read as days
-            everywhere; on a phone it is the screen's top row. */}
-        <PageTopRow
-          className="pt-3 pb-3 px-4 md:pt-6 md:pb-6 md:max-w-5xl md:mx-auto md:w-full"
-          left={<TodayButton onPress={() => setDayKey(todayKey)} />}
-          center={
-            <DateNav
-              label={dayStart(dayKey).toLocaleDateString(undefined, {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-              })}
-              prevLabel="Previous day"
-              nextLabel="Next day"
-              onPrev={() => shiftDay(-1)}
-              onNext={() => shiftDay(1)}
-              onPress={openPicker}
-              prevDisabled={atFloor}
-              nextDisabled={atCeiling}
-            />
-          }
-        />
-        {/* px-10 puts the strip at the inset the Classes and Programming
-            strips sit at, so the days line up from one tab to the next. */}
-        <View className="px-10 md:px-4 md:max-w-5xl md:mx-auto md:w-full">
-          <WeekStrip
-            days={weekDays}
-            selected={dayStart(dayKey)}
-            onSelect={(d) =>
-              setDayKey(clampDayKey(dayKeyOf(d), bounds.floor, bounds.ceiling))
-            }
-          />
-        </View>
-
         <GestureDetector gesture={swipe}>
           <View className="flex-1">
             {page.isPast ? (
-              <TimelinePastDay gymId={gymId} dayKey={dayKey} />
+              <TimelinePastDay gymId={gymId} dayKey={dayKey} topInset={headerH} />
             ) : page.isFuture ? (
-              <TimelineFutureDay gymId={gymId} dayKey={dayKey} />
+              <TimelineFutureDay gymId={gymId} dayKey={dayKey} topInset={headerH} />
             ) : (
         <ScrollView
           ref={scrollRef}
           className="flex-1"
-          contentContainerClassName="gap-6 pt-6 px-4 md:max-w-2xl md:mx-auto md:w-full"
-          // The talk bar floats over this scroller rather than sitting
-          // below it, so the page's own last row would otherwise end up
-          // permanently under it.
-          contentContainerStyle={{ paddingBottom: COMPOSER_CLEARANCE }}
+          contentContainerClassName="gap-6 px-4 md:max-w-2xl md:mx-auto md:w-full"
+          // Both ends of this scroller are under floating chrome: the
+          // header above, the talk bar below. Neither gap is a class,
+          // because the top one is measured — and pt-6 alongside a style
+          // paddingTop is one rule too many about the same edge.
+          contentContainerStyle={{
+            paddingTop: headerH + STREAM_GAP,
+            paddingBottom: COMPOSER_CLEARANCE,
+          }}
           onScroll={onStreamScroll}
           scrollEventThrottle={16}
           onContentSizeChange={() => {
@@ -1168,6 +1141,53 @@ export default function Timeline() {
           </View>
         </GestureDetector>
 
+        {/* The day header: Today jump, the visible day with stepping
+            arrows, tap-to-open month grid — the same header the Classes
+            and Programming calendars carry, so days read as days
+            everywhere; on a phone it is the screen's top row.
+
+            It floats over the thread rather than sitting above it, on the
+            dock's glass, so the day you are reading runs under the day you
+            are on instead of stopping at a hard edge. Last in the tree
+            because that is what paints it over the scroller; the scrollers
+            take its measured height as their top padding. */}
+        <View
+          onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)}
+          style={GLASS}
+          className={`absolute top-0 left-0 right-0 ${GLASS_FILL} border-b border-line dark:border-line-dk`}>
+          <PageTopRow
+            className="pt-3 pb-3 px-4 md:pt-6 md:pb-6 md:max-w-5xl md:mx-auto md:w-full"
+            left={<TodayButton onPress={() => setDayKey(todayKey)} />}
+            center={
+              <DateNav
+                label={dayStart(dayKey).toLocaleDateString(undefined, {
+                  weekday: 'short',
+                  day: 'numeric',
+                  month: 'short',
+                })}
+                prevLabel="Previous day"
+                nextLabel="Next day"
+                onPrev={() => shiftDay(-1)}
+                onNext={() => shiftDay(1)}
+                onPress={openPicker}
+                prevDisabled={atFloor}
+                nextDisabled={atCeiling}
+              />
+            }
+          />
+          {/* px-10 puts the strip at the inset the Classes and Programming
+              strips sit at, so the days line up from one tab to the next. */}
+          <View className="px-10 md:px-4 md:max-w-5xl md:mx-auto md:w-full">
+            <WeekStrip
+              days={weekDays}
+              selected={dayStart(dayKey)}
+              onSelect={(d) =>
+                setDayKey(clampDayKey(dayKeyOf(d), bounds.floor, bounds.ceiling))
+              }
+            />
+          </View>
+        </View>
+
         {isOwner && page.isToday ? (
           <TalkBar
             input={input}
@@ -1217,6 +1237,13 @@ export default function Timeline() {
 // The clearance the stream keeps under the floating talk bar: its full
 // height plus the gap it stands off the dock by.
 const COMPOSER_CLEARANCE = 116;
+// What pt-6 used to be: the breath between the floating header and the
+// first card once the thread is scrolled to the top.
+const STREAM_GAP = 24;
+// The floating day header at phone width: a 36px row in 12px of padding,
+// then the week strip's 68px of letter, disc and dot in 20px more. Only
+// the first paint's guess — onLayout has the real number by the second.
+const HEADER_CLEARANCE = 148;
 const COMPOSER_COMPACT = 0.93;
 const COMPOSER_HEIGHT = 96;
 

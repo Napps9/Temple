@@ -46,9 +46,13 @@ function useTimelineDay(gymId: string | undefined, dayKey: string) {
 export function TimelinePastDay({
   gymId,
   dayKey,
+  topInset,
 }: {
   gymId: string | undefined;
   dayKey: string;
+  // The Timeline's day header floats over this scroller, so the day it
+  // is showing runs underneath it. This is that header's measured height.
+  topInset: number;
 }) {
   const day = useTimelineDay(gymId, dayKey);
   const events = [...dedupeClosures(day.data ?? [])].sort((a, b) =>
@@ -58,7 +62,8 @@ export function TimelinePastDay({
   return (
     <PageScroll
       className="flex-1"
-      contentContainerClassName="gap-4 py-6 px-4 md:max-w-2xl md:mx-auto md:w-full"
+      contentContainerClassName="gap-4 pb-6 px-4 md:max-w-2xl md:mx-auto md:w-full"
+      contentContainerStyle={{ paddingTop: topInset + 24 }}
       refreshControl={
         <RefreshControl
           refreshing={day.isRefetching}
