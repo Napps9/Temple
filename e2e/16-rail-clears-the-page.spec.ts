@@ -65,6 +65,23 @@ test('a rail destination navigates when clicked', async ({ page }, testInfo) => 
 
   const manage = page.getByRole('tab', { name: 'Manage' });
   await expect(manage).toBeVisible({ timeout: 30_000 });
+
+  // Hover first, and wait for the row to stop moving before pressing it.
+  // A cold click on the strip leaves the page on /timeline — three runs
+  // of it, no navigation — and the open question is whether the press
+  // misses a row that is still growing under it or whether the row is
+  // dead. Pointing at it and letting the 190ms expand finish answers
+  // that: if this navigates, the row works and the press was racing the
+  // animation.
+  await manage.hover();
+  let last = '';
+  for (let i = 0; i < 40; i++) {
+    const box = await manage.boundingBox();
+    const now = JSON.stringify(box);
+    if (now === last) break;
+    last = now;
+    await page.waitForTimeout(50);
+  }
   await manage.click();
 
   // Report where it actually went. A bare waitForURL times out saying
