@@ -26,12 +26,16 @@ export function DateNav({
   prevLabel?: string;
   nextLabel?: string;
 }) {
-  const arrow =
-    'w-8 h-8 items-center justify-center md:w-9 md:h-9 md:rounded-full md:border md:border-line md:dark:border-line-dk md:hover:bg-raised md:dark:hover:bg-raised-dk';
-  const glyph = (disabled?: boolean) =>
-    `text-lg ${
-      disabled ? 'text-ink-3 dark:text-ink-2' : 'text-ink-3 dark:text-ink-3-dk md:text-ink-2 md:dark:text-ink-2-dk'
+  // One glyph colour, and the disabled state is the whole control fading.
+  // Colouring the glyph instead said nothing below md, where the two
+  // classes resolved to the same grey, and said the opposite of what it
+  // meant in dark, where the disabled ink was the lighter of the pair —
+  // so a step you cannot take read as the brighter of the two arrows.
+  const arrow = (disabled?: boolean) =>
+    `w-8 h-8 items-center justify-center md:w-9 md:h-9 md:rounded-full md:border md:border-line md:dark:border-line-dk ${
+      disabled ? 'opacity-40' : 'md:hover:bg-raised md:dark:hover:bg-raised-dk'
     }`;
+  const glyph = 'text-lg text-ink-3 dark:text-ink-3-dk md:text-ink-2 md:dark:text-ink-2-dk';
   return (
     <View className="flex-row items-center gap-0.5 md:gap-4">
       <Pressable
@@ -43,8 +47,8 @@ export function DateNav({
         // date between them has carried the role all along.
         accessibilityRole="button"
         accessibilityLabel={prevLabel}
-        className={arrow}>
-        <Text className={glyph(prevDisabled)}>‹</Text>
+        className={arrow(prevDisabled)}>
+        <Text className={glyph}>‹</Text>
       </Pressable>
       <Pressable
         onPress={onPress}
@@ -61,8 +65,8 @@ export function DateNav({
         hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel={nextLabel}
-        className={arrow}>
-        <Text className={glyph(nextDisabled)}>›</Text>
+        className={arrow(nextDisabled)}>
+        <Text className={glyph}>›</Text>
       </Pressable>
     </View>
   );

@@ -893,10 +893,17 @@ export default function Timeline() {
       )
     : { floor: todayKey, ceiling: todayKey };
 
+  // The arrows go dead at the ends, but a swipe does not — so the clamp
+  // decides whether anything moved, and only a day that actually changed
+  // is worth confirming.
   const shiftDay = (direction: -1 | 1) => {
-    setDayKey((k) =>
-      clampDayKey(shiftDayKey(k, direction), bounds.floor, bounds.ceiling),
+    const next = clampDayKey(
+      shiftDayKey(dayKey, direction),
+      bounds.floor,
+      bounds.ceiling,
     );
+    if (next === dayKey) return;
+    setDayKey(next);
     haptic.selection();
   };
   // The week under the header, the strip Book, Classes and Programming
@@ -1207,6 +1214,7 @@ export default function Timeline() {
         weekStartsOn={defaults.data?.week_starts_on ?? 'mon'}
         onChangeMonth={(dir) => setPickerMonth((m) => addMonthsTo(m, dir))}
         onSelectDay={(day) => {
+          haptic.selection();
           // Out-of-range picks land on the nearest reachable day.
           setDayKey(clampDayKey(dayKeyOf(day), bounds.floor, bounds.ceiling));
           setPickerOpen(false);
