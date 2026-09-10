@@ -186,6 +186,18 @@ Gotchas seen in this codebase:
   `contentContainerClassName="gap-X py-6 px-4 md:max-w-2xl md:mx-auto md:w-full"`.
   The `px-4` matters on mobile — `<Screen>`'s `px-6` isn't reliably
   inherited through `<ScrollView>` on react-native-web.
+- **A `className` on `<Screen>` cannot cancel its `px-6`.** Screen
+  renders `flex-1 px-6 ${className}`, so `className="px-0"` ships both
+  classes at equal specificity, and the winner is whichever Tailwind
+  emitted later — `.px-0` comes first in the spacing scale, so `px-6`
+  wins. On native too: react-native-css-interop sorts by the rule's
+  appearance order in the compiled CSS, not by the order of the class
+  names in the attribute. So the page keeps its 24pt and every offset
+  measured from "no padding" is 24pt out. That is what put Timeline's
+  day header 24pt further in than the Classes one. Six screens still
+  pass `px-0`; to actually reach the edge, negate it at the child
+  (`-mx-6`, or `-mx-10` under a `px-4` container) the way the calendar
+  headers do.
 - **`<Input>`** is the shared text input (handles label, error,
   password show/hide). Pass `secureTextEntry` for password fields plus
   `textContentType` + `autoComplete` for password managers.
