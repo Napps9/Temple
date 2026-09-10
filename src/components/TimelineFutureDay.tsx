@@ -46,13 +46,9 @@ type SessionRow = {
 export function TimelineFutureDay({
   gymId,
   dayKey,
-  topInset,
 }: {
   gymId: string | undefined;
   dayKey: string;
-  // The Timeline's day header floats over this scroller, so the day it
-  // is showing runs underneath it. This is that header's measured height.
-  topInset: number;
 }) {
   const canComms = useCan('can_manage_comms') ?? false;
   const canPlans = useCan('can_assign_plan') ?? false;
@@ -210,7 +206,6 @@ export function TimelineFutureDay({
     <PageScroll
       className="flex-1"
       contentContainerClassName="gap-4 pb-6 px-4 md:max-w-2xl md:mx-auto md:w-full"
-      contentContainerStyle={{ paddingTop: topInset + 24 }}
       refreshControl={
         <RefreshControl
           refreshing={sessions.isRefetching}

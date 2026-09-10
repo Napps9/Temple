@@ -2,8 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, useWindowDimensions, View } from 'react-native';
 import { LABEL_CLASS, LABEL_TYPE } from '@/components/SectionLabel';
 import { AIMark } from '@/components/AIMark';
 import { ListRow, RuledList } from '@/components/ListRow';
@@ -51,14 +50,7 @@ import {
   reportThreadScroll,
   useComposerExpanded,
 } from '@/lib/dock';
-import {
-  GLASS,
-  GLASS_FILL,
-  GLASS_PAGE_BLEED,
-  GLASS_PAGE_LOCATIONS,
-  GLASS_PAGE_RAMP,
-  glassPageFill,
-} from '@/lib/glass';
+import { GLASS, GLASS_FILL } from '@/lib/glass';
 import { MD } from '@/lib/breakpoint';
 import { DOCK_CLEARANCE } from '@/components/BottomDock';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
@@ -931,12 +923,8 @@ export default function Timeline() {
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(() => startOfMonthOf(new Date()));
-  // The day header floats over the thread, so its height is what every
-  // scroller under it has to start below. Seeded with the phone value and
-  // then measured: starting at zero paints one frame with the first card
-  // behind the header, and at md the two rows are 24px taller.
-  const [headerH, setHeaderH] = useState(HEADER_CLEARANCE);
   const openPicker = () => {
+    haptic.selection();
     setPickerMonth(startOfMonthOf(dayStart(dayKey)));
     setPickerOpen(true);
   };
@@ -961,29 +949,63 @@ export default function Timeline() {
   const atCeiling = dayKey >= bounds.ceiling;
 
   return (
-    <Screen edges={['bottom', 'left', 'right']} className="px-0">
+    <Screen edges={['bottom', 'left', 'right']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1 pb-dock md:pb-0">
+        {/* The day header: Today jump, the visible day with stepping
+            arrows, tap-to-open month grid, then the week — the same rows
+            the Classes and Programming calendars draw, in the same
+            container, so a day is picked the same way on all three.
+            -mx-10 undoes Screen's px-6 and this container's px-4 so the
+            date row spans the width the way it does over there; the strip
+            keeps the inset and lines up column for column across tabs. */}
+        <View className="w-full max-w-5xl mx-auto px-4">
+          <View className="-mx-10 md:mx-0">
+            <PageTopRow
+              className="pt-3 pb-4 md:pt-6 md:pb-6"
+              left={<TodayButton onPress={() => setDayKey(todayKey)} />}
+              center={
+                <DateNav
+                  label={dayStart(dayKey).toLocaleDateString(undefined, {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                  })}
+                  prevLabel="Previous day"
+                  nextLabel="Next day"
+                  onPrev={() => shiftDay(-1)}
+                  onNext={() => shiftDay(1)}
+                  onPress={openPicker}
+                  prevDisabled={atFloor}
+                  nextDisabled={atCeiling}
+                />
+              }
+            />
+          </View>
+          <WeekStrip
+            days={weekDays}
+            selected={dayStart(dayKey)}
+            onSelect={(d) =>
+              setDayKey(clampDayKey(dayKeyOf(d), bounds.floor, bounds.ceiling))
+            }
+          />
+        </View>
+
         <GestureDetector gesture={swipe}>
           <View className="flex-1">
             {page.isPast ? (
-              <TimelinePastDay gymId={gymId} dayKey={dayKey} topInset={headerH} />
+              <TimelinePastDay gymId={gymId} dayKey={dayKey} />
             ) : page.isFuture ? (
-              <TimelineFutureDay gymId={gymId} dayKey={dayKey} topInset={headerH} />
+              <TimelineFutureDay gymId={gymId} dayKey={dayKey} />
             ) : (
         <ScrollView
           ref={scrollRef}
           className="flex-1"
           contentContainerClassName="gap-6 px-4 md:max-w-2xl md:mx-auto md:w-full"
-          // Both ends of this scroller are under floating chrome: the
-          // header above, the talk bar below. Neither gap is a class,
-          // because the top one is measured — and pt-6 alongside a style
-          // paddingTop is one rule too many about the same edge.
-          contentContainerStyle={{
-            paddingTop: headerH + STREAM_GAP,
-            paddingBottom: COMPOSER_CLEARANCE,
-          }}
+          // The talk bar still floats over the foot of the thread, so the
+          // last card needs room to clear it.
+          contentContainerStyle={{ paddingBottom: COMPOSER_CLEARANCE }}
           onScroll={onStreamScroll}
           scrollEventThrottle={16}
           onContentSizeChange={() => {
@@ -1149,76 +1171,6 @@ export default function Timeline() {
           </View>
         </GestureDetector>
 
-        {/* The day header: Today jump, the visible day with stepping
-            arrows, tap-to-open month grid — the same header the Classes
-            and Programming calendars carry, so days read as days
-            everywhere; on a phone it is the screen's top row.
-
-            It floats over the thread rather than sitting above it, so the
-            day you are reading runs under the day you are on instead of
-            stopping at a hard edge. Last in the tree because that is what
-            paints it over the scroller; the scrollers take its measured
-            height as their top padding.
-
-            On the page's own ground rather than the dock's surface glass,
-            and carrying no border: at rest this has to be the row those
-            other two screens draw, which is controls on the ground and
-            nothing else. A surface tint made it a white band, and a band
-            needs a line to say where it ends. Ground has no edge to
-            explain, so the blur is the only thing that happens when a
-            card passes underneath. */}
-        <View
-          onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)}
-          className="absolute top-0 left-0 right-0">
-          {/* Painted before the content, so the day sits on the glass
-              rather than under it, and absolute so none of it counts
-              toward the height the scrollers take as their inset. */}
-          {GLASS_PAGE_RAMP.map((layer, i) => (
-            <View
-              key={i}
-              pointerEvents="none"
-              style={[StyleSheet.absoluteFill, BLEED_PAST, layer]}
-            />
-          ))}
-          <LinearGradient
-            pointerEvents="none"
-            colors={glassPageFill(colors.screenBg)}
-            locations={GLASS_PAGE_LOCATIONS}
-            style={[StyleSheet.absoluteFill, BLEED_PAST]}
-          />
-          <PageTopRow
-            className="pt-3 pb-3 px-4 md:pt-6 md:pb-6 md:max-w-5xl md:mx-auto md:w-full"
-            left={<TodayButton onPress={() => setDayKey(todayKey)} />}
-            center={
-              <DateNav
-                label={dayStart(dayKey).toLocaleDateString(undefined, {
-                  weekday: 'short',
-                  day: 'numeric',
-                  month: 'short',
-                })}
-                prevLabel="Previous day"
-                nextLabel="Next day"
-                onPrev={() => shiftDay(-1)}
-                onNext={() => shiftDay(1)}
-                onPress={openPicker}
-                prevDisabled={atFloor}
-                nextDisabled={atCeiling}
-              />
-            }
-          />
-          {/* px-10 puts the strip at the inset the Classes and Programming
-              strips sit at, so the days line up from one tab to the next. */}
-          <View className="px-10 md:px-4 md:max-w-5xl md:mx-auto md:w-full">
-            <WeekStrip
-              days={weekDays}
-              selected={dayStart(dayKey)}
-              onSelect={(d) =>
-                setDayKey(clampDayKey(dayKeyOf(d), bounds.floor, bounds.ceiling))
-              }
-            />
-          </View>
-        </View>
-
         {isOwner && page.isToday ? (
           <TalkBar
             input={input}
@@ -1268,17 +1220,6 @@ export default function Timeline() {
 // The clearance the stream keeps under the floating talk bar: its full
 // height plus the gap it stands off the dock by.
 const COMPOSER_CLEARANCE = 116;
-// What pt-6 used to be: the breath between the floating header and the
-// first card once the thread is scrolled to the top.
-const STREAM_GAP = 24;
-
-// The glass's overhang, as a style rather than a number at the call site
-// so both the ramp layers and the fill are sized by one thing.
-const BLEED_PAST = { bottom: -GLASS_PAGE_BLEED } as const;
-// The floating day header at phone width: a 36px row in 12px of padding,
-// then the week strip's 68px of letter, disc and dot in 20px more. Only
-// the first paint's guess — onLayout has the real number by the second.
-const HEADER_CLEARANCE = 148;
 const COMPOSER_COMPACT = 0.93;
 const COMPOSER_HEIGHT = 96;
 
