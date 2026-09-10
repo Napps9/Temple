@@ -50,7 +50,7 @@ import {
   reportThreadScroll,
   useComposerExpanded,
 } from '@/lib/dock';
-import { GLASS, GLASS_FILL, GLASS_FILL_PAGE } from '@/lib/glass';
+import { GLASS, GLASS_FILL, GLASS_FILL_PAGE, GLASS_PAGE } from '@/lib/glass';
 import { MD } from '@/lib/breakpoint';
 import { DOCK_CLEARANCE } from '@/components/BottomDock';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
@@ -1161,7 +1161,7 @@ export default function Timeline() {
             card passes underneath. */}
         <View
           onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)}
-          style={GLASS}
+          style={GLASS_PAGE}
           className={`absolute top-0 left-0 right-0 ${GLASS_FILL_PAGE}`}>
           <PageTopRow
             className="pt-3 pb-3 px-4 md:pt-6 md:pb-6 md:max-w-5xl md:mx-auto md:w-full"

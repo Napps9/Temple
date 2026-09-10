@@ -53,7 +53,30 @@ export const GLASS_FILL =
 // line under. Over a card that has scrolled beneath it, the tint and the
 // blur are what keep the day legible, and the card stays visible through
 // both, which is the thing the border was hiding.
+// Sheerer than the pills, and it has to be. A pill floats over cards and
+// coloured buttons, so 60% still shows movement. This spans a thread of
+// WHITE cards on a near-white ground — #FFFFFF over #F7F7F8 is eight
+// levels apart, so the card's body is invisible under any fill and the
+// only thing with contrast under here is the text. At 70% just 30% of
+// that reached the eye, and the 24px pill blur had already averaged 13px
+// type into a flat wash before it got there. The two together erased the
+// thing they were meant to reveal: a header with no line and nothing
+// moving under it reads as a blank strip, not as glass.
 export const GLASS_FILL_PAGE =
   Platform.OS === 'web'
-    ? 'bg-ground/70 dark:bg-ground-dk/70'
+    ? 'bg-ground/50 dark:bg-ground-dk/50'
     : 'bg-ground/88 dark:bg-ground-dk/88';
+
+// The page header's own blur, at a smaller radius than the pills' 24px.
+// Radius is what decides whether you see MOVEMENT or a smear: 24px over
+// body text leaves one uniform grey, and a uniform grey does not travel
+// when the thread scrolls. 16px keeps enough of a line's shape that the
+// card visibly moves underneath, which is the whole claim the header is
+// making. Registered, not a literal, for the reason at the top of this
+// file — an inline object reaches WebKit unprefixed and does nothing.
+export const GLASS_PAGE: ViewStyle | undefined =
+  Platform.OS === 'web'
+    ? StyleSheet.create({
+        g: { backdropFilter: 'blur(16px) saturate(1.6)' } as unknown as ViewStyle,
+      }).g
+    : undefined;
