@@ -179,7 +179,7 @@ describe('the card a copy shows before it is agreed to', () => {
     expect(written[0].p_date).toBe('2026-08-12');
     expect(written[0].p_gym_id).toBe('gym');
     expect(receipt).toBe(
-      'Copied as a draft. One session now sits on the week of 10 Aug, for coaches only until you release it.',
+      'Copied as a draft. One session now sits on the week of 10 Aug, for coaches only until you make it public.',
     );
     vi.restoreAllMocks();
   });

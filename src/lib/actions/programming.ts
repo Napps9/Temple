@@ -851,8 +851,8 @@ export const copyWeek: ActionSpec<CopyWeek> = {
 
     ctx.offer?.('Open programming', '/programming');
     return rows.length === 1
-      ? `Copied as a draft. One session now sits on the week of ${weekLabel(toMonday)}, for coaches only until you release it.`
-      : `Copied as a draft. ${rows.length} sessions now sit on the week of ${weekLabel(toMonday)}, for coaches only until you release them.`;
+      ? `Copied as a draft. One session now sits on the week of ${weekLabel(toMonday)}, for coaches only until you make it public.`
+      : `Copied as a draft. ${rows.length} sessions now sit on the week of ${weekLabel(toMonday)}, for coaches only until you make them public.`;
   },
 };
 

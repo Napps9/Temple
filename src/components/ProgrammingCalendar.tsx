@@ -644,7 +644,7 @@ function ClassTypeCard({
         title="Nothing programmed"
         description={
           mode === 'manage'
-            ? 'Tap Add to write the day. Members see it once it is published.'
+            ? 'Tap Add to write the day. Members see it once you make it public.'
             : 'Check back once your coach has posted it.'
         }
       />
