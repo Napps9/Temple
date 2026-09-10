@@ -38,3 +38,22 @@ export const GLASS_FILL =
   Platform.OS === 'web'
     ? 'bg-surface/60 dark:bg-surface-dk/60'
     : 'bg-surface/80 dark:bg-surface-dk/80';
+
+// The fill for chrome that spans the page instead of floating on it as a
+// pill — the Timeline's day header. It takes the GROUND, not the
+// surface, and the difference is the whole point: this header has to be
+// invisible when nothing is under it, because the same header on Classes
+// and Programming is an ordinary row on the page ground carrying no fill
+// at all. Surface at 60% over #F7F7F8 composites to #FCFCFC, which is a
+// white band across the top of one screen in a product where the other
+// two have none — a slab, and it needed a border to explain where it
+// ended.
+//
+// Ground over ground is nothing to see, so there is nothing to draw a
+// line under. Over a card that has scrolled beneath it, the tint and the
+// blur are what keep the day legible, and the card stays visible through
+// both, which is the thing the border was hiding.
+export const GLASS_FILL_PAGE =
+  Platform.OS === 'web'
+    ? 'bg-ground/70 dark:bg-ground-dk/70'
+    : 'bg-ground/88 dark:bg-ground-dk/88';

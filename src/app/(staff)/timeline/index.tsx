@@ -50,7 +50,7 @@ import {
   reportThreadScroll,
   useComposerExpanded,
 } from '@/lib/dock';
-import { GLASS, GLASS_FILL } from '@/lib/glass';
+import { GLASS, GLASS_FILL, GLASS_FILL_PAGE } from '@/lib/glass';
 import { MD } from '@/lib/breakpoint';
 import { DOCK_CLEARANCE } from '@/components/BottomDock';
 import { useDecideChangeRequest } from '@/lib/membership-changes';
@@ -1146,15 +1146,23 @@ export default function Timeline() {
             and Programming calendars carry, so days read as days
             everywhere; on a phone it is the screen's top row.
 
-            It floats over the thread rather than sitting above it, on the
-            dock's glass, so the day you are reading runs under the day you
-            are on instead of stopping at a hard edge. Last in the tree
-            because that is what paints it over the scroller; the scrollers
-            take its measured height as their top padding. */}
+            It floats over the thread rather than sitting above it, so the
+            day you are reading runs under the day you are on instead of
+            stopping at a hard edge. Last in the tree because that is what
+            paints it over the scroller; the scrollers take its measured
+            height as their top padding.
+
+            On the page's own ground rather than the dock's surface glass,
+            and carrying no border: at rest this has to be the row those
+            other two screens draw, which is controls on the ground and
+            nothing else. A surface tint made it a white band, and a band
+            needs a line to say where it ends. Ground has no edge to
+            explain, so the blur is the only thing that happens when a
+            card passes underneath. */}
         <View
           onLayout={(e) => setHeaderH(e.nativeEvent.layout.height)}
           style={GLASS}
-          className={`absolute top-0 left-0 right-0 ${GLASS_FILL} border-b border-line dark:border-line-dk`}>
+          className={`absolute top-0 left-0 right-0 ${GLASS_FILL_PAGE}`}>
           <PageTopRow
             className="pt-3 pb-3 px-4 md:pt-6 md:pb-6 md:max-w-5xl md:mx-auto md:w-full"
             left={<TodayButton onPress={() => setDayKey(todayKey)} />}

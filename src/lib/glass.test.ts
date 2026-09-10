@@ -2,7 +2,7 @@
 import { StyleSheet } from 'react-native';
 import { describe, expect, it } from 'vitest';
 
-import { GLASS, GLASS_FILL } from './glass';
+import { GLASS, GLASS_FILL, GLASS_FILL_PAGE } from './glass';
 
 // getSheet is react-native-web's, not React Native's, so it is absent from
 // the types the app compiles against. It is the only way to read what the
@@ -25,5 +25,17 @@ describe('glass', () => {
 
   it('is sheer enough on web to show the page through it', () => {
     expect(GLASS_FILL).toBe('bg-surface/60 dark:bg-surface-dk/60');
+  });
+
+  // The two fills are not interchangeable and swapping them is invisible
+  // in a diff. A pill floating on the page takes the surface; chrome that
+  // spans the page takes the ground, because it has to disappear into it
+  // when nothing has scrolled under. Surface across the top of a screen
+  // is a white band, which is what the Timeline's header was, and a band
+  // needs a border to say where it ends.
+  it('fills page-width chrome with the ground, not the surface', () => {
+    expect(GLASS_FILL_PAGE).toContain('bg-ground/');
+    expect(GLASS_FILL_PAGE).toContain('dark:bg-ground-dk/');
+    expect(GLASS_FILL_PAGE).not.toContain('surface');
   });
 });
