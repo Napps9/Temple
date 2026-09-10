@@ -350,7 +350,7 @@ export default function ManagementHome() {
       <View className="flex-1">
         <PageScroll
           className="flex-1"
-          contentContainerClassName="gap-4 py-6 px-4 lg:px-8 lg:max-w-5xl lg:w-full">
+          contentContainerClassName="gap-4 py-6 px-4 lg:px-8 lg:max-w-5xl lg:mx-auto lg:w-full">
           <PageHead
             title="Manage"
             subtitle="Everything behind the gym — people, money, and how it runs."

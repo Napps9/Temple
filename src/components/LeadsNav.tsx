@@ -62,7 +62,7 @@ export function LeadsShell({
     <Screen edges={['bottom', 'left', 'right']} className="px-0">
       <PageScroll
         className="flex-1"
-        contentContainerClassName="gap-5 py-6 px-4 lg:px-8 lg:max-w-5xl lg:w-full">
+        contentContainerClassName="gap-5 py-6 px-4 lg:px-8 lg:max-w-5xl lg:mx-auto lg:w-full">
         <View className="gap-3">
           <BackLink fallbackHref="/management" coveredByNav />
           <LeadsPills tabs={tabs} active={active} />

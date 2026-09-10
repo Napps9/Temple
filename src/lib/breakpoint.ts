@@ -25,12 +25,10 @@ export const LG = 1024;
 // is and get a useful answer, and the product's split view — the
 // email builder — was asking.
 //
-// This is the PINNED width. Unpinned the rail is a 68px strip and the
-// column is 178px wider than this says, because the open panel floats
-// over the page rather than displacing it. The pessimistic number is the
-// right one here: the only caller uses it to decide whether there is room
-// for a split view, and a split that fits until someone pins the rail is
-// worse than one that appears a little later.
+// The rail is this wide whenever it is on, so this is exact rather than
+// pessimistic: there is no collapsed strip and no floating panel, and the
+// one caller — the email builder, asking whether there is room for a
+// split view — gets the real number.
 export const RAIL_W = 246;
 
 export function staffContentWidth(windowWidth: number) {
