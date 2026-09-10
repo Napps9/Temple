@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Pressable, Switch, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from './Text';
 
 import { Button } from './Button';
+import { FieldLabel } from './SectionLabel';
 import { Input } from './Input';
+import { Segmented } from './Segmented';
 import { Sheet, SheetAction } from './Sheet';
 import { labelOn } from '@/lib/contrast';
 import { useGymMembership, useSession } from '@/lib/auth';
@@ -368,22 +370,31 @@ export function ProgrammingModal({
               gated per member (0123), so a second embargo there would be
               a switch that governs nothing. */}
           {target?.kind === 'classType' && date ? (
-            <View className="flex-row items-center gap-3 bg-raised dark:bg-raised-dk rounded-ctl px-3 py-2.5">
-              <View className="flex-1">
-                <Text className="text-ink dark:text-ink-dk text-sm font-medium">
-                  {publishNow ? 'Members can see this' : 'Only coaches can see this'}
-                </Text>
-                <Text className="text-ink-2 dark:text-ink-2-dk text-xs mt-0.5">
-                  {publishNow
-                    ? 'Saving puts it on the members\u2019 calendar.'
-                    : 'Write ahead now, release it when you\u2019re ready.'}
-                </Text>
+            // Two named states, not a switch beside a sentence. The
+            // sentence WAS the state \u2014 "Only coaches can see this" \u2014 so
+            // the row read as a claim you were being asked to agree with,
+            // and the switch beside it as the means of agreeing. Draft and
+            // Public are things you pick between, and the line underneath
+            // says who each one reaches, because "draft" on its own does
+            // not say that coaches still see it.
+            <View className="gap-2 bg-raised dark:bg-raised-dk rounded-ctl px-3 py-2.5">
+              <View className="flex-row items-center justify-between gap-3">
+                <FieldLabel>Who can see this</FieldLabel>
+                <Segmented
+                  role="radio"
+                  options={[
+                    { key: 'draft', label: 'Draft' },
+                    { key: 'public', label: 'Public' },
+                  ]}
+                  value={publishNow ? 'public' : 'draft'}
+                  onChange={(key) => setPublishNow(key === 'public')}
+                />
               </View>
-              <Switch
-                accessibilityLabel="Members can see this"
-                value={publishNow}
-                onValueChange={setPublishNow}
-              />
+              <Text className="text-ink-2 dark:text-ink-2-dk text-xs">
+                {publishNow
+                  ? 'On the members\u2019 calendar as soon as you save.'
+                  : 'Coaches can see it. Make it public when you\u2019re ready.'}
+              </Text>
             </View>
           ) : null}
           {!target || !date ? (

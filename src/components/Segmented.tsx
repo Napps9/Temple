@@ -12,10 +12,16 @@ export function Segmented<T extends string>({
   options,
   value,
   onChange,
+  role = 'tab',
 }: {
   options: { key: T; label: string }[];
   value: T;
   onChange: (key: T) => void;
+  // Switching which view you are looking at is a row of tabs. Choosing
+  // between two states of the thing you are editing is a radio group,
+  // and it announces as checked rather than selected — the same control
+  // to the eye, two different things to a screen reader.
+  role?: 'tab' | 'radio';
 }) {
   return (
     <View className="flex-row bg-sunken dark:bg-raised-dk rounded-full p-1">
@@ -28,8 +34,10 @@ export function Segmented<T extends string>({
               haptic.selection();
               onChange(o.key);
             }}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: active }}
+            accessibilityRole={role}
+            accessibilityState={
+              role === 'radio' ? { checked: active } : { selected: active }
+            }
             className={`px-3 py-1.5 rounded-full ${
               active ? 'bg-white dark:bg-sunken-dk' : 'hover:bg-surface/50 dark:hover:bg-sunken-dk/40'
             }`}>

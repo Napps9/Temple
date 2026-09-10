@@ -2565,7 +2565,10 @@ The staff area shows up when `can_access_staff_area` is on.
   release mechanism. No cron, no worker, nothing to fail overnight — the
   row becomes visible because time passed. Staff read everything under
   `can_edit_classes` (0219's rule: read and write move together). The
-  editor gains one switch, the day card a Draft/Scheduled chip, and the
+  editor gains a Draft | Public choice under "Who can see this" (a
+  `Segmented` in its radio role, with a line naming who each state
+  reaches — a draft has to say coaches still see it), the day card a
+  Draft/Scheduled chip, and the
   write became `save_class_programming` — a draft is a state a member must
   not be able to reach, and the modal had upserted the table directly since
   0007. **`copy_week` lands as a draft**: it is how a coach writes ahead, so
