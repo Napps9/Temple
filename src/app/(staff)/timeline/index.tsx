@@ -265,6 +265,8 @@ const SETUP_INTENT =
 
 export default function Timeline() {
   const { data: membership } = useGymMembership();
+  const { width } = useWindowDimensions();
+  const onPhone = width < MD;
   const gymId = membership?.gymId;
   const session = useSession();
   const role = useRole();
@@ -957,9 +959,14 @@ export default function Timeline() {
 
   return (
     <Screen edges={['bottom', 'left', 'right']}>
+      {/* No pb-dock. Padding here would end the scroller above the dock,
+          and then the thread stops at a line of empty ground instead of
+          running under it — which is what every other screen does, via
+          PageScroll. The clearance belongs inside the scroller, where it
+          holds the last card off the chrome without shortening the page. */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1 pb-dock md:pb-0">
+        className="flex-1">
         {/* The day header: Today jump, the visible day with stepping
             arrows, tap-to-open month grid, then the week — the same rows
             the Classes and Programming calendars draw, in the same
@@ -1010,9 +1017,11 @@ export default function Timeline() {
           ref={scrollRef}
           className="flex-1"
           contentContainerClassName="gap-6 px-4 md:max-w-2xl md:mx-auto md:w-full"
-          // The talk bar still floats over the foot of the thread, so the
-          // last card needs room to clear it.
-          contentContainerStyle={{ paddingBottom: COMPOSER_CLEARANCE }}
+          // Both pieces of chrome the thread runs under, added up: the
+          // talk bar, and below md the dock beneath it.
+          contentContainerStyle={{
+            paddingBottom: COMPOSER_CLEARANCE + (onPhone ? DOCK_CLEARANCE : 0),
+          }}
           onScroll={onStreamScroll}
           scrollEventThrottle={16}
           onContentSizeChange={() => {
@@ -1191,7 +1200,10 @@ export default function Timeline() {
           // thread and the sentences anchor their dates to it. Without
           // this line the composer simply vanished on paging, and the
           // Today press is the same jump the header's button makes.
-          <View className="px-4 pb-3 pt-1 md:max-w-2xl md:mx-auto md:w-full">
+          //
+          // This one is in flow rather than floating, so it carries the
+          // dock's clearance itself now that the page no longer does.
+          <View className="px-4 pt-1 pb-dock md:pb-3 md:max-w-2xl md:mx-auto md:w-full">
             <View className="flex-row items-center gap-3 rounded-card border border-line dark:border-line-dk bg-surface dark:bg-surface-dk px-4 py-3">
               <Text className="flex-1 text-ink-2 dark:text-ink-2-dk text-sm">
                 {page.isPast ? 'Past days are the record.' : 'Days ahead are the plan.'}{' '}
@@ -1226,7 +1238,8 @@ export default function Timeline() {
 }
 
 // The clearance the stream keeps under the floating talk bar: its full
-// height plus the gap it stands off the dock by.
+// height plus the gap it stands off the dock by. Below md the dock's own
+// clearance is added to it — the thread runs under both.
 const COMPOSER_CLEARANCE = 116;
 const COMPOSER_COMPACT = 0.93;
 const COMPOSER_HEIGHT = 96;
