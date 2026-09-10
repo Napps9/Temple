@@ -66,13 +66,19 @@ test('a rail destination navigates when clicked', async ({ page }, testInfo) => 
   const manage = page.getByRole('tab', { name: 'Manage' });
   await expect(manage).toBeVisible({ timeout: 30_000 });
 
-  // Hover first, and wait for the row to stop moving before pressing it.
-  // A cold click on the strip leaves the page on /timeline — three runs
-  // of it, no navigation — and the open question is whether the press
-  // misses a row that is still growing under it or whether the row is
-  // dead. Pointing at it and letting the 190ms expand finish answers
-  // that: if this navigates, the row works and the press was racing the
-  // animation.
+  // Hover, wait for the row to stop moving, then press it. Do not
+  // collapse this back into a bare click(): a cold click leaves the page
+  // on /timeline every time, which is what three runs of it did before
+  // this dance went in.
+  //
+  // The row is not dead — settling first navigates, which is what proves
+  // it. The press was landing on a row that had moved out from under it:
+  // pointerenter sets peeking, React re-renders the row from a centred
+  // 44px icon to a 222px row with a label, and Playwright's stability
+  // check can sample two identical frames BEFORE that re-render commits,
+  // call the box settled, and press stale coordinates. Waiting on the
+  // box itself is the only honest way to press a control that resizes
+  // because you pointed at it.
   await manage.hover();
   let last = '';
   for (let i = 0; i < 40; i++) {
