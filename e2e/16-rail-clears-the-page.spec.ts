@@ -2,19 +2,21 @@ import { expect, test } from '@playwright/test';
 
 import { OWNER_EMAIL, signIn } from './helpers';
 
-// Journey 16: the wide staff pages centre their column like every other
-// page does.
+// Journey 16, two separate claims about the staff rail's neighbours.
 //
+// One: the wide staff pages centre their column like every other page.
 // Manage and the Leads shell were the only two screens in the app with a
 // max-width and no mx-auto, so their content ran hard against the rail
-// with the whole gutter on the right. That is why the rail's panel, when
-// it opens, had the page's own heading and first cards to land on rather
-// than empty ground — and why these two screens read as a different
-// product beside the others.
+// with the whole gutter on the right, and the rail's open panel had the
+// page's own heading to land on rather than empty ground.
 //
-// A claim about boxes, so ask the browser for the boxes. This says
-// nothing about the rail's open panel: that floats over the page by
-// design and is measured nowhere here.
+// Two: a rail destination navigates when it is clicked. Nothing in this
+// suite had ever pressed one — every other journey reaches its screen
+// with page.goto — so the rail's rows have been drawn, measured and
+// never used.
+//
+// Neither says anything about the open panel floating over the page.
+// That is the rail's design and is measured nowhere here.
 
 test('Manage centres its column beside the rail', async ({ page }, testInfo) => {
   test.skip(
@@ -24,9 +26,10 @@ test('Manage centres its column beside the rail', async ({ page }, testInfo) => 
   test.setTimeout(120_000);
 
   await signIn(page, OWNER_EMAIL);
-
-  await page.getByRole('tab', { name: 'Manage' }).click();
-  await page.waitForURL(/\/management/, { timeout: 30_000 });
+  // By URL, like every other journey: this test is about the column, and
+  // routing through the rail would make a rail fault look like a layout
+  // fault. The click has its own test below.
+  await page.goto('/management');
 
   const heading = page.getByRole('heading', { name: 'Manage', exact: true });
   await expect(heading).toBeVisible({ timeout: 30_000 });
@@ -49,4 +52,28 @@ test('Manage centres its column beside the rail', async ({ page }, testInfo) => 
     Math.abs(leftGutter - rightGutter),
     `left gutter ${Math.round(leftGutter)}, right gutter ${Math.round(rightGutter)}`,
   ).toBeLessThanOrEqual(24);
+});
+
+test('a rail destination navigates when clicked', async ({ page }, testInfo) => {
+  test.skip(
+    testInfo.project.name !== 'desktop',
+    'the rail only exists at 1024 and up',
+  );
+  test.setTimeout(120_000);
+
+  await signIn(page, OWNER_EMAIL);
+
+  const manage = page.getByRole('tab', { name: 'Manage' });
+  await expect(manage).toBeVisible({ timeout: 30_000 });
+  await manage.click();
+
+  // Report where it actually went. A bare waitForURL times out saying
+  // only that thirty seconds passed, which does not distinguish a press
+  // that missed the row from a press that landed and routed nowhere.
+  await expect
+    .poll(() => new URL(page.url()).pathname, {
+      timeout: 30_000,
+      message: 'clicked Manage in the rail; the path never became /management',
+    })
+    .toMatch(/^\/management/);
 });
