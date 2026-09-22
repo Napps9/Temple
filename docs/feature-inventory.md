@@ -4419,7 +4419,14 @@ surface, reachable from the **Comms** tab on Manage or
   is dropped into every new campaign. Image blocks upload to the
   `email-assets` bucket or take a pasted URL. The document compiles to
   responsive, table-based HTML email (plus a plain-text alternative) via
-  a pure, unit-tested renderer; a web iframe shows the real render.
+  a pure, unit-tested renderer; a web iframe shows the real render. On
+  web the editor measures its own column and, given 1040px or more, sits
+  the block rail beside a live click-to-edit canvas — text typed on the
+  email itself writes back to the document; narrower columns stack the
+  rail at the page's reading width and the header's Preview toggle shows
+  the read-only render. The column is measured, not derived from the
+  window, because the staff rail floats over the page unpinned and
+  displaces it pinned.
   **Undo/redo** covers every edit (add/remove/reorder, inspector and
   canvas typing, theme swaps, colour + settings tweaks); a run of
   keystrokes coalesces into one step, the history lives above the editor

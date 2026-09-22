@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import { parseFieldPath } from '@/lib/email/canvas-sync';
+import { useThemeColors } from '@/lib/theme';
 
 const CANVAS_SOURCE = 'temple-email-canvas';
 
@@ -41,6 +42,7 @@ export function HtmlPreview({
   onCanvasSelect?: (blockId: string | null) => void;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const colors = useThemeColors();
 
   useEffect(() => {
     if (!editable) return;
@@ -76,11 +78,14 @@ export function HtmlPreview({
     );
   }, [editable, selectedBlockId]);
 
+  // The frame is a card: the app's hairline and card radius, so it sits in
+  // the split view like the rail's cards beside it. White behind the email
+  // because every email page is light, whatever scheme the app is in.
   const style = {
     width: '100%',
     height,
-    border: '1px solid #E2E8F0',
-    borderRadius: 12,
+    border: `1px solid ${colors.line}`,
+    borderRadius: 16,
     background: '#FFFFFF',
   } as const;
 

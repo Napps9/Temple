@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, View } from 'react-native';
 import { PageScroll } from '@/components/PageScroll';
 import { Spinner } from '@/components/EmptyState';
 import { Text } from '@/components/Text';
@@ -11,6 +11,7 @@ import { AudienceBuilder } from '@/components/email/AudienceBuilder';
 import { ChipButton } from '@/components/ChipButton';
 import { HtmlPreview } from '@/components/email/HtmlPreview';
 import { EmailEditor } from '@/components/email/EmailEditor';
+import { SaveButton } from '@/components/email/SaveButton';
 import { StatusBadge } from '@/components/email/CampaignList';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
@@ -398,9 +399,9 @@ function EditorView({ campaign }: { campaign: Campaign }) {
             ) : null}
           </View>
           {showPreview && Platform.OS === 'web' ? (
-            <ScrollView className="flex-1" contentContainerClassName="pb-4">
-              <HtmlPreview html={previewHtml} />
-            </ScrollView>
+            <View className="flex-1 pb-4">
+              <HtmlPreview html={previewHtml} height="100%" />
+            </View>
           ) : (
             <EmailEditor
               document={document}
@@ -681,46 +682,6 @@ function HistoryButton({
         disabled ? 'opacity-30' : 'hover:bg-raised dark:hover:bg-raised-dk'
       }`}>
       <Ionicons name={icon} size={18} color={colors.ink2} />
-    </Pressable>
-  );
-}
-
-// Explicit Save control: autosave still runs, but a visible button plus a
-// "Saved" confirmation removes the guesswork about whether edits landed.
-function SaveButton({
-  state,
-  onPress,
-}: {
-  state: 'idle' | 'saving' | 'saved';
-  onPress: () => void;
-}) {
-  const colors = useThemeColors();
-  const saved = state === 'saved';
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={state === 'saving'}
-      hitSlop={6}
-      className={`flex-row items-center gap-1.5 rounded-ctl px-3 py-1.5 active:opacity-80 hover:opacity-90 ${
-        saved
-          ? 'bg-green-500/10'
-          : 'bg-primary disabled:opacity-70'
-      }`}>
-      {state === 'saving' ? (
-        <ActivityIndicator size="small" color={saved ? '#16A34A' : colors.onPrimary} />
-      ) : (
-        <Ionicons
-          name={saved ? 'checkmark-circle' : 'save-outline'}
-          size={15}
-          color={saved ? '#16A34A' : '#FFFFFF'}
-        />
-      )}
-      <Text
-        className={`text-sm font-semibold ${
-          saved ? 'text-green-700 dark:text-green-400' : 'text-white'
-        }`}>
-        {state === 'saving' ? 'Saving…' : saved ? 'Saved' : 'Save'}
-      </Text>
     </Pressable>
   );
 }

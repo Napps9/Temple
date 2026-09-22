@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Platform, Pressable, Switch, View } from 'react-native';
 import { PageScroll } from '@/components/PageScroll';
 import { IconTile, ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
@@ -15,6 +15,7 @@ import { Screen } from '@/components/Screen';
 import { FieldLabel } from '@/components/SectionLabel';
 import { EmailEditor } from '@/components/email/EmailEditor';
 import { HtmlPreview } from '@/components/email/HtmlPreview';
+import { SaveButton } from '@/components/email/SaveButton';
 import { useGymMembership, useSession } from '@/lib/auth';
 import { FALLBACK_BRAND_SEED, coerceDocument, documentWarnings, starterDocument, type EmailDocument } from '@/lib/email/blocks';
 import { knobToStorage, storageToKnob } from '@/lib/email/automation-knob';
@@ -658,6 +659,7 @@ export default function AutomationEditor() {
     ? renderEmailHtml(activeStep.doc, { preheader: activeStep.preheader, unsubscribeUrl: '#' })
     : previewHtml;
   const activeLabel = activeStep ? `Follow-up ${activeStepIndex + 1}` : 'Main email';
+  const saveState = save.isPending ? 'saving' : justSaved ? 'saved' : 'idle';
 
   async function saveActiveNow() {
     if (activeStep) {
@@ -676,7 +678,7 @@ export default function AutomationEditor() {
     return (
       <Screen edges={['bottom', 'left', 'right']}>
         <View className="flex-1 gap-3 py-4">
-          <View className="flex-row items-center gap-3 px-4">
+          <View className="flex-row items-center gap-3">
             <Pressable
               onPress={() => setMode('setup')}
               hitSlop={6}
@@ -689,13 +691,7 @@ export default function AutomationEditor() {
             <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
               {activeLabel}
             </Text>
-            <Button
-              variant="secondary"
-              onPress={saveActiveNow}
-              loading={save.isPending}
-              success={justSaved}>
-              Save
-            </Button>
+            <SaveButton state={saveState} onPress={saveActiveNow} />
             {Platform.OS === 'web' ? (
               <Pressable
                 onPress={() => setShowPreview((v) => !v)}
@@ -713,9 +709,9 @@ export default function AutomationEditor() {
             ) : null}
           </View>
           {showPreview && Platform.OS === 'web' ? (
-            <ScrollView className="flex-1" contentContainerClassName="pb-4 px-4">
-              <HtmlPreview html={activePreviewHtml} />
-            </ScrollView>
+            <View className="flex-1 pb-4">
+              <HtmlPreview html={activePreviewHtml} height="100%" />
+            </View>
           ) : (
             <EmailEditor
               document={activeDoc}
@@ -736,15 +732,7 @@ export default function AutomationEditor() {
 
         <PageHead
           title="Edit automation"
-          action={
-            <Button
-              variant="secondary"
-              onPress={saveNow}
-              loading={save.isPending}
-              success={justSaved}>
-              Save
-            </Button>
-          }
+          action={<SaveButton state={saveState} onPress={saveNow} />}
         />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 flex-row items-center justify-between gap-3">

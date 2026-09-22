@@ -17,25 +17,13 @@
 //
 // They live outside the components that use them so the rule is two
 // testable lines rather than a ternary buried in three renders.
+//
+// A component that needs to know its own column's width measures it with
+// onLayout rather than deriving it from the window here: unpinned, the
+// rail is a 68px strip with the open panel floating over the page, so a
+// window-based estimate is 178px pessimistic for everyone who never pins.
 export const MD = 768;
 export const LG = 1024;
-
-// The rail's own width, and the sum a staff screen actually has to lay
-// out in. A component inside the column cannot ask the window how wide it
-// is and get a useful answer, and the product's split view — the
-// email builder — was asking.
-//
-// This is the PINNED width. Unpinned the rail is a 68px strip and the
-// column is 178px wider than this says, because the open panel floats
-// over the page rather than displacing it. The pessimistic number is the
-// right one here: the only caller uses it to decide whether there is room
-// for a split view, and a split that fits until someone pins the rail is
-// worse than one that appears a little later.
-export const RAIL_W = 246;
-
-export function staffContentWidth(windowWidth: number) {
-  return windowWidth >= LG ? windowWidth - RAIL_W : windowWidth;
-}
 
 export type ModalShape = 'sheet' | 'dialog';
 

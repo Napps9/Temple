@@ -2,10 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { FieldLabel } from '@/components/SectionLabel';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState, type ComponentProps } from 'react';
-import { Platform, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { Platform, Pressable, ScrollView, View } from 'react-native';
 import { Text, TextInput } from '@/components/Text';
 
-import { staffContentWidth } from '@/lib/breakpoint';
 import { useSession } from '@/lib/auth';
 import { useThemeColors } from '@/lib/theme';
 import { errorMessage } from '@/lib/errors';
@@ -55,6 +54,18 @@ const ADDABLE: EmailBlockType[] = [
 // Single-field inspector edits to these coalesce into one undo step while
 // the user is typing; every other change is a discrete history entry.
 const COALESCE_FIELDS = new Set(['text', 'href', 'alt', 'src']);
+
+// The split view's rule. The rail is fixed; beside it the canvas needs
+// room for a Standard (600px) email plus the renderer's 12px gutters
+// before it is worth showing. The editor measures its own column rather
+// than asking the window, because the staff rail floats over the page
+// unpinned (68px) and displaces it pinned (246px), and only the column
+// knows which it got — estimating from the window hid the canvas on
+// every laptop narrower than 1526px.
+const RAIL_W = 400;
+const SPLIT_GAP = 16;
+const CANVAS_MIN_W = 624;
+const SPLIT_MIN_W = RAIL_W + SPLIT_GAP + CANVAS_MIN_W;
 
 // ---------------------------------------------------------------------------
 // Small shared controls
@@ -444,9 +455,10 @@ function SettingsInspector({
 
 // An accordion block list — each
 // block is a labelled row that expands an inline inspector — plus an
-// "Add a block" palette and an "Email style" card, in a rail. On wide web
-// the rail sits beside a live read-only preview; on narrow it stacks and the
-// caller offers a Preview toggle.
+// "Add a block" palette and an "Email style" card, in a rail. Given the
+// room on web, the rail sits beside a live click-to-edit canvas; otherwise
+// it stacks at the page's reading width and the caller offers a read-only
+// Preview toggle.
 export function EmailEditor({
   document,
   onChange,
@@ -460,7 +472,7 @@ export function EmailEditor({
 }) {
   const colors = useThemeColors();
   const session = useSession();
-  const { width } = useWindowDimensions();
+  const [columnWidth, setColumnWidth] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -604,7 +616,7 @@ export function EmailEditor({
   ));
 
   const paletteCard = (
-    <View className="bg-surface dark:bg-surface-dk rounded-ctl p-3 gap-2">
+    <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-3">
       <FieldLabel>
         Add a block
       </FieldLabel>
@@ -615,7 +627,7 @@ export function EmailEditor({
   // The block list: labelled rows that expand an inline inspector, matching
   // the accordion pattern.
   const listCard = (
-    <View className="bg-surface dark:bg-surface-dk rounded-ctl p-3 gap-2">
+    <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-3">
       <FieldLabel>
         Content{document.blocks.length ? ` (${document.blocks.length})` : ''}
       </FieldLabel>
@@ -701,7 +713,7 @@ export function EmailEditor({
   );
 
   const styleCard = (
-    <View className="bg-surface dark:bg-surface-dk rounded-ctl p-4 gap-3">
+    <View className="bg-surface dark:bg-surface-dk rounded-card p-4 gap-3">
       <FieldLabel>
         Email style
       </FieldLabel>
@@ -717,37 +729,40 @@ export function EmailEditor({
     </>
   );
 
-  // Wide web pairs the editor rail with a live, click-to-edit preview —
-  // a split view — so heading/text/button-label
-  // edits can happen straight in the canvas, not just the sidebar; narrow
-  // stacks the rail (the caller offers a read-only Preview toggle).
-  // The column, not the window.
-  if (Platform.OS === 'web' && staffContentWidth(width) >= 1280) {
-    return (
-      <View className="flex-1 flex-row">
-        <View className="w-[420px] shrink-0 border-r border-line dark:border-line-dk">
-          <ScrollView className="flex-1" contentContainerClassName="gap-3 p-1 pb-6">
-            {rail}
-          </ScrollView>
-        </View>
-        <View className="flex-1 p-3">
-          <HtmlPreview
-            html={previewHtml}
-            height="100%"
-            editable
-            syncKey={debouncedSyncKey}
-            onFieldChange={handleCanvasFieldChange}
-            selectedBlockId={selectedId}
-            onCanvasSelect={setSelectedId}
-          />
-        </View>
-      </View>
-    );
-  }
+  // Nothing renders until the column has been measured, so the page never
+  // flashes the stacked rail for a frame before splitting. Native has no
+  // iframe to split with and skips the wait.
+  const measured = columnWidth !== null || Platform.OS !== 'web';
+  const split = Platform.OS === 'web' && columnWidth !== null && columnWidth >= SPLIT_MIN_W;
 
   return (
-    <ScrollView className="flex-1" contentContainerClassName="gap-3 pb-6">
-      {rail}
-    </ScrollView>
+    <View className="flex-1" onLayout={(e) => setColumnWidth(e.nativeEvent.layout.width)}>
+      {!measured ? null : split ? (
+        <View className="flex-1 flex-row" style={{ gap: SPLIT_GAP }}>
+          <View className="shrink-0" style={{ width: RAIL_W }}>
+            <ScrollView className="flex-1" contentContainerClassName="gap-3 pb-6">
+              {rail}
+            </ScrollView>
+          </View>
+          <View className="flex-1">
+            <HtmlPreview
+              html={previewHtml}
+              height="100%"
+              editable
+              syncKey={debouncedSyncKey}
+              onFieldChange={handleCanvasFieldChange}
+              selectedBlockId={selectedId}
+              onCanvasSelect={setSelectedId}
+            />
+          </View>
+        </View>
+      ) : (
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-3 pb-6 md:max-w-2xl md:mx-auto md:w-full">
+          {rail}
+        </ScrollView>
+      )}
+    </View>
   );
 }
