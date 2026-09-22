@@ -14,12 +14,22 @@ import { PageHead } from '@/components/PageHead';
 import { Screen } from '@/components/Screen';
 import { FieldLabel } from '@/components/SectionLabel';
 import { EmailEditor } from '@/components/email/EmailEditor';
+import { HistoryButton } from '@/components/email/HistoryButton';
 import { HtmlPreview } from '@/components/email/HtmlPreview';
 import { SaveButton } from '@/components/email/SaveButton';
 import { useGymMembership, useSession } from '@/lib/auth';
-import { FALLBACK_BRAND_SEED, coerceDocument, documentWarnings, starterDocument, type EmailDocument } from '@/lib/email/blocks';
+import {
+  FALLBACK_BRAND_SEED,
+  coerceDocument,
+  documentWarnings,
+  emptyDocument,
+  starterDocument,
+  type EmailDocument,
+} from '@/lib/email/blocks';
 import { knobToStorage, storageToKnob } from '@/lib/email/automation-knob';
 import { useGymTagLabels } from '@/lib/comms';
+import { useEmailHistory } from '@/lib/email/history';
+import { useHistoryKeys } from '@/lib/email/history-keys';
 import { renderEmailHtml, renderEmailText } from '@/lib/email/render';
 import { errorMessage } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
@@ -381,6 +391,15 @@ export default function AutomationEditor() {
   const [justSaved, setJustSaved] = useState(false);
   const loaded = useRef(false);
 
+  // The builder edits through a history so undo and redo work. One design
+  // session at a time — the main email or one follow-up — so the history
+  // is seeded when the builder opens on an email it is not already holding
+  // (openDesign), and its present is mirrored into the page's copy of that
+  // email (below), which is what autosave, the warnings and the setup
+  // page's block counts read.
+  const history = useEmailHistory(() => emptyDocument(brandSeed));
+  const historyTarget = useRef<string | null>(null);
+
   useEffect(() => {
     if (loaded.current || !automation.data) return;
     const a = automation.data;
@@ -508,6 +527,38 @@ export default function AutomationEditor() {
   function updateStep(stepId: string, patch: Partial<StepState>) {
     setSteps((prev) => prev.map((s) => (s.id === stepId ? { ...s, ...patch } : s)));
   }
+
+  function openDesign(stepId: string | null) {
+    const target = stepId ? steps.find((s) => s.id === stepId)?.doc : doc;
+    if (!target) return;
+    const key = stepId ?? 'primary';
+    if (historyTarget.current !== key) {
+      history.reset(target);
+      historyTarget.current = key;
+    }
+    setEditingStep(stepId);
+    setMode('design');
+  }
+
+  // Returns the same array when the step already holds the present, so
+  // opening the builder does not mark every follow-up dirty and re-save it.
+  useEffect(() => {
+    if (mode !== 'design') return;
+    const present = history.document;
+    if (!editingStep) {
+      setDoc(present);
+      return;
+    }
+    setSteps((prev) => {
+      const i = prev.findIndex((s) => s.id === editingStep);
+      if (i < 0 || prev[i].doc === present) return prev;
+      const next = prev.slice();
+      next[i] = { ...prev[i], doc: present };
+      return next;
+    });
+  }, [history.document, editingStep, mode]);
+
+  useHistoryKeys(mode === 'design', history.undo, history.redo);
 
   function stepPatch(s: StepState) {
     return {
@@ -650,11 +701,6 @@ export default function AutomationEditor() {
   // The design mode edits whichever email is active — the primary or a step.
   const activeStepIndex = editingStep ? steps.findIndex((s) => s.id === editingStep) : -1;
   const activeStep = activeStepIndex >= 0 ? steps[activeStepIndex] : null;
-  const activeDoc = activeStep ? activeStep.doc : doc;
-  const setActiveDoc = (d: EmailDocument) => {
-    if (activeStep) updateStep(activeStep.id, { doc: d });
-    else setDoc(d);
-  };
   const activePreviewHtml = activeStep
     ? renderEmailHtml(activeStep.doc, { preheader: activeStep.preheader, unsubscribeUrl: '#' })
     : previewHtml;
@@ -691,6 +737,20 @@ export default function AutomationEditor() {
             <Text className="flex-1 text-ink dark:text-ink-dk font-semibold">
               {activeLabel}
             </Text>
+            <View className="flex-row items-center gap-1">
+              <HistoryButton
+                icon="arrow-undo-outline"
+                label="Undo"
+                onPress={history.undo}
+                disabled={!history.canUndo}
+              />
+              <HistoryButton
+                icon="arrow-redo-outline"
+                label="Redo"
+                onPress={history.redo}
+                disabled={!history.canRedo}
+              />
+            </View>
             <SaveButton state={saveState} onPress={saveActiveNow} />
             {Platform.OS === 'web' ? (
               <Pressable
@@ -714,8 +774,8 @@ export default function AutomationEditor() {
             </View>
           ) : (
             <EmailEditor
-              document={activeDoc}
-              onChange={setActiveDoc}
+              document={history.document}
+              onChange={history.set}
               brand={brandSeed}
               gymId={membership.gymId}
             />
@@ -937,10 +997,7 @@ export default function AutomationEditor() {
           lead={<IconTile name="brush-outline" />}
           title="Design your email"
           subtitle={`${doc.blocks.length} block${doc.blocks.length === 1 ? '' : 's'} · edit the layout and content`}
-          onPress={() => {
-            setEditingStep(null);
-            setMode('design');
-          }}
+          onPress={() => openDesign(null)}
         />
 
         <View className="bg-surface dark:bg-surface-dk border border-line dark:border-line-dk rounded-card p-4 gap-3">
@@ -996,10 +1053,7 @@ export default function AutomationEditor() {
               />
               <View className="flex-row items-center justify-between gap-3">
                 <Pressable
-                  onPress={() => {
-                    setEditingStep(s.id);
-                    setMode('design');
-                  }}
+                  onPress={() => openDesign(s.id)}
                   className="flex-row items-center gap-2 active:opacity-70">
                   <Ionicons name="brush-outline" size={16} color={colors.ink2} />
                   <Text className="text-primary text-sm font-medium">

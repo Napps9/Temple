@@ -4490,7 +4490,10 @@ platform fires unattended, listed as a section of the Email directory
 (`/management/communications`) with a switch per row; each opens its own
 record at `/management/communications/automations/<id>`. Built on the
 Comms Suite: the
-same block editor + renderer author the email, `comms_audience_rows`
+same block editor + renderer author the email — with the same undo/redo,
+header buttons and Cmd/Ctrl+Z · Shift+Z · Ctrl+Y on web, kept per email so
+a step back inside a follow-up never touches the main one —
+`comms_audience_rows`
 resolves recipients and applies per-topic/blanket suppression, and the gym's
 sender identity / sending domain carry the send. Five triggers (0116, 0201):
 `member_joined` (welcome, N days after joining), `member_first_class`

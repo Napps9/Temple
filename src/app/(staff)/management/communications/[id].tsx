@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, View } from 'react-native';
 import { PageScroll } from '@/components/PageScroll';
 import { Spinner } from '@/components/EmptyState';
@@ -11,6 +11,7 @@ import { AudienceBuilder } from '@/components/email/AudienceBuilder';
 import { ChipButton } from '@/components/ChipButton';
 import { HtmlPreview } from '@/components/email/HtmlPreview';
 import { EmailEditor } from '@/components/email/EmailEditor';
+import { HistoryButton } from '@/components/email/HistoryButton';
 import { SaveButton } from '@/components/email/SaveButton';
 import { StatusBadge } from '@/components/email/CampaignList';
 import { Button } from '@/components/Button';
@@ -38,6 +39,7 @@ import {
 } from '@/lib/email/audience';
 import { FALLBACK_BRAND_SEED, coerceDocument, documentWarnings, type BrandSeed } from '@/lib/email/blocks';
 import { useEmailHistory } from '@/lib/email/history';
+import { useHistoryKeys } from '@/lib/email/history-keys';
 import { renderEmailHtml } from '@/lib/email/render';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -265,37 +267,7 @@ function EditorView({ campaign }: { campaign: Campaign }) {
     };
   }, [persist]);
 
-  // Cmd/Ctrl+Z / Shift+Z / Ctrl+Y drive the document history while the
-  // builder is open. Skip when the caret is in a form field so the browser's
-  // native text undo still works there; the canvas is an iframe, so its own
-  // keystrokes never reach this listener.
-  useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    if (mode !== 'design') return;
-    function onKey(e: KeyboardEvent) {
-      if (!(e.metaKey || e.ctrlKey)) return;
-      const key = e.key.toLowerCase();
-      if (key !== 'z' && key !== 'y') return;
-      const target = e.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
-      if (key === 'y' || (key === 'z' && e.shiftKey)) {
-        e.preventDefault();
-        redo();
-      } else if (key === 'z') {
-        e.preventDefault();
-        undo();
-      }
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [mode, undo, redo]);
+  useHistoryKeys(mode === 'design', undo, redo);
 
   const footer = {
     businessName: settings.data?.footer_business_name || brand.gymName,
@@ -654,35 +626,6 @@ function EditorView({ campaign }: { campaign: Campaign }) {
         )}
       </PageScroll>
     </Screen>
-  );
-}
-
-// Undo/redo controls for the builder header. Icon-only to sit quietly next
-// to Save; disabled (dimmed) when there's nothing to step to.
-function HistoryButton({
-  icon,
-  label,
-  onPress,
-  disabled,
-}: {
-  icon: ComponentProps<typeof Ionicons>['name'];
-  label: string;
-  onPress: () => void;
-  disabled: boolean;
-}) {
-  const colors = useThemeColors();
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      hitSlop={6}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      className={`w-8 h-8 rounded-ctl items-center justify-center active:opacity-70 ${
-        disabled ? 'opacity-30' : 'hover:bg-raised dark:hover:bg-raised-dk'
-      }`}>
-      <Ionicons name={icon} size={18} color={colors.ink2} />
-    </Pressable>
   );
 }
 
