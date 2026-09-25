@@ -84,6 +84,14 @@ export type DemoConfig = {
   // there is unchanged. Exists for the public marketing demo tenant's
   // nightly rotation job, which mints a fresh password on every reseed.
   password?: string;
+  // The gym already exists and a real account owns it (scripts/demo-gym/
+  // attach.ts): the slug is that gym's rather than a demo- one, and the
+  // orchestrator never inserts the gym row — it remaps the plan's gym and
+  // owner placeholders onto the real ids and drops the owner's own rows.
+  attach?: boolean;
+  // Defaults to GBP. Read off the existing gym when attaching, so the money
+  // the seeded proposals quote is in the currency its plans display in.
+  currency?: string;
 };
 
 export type DemoUser = {
@@ -157,7 +165,13 @@ function asJson<TVal>(value: TVal): T<'email_campaigns'>['design'] {
 }
 
 export function buildDemoPlan(config: DemoConfig): DemoPlan {
-  if (!/^demo-[a-z0-9-]+$/.test(config.slug)) {
+  // Either way the slug becomes the seeded accounts' email domain label,
+  // so it has to be one.
+  if (config.attach) {
+    if (!/^[a-z0-9-]+$/.test(config.slug)) {
+      throw new Error(`slug must match [a-z0-9-]+, got "${config.slug}"`);
+    }
+  } else if (!/^demo-[a-z0-9-]+$/.test(config.slug)) {
     throw new Error(`slug must match demo-[a-z0-9-]+, got "${config.slug}"`);
   }
   if (config.members < 10 || config.members > MAX_MEMBERS) {
@@ -209,7 +223,7 @@ export function buildDemoPlan(config: DemoConfig): DemoPlan {
     name: config.gymName,
     slug: config.slug,
     timezone: config.tz,
-    currency: 'GBP',
+    currency: config.currency ?? 'GBP',
     primary_color: '#DC2626',
     public_signup_enabled: true,
     discipline,

@@ -63,10 +63,13 @@ Settings → Secrets and variables → Actions; the value is in Supabase
 Dashboard → Settings → API → `service_role`). The existing
 `SUPABASE_PROJECT_REF` secret supplies the URL.
 
-Then: GitHub → Actions → **Demo gym** → Run workflow → choose `seed`
-or `teardown`, and for a seed, pick `discipline` (crossfit/hyrox) and
-optionally a `slug`/`name`/`members`. Runs against the hosted project
+Then: GitHub → Actions → **Demo gym** → Run workflow → choose `seed`,
+`teardown` or `reseed` (teardown, then seed), and for a seed, pick
+`discipline` (crossfit/hyrox) and optionally a `slug`/`name`/`members`.
+A blank slug means `demo-ironworks`. Runs against the hosted project
 with the same safety rails; credentials are printed in the job log.
+`owner_email` switches the run to an existing gym — see "Into a gym you
+already own".
 
 ## Local usage (zero config)
 
@@ -80,6 +83,46 @@ The seeder reads the local service-role key from `supabase status`
 itself; nothing to configure. Sign in at the printed credentials —
 `owner@demo-ironworks.temple.test` / `TempleDemo1!` to see the staff
 side, `member01@…` for the member side.
+
+## Into a gym you already own
+
+`--owner <email>` seeds the same content into a gym that a real account
+created in the app and owns, instead of creating a demo tenant. The
+gym keeps its name, slug, timezone, currency and owner; the two coaches,
+the members, the timetable and everything they did are created around
+that owner, who also gets the month of their own training the demo
+owner has. Programming, leads, the store, the draft campaign and the
+Timeline's questions are all there. The gym row itself gains the
+discipline, the store flags, a dismissed onboarding and a `created_at`
+a year back (the Timeline's pager floors at it).
+
+```bash
+SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… \
+npm run seed:demo -- --owner you@example.com --yes
+```
+
+Or, in the cloud: Actions → **Demo gym** → Run workflow, `mode=seed`,
+`owner_email=you@example.com`. The job log prints the seeded logins; the
+owner signs in with their own password.
+
+- The gym is found through the account's `owner` memberships. One owned
+  gym needs nothing more; several need `--slug` to pick one. A slug the
+  account does not own is refused.
+- The seeded accounts live on `@<gym-slug>.temple.test`, same as a demo
+  tenant, and are the only accounts a teardown will ever delete.
+- The seed refuses a gym that already holds class types, class sessions,
+  membership plans or lead sources: `--teardown --owner <email>` (or
+  `mode=reseed`, which does both) **empties the gym first** — every
+  table the seed fills, plus cover requests a demo raised, is cleared
+  for that gym, whoever wrote the rows. Other real members keep their
+  accounts and memberships; only the seeded accounts are deleted.
+- `--name` and `--tz` are ignored: the gym's own are used.
+- **This is a real gym, not a demo tenant.** `gyms.is_demo` is not set,
+  so nothing here stops a send or a charge the way the demo tenants are
+  stopped (below). Approving a chase or sending the campaign will try to
+  reach `@<slug>.temple.test` addresses, which cannot route and bounce
+  against the sending domain. Set `is_demo` by hand if you want the
+  guards on.
 
 ## Hosted usage — read this first
 
@@ -122,13 +165,14 @@ upsert; recovery from any failed state is teardown + re-seed.
 | Flag | Default | Meaning |
 | --- | --- | --- |
 | `--discipline` | `crossfit` | `crossfit` or `hyrox` — picks slug/name defaults below and reshapes the gym; see "`--discipline hyrox`" above |
-| `--slug` | `demo-ironworks` (`demo-hyrox` if `--discipline hyrox`) | Gym slug; must match `demo-[a-z0-9-]+` |
-| `--name` | `Ironworks Strength Club` (`Ironclad Hyrox Club` if `--discipline hyrox`) | Display name |
+| `--owner` | | Email of a real account: seed into (or empty) the gym it owns instead of creating a demo tenant; see "Into a gym you already own" |
+| `--slug` | `demo-ironworks` (`demo-hyrox` if `--discipline hyrox`) | Gym slug; must match `demo-[a-z0-9-]+`. With `--owner`, picks between several owned gyms |
+| `--name` | `Ironworks Strength Club` (`Ironclad Hyrox Club` if `--discipline hyrox`) | Display name (ignored with `--owner`) |
 | `--members` | `40` | Member count (10–60) |
 | `--weeks-back` | `4` | Weeks of past sessions/bookings |
 | `--weeks-forward` | `2` | Weeks of future sessions |
 | `--history-weeks` | `10` | Weeks of workout-log history |
-| `--tz` | `Europe/London` | Gym timezone (sessions are DST-correct) |
+| `--tz` | `Europe/London` | Gym timezone (sessions are DST-correct; ignored with `--owner`) |
 | `--seed` | `42` | RNG seed — same seed, same data |
 | `--dry-run` | | Build + print the plan, write nothing |
 | `--teardown` | | Remove the gym and its demo accounts |

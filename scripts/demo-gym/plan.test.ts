@@ -353,6 +353,32 @@ describe('buildDemoPlan — discipline: hyrox', () => {
   });
 });
 
+describe('buildDemoPlan — attach to an existing gym', () => {
+  const attached = buildDemoPlan({
+    ...CONFIG,
+    slug: 'crossfit-goodlife',
+    gymName: 'CrossFit Goodlife',
+    attach: true,
+    currency: 'USD',
+  });
+
+  it('accepts the real gym slug, and still refuses one that cannot be an email domain', () => {
+    expect(attached.emailDomain).toBe('crossfit-goodlife.temple.test');
+    expect(() => buildDemoPlan({ ...CONFIG, slug: 'CrossFit Goodlife', attach: true })).toThrow(/a-z0-9/);
+  });
+
+  it('quotes money in the gym’s own currency', () => {
+    expect(attached.gym.currency).toBe('USD');
+    const upgrade = attached.agentActions.find((a) => a.action_kind === 'plan_upgrade_offer')!;
+    expect(upgrade.payload.offer_price).toBe('$75');
+    expect(plan.agentActions.find((a) => a.action_kind === 'plan_upgrade_offer')!.payload.offer_price).toBe('£75');
+  });
+
+  it('keeps the owner in the plan so the orchestrator has a placeholder to remap', () => {
+    expect(attached.users.filter((u) => u.role === 'owner')).toHaveLength(1);
+  });
+});
+
 describe('the gym\'s jobs', () => {
   // The demo Timeline is the product's main surface, and without an
   // authority row per job it shows the gym's own activity and nothing

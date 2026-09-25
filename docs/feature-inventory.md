@@ -4996,6 +4996,18 @@ surround:
   history, progressing PRs, Hyrox races, injuries, leads, campaign
   draft, store), deterministic per `--seed`, with
   a guarded `--teardown`. Runbook: `docs/demo-gym.md`.
+  **`--owner <email>`** (workflow input `owner_email`) puts the same
+  content into a gym a real account already owns, keeping that person
+  as owner: the plan's gym and owner placeholders are remapped onto the
+  real rows the way GoTrue's minted ids already were, the owner's own
+  account and membership rows are dropped, the gym-level singletons
+  (hours, comms settings, agent authority and templates) upsert, and
+  the gym's `created_at` is backdated a year so the Timeline can page
+  into the seeded history. Its teardown empties the gym table by table
+  (nothing cascades from a gym row that stays) and deletes only the
+  seeded `@<slug>.temple.test` accounts. The workflow also gained
+  `mode=reseed` (teardown, then seed) so the morning-of routine is one
+  run.
   **And the gym's jobs** (`scripts/demo-gym/jobs.ts`) — the seeder wrote
   no `agent_authority` rows, and no job can propose anything without one,
   so a demo Timeline showed the gym's own activity and nothing Temple

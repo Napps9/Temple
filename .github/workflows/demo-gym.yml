@@ -1,22 +1,30 @@
 name: Demo gym
 
-# Manual seed/teardown of the demo gym against the hosted Supabase
-# project — the cloud-only counterpart to running `npm run seed:demo`
-# on a laptop. Needs the SUPABASE_SERVICE_ROLE_KEY repo secret
-# (Supabase Dashboard -> Settings -> API -> service_role) alongside
-# the existing SUPABASE_PROJECT_REF.
+# Manual seed/teardown of a demo gym against the hosted Supabase project
+# — the cloud-only counterpart to running `npm run seed:demo` on a
+# laptop. Needs the SUPABASE_SERVICE_ROLE_KEY repo secret (Supabase
+# Dashboard -> Settings -> API -> service_role) alongside the existing
+# SUPABASE_PROJECT_REF.
+#
+# With owner_email set, the same content goes into a gym that account
+# already owns, keeping that person as the owner; teardown then empties
+# the gym and removes only the seeded accounts. See docs/demo-gym.md,
+# "Into a gym you already own".
 
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: What to do
+        description: What to do (reseed = teardown, then seed)
         type: choice
-        options: [seed, teardown]
+        options: [seed, teardown, reseed]
         required: true
+      owner_email:
+        description: Fill the gym this account already owns instead of creating a demo- gym (blank = demo gym)
+        default: ""
       slug:
-        description: Gym slug (must start with demo-)
-        default: demo-ironworks
+        description: Demo gym slug, must start with demo- (blank = demo-ironworks). With owner_email, only needed when that account owns several gyms
+        default: ""
       members:
         description: Member count (seed only, 10-60)
         default: "40"
@@ -26,7 +34,7 @@ on:
         options: [crossfit, hyrox]
         default: crossfit
       name:
-        description: Gym display name (seed only; blank = sensible default for the discipline)
+        description: Gym display name (new demo gym only; blank = sensible default for the discipline)
         default: ""
 
 env:
@@ -57,6 +65,7 @@ jobs:
           # into the script below, so a crafted input value can't
           # break out into arbitrary shell.
           MODE: ${{ inputs.mode }}
+          OWNER_EMAIL: ${{ inputs.owner_email }}
           SLUG: ${{ inputs.slug }}
           MEMBERS: ${{ inputs.members }}
           DISCIPLINE: ${{ inputs.discipline }}
@@ -66,10 +75,20 @@ jobs:
             echo "::error::SUPABASE_SERVICE_ROLE_KEY repo secret is not set — add it under Settings -> Secrets and variables -> Actions."
             exit 1
           fi
-          if [ "$MODE" = "teardown" ]; then
-            npx tsx scripts/seed-demo-gym.ts --teardown --slug "$SLUG" --yes
-          else
-            ARGS=(--slug "$SLUG" --members "$MEMBERS" --discipline "$DISCIPLINE" --yes)
-            if [ -n "$GYM_NAME" ]; then ARGS+=(--name "$GYM_NAME"); fi
-            npx tsx scripts/seed-demo-gym.ts "${ARGS[@]}"
-          fi
+          TARGET=(--yes)
+          if [ -n "$OWNER_EMAIL" ]; then TARGET+=(--owner "$OWNER_EMAIL"); fi
+          if [ -n "$SLUG" ]; then TARGET+=(--slug "$SLUG"); fi
+          SEED=(--members "$MEMBERS" --discipline "$DISCIPLINE")
+          if [ -n "$GYM_NAME" ]; then SEED+=(--name "$GYM_NAME"); fi
+          case "$MODE" in
+            teardown)
+              npx tsx scripts/seed-demo-gym.ts --teardown "${TARGET[@]}"
+              ;;
+            seed)
+              npx tsx scripts/seed-demo-gym.ts "${SEED[@]}" "${TARGET[@]}"
+              ;;
+            reseed)
+              npx tsx scripts/seed-demo-gym.ts --teardown "${TARGET[@]}"
+              npx tsx scripts/seed-demo-gym.ts "${SEED[@]}" "${TARGET[@]}"
+              ;;
+          esac
